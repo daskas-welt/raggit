@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant)
+  version: 1.0.0
+  description: Single-tenant on-prem RAG on AI Workstation (Qdrant local path + Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query time per FR-004/Constitution IV).
+servers:
+  - url: http://ai-workstation.local:5001
+    description: AI Workstation LAN
+
+security:
+  - ApiKey: []
+
+paths:
+  /api/documents:
+    post:
+      summary: Upload document to singleton library (Admin only)
+      description: Chunks (512/50), embeds locally, indexes into Qdrant file. Rejects unsupported type/size per FR-006.
+      security: [{ ApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        '201':
+          description: Accepted for indexing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { description: File >100MB }
+    get:
+      summary: List documents in singleton library
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Document' }
+
+  /api/documents/{id}:
+    delete:
+      summary: Delete document and purge its vectors (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted, content: {} }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/query:
+    post:
+      summary: Query library with citations (LAN-only, no cloud egress)
+      security: [{ ApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, minLength: 1 }
+                topK: { type: integer, default: 5, minimum: 1, maximum: 10 }
+              required: [query]
+      responses:
+        '200':
+          description: Grounded answer with citations or no relevant content
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/QueryAnswer'
+                  - $ref: '#/components/schemas/NoRelevantContent'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '503': { description: AI workstation unavailable or model unavailable offline (FR-007) }
+
+  /health:
+    get:
+      summary: Health (no auth) — qdrant + llm
+      security: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  qdrant: { type: string, enum: [ok, down] }
+                  llm: { type: string, enum: [ok, down] }
+                  version: { type: string }
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Single-tenant API key or Windows AD token (RBAC Admin vs Employee in API)
+
+  schemas:
+    Document:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        filename: { type: string }
+        mime: { type: string, enum: [application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, text/plain, text/markdown] }
+        size: { type: integer, format: int64 }
+        hash: { type: string, description: SHA-256 hex for dedupe }
+        status: { type: string, enum: [Indexing, Ready, Failed] }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, filename, mime, size, hash, status, createdAt]
+
+    QueryAnswer:
+      type: object
+      properties:
+        answer: { type: string }
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              documentId: { type: string, format: uuid }
+              chunkId: { type: string, format: uuid }
+              text: { type: string }
+              ordinal: { type: integer }
+            required: [documentId, chunkId, text]
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+      required: [answer, citations]
+
+    NoRelevantContent:
+      type: object
+      properties:
+        answer: { type: string, enum: [no relevant content found] }
+        citations: { type: array, maxItems: 0 }
+      required: [answer]
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+    Forbidden:
+      description: Forbidden — Employee cannot upload/delete, unauthenticated rejected per FR-003
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: forbidden }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
