@@ -1,0 +1,251 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Core.Abstractions;
+using RAGGit.Core.Data;
+using RAGGit.Core.Models;
+using RAGGit.Workstation.Api.Auth;
+using Xunit;
+
+namespace RAGGit.Tests.Contract;
+
+/// <summary>
+/// Contract tests for <c>POST /api/documents</c> and <c>GET /api/documents</c>
+/// per contracts/api.yaml. Runs against the full Workstation.Api via
+/// <see cref="WebApplicationFactory{Program}"/> with deterministic fakes for
+/// the vector store and embedder so the tests do not require Ollama/LanceDB.
+/// </summary>
+public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
+{
+    private readonly TestApiFactory _factory;
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+
+    public DocumentsContractTests(TestApiFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _client.DefaultRequestHeaders.Add("X-Api-Key", factory.AdminKey);
+    }
+
+    [Fact]
+    public async Task Post_ValidPdf_Returns201Document()
+    {
+        var content = CreatePdfContent("Contract test PDF content");
+
+        var response = await _client.PostAsync("/api/documents", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var doc = await DeserializeDocumentAsync(response);
+        doc.Filename.Should().Be("contract-test.pdf");
+        doc.Mime.Should().Be(DocumentMimeType.Pdf);
+        doc.Status.Should().Be(DocumentStatus.Ready);
+        doc.Size.Should().BeGreaterThan(0);
+        doc.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task Post_DuplicateHash_Returns200ExistingDocument()
+    {
+        var content = CreatePdfContent("Duplicate hash contract content");
+
+        var first = await _client.PostAsync("/api/documents", content);
+        first.StatusCode.Should().Be(HttpStatusCode.Created);
+        var existing = await DeserializeDocumentAsync(first);
+
+        var second = await _client.PostAsync("/api/documents", CreatePdfContent("Duplicate hash contract content"));
+
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+        var duplicate = await DeserializeDocumentAsync(second);
+        duplicate.Id.Should().Be(existing.Id);
+        duplicate.Hash.Should().Be(existing.Hash);
+    }
+
+    [Fact]
+    public async Task Get_Documents_Returns200Array()
+    {
+        await _client.PostAsync("/api/documents", CreatePdfContent("List contract content"));
+
+        var response = await _client.GetAsync("/api/documents");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var array = await JsonSerializer.DeserializeAsync<List<Document>>(
+            await response.Content.ReadAsStreamAsync(),
+            _jsonOptions);
+        array.Should().NotBeNull();
+        array.Should().Contain(d => d.Filename == "contract-test.pdf" || d.Filename == "list-contract-content.pdf");
+    }
+
+    private static MultipartFormDataContent CreatePdfContent(string text)
+    {
+        var bytes = Encoding.UTF8.GetBytes(text);
+        var stream = new MemoryStream(bytes);
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+
+        var form = new MultipartFormDataContent();
+        form.Add(fileContent, "file", "contract-test.pdf");
+        return form;
+    }
+
+    private async Task<Document> DeserializeDocumentAsync(HttpResponseMessage response)
+    {
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<Document>(json, _jsonOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize Document response.");
+    }
+}
+
+/// <summary>
+/// Shared factory for contract tests. Replaces AI/vector dependencies with fast
+/// in-memory fakes and points SQLite/LanceDB at temp paths.
+/// </summary>
+public sealed class TestApiFactory : WebApplicationFactory<Program>
+{
+    public string AdminKey { get; } = "admin-contract-test";
+    public string EmployeeKey { get; } = "employee-contract-test";
+
+    private readonly string _dbPath;
+    private readonly string _lanceDbPath;
+
+    public TestApiFactory()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), "raggit-contract-tests", Guid.NewGuid().ToString());
+        Directory.CreateDirectory(baseDir);
+        _dbPath = Path.Combine(baseDir, "rag.db");
+        _lanceDbPath = Path.Combine(baseDir, "lancedb");
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureServices(services =>
+        {
+            services.Configure<ApiKeyAuthOptions>(options =>
+            {
+                options.AdminApiKey = AdminKey;
+                options.EmployeeApiKey = EmployeeKey;
+            });
+
+            services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
+            services.AddSingleton<IVectorStore>(new FakeVectorStore());
+            services.AddSingleton<IEmbedder>(new FakeEmbedder());
+            services.AddSingleton<ILlmClient>(new FakeLlmClient());
+        });
+    }
+}
+
+internal sealed class FakeVectorStore : IVectorStore
+{
+    private readonly List<VectorRecord> _records = new();
+
+    public Task UpsertAsync(IEnumerable<VectorRecord> vectors, CancellationToken cancellationToken = default)
+    {
+        lock (_records)
+        {
+            _records.AddRange(vectors);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<SearchResult>> SearchAsync(
+        float[] queryVector,
+        int limit,
+        string? documentIdFilter = null,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_records)
+        {
+            var query = _records.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(documentIdFilter))
+            {
+                query = query.Where(r =>
+                    GetPayloadString(r.Payload, "documentId") == documentIdFilter);
+            }
+
+            var results = query
+                .Take(limit)
+                .Select(r => new SearchResult(
+                    r.Id,
+                    GetPayloadString(r.Payload, "documentId"),
+                    GetPayloadString(r.Payload, "text"),
+                    GetPayloadInt32(r.Payload, "ordinal"),
+                    1.0f))
+                .ToList();
+
+            return Task.FromResult<IReadOnlyList<SearchResult>>(results);
+        }
+    }
+
+    public Task DeleteAsync(string documentId, CancellationToken cancellationToken = default)
+    {
+        lock (_records)
+        {
+            _records.RemoveAll(r => GetPayloadString(r.Payload, "documentId") == documentId);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
+
+    private static string GetPayloadString(IReadOnlyDictionary<string, object?> payload, string key)
+    {
+        return payload.TryGetValue(key, out var value) && value is not null
+            ? value.ToString() ?? string.Empty
+            : string.Empty;
+    }
+
+    private static int GetPayloadInt32(IReadOnlyDictionary<string, object?> payload, string key)
+    {
+        if (payload.TryGetValue(key, out var value) && value is not null)
+        {
+            return value switch
+            {
+                int i => i,
+                long l => (int)l,
+                _ => int.TryParse(value.ToString(), out var parsed) ? parsed : 0
+            };
+        }
+
+        return 0;
+    }
+}
+
+internal sealed class FakeEmbedder : IEmbedder
+{
+    public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
+        IEnumerable<string> inputs,
+        CancellationToken cancellationToken = default)
+    {
+        var embeddings = inputs.Select(_ =>
+        {
+            var vector = new float[384];
+            vector[0] = 1.0f;
+            return vector;
+        }).ToList();
+
+        return Task.FromResult<IReadOnlyList<float[]>>(embeddings);
+    }
+}
+
+internal sealed class FakeLlmClient : ILlmClient
+{
+    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
+        => Task.FromResult("fake answer");
+
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
+}

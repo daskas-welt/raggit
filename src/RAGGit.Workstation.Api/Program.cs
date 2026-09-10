@@ -97,3 +97,5 @@ await using (var db = app.Services.GetRequiredService<RagDbContext>())
 }
 
 app.Run();
+
+public partial class Program { }
