@@ -60,4 +60,19 @@ public sealed partial class LibraryViewModel : ObservableObject
         // This command is a seam for view-specific navigation logic.
         await Task.CompletedTask;
     }
+
+    [RelayCommand]
+    private async Task DeleteDocumentAsync(Document document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        try
+        {
+            await _apiClient.DeleteAsync(document.Id);
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = $"Failed to delete {document.Filename}: {exception.Message}";
+        }
+    }
 }

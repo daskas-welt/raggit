@@ -16,13 +16,18 @@
                       EmptyView="No documents in the library.">
         <CollectionView.ItemTemplate>
           <DataTemplate>
-            <Grid ColumnDefinitions="*,Auto"
-                  Padding="8,4">
+            <Grid ColumnDefinitions="*,Auto,Auto"
+                  Padding="8,4"
+                  ColumnSpacing="8">
               <Label Text="{Binding Filename}"
                      VerticalOptions="Center" />
               <Label Grid.Column="1"
                      Text="{Binding Status}"
                      VerticalOptions="Center" />
+              <Button Grid.Column="2"
+                      Text="Delete"
+                      IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsAdmin}"
+                      Clicked="OnDeleteClicked" />
             </Grid>
           </DataTemplate>
         </CollectionView.ItemTemplate>

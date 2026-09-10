@@ -86,6 +86,15 @@ public sealed class DocumentsApiClient
         return document;
     }
 
+    /// <summary>
+    /// DELETE /api/documents/{id}
+    /// </summary>
+    public async Task DeleteAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.DeleteAsync($"api/documents/{documentId}", cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private sealed class ErrorResponse
     {
         public string? Error { get; set; }
