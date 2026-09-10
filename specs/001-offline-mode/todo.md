@@ -1,12 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T030 [P] [US3] Contract test `DELETE /api/documents/{id}` 204
-- [ ] T031 [P] [US3] Integration test `Delete → purge → query excludes`
-- [ ] T032 [US3] Implement `DELETE /api/documents/{id}`
-- [ ] T033 [US3] Update client `LibraryView` delete button
-- [ ] T034 [P] [US4] Contract test RBAC `GET 200` vs `POST/DELETE 403`
-- [ ] T035 [P] [US4] Integration test `Employee browse read-only`
-- [ ] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE`; client role-aware UI
 - [ ] T037 [P] Add Serilog structured logging + `X-Request-Id` + error problem details
 - [ ] T038 [P] Harden `POST /api/documents` with magic-byte mime check + virus-scan hook stub
 - [ ] T039 [P] Performance: index batching, LanceDB HNSW tuning, chunk cache

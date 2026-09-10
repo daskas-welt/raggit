@@ -29,3 +29,11 @@
 - [x] T027 [US2] Implement `POST /api/query` in `QueryController.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T028 [US2] Implement client `QueryView.xaml` [DONE: 2026-09-10] [By: coder]
 - [x] T029 [US2] Instrument latency `latencyMs` in `Queries` table [DONE: 2026-09-10] [By: coder]
+- [x] T030 [P] [US3] Contract test `DELETE /api/documents/{id}` 204 [DONE: 2026-09-10] [By: coder]
+- [x] T031 [P] [US3] Integration test `Delete → purge → query excludes` [DONE: 2026-09-10] [By: coder]
+- [x] T032 [US3] Implement `DELETE /api/documents/{id}` [DONE: 2026-09-10] [By: coder]
+- [x] T033 [US3] Update client `LibraryView` delete button [DONE: 2026-09-10] [By: coder]
+- [x] T034 [P] [US4] Contract test RBAC `GET 200` vs `POST/DELETE 403` [DONE: 2026-09-10] [By: coder]
+- [x] T035 [P] [US4] Integration test `Employee browse read-only` [DONE: 2026-09-10] [By: coder]
+- [x] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE`; client role-aware UI [DONE: 2026-09-10] [By: coder]
+
