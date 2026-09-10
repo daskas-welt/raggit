@@ -23,29 +23,23 @@ namespace RAGGit.Tests.Integration;
 /// Offline/LAN-only integration tests for <c>POST /api/query</c>.
 /// Uses the real Workstation.Api with a temp LanceDB vector store and
 /// deterministic fakes for Ollama embed/chat so no WAN egress is required.
+/// Each test creates its own factory to keep test data isolated.
 /// </summary>
-public sealed class QueryOfflineTests : IClassFixture<IntegrationTestFactory>
+public sealed class QueryOfflineTests
 {
-    private readonly IntegrationTestFactory _factory;
-    private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
     };
 
-    public QueryOfflineTests(IntegrationTestFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
-
     [Fact]
     public async Task Query_LanOnly_NoWanEgress_ReturnsAnswerWithCitations_p95_Under7Seconds()
     {
-        var employeeClient = CreateEmployeeClient();
-        await SeedRefundPolicyDocumentAsync();
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
+        await SeedRefundPolicyDocumentAsync(factory);
 
-        var llm = GetLlmClient();
+        var llm = GetLlmClient(factory);
         llm.Healthy = true;
         llm.ResponseText = "Refunds are accepted within 30 days.";
 
@@ -75,8 +69,8 @@ public sealed class QueryOfflineTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task Query_NoRelevantContent_ReturnsNoRelevantContent()
     {
-        var employeeClient = CreateEmployeeClient();
-        await SeedRefundPolicyDocumentAsync();
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
 
         var response = await employeeClient.PostAsJsonAsync("/api/query", new { query = "xyz irrelevant" }, _jsonOptions);
 
@@ -89,10 +83,11 @@ public sealed class QueryOfflineTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task Query_LlmUnavailable_Returns503()
     {
-        var employeeClient = CreateEmployeeClient();
-        await SeedRefundPolicyDocumentAsync();
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
+        await SeedRefundPolicyDocumentAsync(factory);
 
-        var llm = GetLlmClient();
+        var llm = GetLlmClient(factory);
         llm.Healthy = false;
         llm.ThrowOnChat = true;
 
@@ -101,17 +96,17 @@ public sealed class QueryOfflineTests : IClassFixture<IntegrationTestFactory>
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
     }
 
-    private HttpClient CreateEmployeeClient()
+    private static HttpClient CreateEmployeeClient(IntegrationTestFactory factory)
     {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Api-Key", _factory.EmployeeKey);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         return client;
     }
 
-    private async Task SeedRefundPolicyDocumentAsync()
+    private static async Task SeedRefundPolicyDocumentAsync(IntegrationTestFactory factory)
     {
-        var adminClient = _factory.CreateClient();
-        adminClient.DefaultRequestHeaders.Add("X-Api-Key", _factory.AdminKey);
+        var adminClient = factory.CreateClient();
+        adminClient.DefaultRequestHeaders.Add("X-Api-Key", factory.AdminKey);
 
         var form = new MultipartFormDataContent();
         var unique = Guid.NewGuid().ToString("N")[..8];
@@ -124,6 +119,6 @@ public sealed class QueryOfflineTests : IClassFixture<IntegrationTestFactory>
         response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
     }
 
-    private FakeLlmClient GetLlmClient()
-        => (FakeLlmClient)_factory.Services.GetRequiredService<ILlmClient>();
+    private static FakeLlmClient GetLlmClient(IntegrationTestFactory factory)
+        => (FakeLlmClient)factory.Services.GetRequiredService<ILlmClient>();
 }

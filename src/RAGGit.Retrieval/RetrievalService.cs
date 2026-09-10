@@ -41,6 +41,11 @@ public sealed class RetrievalService
         }
 
         var queryVector = embeddings[0];
-        return await _vectorStore.SearchAsync(queryVector, topK, cancellationToken: cancellationToken);
+        var results = await _vectorStore.SearchAsync(queryVector, topK, cancellationToken: cancellationToken);
+
+        // Drop results with no meaningful similarity so the controller can
+        // return the "no relevant content found" branch per SC-004.
+        const float minScore = 0.01f;
+        return results.Where(r => r.Score > minScore).ToList();
     }
 }

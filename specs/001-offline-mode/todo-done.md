@@ -26,3 +26,4 @@
 - [x] T024 [P] [US2] Eval harness 50 Q/A set [DONE: 2026-09-10] [By: coder]
 - [x] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs` [DONE: 2026-09-10] [By: coder]
+- [x] T027 [US2] Implement `POST /api/query` in `QueryController.cs` [DONE: 2026-09-10] [By: coder]
