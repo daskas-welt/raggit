@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T023 [P] [US2] Integration test `WAN-disabled query`
 - [ ] T024 [P] [US2] Eval harness 50 Q/A set
 - [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs`
 - [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs`

@@ -217,10 +217,21 @@ internal sealed class FakeEmbedder : IEmbedder
 
 internal sealed class FakeLlmClient : ILlmClient
 {
-    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
-        => Task.FromResult("integration answer");
+    public string ResponseText { get; set; } = "integration answer";
+    public bool Healthy { get; set; } = true;
+    public bool ThrowOnChat { get; set; }
 
-    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
+    {
+        if (ThrowOnChat)
+        {
+            throw new HttpRequestException("Simulated LLM unavailable offline.");
+        }
+
+        return Task.FromResult(ResponseText);
+    }
+
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(Healthy);
 }
 
 /// <summary>
