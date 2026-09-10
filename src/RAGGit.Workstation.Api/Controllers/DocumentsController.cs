@@ -85,6 +85,23 @@ public sealed class DocumentsController : ControllerBase
         return Ok(documents);
     }
 
+    /// <summary>
+    /// DELETE /api/documents/{id} — purge stub for User Story 3.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Admin requested delete for document {DocumentId}", id);
+
+        // TODO: remove Document + Chunk rows and purge vectors in US3.
+        // The vector store already exposes a documentId filter delete wrapper
+        // via IVectorStore.DeleteAsync(documentId).
+        await Task.CompletedTask;
+
+        return NoContent();
+    }
+
     private static bool TryMapMime(string? contentType, string fileName, out DocumentMimeType mime)
     {
         mime = default;
