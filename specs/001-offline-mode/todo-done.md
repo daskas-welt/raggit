@@ -28,3 +28,4 @@
 - [x] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T027 [US2] Implement `POST /api/query` in `QueryController.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T028 [US2] Implement client `QueryView.xaml` [DONE: 2026-09-10] [By: coder]
+- [x] T029 [US2] Instrument latency `latencyMs` in `Queries` table [DONE: 2026-09-10] [By: coder]
