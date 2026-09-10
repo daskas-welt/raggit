@@ -8,7 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.31" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+    <ProjectReference Include="..\RAGGit.Ingest\RAGGit.Ingest.csproj" />
+    <ProjectReference Include="..\RAGGit.Retrieval\RAGGit.Retrieval.csproj" />
   </ItemGroup>
 
 </Project>
