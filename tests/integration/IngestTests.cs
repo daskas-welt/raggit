@@ -156,7 +156,7 @@ public sealed class IngestTests
 /// Factory for integration tests. Keeps SQLite/LanceDB in temp folders and
 /// replaces Ollama with deterministic fakes.
 /// </summary>
-public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
+public class IntegrationTestFactory : WebApplicationFactory<Program>
 {
     public string AdminKey { get; } = "admin-integration-test";
     public string EmployeeKey { get; } = "employee-integration-test";
@@ -171,6 +171,12 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
         Directory.CreateDirectory(baseDir);
         _dbPath = Path.Combine(baseDir, "rag.db");
         _lanceDbPath = Path.Combine(baseDir, "lancedb");
+    }
+
+    internal IntegrationTestFactory(string dbPath, string lanceDbPath)
+    {
+        _dbPath = dbPath;
+        _lanceDbPath = lanceDbPath;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

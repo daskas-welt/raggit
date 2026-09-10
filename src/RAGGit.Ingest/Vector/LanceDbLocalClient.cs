@@ -16,7 +16,7 @@ namespace RAGGit.Ingest.Vector;
 /// Manages the <c>library</c> table with an HNSW cosine index and upserts/search/delete
 /// via the LanceDB Rust-backed .NET SDK. Data persists under <see cref="StoragePath"/>.
 /// </summary>
-public sealed class LanceDbLocalClient : IVectorStore
+public sealed class LanceDbLocalClient : IVectorStore, IDisposable
 {
     private const string TableName = "library";
     private const int DefaultVectorSize = 384;
@@ -27,6 +27,7 @@ public sealed class LanceDbLocalClient : IVectorStore
     private Connection? _connection;
     private lancedb.Table? _table;
     private bool _initialized;
+    private bool _disposed;
 
     /// <summary>
     /// Creates a local LanceDB client that persists data under <paramref name="storagePath"/>.
@@ -56,6 +57,14 @@ public sealed class LanceDbLocalClient : IVectorStore
 
             _connection = new Connection();
             await _connection.Connect(_storagePath, new ConnectionOptions());
+
+            var names = await _connection.TableNames();
+            if (names.Contains(TableName))
+            {
+                _table = await _connection.OpenTable(TableName);
+                _initialized = true;
+                return _table;
+            }
 
             var vectorField = new Field("item", FloatType.Default, nullable: false);
             var vectorType = new FixedSizeListType(vectorField, _vectorSize);
@@ -169,6 +178,20 @@ public sealed class LanceDbLocalClient : IVectorStore
     /// Returns the storage path used by this client.
     /// </summary>
     public string StoragePath => _storagePath;
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _table?.Dispose();
+        _connection?.Dispose();
+        _initLock.Dispose();
+        _disposed = true;
+    }
 
     /// <inheritdoc />
     public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default)

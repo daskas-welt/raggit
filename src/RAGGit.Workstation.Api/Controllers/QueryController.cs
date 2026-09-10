@@ -142,6 +142,11 @@ public sealed class QueryController : ControllerBase
             _logger.LogError(exception, "Query failed because LLM is unreachable for user {UserId}", userId);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "AI workstation unavailable" });
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Query failed due to AI workstation error for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "AI workstation unavailable" });
+        }
     }
 
     private async Task SaveQueryAsync(
