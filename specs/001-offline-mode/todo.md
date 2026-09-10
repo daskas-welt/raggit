@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee`, `AllowAnonymous` for `/health`
 - [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs`
 - [ ] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation
 - [ ] T013 Configure env secrets (`dotnet user-secrets` `Api:Key`, `Onnx:EmbeddingModelPath`) and health endpoint `GET /health`

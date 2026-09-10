@@ -9,3 +9,4 @@
 - [x] T007 Setup SQLite `rag.db` schema and migrations for `Documents`, `Chunks`, `Queries`, `Library(singleton)` per data-model.md [DONE: 2026-09-10] [By: coder]
 - [x] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` and `src/RAGGit.Retrieval`; implement `OllamaEmbedder.cs`, `OnnxEmbedder.cs`, `OllamaLlmClient.cs` [DONE: 2026-09-10] [By: coder]
+- [x] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee`, `AllowAnonymous` for `/health` [DONE: 2026-09-10] [By: coder]
