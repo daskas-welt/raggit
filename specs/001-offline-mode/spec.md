@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "single-tenant RAG library for RAGGit: AI Workstation hosts Ollama and Qdrant local path with ASP.NET Core API; .NET desktop app WPF Avalonia for admins to upload see library and employees to query with citations; LAN-only no cloud egress single-tenant proprietary"
+**Input**: User description: "single-tenant RAG library for RAGGit: AI Workstation hosts Ollama and Qdrant local path with ASP.NET Core API; .NET client app (desktop + mobile) for admins to upload see library and employees to query with citations; LAN-only no cloud egress single-tenant proprietary" — Clarified 2026-09-10: client tier = Windows 11 modern desktop + iOS/Android mobile, no Linux (macOS not in scope); single .NET MAUI codebase selected at plan level.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -84,7 +84,7 @@ Employee views the library (read-only) to discover available documents and under
 - **FR-001**: System MUST allow users with Admin role to upload documents to the single-tenant company library and list/delete them; users with Employee role MUST be able to list/view library read-only.
 - **FR-002**: System MUST chunk, embed locally, and index uploaded content into the single-tenant embedded RAG store on the AI Workstation with no external vector service and no outbound cloud calls during ingest.
 - **FR-003**: System MUST enforce role-based access: Admin can upload/delete, Employee can query/browse; unauthenticated requests MUST be rejected. No multi-tenant partitioning is required (single-tenant per deployment).
-- **FR-004**: System MUST provide a natural-language query over the library that retrieves top-k relevant chunks and generates a grounded answer using the local AI model on the AI Workstation with zero outbound WAN at query time (LAN-only). The desktop app MUST work as a thin client over LAN with no local models.
+- **FR-004**: System MUST provide a natural-language query over the library that retrieves top-k relevant chunks and generates a grounded answer using the local AI model on the AI Workstation with zero outbound WAN at query time (LAN-only). The client app (desktop or mobile) MUST work as a thin client over LAN with no local models.
 - **FR-005**: System MUST return citations (source documentId/chunkId/text) for every generated answer when source exists, and MUST return `no relevant content found` when no relevant chunks are found (no hallucination).
 - **FR-006**: System MUST reject unsupported types/sizes with an actionable error and leave the existing library and index consistent (no partial writes).
 - **FR-007**: System MUST handle AI model unavailability offline by failing fast with a clear `model unavailable offline` or `AI workstation unavailable` error, not hanging.
@@ -117,11 +117,12 @@ Employee views the library (read-only) to discover available documents and under
 ## Assumptions
 
 - Single-tenant per deployment; each company runs its own AI Workstation(s) + desktops on the same LAN/VPN — no shared cloud tenancy.
-- Reference AI Workstation: 16GB RAM + GPU recommended, 10GB disk for models+DB; Desktop: 4GB RAM thin client, no local models (Constitution II). If hardware is lower, quantized small models (bge-micro-v2 80MB, phi-3-mini int4) will be used.
+- Reference AI Workstation: 16GB RAM + GPU recommended, 10GB disk for models+DB; Client (desktop + mobile): 4GB RAM thin client, no local models (Constitution II). If hardware is lower, quantized small models (bge-micro-v2 80MB, phi-3-mini int4) will be used.
 - Supported formats for v1: PDF, docx, txt, md only; video/audio transcripts out of scope.
 - Chunking 512 tokens / 50 overlap, embedding dim 384 or 768, topK=5 — tunable via config, not per-user in v1.
 - Authentication for v1: API key or Windows AD integrated on workstation; full SSO deferred. Upload rejects >100MB per file.
-- AI Workstation hosts Ollama (embed + chat) and Qdrant local file (`QdrantClient(path=)`) or equivalent embedded vector store; desktop connects via `https://ai-workstation.local:5001` over LAN.
+- AI Workstation hosts Ollama (embed + chat) and Qdrant local file (`QdrantClient(path=)`) or equivalent embedded vector store; client apps (desktop + mobile) connect via `https://ai-workstation.local:5001` over LAN (mobile requires same subnet or site VPN).
 - Air-gapped first run requires pre-cached models; otherwise startup error is acceptable per FR-007.
-- Proprietary distribution: signed MSIX/DMG per company, private update channel.
+- Proprietary distribution: signed MSIX (Windows 11) + private mobile distribution (iOS enterprise/Ad-Hoc, Android sideload) per company, private update channel. No public app-store listing required.
+- Client platforms for v1: Windows 11 desktop + iOS/Android mobile from one codebase; mobile exposes same browse/upload/query flows as desktop — no mobile-only features (camera, push, biometrics) in v1.
 

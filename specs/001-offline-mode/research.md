@@ -43,9 +43,18 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 
 **Thin wrapper over Semantic Kernel**: direct `Qdrant search(filter=documentId?) → prompt template (system + chunks + query) → local LLM → {answer, citations}`. LangChain/LlamaIndex rejected — hide retrieval control and add Python deps. `Semantic Kernel` `OnnxSimpleRAG` sample `semantic-kernel: Configure ONNX Model Paths` shows the exact flow for .NET without cloud.
 
-### 5. Desktop Framework
+### 5. Client Framework (Desktop + Mobile)
 
-**WPF (.NET 8)** for Windows-only (fastest, mature tooling, `MSIX` signing). **Avalonia UI 11** `avaloniaui/avalonia-docs` for cross-platform (Windows/macOS/Linux) — same ViewModels, `dotnet publish` single file. Both are `HttpClient`-only, no AI deps.
+| Candidate | Scope | Decision |
+|-----------|-------|----------|
+| **.NET MAUI (.NET 8)** | Windows 11 desktop + iOS + Android from one codebase | **Selected** — matches Windows 11 modern desktop + mobile requirement; WinUI 3/Fluent rendering on Windows; HttpClient-only, no AI deps |
+| **WPF (.NET 8)** | Windows-only desktop | Approved alternative — fastest Windows desktop, but no mobile; rejected for v1 because mobile is required |
+| **WinUI 3 / Windows App SDK** | Windows-only desktop | Approved — modern Windows UI, but no mobile; rejected for v1 because mobile is required |
+| **WinForms (.NET 8)** | Windows-only desktop | Rejected — legacy, not suitable for modern RAGGit client |
+| **Avalonia UI 11** | Windows/macOS/Linux desktop | Rejected for v1 — supports desktop but mobile path (Avalonia XPF/iOS/Android) is less mature than MAUI and adds Linux/macOS targets out of scope |
+| **Uno Platform** | Cross-platform desktop + mobile | Rejected for v1 — heavier than MAUI for a single shared codebase; WinUI-compatible abstraction adds complexity |
+
+**Rationale**: MAUI is the only Microsoft-supported path that covers Windows 11 modern desktop (WinUI 3/Fluent via `net8.0-windows10.0.19041.0`) and iOS/Android mobile from a single .NET 8 codebase while keeping the client `HttpClient`-only and free of workstation AI dependencies.
 
 ## Alternatives Considered
 
@@ -65,4 +74,4 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 - `Ollama: POST /api/embed` embed endpoint
 - `LLamaSharp: GetEmbeddings.md:15` EmbeddingMode
 - `Semantic Kernel: OnnxSimpleRAG/README.md:25` ONNX chat + bge-micro-v2 local
-- `Avalonia Docs: 29194` cross-platform UI
+- `.NET MAUI docs` cross-platform UI for Windows, iOS, Android

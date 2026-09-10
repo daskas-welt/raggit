@@ -9,7 +9,7 @@
 
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story (US1-US4) or `Found` for foundational
-- File paths per `plan.md: RAGGit.Core / Ingest / Retrieval / Workstation.Api / Desktop / tests/`
+- File paths per `plan.md: RAGGit.Core / Ingest / Retrieval / Workstation.Api / Client.Maui / tests/`
 
 ---
 
@@ -17,10 +17,10 @@
 
 **Purpose**: Initialize .NET 8 solution and structure per plan.md
 
-- [ ] T001 Create solution `RAGGit.sln` and projects `src/RAGGit.Core`, `src/RAGGit.Ingest`, `src/RAGGit.Retrieval`, `src/RAGGit.Workstation.Api`, `src/RAGGit.Desktop` per plan.md Project Structure
+- [ ] T001 Create solution `RAGGit.sln` and projects `src/RAGGit.Core`, `src/RAGGit.Ingest`, `src/RAGGit.Retrieval`, `src/RAGGit.Workstation.Api`, `src/RAGGit.Client.Maui` per plan.md Project Structure
 - [ ] T002 [P] Initialize `src/RAGGit.Core` (.NET 8 classlib) with `Microsoft.Data.Sqlite`, `Qdrant.Client`, `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs per plan.md Primary Dependencies
 - [ ] T003 [P] Initialize `src/RAGGit.Workstation.Api` (ASP.NET Core 8) with `Swashbuckle.AspNetCore`, `Serilog` and reference `RAGGit.Core/Ingest/Retrieval`
-- [ ] T004 [P] Initialize `src/RAGGit.Desktop` (WPF .NET 8 — switch to Avalonia if cross-platform) with `HttpClient`, `CommunityToolkit.Mvvm` and reference `RAGGit.Core`
+- [ ] T004 [P] Initialize `src/RAGGit.Client.Maui` (.NET MAUI .NET 8; TFMs `net8.0-windows10.0.19041.0`, `net8.0-ios`, `net8.0-android`) with `HttpClient`, `CommunityToolkit.Mvvm` and reference `RAGGit.Core` (Core stays plain `net8.0`)
 - [ ] T005 [P] Initialize `tests/unit`, `tests/contract`, `tests/integration` (xUnit) with `FluentAssertions`, `Microsoft.AspNetCore.Mvc.Testing`
 - [ ] T006 [P] Configure `Directory.Build.props`, `editorconfig`, `dotnet format`, `.gitignore` (`/data/`, `/models/*.gguf`, `/models/*.onnx`)
 
@@ -59,7 +59,7 @@
 - [ ] T017 [P] [US1] Implement chunking `src/RAGGit.Ingest/Chunker.cs` (PdfPig/OpenXML → 512 tokens /50 overlap) per data-model.md Chunk
 - [ ] T018 [US1] Implement ingest service `src/RAGGit.Ingest/IngestService.cs` → `Embedder` batch → `QdrantLocalClient.Upsert` with payload `{documentId, text, ordinal}` + SQLite `Documents`/`Chunks` transaction (depends on T017, T008, T009)
 - [ ] T019 [US1] Implement `POST /api/documents` + `GET /api/documents` in `src/RAGGit.Workstation.Api/Controllers/DocumentsController.cs` (multipart `file`, mime validation per FR-010, hash dedupe → existing id, Admin-only 403 per FR-003) per contracts/api.yaml
-- [ ] T020 [US1] Implement desktop `LibraryView` + `UploadView` in `src/RAGGit.Desktop/Views/` calling `POST /api/documents` with progress and error `unsupported type` per FR-006
+- [ ] T020 [US1] Implement client `LibraryView` + `UploadView` in `src/RAGGit.Client.Maui/Views/` calling `POST /api/documents` with progress and error `unsupported type` per FR-006
 - [ ] T021 [US1] Add validation, logging (Serilog), and `DELETE` purge stub for later (Qdrant filter `documentId`)
 
 **Checkpoint**: US-1 independently functional — upload 10 PDFs via desktop → `Ready` <5min, `GET` lists them, Qdrant `collection library` count matches chunks.
@@ -83,7 +83,7 @@
 - [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs` — `Embedder.GetEmbeddings(query)` → `QdrantClient.Search(limit:5)` → payload `text` per research.md
 - [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs` — prompt template (system + chunks + query) → `LlmClient.Chat` (Ollama `/api/chat` or Phi-3 ONNX) → `answer` + `citationIds` (depends on T025)
 - [ ] T027 [US2] Implement `POST /api/query` in `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` (validate `query` not empty, `topK` clamp 1-10, call Retrieval+Generation, map `no relevant content found` when 0 hits, 503 when LLM down per FR-007) per contracts/api.yaml
-- [ ] T028 [US2] Implement desktop `QueryView` in `src/RAGGit.Desktop/Views/QueryView.xaml` with streaming answer + citations list (documentId/chunkId/ordinal) calling `POST /api/query` via `HttpClient`
+- [ ] T028 [US2] Implement client `QueryView` in `src/RAGGit.Client.Maui/Views/QueryView.xaml` with streaming answer + citations list (documentId/chunkId/ordinal) calling `POST /api/query` via `HttpClient`
 - [ ] T029 [US2] Instrument latency `latencyMs` in `Queries` table and expose via health for SC-002
 
 **Checkpoint**: US-1+US-2 together form closed-loop MVP — upload on desktop → query on second desktop with WAN-off workstation → cited answer <7s. Deployable.
@@ -104,7 +104,7 @@
 ### Implementation for User Story 3
 
 - [ ] T032 [US3] Implement `DELETE /api/documents/{id}` in `DocumentsController.cs` — remove `Documents`/`Chunks` rows + `QdrantClient.Delete(filter: documentId)` (depends on T008, T007)
-- [ ] T033 [US3] Update desktop `LibraryView` delete button (Admin-only, confirm dialog) calling `DELETE /api/documents/{id}` and refreshing list
+- [ ] T033 [US3] Update client `LibraryView` delete button (Admin-only, confirm dialog) calling `DELETE /api/documents/{id}` and refreshing list
 
 **Checkpoint**: US-3 independently testable after US-1 data exists; no dependency on US-2.
 
@@ -123,7 +123,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE` and allow `GET` for `Employee` in `DocumentsController.cs`; add desktop role-aware UI (hide upload/delete for Employee) in `src/RAGGit.Desktop/ViewModels/LibraryViewModel.cs`
+- [ ] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE` and allow `GET` for `Employee` in `DocumentsController.cs`; add client role-aware UI (hide upload/delete for Employee) in `src/RAGGit.Client.Maui/ViewModels/LibraryViewModel.cs`
 
 **Checkpoint**: All 4 stories independently functional; full role matrix verified.
 
@@ -136,8 +136,8 @@
 - [ ] T037 [P] Add Serilog structured logging + `X-Request-Id` + error problem details across API
 - [ ] T038 [P] Harden `POST /api/documents` with magic-byte mime check + virus-scan hook stub per FR-006
 - [ ] T039 [P] Performance: index batching, Qdrant HNSW tuning, chunk cache; validate SC-001 <5min for 50 pages and SC-002 p95 offline
-- [ ] T040 [P] Security: single-tenant proprietary signing (`MSIX`/`DMG`) docs + `secrets` not in repo, `data/` + `models/` gitignored per quickstart.md
-- [ ] T041 [P] Add `src/RAGGit.Desktop` installer build `dotnet publish -r win-x64 --self-contained` and workstation `docker-compose` (optional) + LAN discovery doc
+- [ ] T040 [P] Security: single-tenant proprietary signing (MSIX Windows + iOS enterprise/Ad-Hoc + Android sideload) docs + `secrets` not in repo, `data/` + `models/` gitignored per quickstart.md
+- [ ] T041 [P] Add `src/RAGGit.Client.Maui` builds: `dotnet publish -f net8.0-windows10.0.19041.0`, `-f net8.0-android`, `-f net8.0-ios` and workstation `docker-compose` (optional) + LAN discovery doc
 - [ ] T042 [P] Extra unit tests for edge cases: large file queue, duplicate hash, `model unavailable offline` 503, LAN partition retry (no cloud fallback) per spec Edge Cases
 - [ ] T043 Run `quickstart.md` validation: build + workstation + desktop + WAN-off query + `dotnet test` (all filters) passes per `plan.md:Constitution Check`
 
