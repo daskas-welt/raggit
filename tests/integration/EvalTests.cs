@@ -142,6 +142,11 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             }
         }
 
+        // Queries containing this word intentionally miss every seeded vector.
+        var noMatchVector = new float[VectorSize];
+        noMatchVector[30] = 1.0f;
+        overrides["unrelated"] = noMatchVector;
+
         // Distractor documents with vectors orthogonal to all categories.
         for (var d = 0; d < 5; d++)
         {
@@ -187,12 +192,13 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             }
         }
 
-        // 10 no-relevant-content queries.
+        // 10 no-relevant-content queries. The word "unrelated" is mapped in
+        // FakeEmbedder to a vector dimension no seeded chunk uses.
         for (var q = 0; q < 10; q++)
         {
             questions.Add(new EvalQuestion
             {
-                Query = $"totally unrelated topic {Guid.NewGuid():N} {q}",
+                Query = $"unrelated topic {Guid.NewGuid():N} {q}",
                 ExpectedCategory = -1
             });
         }
