@@ -13,14 +13,18 @@ using RAGGit.Ingest.Vector;
 using RAGGit.Retrieval;
 using RAGGit.Retrieval.Ai;
 using RAGGit.Workstation.Api.Auth;
+using RAGGit.Workstation.Api.Middleware;
 using Serilog;
+using Serilog.Enrichers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{RequestId}] {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -104,6 +108,19 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// RFC7807 problem details for consistent error shapes.
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        if (context.HttpContext.Items.TryGetValue(RequestIdMiddleware.HeaderName, out var requestId))
+        {
+            context.ProblemDetails.Extensions["requestId"] = requestId;
+        }
+    };
+});
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = DocumentValidation.MaxFileSizeBytes + 1024;
@@ -117,11 +134,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<RequestIdMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseCors("Lan");
 app.UseResponseCaching();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.MapControllers();
 
