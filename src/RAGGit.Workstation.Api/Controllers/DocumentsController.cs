@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using RAGGit.Core.Abstractions;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
 
@@ -21,11 +22,16 @@ namespace RAGGit.Workstation.Api.Controllers;
 public sealed class DocumentsController : ControllerBase
 {
     private readonly IngestService _ingestService;
+    private readonly IVirusScanner _virusScanner;
     private readonly ILogger<DocumentsController> _logger;
 
-    public DocumentsController(IngestService ingestService, ILogger<DocumentsController> logger)
+    public DocumentsController(
+        IngestService ingestService,
+        IVirusScanner virusScanner,
+        ILogger<DocumentsController> logger)
     {
         _ingestService = ingestService ?? throw new ArgumentNullException(nameof(ingestService));
+        _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -61,8 +67,17 @@ public sealed class DocumentsController : ControllerBase
         _logger.LogInformation("Admin uploading {Filename} ({Mime}) as {User}", file.FileName, mime, createdBy);
 
         await using var stream = file.OpenReadStream();
+        var validatedStream = await DocumentFormatValidator.ValidateAndRewindAsync(stream, mime, cancellationToken);
+
+        var scanPassed = await _virusScanner.ScanAsync(validatedStream, file.FileName, cancellationToken);
+        if (!scanPassed)
+        {
+            _logger.LogWarning("Upload rejected: virus scan failed for {Filename}", file.FileName);
+            return BadRequest(new { error = "File failed security scan." });
+        }
+
         var (document, created) = await _ingestService.IngestAsync(
-            stream,
+            validatedStream,
             file.FileName,
             mime,
             file.Length,

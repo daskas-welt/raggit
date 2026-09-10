@@ -97,6 +97,7 @@ builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatMod
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();
+builder.Services.AddSingleton<IVirusScanner, NoOpVirusScanner>();
 
 // API
 builder.Services.AddControllers()
