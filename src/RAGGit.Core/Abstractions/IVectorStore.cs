@@ -22,4 +22,9 @@ public interface IVectorStore
     Task DeleteAsync(
         string documentId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns true if the vector store is reachable and operational.
+    /// </summary>
+    Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default);
 }

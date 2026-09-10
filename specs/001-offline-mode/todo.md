@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T013 Configure env secrets (`dotnet user-secrets` `Api:Key`, `Onnx:EmbeddingModelPath`) and health endpoint `GET /health`
 - [ ] T014 [P] [US1] Contract test `POST /api/documents` 201 + `GET /api/documents` 200
 - [ ] T015 [P] [US1] Integration test `Upload → Index → Searchable <5min`
 - [ ] T016 [P] [US1] Unit test chunking `512/50` and hash SHA-256 dedupe
@@ -36,6 +35,6 @@
 ## Follow-ups / Notes
 
 - [ ] [Priority: High] Qdrant.Client .NET SDK (1.12.0/1.19.0) does not support local `path=` embedded mode (only Python client does). Current `QdrantLocalClient` connects to a server endpoint and uses the path as a storage directory marker. Decide whether to bundle/start a local Qdrant server binary, switch to an approved alternative (LanceDB), or accept a server dependency on the workstation. (Ref: `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs`)
-
+- [ ] [Priority: Med] `OnnxEmbedder` uses a basic WordPiece tokenizer; validate against bge-micro-v2 ONNX output and replace with a proper HuggingFace tokenizer (e.g. `Microsoft.ML.Tokenizers`) if needed. (Ref: `src/RAGGit.Ingest/Ai/OnnxEmbedder.cs`)
 - [ ] [Priority: Med] Convert `src/RAGGit.Client.Maui` from classlib fallback to a full `dotnet new maui` project once the .NET 8 MAUI workload/template is available; remove the `BuildingInsideVisualStudio` conditional and keep the required TFMs (`net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android`). (Ref: `src/RAGGit.Client.Maui/RAGGit.Client.Maui.csproj`)
 - [ ] [Priority: Low] Ensure `.gitignore` for `bin/`, `obj/`, `data/`, and `models/` is added in T006 so build artifacts are not tracked. (Ref: `specs/001-offline-mode/tasks.md`)

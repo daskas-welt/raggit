@@ -56,4 +56,20 @@ public sealed class OllamaLlmClient : ILlmClient
 
         return responseBuilder.ToString().Trim();
     }
+
+    /// <inheritdoc />
+    public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(2));
+            _ = await _client.ListLocalModelsAsync(cts.Token);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

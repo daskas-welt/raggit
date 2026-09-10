@@ -94,6 +94,7 @@ dotnet test --filter "Category=integration" # includes WAN-disabled suite (requi
 ## Env Secrets (no hardcoding)
 
 ```powershell
-dotnet user-secrets set "Api:Key" "<key>" --project src/RAGGit.Workstation.Api
+dotnet user-secrets set "Api:AdminKey" "<admin-key>" --project src/RAGGit.Workstation.Api
+dotnet user-secrets set "Api:EmployeeKey" "<employee-key>" --project src/RAGGit.Workstation.Api
 dotnet user-secrets set "Onnx:EmbeddingModelPath" "./models/bge-micro-v2/onnx/model.onnx" --project src/RAGGit.Workstation.Api
 ```

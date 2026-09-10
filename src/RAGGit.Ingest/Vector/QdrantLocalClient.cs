@@ -167,6 +167,23 @@ public sealed class QdrantLocalClient : IVectorStore
     /// </summary>
     public string StoragePath => _storagePath;
 
+    /// <inheritdoc />
+    public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureCollectionAsync(cancellationToken);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(2));
+            _ = await _client.CollectionExistsAsync(CollectionName, cts.Token);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static IEnumerable<KeyValuePair<string, Value>> ConvertPayload(IReadOnlyDictionary<string, object?> payload)
     {
         foreach (var kvp in payload)
