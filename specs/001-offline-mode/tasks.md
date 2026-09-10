@@ -138,7 +138,7 @@
 - [ ] T039 [P] Performance: index batching, Qdrant HNSW tuning, chunk cache; validate SC-001 <5min for 50 pages and SC-002 p95 offline
 - [ ] T040 [P] Security: single-tenant proprietary signing (MSIX Windows + iOS enterprise/Ad-Hoc + Android sideload) docs + `secrets` not in repo, `data/` + `models/` gitignored per quickstart.md
 - [ ] T041 [P] Add `src/RAGGit.Client.Maui` builds: `dotnet publish -f net8.0-windows10.0.19041.0`, `-f net8.0-android`, `-f net8.0-ios` and workstation `docker-compose` (optional) + LAN discovery doc
-- [ ] T042 [P] Extra unit tests for edge cases: large file queue, duplicate hash, `model unavailable offline` 503, LAN partition retry (no cloud fallback) per spec Edge Cases
+- [ ] T042 [P] Extra unit tests for edge cases: large file queue, duplicate hash, `model unavailable offline` 503, LAN partition retry (no cloud fallback), and workstation restart persistence (index → restart → GET /api/documents + query still work per FR-008) per spec Edge Cases
 - [ ] T043 Run `quickstart.md` validation: build + workstation + desktop + WAN-off query + `dotnet test` (all filters) passes per `plan.md:Constitution Check`
 - [ ] T044 [P] Add CI workflow `.github/workflows/ci.yml` running `dotnet build`, `dotnet test` (unit, contract), and WAN-disabled offline integration suite `QueryOfflineTests` as required merge gate per Constitution IV/VI (plan.md:38, constitution.md:26/44)
 

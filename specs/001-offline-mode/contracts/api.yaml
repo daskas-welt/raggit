@@ -14,7 +14,7 @@ paths:
   /api/documents:
     post:
       summary: Upload document to singleton library (Admin only)
-      description: Chunks (512/50), embeds locally, indexes into Qdrant file. Rejects unsupported type/size per FR-006.
+      description: Chunks (512/50), embeds locally, indexes into Qdrant file. Rejects unsupported type/size per FR-006. If the uploaded file hash matches an existing document, returns 200 with the existing Document and does not re-index (dedupe per spec.md:74).
       security: [{ ApiKey: [] }]
       requestBody:
         required: true
@@ -28,6 +28,12 @@ paths:
                   format: binary
               required: [file]
       responses:
+        '200':
+          description: Duplicate — returns existing Document (same hash, not re-indexed per spec.md:74)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
         '201':
           description: Accepted for indexing
           content:
