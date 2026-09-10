@@ -27,9 +27,10 @@ public sealed partial class LibraryViewModel : ObservableObject
     [ObservableProperty]
     private string? _errorMessage;
 
-    public LibraryViewModel(DocumentsApiClient apiClient)
+    public LibraryViewModel(DocumentsApiClient apiClient, string role = "Employee")
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        IsAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
     }
 
     [RelayCommand]

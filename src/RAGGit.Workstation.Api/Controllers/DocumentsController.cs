@@ -78,7 +78,6 @@ public sealed class DocumentsController : ControllerBase
     /// GET /api/documents — list library documents (Admin and Employee).
     /// </summary>
     [HttpGet]
-    [AllowAnonymous] // Auth still enforced at controller level; both roles may list.
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
         var documents = await _ingestService.ListDocumentsAsync(cancellationToken);
