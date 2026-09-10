@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-31
 
-**Status**: Draft
+**Status**: Ready for Implementation
 
 **Input**: User description: "single-tenant RAG library for RAGGit: AI Workstation hosts Ollama and Qdrant local path with ASP.NET Core API; .NET client app (desktop + mobile) for admins to upload see library and employees to query with citations; LAN-only no cloud egress single-tenant proprietary" — Clarified 2026-09-10: client tier = Windows 11 modern desktop + iOS/Android mobile, no Linux (macOS not in scope); single .NET MAUI codebase selected at plan level.
 
@@ -42,7 +42,7 @@ A company employee opens the desktop app, types a natural-language question, and
 
 ### User Story 3 - Admin Manages Library (Priority: P2)
 
-Admin browses, previews, and deletes documents in the single-tenant library. Deletion purges vectors and metadata so subsequent queries no longer return deleted content. All employees immediately see the updated library.
+Admin browses and deletes documents in the single-tenant library. Deletion purges vectors and metadata so subsequent queries no longer return deleted content. All employees immediately see the updated library.
 
 **Why this priority**: Required for lifecycle but not for first demo; can be added after US-1/US-2 loop works.
 
@@ -91,8 +91,6 @@ Employee views the library (read-only) to discover available documents and under
 - **FR-008**: System MUST persist the RAG store and document metadata on the AI Workstation to disk and survive workstation restart; desktop is stateless.
 - **FR-009**: System MUST operate on-prem over LAN/VPN as a proprietary single-tenant deployment; proprietary artifacts MUST be signed and distributed privately per company.
 
-*Unclear aspects (max 3 markers):*
-
 - **FR-010**: System MUST support upload formats PDF, docx, txt, and md only for v1; video/audio transcripts are out of scope for v1.
 - **FR-011**: System MUST meet scale target of 5k documents / ~1M chunks per library maximum with chunk size 512 tokens / 50 overlap and retrieval topK=5 for v1.
 
@@ -121,7 +119,7 @@ Employee views the library (read-only) to discover available documents and under
 - Supported formats for v1: PDF, docx, txt, md only; video/audio transcripts out of scope.
 - Chunking 512 tokens / 50 overlap, embedding dim 384 or 768, topK=5 — tunable via config, not per-user in v1.
 - Authentication for v1: API key or Windows AD integrated on workstation; full SSO deferred. Upload rejects >100MB per file.
-- AI Workstation hosts Ollama (embed + chat) and Qdrant local file (`QdrantClient(path=)`) or equivalent embedded vector store; client apps (desktop + mobile) connect via `https://ai-workstation.local:5001` over LAN (mobile requires same subnet or site VPN).
+- AI Workstation hosts Ollama (embed + chat) and Qdrant local file (`QdrantClient(path=)`) or equivalent embedded vector store; client apps (desktop + mobile) connect via `http://ai-workstation.local:5001` over trusted LAN (HTTPS optional, cert via reverse proxy if required; mobile requires same subnet or site VPN).
 - Air-gapped first run requires pre-cached models; otherwise startup error is acceptable per FR-007.
 - Proprietary distribution: signed MSIX (Windows 11) + private mobile distribution (iOS enterprise/Ad-Hoc, Android sideload) per company, private update channel. No public app-store listing required.
 - Client platforms for v1: Windows 11 desktop + iOS/Android mobile from one codebase; mobile exposes same browse/upload/query flows as desktop — no mobile-only features (camera, push, biometrics) in v1.

@@ -82,8 +82,8 @@
 
 - [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs` — `Embedder.GetEmbeddings(query)` → `QdrantClient.Search(limit:5)` → payload `text` per research.md
 - [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs` — prompt template (system + chunks + query) → `LlmClient.Chat` (Ollama `/api/chat` or Phi-3 ONNX) → `answer` + `citationIds` (depends on T025)
-- [ ] T027 [US2] Implement `POST /api/query` in `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` (validate `query` not empty, `topK` clamp 1-10, call Retrieval+Generation, map `no relevant content found` when 0 hits, 503 when LLM down per FR-007) per contracts/api.yaml
-- [ ] T028 [US2] Implement client `QueryView` in `src/RAGGit.Client.Maui/Views/QueryView.xaml` with streaming answer + citations list (documentId/chunkId/ordinal) calling `POST /api/query` via `HttpClient`
+- [ ] T027 [US2] Implement `POST /api/query` in `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` (validate `query` not empty, `topK` clamp 1-5, call Retrieval+Generation, map `no relevant content found` when 0 hits, 503 when LLM down per FR-007) per contracts/api.yaml
+- [ ] T028 [US2] Implement client `QueryView` in `src/RAGGit.Client.Maui/Views/QueryView.xaml` with answer + citations list (documentId/chunkId/ordinal) calling `POST /api/query` via `HttpClient`
 - [ ] T029 [US2] Instrument latency `latencyMs` in `Queries` table and expose via health for SC-002
 
 **Checkpoint**: US-1+US-2 together form closed-loop MVP — upload on desktop → query on second desktop with WAN-off workstation → cited answer <7s. Deployable.
@@ -140,6 +140,7 @@
 - [ ] T041 [P] Add `src/RAGGit.Client.Maui` builds: `dotnet publish -f net8.0-windows10.0.19041.0`, `-f net8.0-android`, `-f net8.0-ios` and workstation `docker-compose` (optional) + LAN discovery doc
 - [ ] T042 [P] Extra unit tests for edge cases: large file queue, duplicate hash, `model unavailable offline` 503, LAN partition retry (no cloud fallback) per spec Edge Cases
 - [ ] T043 Run `quickstart.md` validation: build + workstation + desktop + WAN-off query + `dotnet test` (all filters) passes per `plan.md:Constitution Check`
+- [ ] T044 [P] Add CI workflow `.github/workflows/ci.yml` running `dotnet build`, `dotnet test` (unit, contract), and WAN-disabled offline integration suite `QueryOfflineTests` as required merge gate per Constitution IV/VI (plan.md:38, constitution.md:26/44)
 
 ---
 

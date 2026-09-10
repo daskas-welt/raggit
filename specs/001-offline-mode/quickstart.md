@@ -68,7 +68,7 @@ dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-ios                  
 # Mobile devices reach the workstation over site VPN or the same LAN subnet — no cloud relay (Constitution IV)
 ```
 
-Client flows: **Admin**: `Library → Upload (PDF/docx/txt/md <100MB)` → status `Indexing→Ready`; **Employee**: `Query → "what is refund policy?"` → `{answer, citations[]}` streamed.
+Client flows: **Admin**: `Library → Upload (PDF/docx/txt/md <100MB)` → status `Indexing→Ready`; **Employee**: `Query → "what is refund policy?"` → `{answer, citations[]}`.
 
 ## 5. Verify Offline Invariant (SC-002)
 

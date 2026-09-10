@@ -26,7 +26,7 @@ Build RAGGit as a single-tenant on-prem system: AI Workstation owns all heavy AI
 
 **Constraints**: Offline invariant — no WAN at query time (LAN only), thin desktop with zero local model weights, single-tenant per deployment (no company_id partition), proprietary signed distribution, thin client must handle `AI workstation unavailable` / `model unavailable offline` fail-fast (FR-007)
 
-**Scale/Scope**: 5k documents / ~1M chunks max per library (singleton), chunk 512 tokens / 50 overlap, retrieval topK=5, 50 screens max (library + query), ~3 projects in solution
+**Scale/Scope**: 5k documents / ~1M chunks max per library (singleton), chunk 512 tokens / 50 overlap, retrieval topK=5, 50 screens max (library + query), ~5 projects in solution
 
 ## Constitution Check
 
@@ -38,9 +38,9 @@ Build RAGGit as a single-tenant on-prem system: AI Workstation owns all heavy AI
 - [x] **IV. Offline Invariant (NON-NEGOTIABLE)**: Plan includes WAN-disabled CI gate and `model unavailable offline` error path; no cloud fallback in design — complies.
 - [x] **V. Citation-Grounded RAG**: `POST /api/query` contract requires `{answer, citations[]}` and `no relevant content found` branch; eval harness enforces SC-004 — complies.
 - [x] **VI. Test-First (NON-NEGOTIABLE)**: Plan mandates xUnit TDD with offline suite and 80% library coverage before implement — complies.
-- [x] **VII. Simplicity & Proprietary Stewardship**: 3 projects (`RAGGit.Core`, `RAGGit.Workstation.Api`, `RAGGit.Client.Maui`) + `tests/` within limit; versioning MAJOR.MINOR.PATCH, signed MSIX + private enterprise mobile distro — complies.
+- [x] **VII. Simplicity & Proprietary Stewardship**: 5 projects (`RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`, `RAGGit.Workstation.Api`, `RAGGit.Client.Maui`) + `tests/` within limit (justified per Constitution III); versioning MAJOR.MINOR.PATCH, signed MSIX + private enterprise mobile distro — complies.
 
-*Re-check 2026-09-10: switched client from WPF/Avalonia desktop to .NET MAUI (Windows 11 + iOS + Android, single codebase). Constitution amended to v1.1.0 (MINOR, ratified 2026-09-10: Principle III renamed .NET Library-First & Client Reuse with MAUI TFMs + WPF fallback, Principle VII MSIX + private mobile signing, Stack line, VI "configured auth provider" gate wording). Plan compliant with v1.1.0: AI still workstation-owned, client remains HttpClient-only, no Linux/macOS client target, Core stays plain net8.0, proprietary signing/private distribution preserved.*
+*Re-check 2026-09-10: switched client from WPF/Avalonia desktop to .NET MAUI (Windows 11 + iOS + Android, single codebase). Constitution amended to v1.1.0 (MINOR, Last Amended 2026-09-10: Principle III renamed .NET Library-First & Client Reuse with MAUI TFMs + WPF fallback, Principle VII MSIX + private mobile signing, Stack line, VI "configured auth provider" gate wording). Plan compliant with v1.1.0: AI still workstation-owned, client remains HttpClient-only, no Linux/macOS client target, Core stays plain net8.0, proprietary signing/private distribution preserved.*
 
 ## Project Structure
 
@@ -85,3 +85,4 @@ RAGGit.sln
 |-----------|------------|-------------------------------------|
 | Embedded Qdrant native dep on workstation | Offline invariant requires file-backed HNSW with no server; cloud vector DB would violate WAN-off gate | Cloud Pinecone/Qdrant Cloud needs WAN, fails SC-002 |
 | Native Ollama/LLamaSharp/ONNX Runtime dep on workstation | Local embed+LLM without cloud; thin desktop cannot run 2GB model | Cloud OpenAI fails offline invariant; bundling into desktop would need 8GB per employee |
+| 5-project split (Core/Ingest/Retrieval/Api/Client.Maui) | Constitution III requires library reuse + II requires client thin | Single project would bundle AI into client violating II |
