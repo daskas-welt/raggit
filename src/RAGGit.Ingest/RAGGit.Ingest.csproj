@@ -13,7 +13,7 @@
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
     <PackageReference Include="OllamaSharp" Version="5.4.30" />
-    <PackageReference Include="PdfPig" Version="0.1.10" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
   </ItemGroup>
 
 

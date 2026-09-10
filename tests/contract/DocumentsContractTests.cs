@@ -7,17 +7,20 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 using RAGGit.Workstation.Api.Auth;
+using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.Fonts.Standard14Fonts;
+using UglyToad.PdfPig.Writer;
 using Xunit;
 
 namespace RAGGit.Tests.Contract;
@@ -32,7 +35,10 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
 {
     private readonly TestApiFactory _factory;
     private readonly HttpClient _client;
-    private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+    };
 
     public DocumentsContractTests(TestApiFactory factory)
     {
@@ -60,13 +66,14 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
     [Fact]
     public async Task Post_DuplicateHash_Returns200ExistingDocument()
     {
-        var content = CreatePdfContent("Duplicate hash contract content");
+        var pdfBytes = BuildMinimalPdf("Duplicate hash contract content");
 
-        var first = await _client.PostAsync("/api/documents", content);
+        var first = await _client.PostAsync("/api/documents", CreatePdfContentFromBytes(pdfBytes));
         first.StatusCode.Should().Be(HttpStatusCode.Created);
         var existing = await DeserializeDocumentAsync(first);
 
-        var second = await _client.PostAsync("/api/documents", CreatePdfContent("Duplicate hash contract content"));
+        // Re-use the exact same PDF bytes so the SHA-256 hash matches.
+        var second = await _client.PostAsync("/api/documents", CreatePdfContentFromBytes(pdfBytes));
 
         second.StatusCode.Should().Be(HttpStatusCode.OK);
         var duplicate = await DeserializeDocumentAsync(second);
@@ -91,7 +98,12 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
 
     private static MultipartFormDataContent CreatePdfContent(string text)
     {
-        var bytes = Encoding.UTF8.GetBytes(text);
+        var bytes = BuildMinimalPdf(text);
+        return CreatePdfContentFromBytes(bytes);
+    }
+
+    private static MultipartFormDataContent CreatePdfContentFromBytes(byte[] bytes)
+    {
         var stream = new MemoryStream(bytes);
         var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
@@ -99,6 +111,15 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
         var form = new MultipartFormDataContent();
         form.Add(fileContent, "file", "contract-test.pdf");
         return form;
+    }
+
+    private static byte[] BuildMinimalPdf(string text)
+    {
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        var page = builder.AddPage(612, 792);
+        page.AddText(text, 12, new PdfPoint(50, 700), font);
+        return builder.Build();
     }
 
     private async Task<Document> DeserializeDocumentAsync(HttpResponseMessage response)
@@ -133,7 +154,7 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            services.Configure<ApiKeyAuthOptions>(options =>
+            services.Configure<ApiKeyAuthOptions>(ApiKeyAuthOptions.Scheme, options =>
             {
                 options.AdminApiKey = AdminKey;
                 options.EmployeeApiKey = EmployeeKey;
