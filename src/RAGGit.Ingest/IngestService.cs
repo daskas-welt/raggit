@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -22,23 +24,23 @@ public sealed class IngestService
     private readonly IVectorStore _vectorStore;
     private readonly RagDbContext _db;
     private readonly ILogger<IngestService> _logger;
-    private readonly int _chunkSize;
-    private readonly int _overlap;
+    private readonly IngestOptions _options;
+    private readonly IMemoryCache? _chunkCache;
 
     public IngestService(
         IEmbedder embedder,
         IVectorStore vectorStore,
         RagDbContext db,
         ILogger<IngestService> logger,
-        int chunkSize = 512,
-        int overlap = 50)
+        IOptions<IngestOptions>? options = null,
+        IMemoryCache? chunkCache = null)
     {
         _embedder = embedder ?? throw new ArgumentNullException(nameof(embedder));
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _chunkSize = chunkSize > 0 ? chunkSize : 512;
-        _overlap = overlap >= 0 && overlap < _chunkSize ? overlap : 50;
+        _options = options?.Value ?? new IngestOptions();
+        _chunkCache = chunkCache;
     }
 
     /// <summary>
@@ -87,17 +89,12 @@ public sealed class IngestService
                 content.Position = 0;
             }
 
-            var text = await Chunker.ExtractTextAsync(content, mime);
-            var chunks = Chunker.ChunkText(text, document.Id, _chunkSize, _overlap);
+            var chunks = await GetOrCreateChunksAsync(content, mime, document, cancellationToken);
             _logger.LogInformation("Document {DocumentId} produced {ChunkCount} chunks", document.Id, chunks.Count);
 
             if (chunks.Count > 0)
             {
-                var embeddings = await _embedder.GetEmbeddingsAsync(chunks.Select(c => c.Text), cancellationToken);
-                if (embeddings.Count != chunks.Count)
-                {
-                    throw new InvalidOperationException($"Embedder returned {embeddings.Count} vectors for {chunks.Count} chunks.");
-                }
+                var embeddings = await EmbedInBatchesAsync(chunks, _options.EmbedBatchSize, cancellationToken);
 
                 var records = chunks.Select((chunk, index) => new VectorRecord(
                     chunk.Id,
@@ -294,6 +291,66 @@ public sealed class IngestService
         command.Parameters.AddWithValue("@id", documentId.ToString());
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<Chunk>> GetOrCreateChunksAsync(
+        Stream content,
+        DocumentMimeType mime,
+        Document document,
+        CancellationToken cancellationToken)
+    {
+        var cacheKey = $"chunks:{document.Hash}";
+        if (_options.EnableChunkCache && _chunkCache is not null &&
+            _chunkCache.TryGetValue(cacheKey, out IReadOnlyList<Chunk>? cached) && cached is not null)
+        {
+            _logger.LogDebug("Chunk cache hit for document {DocumentId}", document.Id);
+            return cached.Select(c => new Chunk
+            {
+                Id = Guid.NewGuid(),
+                DocumentId = document.Id,
+                Ordinal = c.Ordinal,
+                Text = c.Text,
+                TokenCount = c.TokenCount
+            }).ToList();
+        }
+
+        var text = await Chunker.ExtractTextAsync(content, mime);
+        var chunks = Chunker.ChunkText(text, document.Id, _options.ChunkSize, _options.ChunkOverlap);
+
+        if (_options.EnableChunkCache && _chunkCache is not null)
+        {
+            _chunkCache.Set(cacheKey, chunks, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = _options.ChunkCacheTtl,
+                Size = chunks.Count
+            });
+        }
+
+        return chunks;
+    }
+
+    private async Task<IReadOnlyList<float[]>> EmbedInBatchesAsync(
+        IReadOnlyList<Chunk> chunks,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        batchSize = Math.Max(1, batchSize);
+        var allEmbeddings = new List<float[]>(chunks.Count);
+
+        for (var i = 0; i < chunks.Count; i += batchSize)
+        {
+            var batch = chunks.Skip(i).Take(batchSize).Select(c => c.Text).ToList();
+            var embeddings = await _embedder.GetEmbeddingsAsync(batch, cancellationToken);
+
+            if (embeddings.Count != batch.Count)
+            {
+                throw new InvalidOperationException($"Embedder returned {embeddings.Count} vectors for {batch.Count} chunks.");
+            }
+
+            allEmbeddings.AddRange(embeddings);
+        }
+
+        return allEmbeddings;
     }
 
     private static Document MapDocument(SqliteDataReader reader)

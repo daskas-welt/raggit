@@ -94,6 +94,7 @@ else
 }
 
 builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel));
+builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();
