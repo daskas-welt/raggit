@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T028 [US2] Implement client `QueryView.xaml`
 - [ ] T029 [US2] Instrument latency `latencyMs` in `Queries` table
 - [ ] T030 [P] [US3] Contract test `DELETE /api/documents/{id}` 204
 - [ ] T031 [P] [US3] Integration test `Delete → purge → query excludes`
