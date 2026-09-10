@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, '001-offline-mode']
+  pull_request:
+    branches: [main, '001-offline-mode']
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore RAGGit.sln
+
+      - name: Build
+        run: dotnet build RAGGit.sln --no-restore --configuration Release
+
+      - name: Unit tests
+        run: dotnet test --filter "FullyQualifiedName~Tests.Unit" --no-build --configuration Release
+
+      - name: Contract tests
+        run: dotnet test --filter "FullyQualifiedName~Tests.Contract" --no-build --configuration Release
+
+      # WAN-disabled offline integration suite per Constitution IV/VI.
+      # unshare -n removes network access for the test process while keeping
+      # localhost available (the tests use fakes, so no external egress is
+      # required). The other integration tests run normally.
+      - name: WAN-disabled offline integration tests
+        run: unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests" --no-build --configuration Release
+
+      - name: Remaining integration tests
+        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests" --no-build --configuration Release
