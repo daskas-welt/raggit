@@ -1,0 +1,49 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Data and models (workstation-local, never committed)
+/data/
+/data/qdrant/
+*.db
+/models/*.gguf
+/models/*.onnx
+/models/
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NuGet
+*.nupkg
+*.snupkg
+nuget.exe
+
+# Publish
+publish/
+app.publish/

@@ -1,4 +1,4 @@
-﻿namespace RAGGit.Ingest;
+namespace RAGGit.Ingest;
 
 public class Class1
 {

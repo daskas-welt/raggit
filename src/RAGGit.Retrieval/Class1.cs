@@ -1,4 +1,4 @@
-﻿namespace RAGGit.Retrieval;
+namespace RAGGit.Retrieval;
 
 public class Class1
 {
