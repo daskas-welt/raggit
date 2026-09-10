@@ -11,3 +11,4 @@
 - [x] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` and `src/RAGGit.Retrieval`; implement `OllamaEmbedder.cs`, `OnnxEmbedder.cs`, `OllamaLlmClient.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee`, `AllowAnonymous` for `/health` [DONE: 2026-09-10] [By: coder]
 - [x] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `Qdrant:Path`, `Ollama:Url`) per contracts/api.yaml servers [DONE: 2026-09-10] [By: coder]
+- [x] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation [DONE: 2026-09-10] [By: coder]
