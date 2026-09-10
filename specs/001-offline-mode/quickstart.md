@@ -87,9 +87,13 @@ curl -X POST http://ai-workstation.local:5001/api/query -H "Content-Type: applic
 ## 6. Tests
 
 ```powershell
-dotnet test --filter "Category=unit"
-dotnet test --filter "Category=contract"
-dotnet test --filter "Category=integration" # includes WAN-disabled suite (requires workstation running)
+# Run all automated quickstart validation steps at once:
+./scripts/validate-quickstart.ps1
+
+# Or run each layer individually:
+dotnet test --filter "FullyQualifiedName~Tests.Unit"
+dotnet test --filter "FullyQualifiedName~Tests.Contract"
+dotnet test --filter "FullyQualifiedName~Tests.Integration" # includes WAN-disabled suite
 ```
 
 ## Env Secrets (no hardcoding)
