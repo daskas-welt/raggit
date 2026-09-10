@@ -1,13 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T014 [P] [US1] Contract test `POST /api/documents` 201 + `GET /api/documents` 200
-- [ ] T015 [P] [US1] Integration test `Upload → Index → Searchable <5min`
-- [ ] T016 [P] [US1] Unit test chunking `512/50` and hash SHA-256 dedupe
-- [ ] T017 [P] [US1] Implement chunking `src/RAGGit.Ingest/Chunker.cs`
-- [ ] T018 [US1] Implement ingest service `src/RAGGit.Ingest/IngestService.cs`
-- [ ] T019 [US1] Implement `POST /api/documents` + `GET /api/documents` in `DocumentsController.cs`
-- [ ] T020 [US1] Implement client `LibraryView` + `UploadView` in `src/RAGGit.Client.Maui/Views/`
-- [ ] T021 [US1] Add validation, logging, and `DELETE` purge stub
 - [ ] T022 [P] [US2] Contract test `POST /api/query` 200 `{answer,citations}` and `NoRelevantContent` branch
 - [ ] T023 [P] [US2] Integration test `WAN-disabled query`
 - [ ] T024 [P] [US2] Eval harness 50 Q/A set
@@ -37,3 +29,6 @@
 - [ ] [Priority: Med] `OnnxEmbedder` uses a basic WordPiece tokenizer; validate against bge-micro-v2 ONNX output and replace with a proper HuggingFace tokenizer (e.g. `Microsoft.ML.Tokenizers`) if needed. (Ref: `src/RAGGit.Ingest/Ai/OnnxEmbedder.cs`)
 - [ ] [Priority: Med] Convert `src/RAGGit.Client.Maui` from classlib fallback to a full `dotnet new maui` project once the .NET 8 MAUI workload/template is available; remove the `BuildingInsideVisualStudio` conditional and keep the required TFMs (`net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android`). (Ref: `src/RAGGit.Client.Maui/RAGGit.Client.Maui.csproj`)
 - [ ] [Priority: Low] Ensure `.gitignore` for `bin/`, `obj/`, `data/`, and `models/` is added in T006 so build artifacts are not tracked. (Ref: `specs/001-offline-mode/tasks.md`)
+- [ ] [Priority: Med] Wire up `DocumentsApiClient` base address/API key and register MAUI views in `AppShell` / DI so the client can actually reach the workstation. (Ref: `src/RAGGit.Client.Maui/Services/DocumentsApiClient.cs`, `src/RAGGit.Client.Maui/AppShell.xaml`)
+- [ ] [Priority: Med] Validate the MAUI XAML views build for the real target frameworks (`net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android`) and wire `LibraryViewModel.UploadCommand` navigation. (Ref: `src/RAGGit.Client.Maui/Views/LibraryView.xaml`, `src/RAGGit.Client.Maui/Views/UploadView.xaml`)
+- [ ] [Priority: Med] Harden `POST /api/documents` so corrupted/invalid PDFs and docx files return 400 instead of 500, preserving the no-partial-index invariant per FR-006. (Ref: `src/RAGGit.Workstation.Api/Controllers/DocumentsController.cs`, `src/RAGGit.Ingest/Chunker.cs`)
