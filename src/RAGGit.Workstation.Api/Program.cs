@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Data;
+using RAGGit.Core.Models;
+using RAGGit.Ingest;
 using RAGGit.Ingest.Ai;
 using RAGGit.Ingest.Vector;
 using RAGGit.Retrieval.Ai;
@@ -68,11 +70,22 @@ builder.Services.AddSingleton(new RagDbContext(connectionString));
 builder.Services.AddSingleton<IVectorStore>(new LanceDbLocalClient(vectorDbPath, vectorDbVectorSize));
 builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel));
 builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel));
+builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();
 
 // API
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new RAGGit.Core.Models.DocumentMimeTypeConverter());
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = DocumentValidation.MaxFileSizeBytes + 1024;
+});
 
 var app = builder.Build();
 

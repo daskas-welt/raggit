@@ -56,7 +56,15 @@ public sealed class Document
     /// <summary>
     /// Returns the content-type string for this document's MIME type.
     /// </summary>
-    public string GetContentType() => Mime switch
+    public string GetContentType() => Mime.GetContentType();
+}
+
+/// <summary>
+/// MIME-type helpers shared between models, converters, and controllers.
+/// </summary>
+public static class DocumentMimeTypeExtensions
+{
+    public static string GetContentType(this DocumentMimeType mime) => mime switch
     {
         DocumentMimeType.Pdf => "application/pdf",
         DocumentMimeType.Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
