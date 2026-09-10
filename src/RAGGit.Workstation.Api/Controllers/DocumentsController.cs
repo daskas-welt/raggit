@@ -86,7 +86,7 @@ public sealed class DocumentsController : ControllerBase
     }
 
     /// <summary>
-    /// DELETE /api/documents/{id} — purge stub for User Story 3.
+    /// DELETE /api/documents/{id} — purge document, chunks, and vectors (Admin only).
     /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
@@ -94,10 +94,11 @@ public sealed class DocumentsController : ControllerBase
     {
         _logger.LogInformation("Admin requested delete for document {DocumentId}", id);
 
-        // TODO: remove Document + Chunk rows and purge vectors in US3.
-        // The vector store already exposes a documentId filter delete wrapper
-        // via IVectorStore.DeleteAsync(documentId).
-        await Task.CompletedTask;
+        var deleted = await _ingestService.DeleteDocumentAsync(id, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound(new { error = "Document not found." });
+        }
 
         return NoContent();
     }

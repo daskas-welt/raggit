@@ -152,6 +152,55 @@ public sealed class IngestService
     }
 
     /// <summary>
+    /// Deletes a document and its chunks from SQLite and purges its vectors
+    /// from the configured vector store. Returns <c>true</c> when the document
+    /// existed and was deleted, <c>false</c> when it was not found.
+    /// </summary>
+    public async Task<bool> DeleteDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = _db.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            using var existsCommand = connection.CreateCommand();
+            existsCommand.Transaction = (SqliteTransaction)transaction;
+            existsCommand.CommandText = "SELECT COUNT(*) FROM Documents WHERE Id = @id;";
+            existsCommand.Parameters.AddWithValue("@id", documentId.ToString());
+            var count = Convert.ToInt64(await existsCommand.ExecuteScalarAsync(cancellationToken));
+            if (count == 0)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return false;
+            }
+
+            using var deleteChunksCommand = connection.CreateCommand();
+            deleteChunksCommand.Transaction = (SqliteTransaction)transaction;
+            deleteChunksCommand.CommandText = "DELETE FROM Chunks WHERE DocumentId = @id;";
+            deleteChunksCommand.Parameters.AddWithValue("@id", documentId.ToString());
+            await deleteChunksCommand.ExecuteNonQueryAsync(cancellationToken);
+
+            using var deleteDocumentCommand = connection.CreateCommand();
+            deleteDocumentCommand.Transaction = (SqliteTransaction)transaction;
+            deleteDocumentCommand.CommandText = "DELETE FROM Documents WHERE Id = @id;";
+            deleteDocumentCommand.Parameters.AddWithValue("@id", documentId.ToString());
+            await deleteDocumentCommand.ExecuteNonQueryAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        await _vectorStore.DeleteAsync(documentId.ToString(), cancellationToken);
+        _logger.LogInformation("Deleted document {DocumentId} and purged its vectors", documentId);
+        return true;
+    }
+
+    /// <summary>
     /// Finds a document by its SHA-256 hash.
     /// </summary>
     public async Task<Document?> FindByHashAsync(string hash, CancellationToken cancellationToken = default)
