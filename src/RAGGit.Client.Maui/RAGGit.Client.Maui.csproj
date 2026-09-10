@@ -25,12 +25,19 @@
   <!-- MAUI XAML pages are only compiled for the real MAUI TFMs. -->
   <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
     <MauiXaml Include="Views\*.xaml" />
+    <MauiXaml Include="App.xaml" />
+    <MauiXaml Include="AppShell.xaml" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <Compile Remove="Views\**\*.xaml.cs" />
+    <Compile Remove="App.xaml.cs" />
+    <Compile Remove="AppShell.xaml.cs" />
     <Compile Remove="Services\MauiFilePicker.cs" />
+    <Compile Remove="MauiProgram.cs" />
     <None Include="Views\**\*.xaml" />
+    <None Include="App.xaml" />
+    <None Include="AppShell.xaml" />
   </ItemGroup>
 
 </Project>
