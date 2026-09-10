@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs`
 - [ ] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` and `src/RAGGit.Retrieval`; implement `OllamaEmbedder.cs`, `OnnxEmbedder.cs`, `OllamaLlmClient.cs`
 - [ ] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee`, `AllowAnonymous` for `/health`
 - [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs`
@@ -39,6 +38,8 @@
 - [ ] T044 [P] Add CI workflow `.github/workflows/ci.yml`
 
 ## Follow-ups / Notes
+
+- [ ] [Priority: High] Qdrant.Client .NET SDK (1.12.0/1.19.0) does not support local `path=` embedded mode (only Python client does). Current `QdrantLocalClient` connects to a server endpoint and uses the path as a storage directory marker. Decide whether to bundle/start a local Qdrant server binary, switch to an approved alternative (LanceDB), or accept a server dependency on the workstation. (Ref: `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs`)
 
 - [ ] [Priority: Med] Convert `src/RAGGit.Client.Maui` from classlib fallback to a full `dotnet new maui` project once the .NET 8 MAUI workload/template is available; remove the `BuildingInsideVisualStudio` conditional and keep the required TFMs (`net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android`). (Ref: `src/RAGGit.Client.Maui/RAGGit.Client.Maui.csproj`)
 - [ ] [Priority: Low] Remove placeholder `Class1.cs` files from each classlib as real types are added in T002+. (Ref: `src/RAGGit.Core/Class1.cs`, `src/RAGGit.Ingest/Class1.cs`, `src/RAGGit.Retrieval/Class1.cs`, `src/RAGGit.Client.Maui/Class1.cs`)
