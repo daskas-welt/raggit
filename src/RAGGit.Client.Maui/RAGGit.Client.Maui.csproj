@@ -16,6 +16,10 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Syncfusion.Maui.AIAssistView" Version="28.2.7" />
+    <PackageReference Include="Syncfusion.Maui.Core" Version="28.2.7" />
+    <PackageReference Include="Syncfusion.Maui.DataGrid" Version="28.2.7" />
+    <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.11" />
   </ItemGroup>
 
   <!-- MAUI XAML pages are only compiled for the real MAUI TFMs. -->

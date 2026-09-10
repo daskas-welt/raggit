@@ -39,6 +39,18 @@ public sealed partial class QueryViewModel : ObservableObject
     [ObservableProperty]
     private string? _statusMessage;
 
+    // SfAIAssistView binding — requests (user) + responses (assistant with citations). Keeps thin client (Constitution II).
+    [ObservableProperty]
+    private ObservableCollection<object> _requests = new();
+
+    [ObservableProperty]
+    private ObservableCollection<object> _responses = new();
+
+    [ObservableProperty]
+    private bool _hasStatusMessage;
+
+    partial void OnStatusMessageChanged(string? value) => HasStatusMessage = !string.IsNullOrWhiteSpace(value);
+
     public QueryViewModel(QueryApiClient apiClient)
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
@@ -61,6 +73,9 @@ public sealed partial class QueryViewModel : ObservableObject
         Citations = new ObservableCollection<Citation>();
         HasCitations = false;
 
+        // Push to SfAIAssistView Requests (Syncfusion MAUI AIAssistView — selective adoption per plan.md)
+        Requests.Add(new { Text = QueryText, Timestamp = DateTime.Now });
+
         try
         {
             var response = await _apiClient.QueryAsync(QueryText);
@@ -68,6 +83,8 @@ public sealed partial class QueryViewModel : ObservableObject
             Citations = new ObservableCollection<Citation>(response.Citations);
             HasCitations = response.Citations.Count > 0;
             IsResultVisible = true;
+            // Push to Responses — AIAssistView renders assistant bubble; citations as footer cards handled via HasCitations pane
+            Responses.Add(new { Text = response.Answer, Citations = response.Citations, Timestamp = DateTime.Now });
 
             if (response.Citations.Count == 0)
             {
