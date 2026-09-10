@@ -7,10 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Apache.Arrow" Version="22.1.0" />
+    <PackageReference Include="LanceDB" Version="2.5.0" />
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
     <PackageReference Include="OllamaSharp" Version="5.4.30" />
-    <PackageReference Include="Qdrant.Client" Version="1.12.0" />
   </ItemGroup>
 
   <ItemGroup>

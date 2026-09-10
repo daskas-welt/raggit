@@ -47,17 +47,25 @@ builder.Services.AddAuthentication(ApiKeyAuthOptions.Scheme)
 builder.Services.AddAuthorization();
 
 // Configuration
-var qdrantPath = builder.Configuration["Qdrant:Path"] ?? "./data/qdrant";
+var vectorDbPath = builder.Configuration["VectorDb:Path"] ?? "./data/lancedb";
+var vectorDbVectorSize = builder.Configuration.GetValue<int?>("VectorDb:VectorSize") ?? 384;
 var ollamaUrl = builder.Configuration["Ollama:Url"] ?? "http://localhost:11434";
 var embedModel = builder.Configuration["Ollama:EmbedModel"] ?? "nomic-embed-text";
 var chatModel = builder.Configuration["Ollama:ChatModel"] ?? "llama3.2:3b";
 var connectionString = builder.Configuration.GetConnectionString("RagDb") ?? "Data Source=./data/rag.db";
 
+// Backward compatibility: fall back to legacy Qdrant:Path if VectorDb:Path is missing.
+if (!builder.Configuration.GetSection("VectorDb:Path").Exists() &&
+    !string.IsNullOrEmpty(builder.Configuration["Qdrant:Path"]))
+{
+    vectorDbPath = builder.Configuration["Qdrant:Path"]!;
+}
+
 // Data
 builder.Services.AddSingleton(new RagDbContext(connectionString));
 
 // AI services
-builder.Services.AddSingleton<IVectorStore>(new QdrantLocalClient(qdrantPath));
+builder.Services.AddSingleton<IVectorStore>(new LanceDbLocalClient(vectorDbPath, vectorDbVectorSize));
 builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel));
 builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel));
 

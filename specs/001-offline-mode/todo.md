@@ -25,7 +25,7 @@
 - [ ] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE`; client role-aware UI
 - [ ] T037 [P] Add Serilog structured logging + `X-Request-Id` + error problem details
 - [ ] T038 [P] Harden `POST /api/documents` with magic-byte mime check + virus-scan hook stub
-- [ ] T039 [P] Performance: index batching, Qdrant HNSW tuning, chunk cache
+- [ ] T039 [P] Performance: index batching, LanceDB HNSW tuning, chunk cache
 - [ ] T040 [P] Security: single-tenant proprietary signing docs + `data/` + `models/` gitignored
 - [ ] T041 [P] Add `src/RAGGit.Client.Maui` publish builds + workstation `docker-compose`
 - [ ] T042 [P] Extra unit tests for edge cases
@@ -34,7 +34,6 @@
 
 ## Follow-ups / Notes
 
-- [ ] [Priority: High] Qdrant.Client .NET SDK (1.12.0/1.19.0) does not support local `path=` embedded mode (only Python client does). Current `QdrantLocalClient` connects to a server endpoint and uses the path as a storage directory marker. Decide whether to bundle/start a local Qdrant server binary, switch to an approved alternative (LanceDB), or accept a server dependency on the workstation. (Ref: `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs`)
 - [ ] [Priority: Med] `OnnxEmbedder` uses a basic WordPiece tokenizer; validate against bge-micro-v2 ONNX output and replace with a proper HuggingFace tokenizer (e.g. `Microsoft.ML.Tokenizers`) if needed. (Ref: `src/RAGGit.Ingest/Ai/OnnxEmbedder.cs`)
 - [ ] [Priority: Med] Convert `src/RAGGit.Client.Maui` from classlib fallback to a full `dotnet new maui` project once the .NET 8 MAUI workload/template is available; remove the `BuildingInsideVisualStudio` conditional and keep the required TFMs (`net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android`). (Ref: `src/RAGGit.Client.Maui/RAGGit.Client.Maui.csproj`)
 - [ ] [Priority: Low] Ensure `.gitignore` for `bin/`, `obj/`, `data/`, and `models/` is added in T006 so build artifacts are not tracked. (Ref: `specs/001-offline-mode/tasks.md`)

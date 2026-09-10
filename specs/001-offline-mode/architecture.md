@@ -29,10 +29,10 @@ flowchart TB
     subgraph Workstation["AI Workstation (owns all AI)"]
         API["RAGGit.Workstation.Api<br/>Controllers: Documents, Query, Health<br/>Auth: ApiKey (Admin/Employee)"]
         Core["RAGGit.Core (plain net8.0)<br/>Models: Document, Chunk, Query, Library<br/>Abstractions: IVectorStore, IEmbedder, ILlmClient"]
-        Ingest["RAGGit.Ingest<br/>Chunker (512/50 PdfPig/OpenXML)<br/>OllamaEmbedder / OnnxEmbedder<br/>QdrantLocalClient path=./data/qdrant"]
+        Ingest["RAGGit.Ingest<br/>Chunker (512/50 PdfPig/OpenXML)<br/>OllamaEmbedder / OnnxEmbedder<br/>LanceDbLocalClient path=./data/lancedb"]
         Retrieval["RAGGit.Retrieval<br/>RetrievalService (topK=5)<br/>GenerationService (prompt+LLM)"]
         DB[("SQLite rag.db<br/>Documents, Chunks, Queries, Library(1)")]
-        Qdrant[("Qdrant file ./data/qdrant<br/>collection 'library' HNSW m=16")]
+        LanceDb[("LanceDB file ./data/lancedb<br/>table 'library' HNSW m=16")]
         Ollama[["Ollama :11434<br/>nomic-embed-text / llama3.2:3b<br/>or LLamaSharp GGUF / ONNX bge-micro-v2"]]
     end
 
@@ -42,9 +42,9 @@ flowchart TB
     API --> Ingest
     API --> Retrieval
     Ingest --> DB
-    Ingest --> Qdrant
+    Ingest --> LanceDb
     Ingest --> Ollama
-    Retrieval --> Qdrant
+    Retrieval --> LanceDb
     Retrieval --> Ollama
     Retrieval --> DB
 ```
@@ -56,7 +56,7 @@ sequenceDiagram
     participant C as MAUI Client
     participant A as API (Workstation)
     participant E as IEmbedder (Ingest)
-    participant V as IVectorStore (Qdrant file)
+    participant V as IVectorStore (LanceDB file)
     participant L as ILlmClient (Ollama/ONNX)
     participant D as SQLite
 
@@ -83,7 +83,7 @@ sequenceDiagram
     participant A as DocumentsController
     participant K as Chunker (512/50)
     participant E as IEmbedder
-    participant V as Qdrant file
+    participant V as LanceDB file
     participant D as SQLite
 
     C->>A: POST /api/documents multipart file (Admin)
@@ -110,7 +110,7 @@ Core NEVER → Ingest/Retrieval
 
 ## Deployment (One-Tenant-Per-Workstation)
 
-- Workstation: Win10+/Linux, 16GB+GPU, 10GB disk, `Qdrant path=./data/qdrant` + `rag.db` persisted, models pre-cached (no `ollama pull` at query)
+- Workstation: Win10+/Linux, 16GB+GPU, 10GB disk, `LanceDB path=./data/lancedb` + `rag.db` persisted, models pre-cached (no `ollama pull` at query)
 - Client: MAUI `net8.0-windows10.0.19041.0` (MSIX signed) + `net8.0-android` (sideload) + `net8.0-ios` (Ad-Hoc/enterprise, Mac host) — all HttpClient-only over LAN/VPN
 - Offline invariant: CI gate `T044` runs `QueryOfflineTests` WAN-disabled; `/health` anon
 

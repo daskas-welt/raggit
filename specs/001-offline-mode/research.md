@@ -4,7 +4,7 @@
 
 ## Summary
 
-Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → LAN → AI Workstation owning all AI) satisfies the Offline Invariant with no cloud egress. All pillars verified via Context7 docs: `QdrantClient(path=)` local file, `Ollama /api/embed` + `/api/chat`, `LLamaSharp GetEmbeddings` with GGUF, and `Semantic Kernel OnnxSimpleRAG` (bge-micro-v2 + Phi-3 ONNX) for pure .NET without Python.
+Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → LAN → AI Workstation owning all AI) satisfies the Offline Invariant with no cloud egress. All pillars verified via Context7 docs: LanceDB `connect(path)` local file, `Ollama /api/embed` + `/api/chat`, `LLamaSharp GetEmbeddings` with GGUF, and `Semantic Kernel OnnxSimpleRAG` (bge-micro-v2 + Phi-3 ONNX) for pure .NET without Python.
 
 ## Decisions
 
@@ -12,12 +12,12 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 
 | Candidate | Offline Pattern (verified) | Decision |
 |-----------|----------------------------|----------|
-| **Qdrant local** `qdrant/qdrant-client` | `QdrantClient(path="./data/qdrant")` persists to disk; `:memory:` for tests — `APIDOC QdrantClient Constructor location/path` | **Selected** — full payload filtering (for future `documentId` filter), HNSW Rust core, parity with cloud if later needed |
-| **LanceDB** `lancedb/lancedb` | `lancedb.connect("<PATH>")` + `table.search().limit()` | Approved alternative — columnar, hybrid FTS+vector+SQL; defer unless FTS needed |
+| **LanceDB** `lancedb/lancedb` | `lancedb.connect("<PATH>")` + `table.search().limit()` via the `LanceDB` .NET SDK (Rust-backed, local file) | **Selected** — columnar, hybrid FTS+vector+SQL, no server, satisfies Offline Invariant |
+| **Qdrant local** `qdrant/qdrant-client` | `QdrantClient(path="./data/qdrant")` persists to disk; `:memory:` for tests — `APIDOC QdrantClient Constructor location/path` | Rejected — the `Qdrant.Client` .NET SDK does not support local `path=` embedded mode; requires a running server |
 | **Chroma** `chroma-core/chroma` | `chromadb.PersistentClient(path="/path")` → `chroma.sqlite3` | Rejected for production — docs state `PersistentClient is intended for local dev/testing. For production prefer server` |
-| **Sqlite-vec** | SQLite extension | Fallback for minimal footprint if Qdrant native dep is an issue |
+| **Sqlite-vec** | SQLite extension | Approved fallback for minimal footprint if LanceDB native dep becomes an issue |
 
-**Rationale**: Single-tenant needs no `company_id` partition; a single Qdrant file per workstation is simplest to backup/ship. Chroma caveat makes it unsuitable for SC-003 scale. Qdrant local satisfies `plan.md:Storage` without Docker/server.
+**Rationale**: Single-tenant needs no `company_id` partition; a single LanceDB directory per workstation is simplest to backup/ship and gives vector+FTS+SQL in one file-backed store. The `Qdrant.Client` .NET SDK does not implement embedded `path=` mode, so Qdrant is rejected for this .NET stack. Chroma's caveat makes it unsuitable for SC-003 scale. LanceDB local satisfies `plan.md:Storage` without Docker/server.
 
 ### 2. Embeddings — Local, No Cloud
 
@@ -41,7 +41,7 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 
 ### 4. RAG Orchestration
 
-**Thin wrapper over Semantic Kernel**: direct `Qdrant search(filter=documentId?) → prompt template (system + chunks + query) → local LLM → {answer, citations}`. LangChain/LlamaIndex rejected — hide retrieval control and add Python deps. `Semantic Kernel` `OnnxSimpleRAG` sample `semantic-kernel: Configure ONNX Model Paths` shows the exact flow for .NET without cloud.
+**Thin wrapper over Semantic Kernel**: direct `LanceDB search(filter=documentId?) → prompt template (system + chunks + query) → local LLM → {answer, citations}`. LangChain/LlamaIndex rejected — hide retrieval control and add Python deps. `Semantic Kernel` `OnnxSimpleRAG` sample `semantic-kernel: Configure ONNX Model Paths` shows the exact flow for .NET without cloud.
 
 ### 5. Client Framework (Desktop + Mobile)
 
@@ -60,7 +60,7 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 
 - Single project bundling AI into desktop — rejected: violates Constitution II (workstation-owned AI) and needs 8GB per employee.
 - Cloud vector DB (Pinecone/Qdrant Cloud) — rejected: fails offline invariant `FR-004`/`SC-002`.
-- Python FastAPI for workstation — viable but rejected for this team: `.NET/C#` skill per user request; ASP.NET Core achieves same `Qdrant path` + `Ollama` via `OllamaSharp`.
+- Python FastAPI for workstation — viable but rejected for this team: `.NET/C#` skill per user request; ASP.NET Core achieves same LanceDB local path + `Ollama` via `OllamaSharp`.
 
 ## Open Items Resolved
 
@@ -70,7 +70,7 @@ Phase 0 research proves the single-tenant on-prem split (thin .NET desktop → L
 
 ## References
 
-- `QdrantClient:55` `path` persistent local storage
+- LanceDB C# SDK `connect(path)` local directory storage
 - `Ollama: POST /api/embed` embed endpoint
 - `LLamaSharp: GetEmbeddings.md:15` EmbeddingMode
 - `Semantic Kernel: OnnxSimpleRAG/README.md:25` ONNX chat + bge-micro-v2 local

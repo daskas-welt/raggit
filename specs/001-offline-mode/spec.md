@@ -6,7 +6,7 @@
 
 **Status**: Ready for Implementation
 
-**Input**: User description: "single-tenant RAG library for RAGGit: AI Workstation hosts Ollama and Qdrant local path with ASP.NET Core API; .NET client app (desktop + mobile) for admins to upload see library and employees to query with citations; LAN-only no cloud egress single-tenant proprietary" — Clarified 2026-09-10: client tier = Windows 11 modern desktop + iOS/Android mobile, no Linux (macOS not in scope); single .NET MAUI codebase selected at plan level.
+**Input**: User description: "single-tenant RAG library for RAGGit: AI Workstation hosts Ollama and LanceDB local path with ASP.NET Core API; .NET client app (desktop + mobile) for admins to upload see library and employees to query with citations; LAN-only no cloud egress single-tenant proprietary" — Clarified 2026-09-10: client tier = Windows 11 modern desktop + iOS/Android mobile, no Linux (macOS not in scope); single .NET MAUI codebase selected at plan level.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,7 +119,7 @@ Employee views the library (read-only) to discover available documents and under
 - Supported formats for v1: PDF, docx, txt, md only; video/audio transcripts out of scope.
 - Chunking 512 tokens / 50 overlap, embedding dim 384 or 768, topK=5 — tunable via config, not per-user in v1.
 - Authentication for v1: API key or Windows AD integrated on workstation; full SSO deferred. Upload rejects >100MB per file.
-- AI Workstation hosts Ollama (embed + chat) and Qdrant local file (`QdrantClient(path=)`) or equivalent embedded vector store; client apps (desktop + mobile) connect via `http://ai-workstation.local:5001` over trusted LAN (HTTPS optional, cert via reverse proxy if required; mobile requires same subnet or site VPN).
+- AI Workstation hosts Ollama (embed + chat) and LanceDB local file (`lancedb.connect(path)`) or equivalent embedded vector store; client apps (desktop + mobile) connect via `http://ai-workstation.local:5001` over trusted LAN (HTTPS optional, cert via reverse proxy if required; mobile requires same subnet or site VPN).
 - Air-gapped first run requires pre-cached models; otherwise startup error is acceptable per FR-007.
 - Proprietary distribution: signed MSIX (Windows 11) + private mobile distribution (iOS enterprise/Ad-Hoc, Android sideload) per company, private update channel. No public app-store listing required.
 - Client platforms for v1: Windows 11 desktop + iOS/Android mobile from one codebase; mobile exposes same browse/upload/query flows as desktop — no mobile-only features (camera, push, biometrics) in v1.

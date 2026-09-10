@@ -26,17 +26,19 @@ public sealed class HealthController : ControllerBase
     }
 
     /// <summary>
-    /// GET /health — returns qdrant/llm status and API version.
+    /// GET /health — returns vectorDb/llm status and API version.
+    /// The legacy <c>qdrant</c> key is kept for backward compatibility.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var qdrantHealthy = await _vectorStore.IsHealthyAsync(cancellationToken);
+        var vectorDbHealthy = await _vectorStore.IsHealthyAsync(cancellationToken);
         var llmHealthy = await _llmClient.IsHealthyAsync(cancellationToken);
 
         return Ok(new
         {
-            qdrant = qdrantHealthy ? "ok" : "down",
+            vectorDb = vectorDbHealthy ? "ok" : "down",
+            qdrant = vectorDbHealthy ? "ok" : "down",
             llm = llmHealthy ? "ok" : "down",
             version = GetApiVersion()
         });

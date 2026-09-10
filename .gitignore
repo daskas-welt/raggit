@@ -23,7 +23,7 @@ artifacts/
 
 # Data and models (workstation-local, never committed)
 /data/
-/data/qdrant/
+/data/lancedb/
 *.db
 /models/*.gguf
 /models/*.onnx

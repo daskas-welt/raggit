@@ -1,15 +1,15 @@
 # Completed Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
 - [x] T001 Create solution `RAGGit.sln` and projects `src/RAGGit.Core`, `src/RAGGit.Ingest`, `src/RAGGit.Retrieval`, `src/RAGGit.Workstation.Api`, `src/RAGGit.Client.Maui` per plan.md Project Structure [DONE: 2026-09-10] [By: coder]
-- [x] T002 [P] Initialize `src/RAGGit.Core` as plain net8.0 classlib with `Microsoft.Data.Sqlite` package ref only, and define abstractions `IVectorStore`, `IEmbedder`, `ILlmClient` in `src/RAGGit.Core/Abstractions/` — no Qdrant.Client/OllamaSharp/LLamaSharp/Microsoft.ML.OnnxRuntime in Core [DONE: 2026-09-10] [By: coder]
+- [x] T002 [P] Initialize `src/RAGGit.Core` as plain net8.0 classlib with `Microsoft.Data.Sqlite` package ref only, and define abstractions `IVectorStore`, `IEmbedder`, `ILlmClient` in `src/RAGGit.Core/Abstractions/` — no LanceDB/Apache.Arrow/OllamaSharp/LLamaSharp/Microsoft.ML.OnnxRuntime in Core [DONE: 2026-09-10] [By: coder]
 - [x] T003 [P] Initialize `src/RAGGit.Workstation.Api` (ASP.NET Core 8) with `Swashbuckle.AspNetCore`, `Serilog` and reference `RAGGit.Core/Ingest/Retrieval` [DONE: 2026-09-10] [By: coder]
 - [x] T004 [P] Initialize `src/RAGGit.Client.Maui` (.NET MAUI .NET 8; TFMs `net8.0-windows10.0.19041.0`, `net8.0-ios`, `net8.0-android`) with `HttpClient`, `CommunityToolkit.Mvvm` and reference `RAGGit.Core` [DONE: 2026-09-10] [By: coder]
 - [x] T005 [P] Initialize `tests/unit`, `tests/contract`, `tests/integration` (xUnit) with `FluentAssertions`, `Microsoft.AspNetCore.Mvc.Testing` [DONE: 2026-09-10] [By: coder]
 - [x] T006 [P] Configure `Directory.Build.props`, `editorconfig`, `dotnet format`, `.gitignore` (`/data/`, `/models/*.gguf`, `/models/*.onnx`) [DONE: 2026-09-10] [By: coder]
 - [x] T007 Setup SQLite `rag.db` schema and migrations for `Documents`, `Chunks`, `Queries`, `Library(singleton)` per data-model.md [DONE: 2026-09-10] [By: coder]
-- [x] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs` [DONE: 2026-09-10] [By: coder]
+- [x] T008 [P] Add `LanceDB` .NET SDK package ref to `src/RAGGit.Ingest` and implement LanceDB embedded wrapper `src/RAGGit.Ingest/Vector/LanceDbLocalClient.cs` (switched from Qdrant.Client because the .NET SDK does not support embedded `path=` mode) [DONE: 2026-09-10] [By: coder]
 - [x] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` and `src/RAGGit.Retrieval`; implement `OllamaEmbedder.cs`, `OnnxEmbedder.cs`, `OllamaLlmClient.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee`, `AllowAnonymous` for `/health` [DONE: 2026-09-10] [By: coder]
-- [x] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `Qdrant:Path`, `Ollama:Url`) per contracts/api.yaml servers [DONE: 2026-09-10] [By: coder]
+- [x] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `VectorDb:Path`, `Ollama:Url`) per contracts/api.yaml servers [DONE: 2026-09-10] [By: coder]
 - [x] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation [DONE: 2026-09-10] [By: coder]
 - [x] T013 Configure env secrets (`dotnet user-secrets` `Api:Key`, `Onnx:EmbeddingModelPath`) and health endpoint `GET /health` [DONE: 2026-09-10] [By: coder]

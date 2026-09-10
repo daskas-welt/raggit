@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: RAGGit Workstation API (Single-Tenant)
   version: 1.0.0
-  description: Single-tenant on-prem RAG on AI Workstation (Qdrant local path + Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query time per FR-004/Constitution IV).
+  description: Single-tenant on-prem RAG on AI Workstation (LanceDB local path + Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query time per FR-004/Constitution IV).
 servers:
   - url: http://ai-workstation.local:5001
     description: AI Workstation LAN
@@ -14,7 +14,7 @@ paths:
   /api/documents:
     post:
       summary: Upload document to singleton library (Admin only)
-      description: Chunks (512/50), embeds locally, indexes into Qdrant file. Rejects unsupported type/size per FR-006. If the uploaded file hash matches an existing document, returns 200 with the existing Document and does not re-index (dedupe per spec.md:74).
+      description: Chunks (512/50), embeds locally, indexes into LanceDB file. Rejects unsupported type/size per FR-006. If the uploaded file hash matches an existing document, returns 200 with the existing Document and does not re-index (dedupe per spec.md:74).
       security: [{ ApiKey: [] }]
       requestBody:
         required: true
@@ -95,7 +95,7 @@ paths:
 
   /health:
     get:
-      summary: Health (no auth) — qdrant + llm
+      summary: Health (no auth) — vectorDb + llm
       security: []
       responses:
         '200':
@@ -104,6 +104,7 @@ paths:
               schema:
                 type: object
                 properties:
+                  vectorDb: { type: string, enum: [ok, down] }
                   qdrant: { type: string, enum: [ok, down] }
                   llm: { type: string, enum: [ok, down] }
                   version: { type: string }

@@ -1,6 +1,6 @@
 # RAGGit — Offline-Mode Single-Tenant RAG Library
 
-> **Proprietary, on-prem, single-tenant RAG for companies.** An AI Workstation hosts the local vector store (`Qdrant` file) and local LLM (`Ollama`/`LLamaSharp`/`ONNX`) and serves a thin `.NET` desktop app over LAN — no cloud egress at query time.
+> **Proprietary, on-prem, single-tenant RAG for companies.** An AI Workstation hosts the local vector store (`LanceDB` file) and local LLM (`Ollama`/`LLamaSharp`/`ONNX`) and serves a thin `.NET` desktop app over LAN — no cloud egress at query time.
 
 **Constitution**: `v1.0.0` ratified `2026-08-31` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
@@ -12,7 +12,7 @@
 Company LAN (no WAN at query time)
 AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET thin clients)
 ├─ ASP.NET Core API (src/RAGGit.Workstation.Api) ──┐
-├─ Qdrant file data/qdrant (QdrantClient(path=))    │
+├─ LanceDB file data/lancedb (lancedb.connect(path))    │
 ├─ Ollama localhost:11434 (nomic-embed-text + llama3.2:3b)  │
 └─ SQLite rag.db ──────────────────────────────────┘
 Desktop: WPF (Win-only) or Avalonia (cross-platform) — HttpClient only, zero local models
@@ -24,7 +24,7 @@ API: POST /api/documents (Admin), GET /api/documents, POST /api/query {answer,ci
 ## Tech Stack
 
 - **Language**: C# .NET 8 (`RAGGit.Core`/`Ingest`/`Retrieval`/`Workstation.Api`/`Desktop`)
-- **Vector**: `Qdrant.Client` embedded `path=` (file, no server) — verified `QdrantClient(path=)`; alt `Sqlite-vec`/`LanceDB`
+- **Vector**: `LanceDB` .NET SDK embedded `connect(path)` (file, no server) — approved alt `Sqlite-vec`; `Qdrant.Client` rejected because its .NET SDK lacks embedded `path=` mode
 - **AI**: `OllamaSharp` (`POST /api/embed` + `/api/chat`) or `LLamaSharp` (`LLamaEmbedder.GetEmbeddings` GGUF) + `ONNX Runtime` (`bge-micro-v2` 80MB + `Phi-3-mini` int4) via `Semantic Kernel` `OnnxSimpleRAG`
 - **Desktop**: WPF (.NET 8) for Windows-only, Avalonia UI 11 for cross-platform — same ViewModels
 - **Testing**: xUnit + FluentAssertions, WAN-disabled integration suite, 50 Q/A eval harness
@@ -34,7 +34,7 @@ API: POST /api/documents (Admin), GET /api/documents, POST /api/query {answer,ci
 ```
 RAGGit.sln
 ├── src/
-│   ├── RAGGit.Core/              # Models Document/Chunk/Query, QdrantLocalClient, Embedder/LlmClient
+│   ├── RAGGit.Core/              # Models Document/Chunk/Query, abstractions IVectorStore/IEmbedder/ILlmClient
 │   ├── RAGGit.Ingest/            # Chunker 512/50 → embed → upsert
 │   ├── RAGGit.Retrieval/         # embed query → search topK=5 → prompt → local LLM
 │   ├── RAGGit.Workstation.Api/   # ASP.NET Core: /api/documents, /api/query, /health
@@ -42,7 +42,7 @@ RAGGit.sln
 ├── tests/
 │   ├── unit/ | contract/ | integration/  # including WAN-disabled offline suite
 ├── specs/001-offline-mode/       # spec.md, plan.md, research.md, data-model.md, quickstart.md, contracts/api.yaml, tasks.md
-├── data/                         # .gitignored: data/qdrant, rag.db
+├── data/                         # .gitignored: data/lancedb, rag.db
 └── models/                       # .gitignored: *.gguf, *.onnx
 ```
 
@@ -77,7 +77,7 @@ git clone https://huggingface.co/TaylorAI/bge-micro-v2 ./models/bge-micro-v2
 
 `src/RAGGit.Workstation.Api/appsettings.Development.json`:
 ```json
-{ "Qdrant": { "Path": "./data/qdrant" }, "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" } }
+{ "VectorDb": { "Path": "./data/lancedb", "Provider": "LanceDB", "VectorSize": 384 }, "Qdrant": { "Path": "./data/qdrant" }, "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" } }
 ```
 ```powershell
 dotnet user-secrets set "Api:Key" "dev-key-123" --project src/RAGGit.Workstation.Api

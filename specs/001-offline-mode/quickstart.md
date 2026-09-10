@@ -40,6 +40,7 @@ Configure `RAGGit.Workstation.Api/appsettings.json`:
 
 ```json
 {
+  "VectorDb": { "Path": "./data/lancedb", "Provider": "LanceDB", "VectorSize": 384 },
   "Qdrant": { "Path": "./data/qdrant" },
   "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" },
   "Onnx": { "EmbeddingModelPath": "./models/bge-micro-v2/onnx/model.onnx", "ChatModelPath": "./models/phi-3-mini/cpu-int4" },
@@ -53,7 +54,7 @@ Tunable without redeploy for 200 users × 50+ q/day (`Trim/Lowercase/Punctuation
 ```powershell
 dotnet run --project src/RAGGit.Workstation.Api --urls http://0.0.0.0:5001
 # Swagger: http://ai-workstation.local:5001/swagger
-# Health: GET http://ai-workstation.local:5001/health → 200 {qdrant: ok, llm: ok}
+# Health: GET http://ai-workstation.local:5001/health → 200 {vectorDb: ok, llm: ok} (qdrant key retained for backward compatibility)
 ```
 
 ## 4. Run Client (Thin, No Models — .NET MAUI)

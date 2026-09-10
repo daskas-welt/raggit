@@ -18,7 +18,7 @@
 **Purpose**: Initialize .NET 8 solution and structure per plan.md
 
 - [ ] T001 Create solution `RAGGit.sln` and projects `src/RAGGit.Core`, `src/RAGGit.Ingest`, `src/RAGGit.Retrieval`, `src/RAGGit.Workstation.Api`, `src/RAGGit.Client.Maui` per plan.md Project Structure
-- [ ] T002 [P] Initialize `src/RAGGit.Core` as plain net8.0 classlib with `Microsoft.Data.Sqlite` package ref only, and define abstractions `IVectorStore`, `IEmbedder`, `ILlmClient` in `src/RAGGit.Core/Abstractions/` — no Qdrant.Client/OllamaSharp/LLamaSharp/Microsoft.ML.OnnxRuntime in Core (Constitution II: Client.Maui references Core only, so Core must stay free of AI/vector deps)
+- [ ] T002 [P] Initialize `src/RAGGit.Core` as plain net8.0 classlib with `Microsoft.Data.Sqlite` package ref only, and define abstractions `IVectorStore`, `IEmbedder`, `ILlmClient` in `src/RAGGit.Core/Abstractions/` — no LanceDB/Apache.Arrow/OllamaSharp/LLamaSharp/Microsoft.ML.OnnxRuntime in Core (Constitution II: Client.Maui references Core only, so Core must stay free of AI/vector deps)
 - [ ] T003 [P] Initialize `src/RAGGit.Workstation.Api` (ASP.NET Core 8) with `Swashbuckle.AspNetCore`, `Serilog` and reference `RAGGit.Core/Ingest/Retrieval`
 - [ ] T004 [P] Initialize `src/RAGGit.Client.Maui` (.NET MAUI .NET 8; TFMs `net8.0-windows10.0.19041.0`, `net8.0-ios`, `net8.0-android`) with `HttpClient`, `CommunityToolkit.Mvvm` and reference `RAGGit.Core` (Core stays plain `net8.0`)
 - [ ] T005 [P] Initialize `tests/unit`, `tests/contract`, `tests/integration` (xUnit) with `FluentAssertions`, `Microsoft.AspNetCore.Mvc.Testing`
@@ -31,22 +31,22 @@
 **Purpose**: Core infrastructure that MUST be complete before ANY user story — ⚠️ CRITICAL
 
 - [ ] T007 Setup SQLite `rag.db` schema and migrations for `Documents`, `Chunks`, `Queries`, `Library(singleton)` per data-model.md in `src/RAGGit.Core/Data/DbContext.cs`
-- [ ] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs` : `IVectorStore` with `QdrantClient(path="./data/qdrant")` collection `library` HNSW `m=16` payload index `documentId` per research.md (`RAGGit.Retrieval` consumes `IVectorStore` via DI wired in `RAGGit.Workstation.Api` — no project reference to Ingest)
+- [ ] T008 [P] Add `LanceDB` .NET SDK package ref to `src/RAGGit.Ingest` and implement LanceDB embedded wrapper `src/RAGGit.Ingest/Vector/LanceDbLocalClient.cs` : `IVectorStore` with `lancedb.connect("./data/lancedb")` table `library` HNSW `m=16 efConstruction=128` and `documentId` filter via `Where(Expr)` (`RAGGit.Retrieval` consumes `IVectorStore` via DI wired in `RAGGit.Workstation.Api` — no project reference to Ingest)
 - [ ] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` (embedders) and `src/RAGGit.Retrieval` (LLM client); implement `src/RAGGit.Ingest/Ai/OllamaEmbedder.cs` + `OnnxEmbedder.cs` : `IEmbedder` (Ollama POST /api/embed, LLamaSharp LLamaEmbedder.GetEmbeddings, or ONNX bge-micro-v2) and `src/RAGGit.Retrieval/Ai/OllamaLlmClient.cs` : `ILlmClient` (Ollama /api/chat or Phi-3 ONNX) per research.md
 - [ ] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee` per FR-003, `AllowAnonymous` for `/health`
-- [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `Qdrant:Path`, `Ollama:Url`) per contracts/api.yaml servers
+- [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `VectorDb:Path`, `Ollama:Url`) per contracts/api.yaml servers
 - [ ] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation (Mime enum PDF/docx/txt/md, Size ≤100MB, Prompt not empty) per data-model.md
 - [ ] T013 Configure env secrets (`dotnet user-secrets` `Api:Key`, `Onnx:EmbeddingModelPath`) and health endpoint `GET /health` in `src/RAGGit.Workstation.Api/Controllers/HealthController.cs`
 
-**Checkpoint**: Foundation ready — `dotnet build` passes, `GET /health` returns 200 `{qdrant: ok, llm: ok}` with `data/qdrant` file created. No story work before this.
+**Checkpoint**: Foundation ready — `dotnet build` passes, `GET /health` returns 200 `{vectorDb: ok, llm: ok}` with `data/lancedb` directory created. No story work before this.
 
 ---
 
 ## Phase 3: User Story 1 - Admin Uploads and Indexes Content (Priority: P1) 🎯 MVP (Ingest Half)
 
-**Goal**: Admin uploads PDF/docx/txt/md (<100MB) via desktop → workstation chunks 512/50, embeds locally, indexes into Qdrant file, status Ready <5min for 50 pages (FR-001, FR-002, FR-006, SC-001)
+**Goal**: Admin uploads PDF/docx/txt/md (<100MB) via desktop → workstation chunks 512/50, embeds locally, indexes into LanceDB file, status Ready <5min for 50 pages (FR-001, FR-002, FR-006, SC-001)
 
-**Independent Test**: Seed: admin uploads 10 PDFs (50 pages each) on LAN → `GET /api/documents` shows 10 `Ready` + Qdrant count >0 + semantic query returns hit. No US-2 needed.
+**Independent Test**: Seed: admin uploads 10 PDFs (50 pages each) on LAN → `GET /api/documents` shows 10 `Ready` + LanceDB count >0 + semantic query returns hit. No US-2 needed.
 
 ### Tests for User Story 1 (Write FIRST, must FAIL before implementation)
 
@@ -57,18 +57,18 @@
 ### Implementation for User Story 1
 
 - [ ] T017 [P] [US1] Implement chunking `src/RAGGit.Ingest/Chunker.cs` (PdfPig/OpenXML → 512 tokens /50 overlap) per data-model.md Chunk
-- [ ] T018 [US1] Implement ingest service `src/RAGGit.Ingest/IngestService.cs` → `Embedder` batch → `QdrantLocalClient.Upsert` with payload `{documentId, text, ordinal}` + SQLite `Documents`/`Chunks` transaction (depends on T017, T008, T009)
+- [ ] T018 [US1] Implement ingest service `src/RAGGit.Ingest/IngestService.cs` → `Embedder` batch → `LanceDbLocalClient.Upsert` with payload `{documentId, text, ordinal}` + SQLite `Documents`/`Chunks` transaction (depends on T017, T008, T009)
 - [ ] T019 [US1] Implement `POST /api/documents` + `GET /api/documents` in `src/RAGGit.Workstation.Api/Controllers/DocumentsController.cs` (multipart `file`, mime validation per FR-010, hash dedupe → existing id, Admin-only 403 per FR-003) per contracts/api.yaml
 - [ ] T020 [US1] Implement client `LibraryView` + `UploadView` in `src/RAGGit.Client.Maui/Views/` calling `POST /api/documents` with progress and error `unsupported type` per FR-006
-- [ ] T021 [US1] Add validation, logging (Serilog), and `DELETE` purge stub for later (Qdrant filter `documentId`)
+- [ ] T021 [US1] Add validation, logging (Serilog), and `DELETE` purge stub for later (LanceDB filter `documentId`)
 
-**Checkpoint**: US-1 independently functional — upload 10 PDFs via desktop → `Ready` <5min, `GET` lists them, Qdrant `collection library` count matches chunks.
+**Checkpoint**: US-1 independently functional — upload 10 PDFs via desktop → `Ready` <5min, `GET` lists them, LanceDB `table library` count matches chunks.
 
 ---
 
 ## Phase 4: User Story 2 - Employee Queries Library Offline with Citations (Priority: P1) 🎯 MVP (Query Half)
 
-**Goal**: Employee query over LAN with WAN disabled → workstation `embed query → Qdrant search topK=5 → local LLM prompt → {answer, citations[]}` or `no relevant content found`, p95 <7s (FR-004, FR-005, SC-002, SC-003, SC-004)
+**Goal**: Employee query over LAN with WAN disabled → workstation `embed query → LanceDB search topK=5 → local LLM prompt → {answer, citations[]}` or `no relevant content found`, p95 <7s (FR-004, FR-005, SC-002, SC-003, SC-004)
 
 **Independent Test**: Pre-seed library (from US-1). Disable WAN on workstation (keep LAN). Employee (Employee role) queries `refund policy` via desktop → `200 {answer, citations ≥1}` <7s; query nonsense → `no relevant content found` 0 citations. Verify no cloud egress.
 
@@ -80,7 +80,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs` — `Embedder.GetEmbeddings(query)` → `QdrantClient.Search(limit:5)` → payload `text` per research.md
+- [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs` — `Embedder.GetEmbeddings(query)` → `LanceDbLocalClient.Search(limit:5)` → payload `text` per research.md
 - [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs` — prompt template (system + chunks + query) → `LlmClient.Chat` (Ollama `/api/chat` or Phi-3 ONNX) → `answer` + `citationIds` (depends on T025)
 - [ ] T027 [US2] Implement `POST /api/query` in `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` (validate `query` not empty, `topK` clamp 1-5, call Retrieval+Generation, map `no relevant content found` when 0 hits, 503 when LLM down per FR-007) per contracts/api.yaml
 - [ ] T028 [US2] Implement client `QueryView` in `src/RAGGit.Client.Maui/Views/QueryView.xaml` with answer + citations list (documentId/chunkId/ordinal) calling `POST /api/query` via `HttpClient`
@@ -92,9 +92,9 @@
 
 ## Phase 5: User Story 3 - Admin Manages Library (Priority: P2)
 
-**Goal**: Admin lists/deletes documents; deletion purges SQLite + Qdrant points filter `documentId`; subsequent queries exclude deleted content (FR-001, FR-002)
+**Goal**: Admin lists/deletes documents; deletion purges SQLite + LanceDB rows filter `documentId`; subsequent queries exclude deleted content (FR-001, FR-002)
 
-**Independent Test**: Admin deletes one of 10 docs from US-1 → `GET /api/documents` count N-1, Qdrant `count filter documentId` 0, query unique term → 0 hits/no citation.
+**Independent Test**: Admin deletes one of 10 docs from US-1 → `GET /api/documents` count N-1, LanceDB `count filter documentId` 0, query unique term → 0 hits/no citation.
 
 ### Tests for User Story 3 (Write FIRST)
 
@@ -103,7 +103,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Implement `DELETE /api/documents/{id}` in `DocumentsController.cs` — remove `Documents`/`Chunks` rows + `QdrantClient.Delete(filter: documentId)` (depends on T008, T007)
+- [ ] T032 [US3] Implement `DELETE /api/documents/{id}` in `DocumentsController.cs` — remove `Documents`/`Chunks` rows + `LanceDbLocalClient.Delete(filter: documentId)` (depends on T008, T007)
 - [ ] T033 [US3] Update client `LibraryView` delete button (Admin-only, confirm dialog) calling `DELETE /api/documents/{id}` and refreshing list
 
 **Checkpoint**: US-3 independently testable after US-1 data exists; no dependency on US-2.
@@ -135,7 +135,7 @@
 
 - [ ] T037 [P] Add Serilog structured logging + `X-Request-Id` + error problem details across API
 - [ ] T038 [P] Harden `POST /api/documents` with magic-byte mime check + virus-scan hook stub per FR-006
-- [ ] T039 [P] Performance: index batching, Qdrant HNSW tuning, chunk cache; validate SC-001 <5min for 50 pages and SC-002 p95 offline
+- [ ] T039 [P] Performance: index batching, LanceDB HNSW tuning, chunk cache; validate SC-001 <5min for 50 pages and SC-002 p95 offline
 - [ ] T040 [P] Security: single-tenant proprietary signing (MSIX Windows + iOS enterprise/Ad-Hoc + Android sideload) docs + `secrets` not in repo, `data/` + `models/` gitignored per quickstart.md
 - [ ] T041 [P] Add `src/RAGGit.Client.Maui` builds: `dotnet publish -f net8.0-windows10.0.19041.0`, `-f net8.0-android`, `-f net8.0-ios` and workstation `docker-compose` (optional) + LAN discovery doc
 - [ ] T042 [P] Extra unit tests for edge cases: large file queue, duplicate hash, `model unavailable offline` 503, LAN partition retry (no cloud fallback), and workstation restart persistence (index → restart → GET /api/documents + query still work per FR-008) per spec Edge Cases

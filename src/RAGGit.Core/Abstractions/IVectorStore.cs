@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace RAGGit.Core.Abstractions;
 
 /// <summary>
-/// Abstraction over an embedded vector store (e.g. Qdrant local path).
+/// Abstraction over an embedded vector store (e.g. LanceDB local path).
 /// </summary>
 public interface IVectorStore
 {
