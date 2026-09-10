@@ -23,3 +23,4 @@
 - [x] T021 [US1] Add validation, logging, and `DELETE` purge stub [DONE: 2026-09-10] [By: coder]
 - [x] T022 [P] [US2] Contract test `POST /api/query` 200 `{answer,citations}` and `NoRelevantContent` branch [DONE: 2026-09-10] [By: coder]
 - [x] T023 [P] [US2] Integration test `WAN-disabled query` [DONE: 2026-09-10] [By: coder]
+- [x] T024 [P] [US2] Eval harness 50 Q/A set [DONE: 2026-09-10] [By: coder]

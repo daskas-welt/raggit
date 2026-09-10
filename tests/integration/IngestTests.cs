@@ -200,12 +200,29 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
 
 internal sealed class FakeEmbedder : IEmbedder
 {
+    /// <summary>
+    /// Optional query-to-vector overrides. The first matching substring wins.
+    /// </summary>
+    public IReadOnlyDictionary<string, float[]>? VectorOverrides { get; set; }
+
     public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
         CancellationToken cancellationToken = default)
     {
-        var embeddings = inputs.Select(_ =>
+        var overrides = VectorOverrides;
+        var embeddings = inputs.Select(input =>
         {
+            if (overrides is not null)
+            {
+                foreach (var pair in overrides)
+                {
+                    if (input.Contains(pair.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return pair.Value;
+                    }
+                }
+            }
+
             var vector = new float[384];
             vector[0] = 1.0f;
             return vector;

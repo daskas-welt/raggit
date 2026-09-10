@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T024 [P] [US2] Eval harness 50 Q/A set
 - [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs`
 - [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs`
 - [ ] T027 [US2] Implement `POST /api/query` in `QueryController.cs`
