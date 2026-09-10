@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:syncTheme="clr-namespace:Syncfusion.Maui.Themes;assembly=Syncfusion.Maui.Core"
+             x:Class="RAGGit.Client.Maui.App">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- Syncfusion Toolkit + Core themes — MaterialLight default, MaterialDark via runtime switch -->
+        <syncTheme:SyncfusionThemeResourceDictionary VisualTheme="MaterialLight" />
+        <!-- App brand overrides -->
+        <ResourceDictionary>
+          <Color x:Key="Primary">#512BD4</Color>
+          <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
+        </ResourceDictionary>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:RAGGit.Client.Maui.Views"
+       x:Class="RAGGit.Client.Maui.AppShell"
+       Title="RAGGit">
+  <TabBar>
+    <ShellContent Title="Library" Icon="library.png" ContentTemplate="{DataTemplate views:LibraryView}" Route="library" />
+    <ShellContent Title="Ask" Icon="chat.png" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
+    <ShellContent Title="Upload" Icon="upload.png" ContentTemplate="{DataTemplate views:UploadView}" Route="upload" />
+  </TabBar>
+</Shell>
