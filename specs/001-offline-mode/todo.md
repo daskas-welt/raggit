@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T005 [P] Initialize `tests/unit`, `tests/contract`, `tests/integration` (xUnit) with `FluentAssertions`, `Microsoft.AspNetCore.Mvc.Testing`
 - [ ] T006 [P] Configure `Directory.Build.props`, `editorconfig`, `dotnet format`, `.gitignore` (`/data/`, `/models/*.gguf`, `/models/*.onnx`)
 - [ ] T007 Setup SQLite `rag.db` schema and migrations for `Documents`, `Chunks`, `Queries`, `Library(singleton)` per data-model.md
 - [ ] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs`
