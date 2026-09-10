@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs`
 - [ ] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation
 - [ ] T013 Configure env secrets (`dotnet user-secrets` `Api:Key`, `Onnx:EmbeddingModelPath`) and health endpoint `GET /health`
 - [ ] T014 [P] [US1] Contract test `POST /api/documents` 201 + `GET /api/documents` 200
