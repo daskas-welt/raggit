@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T026 [US2] Implement generation `src/RAGGit.Retrieval/GenerationService.cs`
 - [ ] T027 [US2] Implement `POST /api/query` in `QueryController.cs`
 - [ ] T028 [US2] Implement client `QueryView.xaml`
 - [ ] T029 [US2] Instrument latency `latencyMs` in `Queries` table

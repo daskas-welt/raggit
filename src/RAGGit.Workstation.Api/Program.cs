@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,7 @@ using RAGGit.Core.Models;
 using RAGGit.Ingest;
 using RAGGit.Ingest.Ai;
 using RAGGit.Ingest.Vector;
+using RAGGit.Retrieval;
 using RAGGit.Retrieval.Ai;
 using RAGGit.Workstation.Api.Auth;
 using Serilog;
@@ -24,7 +26,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Cache
-builder.Services.AddMemoryCache();
+var cacheEnabled = builder.Configuration.GetValue<bool>("Cache:Enabled");
+var embedCap = builder.Configuration.GetValue<int?>("Cache:EmbedCap") ?? 10000;
+var embedTtl = builder.Configuration.GetValue<int?>("Cache:EmbedTTLHours") ?? 24;
+
+builder.Services.AddMemoryCache(options => options.SizeLimit = embedCap);
 builder.Services.AddResponseCaching();
 
 // CORS: allow any LAN origin; auth is header-based so credentials are not required.
@@ -68,8 +74,24 @@ builder.Services.AddSingleton(new RagDbContext(connectionString));
 
 // AI services
 builder.Services.AddSingleton<IVectorStore>(new LanceDbLocalClient(vectorDbPath, vectorDbVectorSize));
-builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel));
+
+if (cacheEnabled)
+{
+    builder.Services.AddSingleton<IEmbedder>(sp => new CachedEmbedder(
+        new OllamaEmbedder(ollamaUrl, embedModel),
+        sp.GetRequiredService<IMemoryCache>(),
+        embedModel,
+        embedCap,
+        embedTtl));
+}
+else
+{
+    builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel));
+}
+
 builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel));
+builder.Services.AddSingleton<RetrievalService>();
+builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();
 
 // API
