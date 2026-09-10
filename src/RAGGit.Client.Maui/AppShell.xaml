@@ -4,9 +4,10 @@
        xmlns:views="clr-namespace:RAGGit.Client.Maui.Views"
        x:Class="RAGGit.Client.Maui.AppShell"
        Title="RAGGit">
+  <!-- Icons stripped for MVP (VII simplicity) — add FontImageSource later: Icon="{FontImage Glyph='&#xE8F6;' FontFamily='MaterialSymbols' Size=24}" after adding font to Resources/Fonts + App.xaml -->
   <TabBar>
-    <ShellContent Title="Library" Icon="library.png" ContentTemplate="{DataTemplate views:LibraryView}" Route="library" />
-    <ShellContent Title="Ask" Icon="chat.png" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
-    <ShellContent Title="Upload" Icon="upload.png" ContentTemplate="{DataTemplate views:UploadView}" Route="upload" />
+    <ShellContent Title="Library" ContentTemplate="{DataTemplate views:LibraryView}" Route="library" />
+    <ShellContent Title="Ask" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
+    <ShellContent Title="Upload" ContentTemplate="{DataTemplate views:UploadView}" Route="upload" />
   </TabBar>
 </Shell>
