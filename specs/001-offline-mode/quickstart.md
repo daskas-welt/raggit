@@ -42,9 +42,11 @@ Configure `RAGGit.Workstation.Api/appsettings.json`:
 {
   "Qdrant": { "Path": "./data/qdrant" },
   "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" },
-  "Onnx": { "EmbeddingModelPath": "./models/bge-micro-v2/onnx/model.onnx", "ChatModelPath": "./models/phi-3-mini/cpu-int4" }
+  "Onnx": { "EmbeddingModelPath": "./models/bge-micro-v2/onnx/model.onnx", "ChatModelPath": "./models/phi-3-mini/cpu-int4" },
+  "Cache": { "Enabled": true, "EmbedCap": 10000, "EmbedTTLHours": 24, "DocsMaxAgeSec": 30 }
 }
 ```
+Tunable without redeploy for 200 users × 50+ q/day (`Trim/Lowercase/Punctuation` normalized `CachedEmbedder` LRU 10k ≈ 30MB, 24h TTL; `GET /api/documents` `Cache-Control: max-age=30` + `ETag`). Dev override `appsettings.Development.json` `EmbedCap 1000 / TTL 1h / max-age 10s`.
 
 ## 3. Run Workstation API
 
