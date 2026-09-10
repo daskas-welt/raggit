@@ -99,3 +99,6 @@ dotnet user-secrets set "Api:AdminKey" "<admin-key>" --project src/RAGGit.Workst
 dotnet user-secrets set "Api:EmployeeKey" "<employee-key>" --project src/RAGGit.Workstation.Api
 dotnet user-secrets set "Onnx:EmbeddingModelPath" "./models/bge-micro-v2/onnx/model.onnx" --project src/RAGGit.Workstation.Api
 ```
+
+See [SECURITY.md](../../../SECURITY.md) for the single-tenant, signing, and
+data-exclusion policy.
