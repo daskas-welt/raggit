@@ -21,3 +21,4 @@
 - [x] T019 [US1] Implement `POST /api/documents` + `GET /api/documents` in `DocumentsController.cs` [DONE: 2026-09-10] [By: coder]
 - [x] T020 [US1] Implement client `LibraryView` + `UploadView` in `src/RAGGit.Client.Maui/Views/` [DONE: 2026-09-10] [By: coder]
 - [x] T021 [US1] Add validation, logging, and `DELETE` purge stub [DONE: 2026-09-10] [By: coder]
+- [x] T022 [P] [US2] Contract test `POST /api/query` 200 `{answer,citations}` and `NoRelevantContent` branch [DONE: 2026-09-10] [By: coder]

@@ -1,6 +1,5 @@
 # Active Tasks: RAGGit Offline-Mode Single-Tenant RAG Library
 
-- [ ] T022 [P] [US2] Contract test `POST /api/query` 200 `{answer,citations}` and `NoRelevantContent` branch
 - [ ] T023 [P] [US2] Integration test `WAN-disabled query`
 - [ ] T024 [P] [US2] Eval harness 50 Q/A set
 - [ ] T025 [P] [US2] Implement retrieval `src/RAGGit.Retrieval/RetrievalService.cs`
