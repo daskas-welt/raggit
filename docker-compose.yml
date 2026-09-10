@@ -1,0 +1,20 @@
+services:
+  raggit-workstation:
+    build:
+      context: .
+      dockerfile: src/RAGGit.Workstation.Api/Dockerfile
+    container_name: raggit-workstation
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5001
+      - OLLAMA__URL=http://host.docker.internal:11434
+      - VECTORDB__PATH=/app/data/lancedb
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models:ro
+    restart: unless-stopped
+    # The workstation must remain LAN-reachable; do not expose 5001 to the
+    # public internet without a reverse proxy and TLS termination.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
