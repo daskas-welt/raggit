@@ -36,4 +36,12 @@
 - [x] T034 [P] [US4] Contract test RBAC `GET 200` vs `POST/DELETE 403` [DONE: 2026-09-10] [By: coder]
 - [x] T035 [P] [US4] Integration test `Employee browse read-only` [DONE: 2026-09-10] [By: coder]
 - [x] T036 [US4] Enforce `[Authorize(Roles="Admin")]` on `POST/DELETE`; client role-aware UI [DONE: 2026-09-10] [By: coder]
+- [x] T037 [P] Add Serilog structured logging + `X-Request-Id` + error problem details [DONE: 2026-09-10] [By: coder]
+- [x] T038 [P] Harden `POST /api/documents` with magic-byte mime check + virus-scan hook stub [DONE: 2026-09-10] [By: coder]
+- [x] T039 [P] Performance: index batching, LanceDB HNSW tuning, chunk cache [DONE: 2026-09-10] [By: coder]
+- [x] T040 [P] Security: single-tenant proprietary signing docs + `data/` + `models/` gitignored [DONE: 2026-09-10] [By: coder]
+- [x] T041 [P] Add `src/RAGGit.Client.Maui` publish builds + workstation `docker-compose` [DONE: 2026-09-10] [By: coder]
+- [x] T042 [P] Extra unit tests for edge cases [DONE: 2026-09-10] [By: coder]
+- [x] T043 Run `quickstart.md` validation [DONE: 2026-09-10] [By: coder]
+- [x] T044 [P] Add CI workflow `.github/workflows/ci.yml` [DONE: 2026-09-10] [By: coder]
 
