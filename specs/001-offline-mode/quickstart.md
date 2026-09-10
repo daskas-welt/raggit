@@ -5,13 +5,14 @@
 ## Prereqs
 
 - .NET 8 SDK (`dotnet --version` ≥8.0), Git LFS for ONNX models (optional)
-- AI Workstation: 16GB RAM + 10GB free disk, LAN to desktops, WAN optional (must work WAN-off per SC-002)
-- Desktop: Windows 10+ (WPF) or Windows/macOS/Linux (Avalonia), 4GB RAM
+- AI Workstation: 16GB RAM + 10GB free disk, LAN to clients, WAN optional (must work WAN-off per SC-002)
+- Client: Windows 11 (MAUI desktop) + iOS/Android (MAUI mobile, same codebase), 4GB RAM thin, LAN/VPN to workstation
 
 ## 1. Clone & Build
 
 ```powershell
 git clone <repo> raggit; cd raggit
+dotnet workload install maui   # one-time MAUI workload prerequisite
 dotnet build RAGGit.sln
 ```
 
@@ -53,15 +54,21 @@ dotnet run --project src/RAGGit.Workstation.Api --urls http://0.0.0.0:5001
 # Health: GET http://ai-workstation.local:5001/health → 200 {qdrant: ok, llm: ok}
 ```
 
-## 4. Run Desktop (Thin Client, No Models)
+## 4. Run Client (Thin, No Models — .NET MAUI)
 
 ```powershell
-dotnet run --project src/RAGGit.Desktop -- --workstation http://ai-workstation.local:5001 --api-key <key>
-# WPF: MSIX build: dotnet publish -c Release -r win-x64 --self-contained
-# Avalonia: dotnet publish -c Release -r win-x64 --self-contained
+# Windows 11 desktop (MAUI workload installed in step 1)
+dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0 -- --workstation http://ai-workstation.local:5001 --api-key <key>
+
+# Publish per target TFM (signed per Constitution VII: MSIX for Windows, private enterprise distribution for mobile)
+dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-windows10.0.19041.0   # Windows 11 → MSIX
+dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-android                # Android → sideload / private MDM
+dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-ios                    # iOS → Ad-Hoc/enterprise (Mac build host required for signing)
+
+# Mobile devices reach the workstation over site VPN or the same LAN subnet — no cloud relay (Constitution IV)
 ```
 
-Desktop flows: **Admin**: `Library → Upload (PDF/docx/txt/md <100MB)` → status `Indexing→Ready`; **Employee**: `Query → "what is refund policy?"` → `{answer, citations[]}` streamed.
+Client flows: **Admin**: `Library → Upload (PDF/docx/txt/md <100MB)` → status `Indexing→Ready`; **Employee**: `Query → "what is refund policy?"` → `{answer, citations[]}` streamed.
 
 ## 5. Verify Offline Invariant (SC-002)
 

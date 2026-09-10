@@ -18,7 +18,7 @@
 **Purpose**: Initialize .NET 8 solution and structure per plan.md
 
 - [ ] T001 Create solution `RAGGit.sln` and projects `src/RAGGit.Core`, `src/RAGGit.Ingest`, `src/RAGGit.Retrieval`, `src/RAGGit.Workstation.Api`, `src/RAGGit.Client.Maui` per plan.md Project Structure
-- [ ] T002 [P] Initialize `src/RAGGit.Core` (.NET 8 classlib) with `Microsoft.Data.Sqlite`, `Qdrant.Client`, `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs per plan.md Primary Dependencies
+- [ ] T002 [P] Initialize `src/RAGGit.Core` as plain net8.0 classlib with `Microsoft.Data.Sqlite` package ref only, and define abstractions `IVectorStore`, `IEmbedder`, `ILlmClient` in `src/RAGGit.Core/Abstractions/` — no Qdrant.Client/OllamaSharp/LLamaSharp/Microsoft.ML.OnnxRuntime in Core (Constitution II: Client.Maui references Core only, so Core must stay free of AI/vector deps)
 - [ ] T003 [P] Initialize `src/RAGGit.Workstation.Api` (ASP.NET Core 8) with `Swashbuckle.AspNetCore`, `Serilog` and reference `RAGGit.Core/Ingest/Retrieval`
 - [ ] T004 [P] Initialize `src/RAGGit.Client.Maui` (.NET MAUI .NET 8; TFMs `net8.0-windows10.0.19041.0`, `net8.0-ios`, `net8.0-android`) with `HttpClient`, `CommunityToolkit.Mvvm` and reference `RAGGit.Core` (Core stays plain `net8.0`)
 - [ ] T005 [P] Initialize `tests/unit`, `tests/contract`, `tests/integration` (xUnit) with `FluentAssertions`, `Microsoft.AspNetCore.Mvc.Testing`
@@ -31,8 +31,8 @@
 **Purpose**: Core infrastructure that MUST be complete before ANY user story — ⚠️ CRITICAL
 
 - [ ] T007 Setup SQLite `rag.db` schema and migrations for `Documents`, `Chunks`, `Queries`, `Library(singleton)` per data-model.md in `src/RAGGit.Core/Data/DbContext.cs`
-- [ ] T008 [P] Implement Qdrant embedded wrapper `src/RAGGit.Core/Vector/QdrantLocalClient.cs` with `QdrantClient(path="./data/qdrant")` collection `library` HNSW `m=16` payload index `documentId` per research.md
-- [ ] T009 [P] Implement Ollama/ONNX abstraction `src/RAGGit.Core/Ai/Embedder.cs` + `LlmClient.cs` (Ollama `POST /api/embed` & `/api/chat` or LLamaSharp `LLamaEmbedder.GetEmbeddings` or ONNX `bge-micro-v2`) per research.md
+- [ ] T008 [P] Add `Qdrant.Client` package ref to `src/RAGGit.Ingest` and implement Qdrant embedded wrapper `src/RAGGit.Ingest/Vector/QdrantLocalClient.cs` : `IVectorStore` with `QdrantClient(path="./data/qdrant")` collection `library` HNSW `m=16` payload index `documentId` per research.md (`RAGGit.Retrieval` consumes `IVectorStore` via DI wired in `RAGGit.Workstation.Api` — no project reference to Ingest)
+- [ ] T009 [P] Add `OllamaSharp` / `LLamaSharp` / `Microsoft.ML.OnnxRuntime` package refs to `src/RAGGit.Ingest` (embedders) and `src/RAGGit.Retrieval` (LLM client); implement `src/RAGGit.Ingest/Ai/OllamaEmbedder.cs` + `OnnxEmbedder.cs` : `IEmbedder` (Ollama POST /api/embed, LLamaSharp LLamaEmbedder.GetEmbeddings, or ONNX bge-micro-v2) and `src/RAGGit.Retrieval/Ai/OllamaLlmClient.cs` : `ILlmClient` (Ollama /api/chat or Phi-3 ONNX) per research.md
 - [ ] T010 [P] Implement auth/RBAC `src/RAGGit.Workstation.Api/Auth/ApiKeyAuthHandler.cs` — `X-Api-Key` → `Admin` vs `Employee` per FR-003, `AllowAnonymous` for `/health`
 - [ ] T011 Setup API routing and middleware in `src/RAGGit.Workstation.Api/Program.cs` (routing, Serilog, error handling, CORS for LAN, `appsettings.json` `Qdrant:Path`, `Ollama:Url`) per contracts/api.yaml servers
 - [ ] T012 Create base models `src/RAGGit.Core/Models/Document.cs`, `Chunk.cs`, `Query.cs`, `Library.cs` with validation (Mime enum PDF/docx/txt/md, Size ≤100MB, Prompt not empty) per data-model.md
@@ -183,3 +183,4 @@
 - Offline invariant: `tests/integration/QueryOfflineTests.cs` MUST run with WAN disabled, LAN connected; fail if egress detected (FR-004).
 - Chunk `512/50`, topK `5`, 5k docs assumption per FR-010/011 — tunable via `appsettings.json`, not per-user.
 - Video/audio out of scope — do not add transcription pipeline tasks.
+- Dependency direction (Constitution II/III): Ingest/Retrieval → Core; Core NEVER references Ingest or Retrieval; Client.Maui → Core only (plain net8.0, interfaces, no AI/vector packages). Concrete IVectorStore/IEmbedder/ILlmClient implementations are registered via DI in RAGGit.Workstation.Api.

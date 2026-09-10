@@ -6,7 +6,7 @@
 
 ## Summary
 
-Build RAGGit as a single-tenant on-prem system: AI Workstation owns all heavy AI (chunk → embed locally → `QdrantClient(path="./data/qdrant")` → retrieve topK=5 → local LLM `llama3.2:3b-q4`/`phi-3-mini`) exposed via `ASP.NET Core` API (`POST /api/documents`, `POST /api/query`). Thin `.NET` client (`.NET MAUI` single codebase: Windows 11 + iOS + Android) calls the API over LAN — no local models on client. Satisfies constitution v1.0.0 I (single-tenant), II (workstation-owned AI), IV (offline invariant, WAN-off query), V (citation-grounded), VI (test-first), and VII (proprietary signed). Approach proven via Phase 0 research: `Qdrant local path`, `Ollama /api/embed`, `LLamaSharp GetEmbeddings`, `Semantic Kernel OnnxSimpleRAG` (bge-micro-v2 + Phi-3 ONNX).
+Build RAGGit as a single-tenant on-prem system: AI Workstation owns all heavy AI (chunk → embed locally → `QdrantClient(path="./data/qdrant")` → retrieve topK=5 → local LLM `llama3.2:3b-q4`/`phi-3-mini`) exposed via `ASP.NET Core` API (`POST /api/documents`, `POST /api/query`). Thin `.NET` client (`.NET MAUI` single codebase: Windows 11 + iOS + Android) calls the API over LAN — no local models on client. Satisfies constitution v1.1.0 I (single-tenant), II (workstation-owned AI), IV (offline invariant, WAN-off query), V (citation-grounded), VI (test-first), and VII (proprietary signed). Approach proven via Phase 0 research: `Qdrant local path`, `Ollama /api/embed`, `LLamaSharp GetEmbeddings`, `Semantic Kernel OnnxSimpleRAG` (bge-micro-v2 + Phi-3 ONNX).
 
 ## Technical Context
 
@@ -40,9 +40,7 @@ Build RAGGit as a single-tenant on-prem system: AI Workstation owns all heavy AI
 - [x] **VI. Test-First (NON-NEGOTIABLE)**: Plan mandates xUnit TDD with offline suite and 80% library coverage before implement — complies.
 - [x] **VII. Simplicity & Proprietary Stewardship**: 3 projects (`RAGGit.Core`, `RAGGit.Workstation.Api`, `RAGGit.Client.Maui`) + `tests/` within limit; versioning MAJOR.MINOR.PATCH, signed MSIX + private enterprise mobile distro — complies.
 
-*Re-check after Phase 1 (data-model + contracts) — no violations introduced.*
-
-*Re-check 2026-09-10: switched client from WPF/Avalonia desktop to .NET MAUI (Windows 11 + iOS + Android, single codebase). Constitution v1.0.0 remains satisfied: AI still workstation-owned, client remains HttpClient-only, no Linux/macOS target, Core stays plain `net8.0`, proprietary signing/private distribution preserved. Constitution v1.1.0 proposal (mobile clause) is aligned with this MAUI plan.*
+*Re-check 2026-09-10: switched client from WPF/Avalonia desktop to .NET MAUI (Windows 11 + iOS + Android, single codebase). Constitution amended to v1.1.0 (MINOR, ratified 2026-09-10: Principle III renamed .NET Library-First & Client Reuse with MAUI TFMs + WPF fallback, Principle VII MSIX + private mobile signing, Stack line, VI "configured auth provider" gate wording). Plan compliant with v1.1.0: AI still workstation-owned, client remains HttpClient-only, no Linux/macOS client target, Core stays plain net8.0, proprietary signing/private distribution preserved.*
 
 ## Project Structure
 

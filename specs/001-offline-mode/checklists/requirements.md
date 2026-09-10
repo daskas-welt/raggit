@@ -33,4 +33,4 @@
 
 - Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`.
 - FR-010/FR-011 intentionally left with [NEEDS CLARIFICATION] but assumptions provided (PDF/docx/txt/md; 5k docs) so plan can proceed; resolve via clarify or accept assumptions.
-- Constitution v1.0.0 principles I-VII align: single-tenant, workstation-owned AI, offline invariant, citation-grounded RAG all captured in FR-002/004/005 and SC-002/004.
+- Constitution v1.1.0 principles I-VII align: single-tenant, workstation-owned AI, offline invariant, citation-grounded RAG all captured in FR-002/004/005 and SC-002/004.
