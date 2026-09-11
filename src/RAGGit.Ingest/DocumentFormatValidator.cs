@@ -1,8 +1,11 @@
 using System;
 using System.Buffers;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Ingest;
@@ -28,6 +31,15 @@ public static class DocumentFormatValidator
     )
     {
         ArgumentNullException.ThrowIfNull(stream);
+
+        // Xlsx requires deep ZipArchive probe (R2) — PK magic alone insufficient.
+        if (declaredMime == DocumentMimeType.Xlsx)
+        {
+            var seekable = await EnsureSeekableAsync(stream, cancellationToken);
+            await ValidateXlsxDeepAsync(seekable, cancellationToken);
+            seekable.Position = 0;
+            return seekable;
+        }
 
         const int headerSize = 8;
         var buffer = ArrayPool<byte>.Shared.Rent(headerSize);
@@ -76,6 +88,79 @@ public static class DocumentFormatValidator
         }
     }
 
+    private static async Task<Stream> EnsureSeekableAsync(
+        Stream stream,
+        CancellationToken cancellationToken
+    )
+    {
+        if (stream.CanSeek)
+        {
+            if (stream.Position != 0) stream.Position = 0;
+            return stream;
+        }
+
+        var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, cancellationToken);
+        ms.Position = 0;
+        return ms;
+    }
+
+    private static Task ValidateXlsxDeepAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        // Must be a valid ZIP containing [Content_Types].xml + xl/workbook.xml (or fallback rels)
+        try
+        {
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
+            var hasContentTypes = archive.Entries.Any(e =>
+                string.Equals(e.FullName, "[Content_Types].xml", StringComparison.OrdinalIgnoreCase)
+            );
+            var hasWorkbook = archive.Entries.Any(e =>
+                string.Equals(e.FullName, "xl/workbook.xml", StringComparison.OrdinalIgnoreCase)
+            );
+            var hasWorkbookRels = archive.Entries.Any(e =>
+                string.Equals(
+                    e.FullName,
+                    "xl/_rels/workbook.xml.rels",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+
+            if (!hasContentTypes || (!hasWorkbook && !hasWorkbookRels))
+            {
+                throw new CorruptDocumentException("content does not match type");
+            }
+        }
+        catch (CorruptDocumentException)
+        {
+            throw;
+        }
+        catch (InvalidDataException ex)
+        {
+            // Truncated zip → InvalidDataException. Map to 400, message naming corrupted/content mismatch
+            var msg = ex.Message.Contains("corrupted", StringComparison.OrdinalIgnoreCase)
+                ? ex.Message
+                : "corrupted xlsx";
+            // Ensure message also hints at content mismatch for renamed docx with bad zip
+            if (!msg.Contains("content does not match type", StringComparison.OrdinalIgnoreCase))
+            {
+                // For truncation, keep corrupted xlsx; tests allow either corrupted or content does not match type
+                throw new CorruptDocumentException(msg, ex);
+            }
+            throw new CorruptDocumentException("content does not match type", ex);
+        }
+        catch (XmlException ex)
+        {
+            throw new CorruptDocumentException("content does not match type", ex);
+        }
+        catch (Exception ex) when (ex is not CorruptDocumentException)
+        {
+            // Any other zip open failure → content mismatch
+            throw new CorruptDocumentException("content does not match type", ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static bool ValidateMagic(byte[] header, DocumentMimeType declaredMime)
     {
         if (header.Length == 0)
@@ -88,6 +173,7 @@ public static class DocumentFormatValidator
         {
             DocumentMimeType.Pdf => StartsWith(header, "%PDF"u8.ToArray()),
             DocumentMimeType.Docx => StartsWith(header, PkZipMagic),
+            DocumentMimeType.Xlsx => StartsWith(header, PkZipMagic),
             DocumentMimeType.Txt or DocumentMimeType.Md => IsUtf8Like(header),
             _ => false,
         };

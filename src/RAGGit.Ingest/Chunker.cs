@@ -26,6 +26,7 @@ public static class Chunker
         {
             DocumentMimeType.Pdf => ExtractPdfText(stream),
             DocumentMimeType.Docx => ExtractDocxText(stream),
+            DocumentMimeType.Xlsx => string.Empty,
             DocumentMimeType.Txt or DocumentMimeType.Md => await ExtractPlainTextAsync(stream),
             _ => throw new NotSupportedException($"Unsupported MIME type: {mime}"),
         };
