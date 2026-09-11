@@ -33,7 +33,7 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         var body = await resp.Content.ReadAsStringAsync();
         body.Should().Contain("error");
         body.Should().Contain("100,000");
-        body.Should().MatchRegex(@".*Spreadsheet exceeds 100,000 cell limit.*found \d+ cells.*");
+        body.Should().MatchRegex(@".*Spreadsheet exceeds 100,000 cell limit.*found [\d,]+ cells.*");
     }
 
     [Fact]

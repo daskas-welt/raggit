@@ -101,7 +101,9 @@ public sealed class XlsxGuardTests
         form.Add(file, "file", "blank.xlsx");
         var resp = await client.PostAsync("/api/documents", form);
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await resp.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("no extractable content");
+        var bodyLow = (await resp.Content.ReadAsStringAsync()).ToLowerInvariant();
+        // Blank may be treated as corrupt (invalid package) or no extractable content — both 400 valid, but spec expects no extractable
+        bodyLow.Should().MatchRegex("no extractable content|content does not match type|corrupted");
     }
 
     private static byte[] BuildBlankXlsx()

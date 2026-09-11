@@ -172,16 +172,22 @@ public sealed class XlsxExtractorTests
     [Fact]
     public async Task Extract_PipedThrough_ChunkText_Yields_SelfDescribingChunks()
     {
-        await using var stream = BuildThreeSheet();
+        // Build larger workbook to exceed 512 tokens
+        var builder = new XlsxWorkbookBuilder();
+        var headers = new[] { "Name", "Dept", "Refund Policy", "Col4", "Col5", "Col6", "Col7", "Col8" };
+        var sheet = builder.AddSheet("Sheet1");
+        sheet.AddRow(headers.Select(h => XlsxWorkbookBuilder.CellSpec.Text(h)).ToArray());
+        for (int i = 0; i < 80; i++)
+        {
+            sheet.AddRow(Enumerable.Range(0, headers.Length).Select(c => XlsxWorkbookBuilder.CellSpec.Text($"val{i}_{c}_longer_token_to_grow_chunk_size")).ToArray());
+        }
+        sheet.EndSheet();
+        await using var stream = builder.Build();
         var text = await Chunker.ExtractTextAsync(stream, DocumentMimeType.Xlsx);
         var chunks = Chunker.ChunkText(text, Guid.NewGuid(), 512, 50);
         chunks.Should().HaveCountGreaterThan(1);
-        // Every chunk containing a data row also contains header text (header is "Name | Dept | Refund Policy")
-        var headerTokens = "Name | Dept | Refund Policy";
-        // At least one data chunk should contain header
         chunks.Should().Contain(c => c.Text.Contains("Name") && c.Text.Contains("Dept"));
-        // For this small fixture, chunk overlap + header repeat should ensure data chunks have header
-        foreach (var chunk in chunks.Where(c => c.Text.Contains("User")))
+        foreach (var chunk in chunks.Where(c => c.Text.Contains("val")))
         {
             chunk.Text.Should().Contain("Name");
         }
