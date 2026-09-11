@@ -10,11 +10,22 @@
 
 ## Architecture
 
-> Interactive diagrams — **GitHub blob view sanitizes HTML**. To view rendered (light theme), use **raw.githack** or download and open locally:
-> - **raw.githack (rendered):** [004 Architecture `?theme=light`](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/architecture.html?theme=light) · [Workflow](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/workflow.html?theme=light) · [Sequence](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/sequence.html?theme=light) · [Dataflow](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/dataflow.html?theme=light) — mirrored at [`docs/004-identity/`](docs/004-identity/architecture.html?theme=light) ([Architecture](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/architecture.html?theme=light) · [Workflow](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/workflow.html?theme=light) · [Sequence](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/sequence.html?theme=light) · [Dataflow](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/dataflow.html?theme=light))
-> - **In-repo (source):** [specs/architecture](specs/004-identity/docs/architecture.html?theme=light) · [workflow](specs/004-identity/docs/workflow.html?theme=light) · [sequence](specs/004-identity/docs/sequence.html?theme=light) · [dataflow](specs/004-identity/docs/dataflow.html?theme=light) (view → Raw → download to see interactivity)
-> - Lifecycle is conditional for 004 and deferred (account states are linear; lifecycle diagram will be added if a retry/failure branch is introduced)
-> - Legacy showcase: **[docs/raggit.html](docs/raggit.html?theme=light)** (`10d002…`) · [raw.githack](https://raw.githack.com/daskas-welt/raggit/main/docs/raggit.html?theme=light)
+> Interactive diagrams — **click image for interactive HTML (`?theme=light`)**. GitHub blob view sanitizes HTML; use **raw.githack** to render, or download.
+
+[![004-Identity Architecture — showcase light](docs/004-identity/architecture.png)](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/architecture.html?theme=light)
+*Architecture — showcase `216fad62` `c850aa23` `811kB` — Workstation API + JWT + Users + LanceDB + Ollama + MAUI + CLI — [interactive `?theme=light`](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/architecture.html?theme=light) · [spec source](specs/004-identity/docs/architecture.html?theme=light) · [docs mirror](docs/004-identity/architecture.html?theme=light)*
+
+[![004-Identity Workflow — showcase light](docs/004-identity/workflow.png)](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/workflow.html?theme=light)
+*Workflow — `94965aa9` `1aca0cba` `811kB` — Provision → Login → Use → Manage — [interactive](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/workflow.html?theme=light)*
+
+[![004-Identity Sequence — showcase light](docs/004-identity/sequence.png)](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/sequence.html?theme=light)
+*Sequence — `bfb222bc` `e5b3a0ec` `812kB` — Login → Bearer → Admin — [interactive](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/sequence.html?theme=light)*
+
+[![004-Identity Dataflow — showcase light](docs/004-identity/dataflow.png)](https://raw.githack.com/daskas-welt/raggit/main/docs/004-identity/dataflow.html?theme=light)
+*Dataflow — `0e58f73e` `45a85f70` `807kB` — Person → Token → Attribution lineage — [interactive](https://raw.githack.com/daskas-welt/raggit/main/specs/004-identity/docs/dataflow.html?theme=light)*
+
+> Lifecycle is conditional for 004 and deferred (account states are linear; lifecycle diagram will be added if a retry/failure branch is introduced)
+> Legacy showcase: **[docs/raggit.html?theme=light](docs/raggit.html?theme=light)** (`10d002…`) · [raw.githack](https://raw.githack.com/daskas-welt/raggit/main/docs/raggit.html?theme=light) · In-repo HTML at `specs/004-identity/docs/` (view → Raw → download)
 
 ```
 Company LAN (no WAN at query time) — see architecture diagram above for interactive topology
