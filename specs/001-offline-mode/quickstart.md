@@ -36,32 +36,37 @@ git clone https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-onnx
 # GGUF alternative: download e.g. llama3.2-3b.Q4_K_M.gguf to ./models/
 ```
 
-Configure `RAGGit.Workstation.Api/appsettings.json`:
+Configure `RAGGit.Workstation.Api/appsettings.json` (v1.1.0 — `VectorDb:VectorSize` 384|768 validated at startup per FR-001; legacy `Qdrant:Path` deprecated, warns if disagreeing):
 
 ```json
 {
   "VectorDb": { "Path": "./data/lancedb", "Provider": "LanceDB", "VectorSize": 384 },
   "Qdrant": { "Path": "./data/qdrant" },
-  "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" },
+  "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "all-minilm", "ChatModel": "phi3:mini", "TimeoutMs": 5000 },
   "Onnx": { "EmbeddingModelPath": "./models/bge-micro-v2/onnx/model.onnx", "ChatModelPath": "./models/phi-3-mini/cpu-int4" },
   "Cache": { "Enabled": true, "EmbedCap": 10000, "EmbedTTLHours": 24, "DocsMaxAgeSec": 30 }
 }
 ```
-Tunable without redeploy for 200 users × 50+ q/day (`Trim/Lowercase/Punctuation` normalized `CachedEmbedder` LRU 10k ≈ 30MB, 24h TTL; `GET /api/documents` `Cache-Control: max-age=30` + `ETag`). Dev override `appsettings.Development.json` `EmbedCap 1000 / TTL 1h / max-age 10s`.
+Dev defaults `all-minilm`/`phi3:mini`/384 (prod `nomic-embed-text`/`llama3.2:3b`/768 commented in `appsettings.Development.json`). Corrupted `pdf`/`docx` returns `400 {error:"corrupted pdf"}` per FR-006 (002 hardening, no partial index). Tunable without redeploy for 200 users × 50+ q/day (`Trim/Lowercase/Punctuation` normalized `CachedEmbedder` LRU 10k ≈ 30MB, 24h TTL; `GET /api/documents` `Cache-Control: max-age=30` + `ETag`). Dev override `appsettings.Development.json` `EmbedCap 1000 / TTL 1h / max-age 10s`.
 
 ## 3. Run Workstation API
 
 ```powershell
 dotnet run --project src/RAGGit.Workstation.Api --urls http://0.0.0.0:5001
 # Swagger: http://ai-workstation.local:5001/swagger
-# Health: GET http://ai-workstation.local:5001/health → 200 {vectorDb: ok, llm: ok} (qdrant key retained for backward compatibility)
+# Health: GET http://ai-workstation.local:5001/health → 200 {vectorDb: ok, llm: ok, version:"1.1.0"} (qdrant key retained for backward compatibility)
+# Auth: GET /api/auth/me -H "X-Api-Key: <key>" → 200 {identityType:"ApiKey", role:"Admin"|"Employee"} (1.1.0, Q2 extensible envelope)
 ```
 
-## 4. Run Client (Thin, No Models — .NET MAUI)
+## 4. Run Client (Thin, No Models — .NET MAUI, v1.1.0)
 
 ```powershell
 # Windows 11 desktop (MAUI workload installed in step 1)
-dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0 -- --workstation http://ai-workstation.local:5001 --api-key <key>
+dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0
+# Fallback net8.0 CI (no workload, views excluded, logic testable):
+dotnet run --project src/RAGGit.Client.Maui -f net8.0
+# Client reads src/RAGGit.Client.Maui/appsettings.json (Workstation:Url, Workstation:ApiKey > Api:AdminKey/Api:EmployeeKey)
+# and discovers role via GET /api/auth/me at launch (FR-003/FR-004); legacy --workstation flags are fictional
 
 # Publish per target TFM (signed per Constitution VII: MSIX for Windows, private enterprise distribution for mobile)
 dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-windows10.0.19041.0   # Windows 11 → MSIX
@@ -84,16 +89,21 @@ curl -X POST http://ai-workstation.local:5001/api/query -H "Content-Type: applic
 # → 200 {answer, citations} with no WAN — proves FR-004
 ```
 
-## 6. Tests
+## 6. Tests (v1.1.0 — opt-in real gate)
 
 ```powershell
-# Run all automated quickstart validation steps at once:
+# Fast CI (fakes only, no Ollama — must stay green per SC-003):
+dotnet test
+dotnet test --filter "RequiresOllama!=true"
+# Opt-in real loop (needs ollama serve + all-minilm/phi3:mini + fresh data/lancedb):
+dotnet test --filter "RequiresOllama"
+# Performance gate SC-001 (<300s, fake <4s):
+pwsh ./scripts/measureIngestPerformance.ps1
+# Corrupted pdf (FR-006 SC-005):
+dotnet test --filter "Corrupted"
+# Full validation at once:
 ./scripts/validate-quickstart.ps1
-
-# Or run each layer individually:
-dotnet test --filter "FullyQualifiedName~Tests.Unit"
-dotnet test --filter "FullyQualifiedName~Tests.Contract"
-dotnet test --filter "FullyQualifiedName~Tests.Integration" # includes WAN-disabled suite
+dotnet csharpier check .
 ```
 
 ## Env Secrets (no hardcoding)

@@ -1,118 +1,141 @@
 # RAGGit — Offline-Mode Single-Tenant RAG Library
 
-> **Proprietary, on-prem, single-tenant RAG for companies.** An AI Workstation hosts the local vector store (`LanceDB` file) and local LLM (`Ollama`/`LLamaSharp`/`ONNX`) and serves a thin `.NET` desktop app over LAN — no cloud egress at query time.
+> **Proprietary, on-prem, single-tenant RAG for companies.** An AI Workstation hosts the local vector store (`LanceDB` file) and local LLM (`Ollama`/`LLamaSharp`/`ONNX`) and serves a thin `.NET MAUI` client over LAN — no cloud egress at query time.
 
-**Constitution**: `v1.0.0` ratified `2026-08-31` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
+**Constitution**: `v1.1.0` ratified `2026-09-10` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
-**Feature**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | [plan](./specs/001-offline-mode/plan.md) | [research](./specs/001-offline-mode/research.md) | [tasks](./specs/001-offline-mode/tasks.md)
+**Version**: `1.1.0` (API `contracts/api.yaml` MINOR — adds `GET /api/auth/me` + `400 corrupted pdf` per FR-006). `/health` reports `version:1.1.0`.
+
+**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md)
 
 ## Architecture
 
 ```
 Company LAN (no WAN at query time)
-AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET thin clients)
-├─ ASP.NET Core API (src/RAGGit.Workstation.Api) ──┐
-├─ LanceDB file data/lancedb (lancedb.connect(path))    │
-├─ Ollama localhost:11434 (nomic-embed-text + llama3.2:3b)  │
-└─ SQLite rag.db ──────────────────────────────────┘
-Desktop: WPF (Win-only) or Avalonia (cross-platform) — HttpClient only, zero local models
-API: POST /api/documents (Admin), GET /api/documents, POST /api/query {answer,citations}, DELETE /api/documents/{id}
+AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET MAUI thin clients)
+├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.1.0 ──┐
+├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768) │
+├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod) │
+└─ SQLite rag.db ──────────────────────────────────────────┘
+MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — HttpClient only, zero local models
+API: POST /api/documents (Admin, 400 corrupted pdf/docx per FR-006, no partial index), GET /api/documents, POST /api/query {answer,citations}, DELETE /api/documents/{id}, GET /api/auth/me {identityType, role} (1.1.0), GET /health {vectorDb, llm, version}
+Legacy Qdrant:Path warned if present and disagreeing with VectorDb:Path (single source of truth)
 ```
 
 **Dev on one machine**: workstation = `localhost:5001` + `localhost:11434`, desktop → `localhost:5001` (same machine, still LAN-only). See [Quickstart](#quickstart-single-machine-dev).
 
 ## Tech Stack
 
-- **Language**: C# .NET 8 (`RAGGit.Core`/`Ingest`/`Retrieval`/`Workstation.Api`/`Desktop`)
-- **Vector**: `LanceDB` .NET SDK embedded `connect(path)` (file, no server) — approved alt `Sqlite-vec`; `Qdrant.Client` rejected because its .NET SDK lacks embedded `path=` mode
-- **AI**: `OllamaSharp` (`POST /api/embed` + `/api/chat`) or `LLamaSharp` (`LLamaEmbedder.GetEmbeddings` GGUF) + `ONNX Runtime` (`bge-micro-v2` 80MB + `Phi-3-mini` int4) via `Semantic Kernel` `OnnxSimpleRAG`
-- **Desktop**: WPF (.NET 8) for Windows-only, Avalonia UI 11 for cross-platform — same ViewModels
-- **Testing**: xUnit + FluentAssertions, WAN-disabled integration suite, 50 Q/A eval harness
+- **Language**: C# .NET 8 (`RAGGit.Core`/`Ingest`/`Retrieval`/`Workstation.Api`/`Client.Maui`)
+- **Vector**: `LanceDB` .NET SDK embedded `connect(VectorDb:Path)` (file, no server; `VectorDb:VectorSize` 384|768 validated at startup, dimension guard fails fast with `delete data/lancedb` recovery). Legacy `Qdrant:Path` deprecated — startup Warning if disagreeing.
+- **AI**: `OllamaSharp` (`POST /api/embed` + `/api/chat` + `TimeoutMs 5000` offline fail-fast → 503 `model unavailable offline`) or `LLamaSharp` GGUF + `ONNX Runtime` (`bge-micro-v2` + `Phi-3-mini`) behind non-default `Ingest:Embedder` flag (FR-005)
+- **Client**: `.NET MAUI` `net8.0-windows10.0.19041.0` / `net8.0-ios` / `net8.0-android` + `net8.0` fallback for CI (no workload). No hard-coded URLs/keys — `Workstation:Url` + `Workstation:ApiKey` via `appsettings.json` + `GET /api/auth/me` role gating.
+- **Testing**: xUnit + FluentAssertions, WAN-disabled integration suite, opt-in real suite `dotnet test --filter RequiresOllama` (skips gracefully when `Ollama:Url` absent per SC-003), 50 Q/A eval harness, `measureIngestPerformance.ps1` SC-001 gate
 
 ## Project Structure
 
 ```
-RAGGit.sln
+RAGGit.sln (v1.1.0)
 ├── src/
 │   ├── RAGGit.Core/              # Models Document/Chunk/Query, abstractions IVectorStore/IEmbedder/ILlmClient
-│   ├── RAGGit.Ingest/            # Chunker 512/50 → embed → upsert
-│   ├── RAGGit.Retrieval/         # embed query → search topK=5 → prompt → local LLM
-│   ├── RAGGit.Workstation.Api/   # ASP.NET Core: /api/documents, /api/query, /health
-│   └── RAGGit.Desktop/           # WPF/Avalonia thin client
+│   ├── RAGGit.Ingest/            # Chunker 512/50 → embed (Ollama) → LanceDB upsert (CorruptDocumentException → 400)
+│   ├── RAGGit.Retrieval/         # embed query → LanceDB search topK=5 → prompt → local LLM (timeout → 503)
+│   ├── RAGGit.Workstation.Api/   # ASP.NET Core: /api/documents, /api/query, /api/auth/me, /health (v1.1.0)
+│   └── RAGGit.Client.Maui/       # .NET MAUI net8.0-windows10.0.19041.0 / ios / android + net8.0 fallback — role-gated UI
 ├── tests/
-│   ├── unit/ | contract/ | integration/  # including WAN-disabled offline suite
-├── specs/001-offline-mode/       # spec.md, plan.md, research.md, data-model.md, quickstart.md, contracts/api.yaml, tasks.md
-├── data/                         # .gitignored: data/lancedb, rag.db
+│   ├── unit/ | contract/ | integration/  # WAN-disabled offline suite + opt-in RequiresOllama + SC-001 perf gate + SC-005 corruption
+│   ├── fixtures/                 # sample-50pages.pdf (50 pages, refund policy) + bad.pdf / bad.docx (FR-006)
+├── specs/001-offline-mode/       # spec.md, plan.md, quickstart.md (synced to 1.1.0), contracts/api.yaml 1.1.0
+├── specs/002-real-bringup/       # spec.md, plan.md, research.md, data-model.md, quickstart.md, verification.md, contracts/api.yaml
+├── scripts/                      # validate-quickstart.ps1, measureIngestPerformance.ps1
+├── data/                         # .gitignored: data/lancedb (VectorDb:Path), rag.db; legacy data/qdrant warned
 └── models/                       # .gitignored: *.gguf, *.onnx
 ```
 
-## Quickstart — Single-Machine Dev
+## Quickstart — Single-Machine Dev (v1.1.0)
 
 No workstation needed. Everything runs on `localhost`.
 
 ### Prereqs
 
-- .NET 8 SDK (`dotnet --version` ≥8.0), Git LFS (for ONNX)
-- 16GB RAM recommended (8GB works with `all-minilm` + `phi-3-mini`), 10GB disk
+- .NET 8 SDK (`dotnet --version` ≥8.0), Git LFS for ONNX (optional)
+- 16GB RAM recommended (8GB works with `all-minilm` + `phi-3-mini` 384d), 10GB disk
 
 ### 1. Build
 
 ```powershell
 git clone https://github.com/daskas-welt/raggit.git; cd raggit
-dotnet build RAGGit.sln  # after T001 scaffolding
+dotnet workload install maui   # one-time for MAUI TFMs (optional — net8.0 fallback builds without it)
+dotnet build RAGGit.sln
+dotnet csharpier check .   # formatted per a9c7cb4 (CI enforces)
 ```
 
 ### 2. AI Models (once, then WAN can be off)
 
 ```powershell
-# Ollama (one binary for embed+chat)
 ollama serve
-ollama pull nomic-embed-text   # or all-minilm 384d
-ollama pull llama3.2:3b        # ~2GB Q4
-
-# OR pure .NET (no daemon)
-git lfs install
-git clone https://huggingface.co/TaylorAI/bge-micro-v2 ./models/bge-micro-v2
+# Dev laptop baseline (RAM-friendly, 384d):
+ollama pull all-minilm
+ollama pull phi3:mini
+# Prod workstation baseline (separate box, 768d):
+# ollama pull nomic-embed-text
+# ollama pull llama3.2:3b
 ```
 
-`src/RAGGit.Workstation.Api/appsettings.Development.json`:
+`src/RAGGit.Workstation.Api/appsettings.json` (dev defaults — `VectorSize` must match `EmbedModel` per FR-001):
 ```json
-{ "VectorDb": { "Path": "./data/lancedb", "Provider": "LanceDB", "VectorSize": 384 }, "Qdrant": { "Path": "./data/qdrant" }, "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "nomic-embed-text", "ChatModel": "llama3.2:3b" } }
+{
+  "VectorDb": { "Path": "./data/lancedb", "Provider": "LanceDB", "VectorSize": 384 },
+  "Qdrant": { "Path": "./data/qdrant" },
+  "Ollama": { "Url": "http://localhost:11434", "EmbedModel": "all-minilm", "ChatModel": "phi3:mini", "TimeoutMs": 5000 }
+}
 ```
+Prod block in `appsettings.Development.json` comments `nomic-embed-text`/`768`/`llama3.2:3b`. Legacy `Qdrant:Path` is deprecated — startup Warns if disagreeing with `VectorDb:Path`.
 ```powershell
-dotnet user-secrets set "Api:Key" "dev-key-123" --project src/RAGGit.Workstation.Api
+dotnet user-secrets set "Api:AdminKey" "dev-admin-key" --project src/RAGGit.Workstation.Api
+dotnet user-secrets set "Api:EmployeeKey" "dev-employee-key" --project src/RAGGit.Workstation.Api
 ```
 
 ### 3. Run (2 terminals)
 
 ```powershell
 # Terminal A — workstation (your "AI workstation")
-dotnet watch --project src/RAGGit.Workstation.Api --urls http://localhost:5001
-# Swagger http://localhost:5001/swagger  Health http://localhost:5001/health
+Remove-Item -Recurse -Force ./data/lancedb -ErrorAction SilentlyContinue  # fresh DB after dimension swap
+dotnet run --project src/RAGGit.Workstation.Api --urls http://localhost:5001
+# Swagger http://localhost:5001/swagger  Health http://localhost:5001/health → {vectorDb:ok, llm:ok, version:"1.1.0"}
+# Auth: curl http://localhost:5001/api/auth/me -H "X-Api-Key: dev-admin-key" → {identityType:"ApiKey", role:"Admin"}
 
-# Terminal B — desktop
-dotnet run --project src/RAGGit.Desktop -- --workstation http://localhost:5001 --api-key dev-key-123
+# Terminal B — MAUI client (Windows 11 desktop primary; iOS/Android TFMs buildable but not acceptance per Q1)
+dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0
+# or fallback net8.0 (no workload, views excluded, logic testable):
+dotnet run --project src/RAGGit.Client.Maui -f net8.0
 ```
 
-### 4. Verify Offline Invariant
+Client reads `src/RAGGit.Client.Maui/appsettings.json` (`Workstation:Url`, `Workstation:ApiKey` > `Api:AdminKey`/`Api:EmployeeKey`) and discovers role via `GET /api/auth/me` at launch (FR-003/FR-004). No hard-coded URLs/keys per `ClientConfigTests`.
+
+### 4. Verify Offline Invariant + Corruption Hardening
 
 ```powershell
-curl -X POST http://localhost:5001/api/documents -H "X-Api-Key: dev-key-123" -F "file=@sample.pdf"
-curl http://localhost:5001/api/documents -H "X-Api-Key: dev-key-123"
+curl -X POST http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key" -F "file=@sample.pdf"
+curl http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key"  # → [{status:Ready}] <5 min SC-001
+# Corrupted pdf (FR-006 SC-005):
+curl -X POST http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key" -F "file=@bad.pdf"
+# → 400 {error:"corrupted pdf"}  # no partial index; GET /api/documents does not list it
 # Disable WiFi (keep localhost), then:
-curl -X POST http://localhost:5001/api/query -H "X-Api-Key: dev-key-123" -H "Content-Type: application/json" -d '{"query":"refund policy"}'
-# → {answer, citations:[{documentId, chunkId, text}]}
+curl -X POST http://localhost:5001/api/query -H "X-Api-Key: dev-employee-key" -H "Content-Type: application/json" -d '{"query":"refund policy"}'
+# → {answer, citations:[{documentId, chunkId, text}]} or no relevant content found
+# With Ollama stopped → 503 {error:"model unavailable offline"} within TimeoutMs 5000, never hang (FR-007)
 ```
 
 ### 5. Tests
 
 ```powershell
-dotnet test --filter Category=unit
-dotnet test --filter Category=contract
-dotnet test --filter Category=integration  # WAN-disabled suite
+dotnet test                    # fakes only, no Ollama — CI must stay green (SC-003)
+dotnet test --filter "RequiresOllama"   # opt-in real loop (needs ollama serve + all-minilm/phi3:mini + fresh data/lancedb)
+pwsh ./scripts/measureIngestPerformance.ps1  # SC-001 perf gate: 50-page PDF <300s (fake <4s)
+./scripts/validate-quickstart.ps1       # build + unit + contract + integration
+dotnet csharpier check .        # formatting gate (CI)
 ```
-
-See [specs/001-offline-mode/quickstart.md](specs/001-offline-mode/quickstart.md) for LAN deploy to real workstation.
 
 ## Specs — 001-offline-mode
 
