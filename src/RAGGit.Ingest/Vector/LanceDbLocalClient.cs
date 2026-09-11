@@ -175,6 +175,15 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     }
 
     /// <summary>
+    /// Validates that the configured vector size matches the persisted collection dimension.
+    /// Stub for T004 red test — real guard lands in T008.
+    /// </summary>
+    public Task ValidateDimensionAsync(int configuredVectorSize, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
     /// Returns the storage path used by this client.
     /// </summary>
     public string StoragePath => _storagePath;
