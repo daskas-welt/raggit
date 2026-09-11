@@ -6,20 +6,29 @@
 
 **Version**: `1.2.0` (API `contracts/api.yaml` MINOR — adds `xlsx` `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` + `413 100k cell cap` + `400 deep xlsx validation` per FR-001/005/006; `1.1.0` added `GET /api/auth/me` + `400 corrupted pdf`). `/health` reports `version:1.2.0`.
 
-**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md)
+**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md) | `004-identity` — [spec](./specs/004-identity/spec.md) | [arch](./specs/004-identity/docs/architecture.html?theme=light) | [workflow](./specs/004-identity/docs/workflow.html?theme=light) | [sequence](./specs/004-identity/docs/sequence.html?theme=light) | [dataflow](./specs/004-identity/docs/dataflow.html?theme=light)
 
 ## Architecture
 
+> Interactive diagrams — open with `?theme=light` for light evidence (Archify showcase, `visual-check` light at every viewport):
+> - **[004-Identity Architecture — showcase](specs/004-identity/docs/architecture.html?theme=light)** — `216fad62…` `c850aa23…` `811kB` — Workstation API + JWT + Users + LanceDB + Ollama + MAUI + CLI
+> - **[004-Identity Workflow](specs/004-identity/docs/workflow.html?theme=light)** — `94965aa9…` `1aca0cba…` `811kB` — Provision → Login → Use → Manage
+> - **[004-Identity Sequence](specs/004-identity/docs/sequence.html?theme=light)** — `bfb222bc…` `e5b3a0ec…` `812kB` — Login → Bearer → Admin
+> - **[004-Identity Dataflow](specs/004-identity/docs/dataflow.html?theme=light)** — `0e58f73e…` `45a85f70…` `807kB` — Person → Token → Attribution lineage
+> - Lifecycle is conditional for 004 and deferred (account states are linear; lifecycle diagram will be added if a retry/failure branch is introduced)
+> - Legacy showcase: **[docs/raggit.html?theme=light](docs/raggit.html?theme=light)** (`10d002…`)
+
 ```
-Company LAN (no WAN at query time)
+Company LAN (no WAN at query time) — see architecture diagram above for interactive topology
 AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET MAUI thin clients)
-├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.2.0 ──┐
-├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768) │
-├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod) │
-└─ SQLite rag.db ──────────────────────────────────────────┘
-MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — HttpClient only, zero local models
-API: POST /api/documents (Admin, 400 corrupted pdf/docx + 400 xlsx deep/empty + 413 xlsx 100k cap per FR-005/006, no partial index), GET /api/documents, POST /api/query {answer,citations}, DELETE /api/documents/{id}, GET /api/auth/me {identityType, role} (1.1.0), GET /health {vectorDb, llm, version:1.2.0}
-Legacy Qdrant:Path warned if present and disagreeing with VectorDb:Path (single source of truth)
+├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.3.0 (004 adds /auth/login + /users) ──┐
+├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768)                 │
+├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod)                │
+├─ SQLite rag.db — Users (PBKDF2, role, lockout 5/15m, 8h JWT, HTTPS) + Documents/Queries ──┘
+MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — SecureStorage token cache + Bearer handler + Admin UsersView (SfDataGrid) + LoginView
+Operator CLI: raggit user add — OS trust anchor, no first-run wizard
+API 004: POST /api/auth/login (HTTPS), GET /api/auth/me {identityType:"Local", role, displayName} (1.3.0), /api/users CRUD (Admin), 401/403/429, no partial index, offline invariant
+Legacy Qdrant:Path warned if disagreeing with VectorDb:Path
 ```
 
 **Dev on one machine**: workstation = `localhost:5001` + `localhost:11434`, desktop → `localhost:5001` (same machine, still LAN-only). See [Quickstart](#quickstart-single-machine-dev).

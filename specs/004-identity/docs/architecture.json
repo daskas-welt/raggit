@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "RAGGit 004-Identity — Per-Person Identity & Accounts",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "maui-client",
+      "type": "frontend",
+      "label": ".NET MAUI Client",
+      "sublabel": "thin + Bearer + SecureStorage",
+      "pos": [40, 80],
+      "size": [150, 72],
+      "tag": "Admin/UsersView"
+    },
+    {
+      "id": "operator-cli",
+      "type": "frontend",
+      "label": "Operator CLI",
+      "sublabel": "raggit user add",
+      "pos": [40, 320],
+      "size": [150, 60],
+      "tag": "OS trust anchor"
+    },
+    {
+      "id": "workstation-api",
+      "type": "backend",
+      "label": "Workstation API",
+      "sublabel": "ASP.NET Core :5001",
+      "pos": [320, 190],
+      "size": [170, 72],
+      "tag": "/auth /users /me"
+    },
+    {
+      "id": "jwt-auth",
+      "type": "security",
+      "label": "JWT Bearer + PBKDF2",
+      "sublabel": "8h token, lockout 5/15m",
+      "pos": [320, 80],
+      "size": [170, 70],
+      "tag": "HTTPS only"
+    },
+    {
+      "id": "users-db",
+      "type": "database",
+      "label": "SQLite rag.db",
+      "sublabel": "Users + Docs + Queries",
+      "pos": [320, 320],
+      "size": [170, 70],
+      "tag": "single-tenant"
+    },
+    {
+      "id": "lancedb",
+      "type": "database",
+      "label": "LanceDB file",
+      "sublabel": "data/lancedb",
+      "pos": [600, 320],
+      "size": [150, 60],
+      "tag": "Vector 384|768"
+    },
+    {
+      "id": "ollama",
+      "type": "external",
+      "label": "Ollama",
+      "sublabel": "localhost:11434",
+      "pos": [600, 190],
+      "size": [150, 60],
+      "tag": "embed + chat"
+    },
+    {
+      "id": "eval-tests",
+      "type": "backend",
+      "label": "Tests + CI",
+      "sublabel": "WAN-disabled suite",
+      "pos": [600, 80],
+      "size": [150, 60],
+      "tag": "147+ tests"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Company LAN — no WAN at query time (single-tenant, offline invariant)",
+      "wraps": ["maui-client", "operator-cli", "workstation-api", "jwt-auth", "users-db", "lancedb", "ollama"]
+    },
+    {
+      "kind": "security-group",
+      "label": "sg-workstation :5001 HTTPS, :11434 loopback",
+      "wraps": ["workstation-api", "jwt-auth", "users-db", "lancedb"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "cli-to-users",
+      "from": "operator-cli",
+      "to": "users-db",
+      "label": "seed users"
+    },
+    {
+      "id": "client-login",
+      "from": "maui-client",
+      "to": "workstation-api",
+      "label": "HTTPS login/me Bearer"
+    },
+    {
+      "id": "api-jwt",
+      "from": "workstation-api",
+      "to": "jwt-auth",
+      "label": "validate"
+    },
+    {
+      "id": "api-users",
+      "from": "workstation-api",
+      "to": "users-db",
+      "label": "Users CRUD + attribution",
+      "labelAt": [405, 276]
+    },
+    {
+      "id": "api-lancedb",
+      "from": "workstation-api",
+      "to": "lancedb",
+      "label": "vector upsert/search"
+    },
+    {
+      "id": "api-ollama",
+      "from": "workstation-api",
+      "to": "ollama",
+      "label": "embed + chat",
+      "labelAt": [503, 276]
+    },
+    {
+      "id": "workstation-tests",
+      "from": "eval-tests",
+      "to": "workstation-api",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Identity (004)",
+      "items": [
+        "Local per-person accounts via Operator CLI — no first-run wizard",
+        "Admin-managed Users table (API + minimal Admin screen)",
+        "JWT bearer 8h, PBKDF2 hash, lockout 5/15m, HTTPS only"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Attribution",
+      "items": [
+        "Documents.CreatedBy + Queries.UserId = stable person id",
+        "GET /auth/me {identityType:\"Local\", role, displayName} — 1.2.0→1.3.0",
+        "Deactivated → next request refused; lockout re-prompts login"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Offline & Single-Tenant",
+      "items": [
+        "LAN-only, no cloud IdP; WAN-disabled CI; Constitution VI MINOR",
+        "One Library singleton, no company_id; API keys kept for bootstrap",
+        "Light theme classic; open ?theme=light"
+      ]
+    }
+  ]
+}
