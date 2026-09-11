@@ -74,6 +74,17 @@ public sealed class IngestService
             return (existing, false);
         }
 
+        // For xlsx, validate extraction + cap + empty BEFORE creating Document row so rejections never persist a row (per data-model.md)
+        if (mime == DocumentMimeType.Xlsx)
+        {
+            if (content.CanSeek && content.Position != 0) content.Position = 0;
+            var preview = await Chunker.ExtractTextAsync(content, mime);
+            if (string.IsNullOrWhiteSpace(preview))
+                throw new NoExtractableContentException("no extractable content");
+            // Also cap already thrown as SpreadsheetCellCapExceededException during preview
+            if (content.CanSeek) content.Position = 0;
+        }
+
         var document = new Document
         {
             Id = Guid.NewGuid(),
@@ -100,6 +111,8 @@ public sealed class IngestService
             }
 
             var chunks = await GetOrCreateChunksAsync(content, mime, document, cancellationToken);
+            if (mime == DocumentMimeType.Xlsx && chunks.Count == 0)
+                throw new NoExtractableContentException("no extractable content");
             _logger.LogInformation(
                 "Document {DocumentId} produced {ChunkCount} chunks",
                 document.Id,
@@ -155,6 +168,28 @@ public sealed class IngestService
             }
             catch { }
 
+            throw;
+        }
+        catch (SpreadsheetCellCapExceededException)
+        {
+            _logger.LogWarning(
+                "Spreadsheet cap exceeded for {Filename} — rolling back document {DocumentId}",
+                filename,
+                document.Id
+            );
+            await DeleteDocumentRowAsync(document.Id, cancellationToken);
+            try { await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken); } catch { }
+            throw;
+        }
+        catch (NoExtractableContentException)
+        {
+            _logger.LogWarning(
+                "No extractable content for {Filename} — rolling back document {DocumentId}",
+                filename,
+                document.Id
+            );
+            await DeleteDocumentRowAsync(document.Id, cancellationToken);
+            try { await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken); } catch { }
             throw;
         }
         catch (Exception exception)

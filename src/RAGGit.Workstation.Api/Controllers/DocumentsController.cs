@@ -117,6 +117,16 @@ public sealed class DocumentsController : ControllerBase
 
             return created ? StatusCode(StatusCodes.Status201Created, document) : Ok(document);
         }
+        catch (SpreadsheetCellCapExceededException ex)
+        {
+            _logger.LogWarning(ex, "Upload rejected: cap exceeded {Filename}", file.FileName);
+            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { error = ex.Message });
+        }
+        catch (NoExtractableContentException ex)
+        {
+            _logger.LogWarning(ex, "Upload rejected: no extractable content {Filename}", file.FileName);
+            return BadRequest(new { error = ex.Message });
+        }
         catch (CorruptDocumentException ex)
         {
             _logger.LogWarning(ex, "Upload rejected: corrupted document {Filename}", file.FileName);
@@ -129,6 +139,7 @@ public sealed class DocumentsController : ControllerBase
                 ex.Message.Contains("corrupted", StringComparison.OrdinalIgnoreCase) ? ex.Message
                 : mime == DocumentMimeType.Pdf ? "corrupted pdf"
                 : mime == DocumentMimeType.Docx ? "corrupted docx"
+                : mime == DocumentMimeType.Xlsx ? "corrupted xlsx"
                 : "corrupted document";
             return BadRequest(new { error = msg });
         }
