@@ -43,4 +43,11 @@
     <None Include="AppShell.xaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <MauiAsset Include="appsettings.json" Condition="'$(TargetFramework)' != 'net8.0'" />
+    <Content Include="appsettings.json" Condition="'$(TargetFramework)' == 'net8.0'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
