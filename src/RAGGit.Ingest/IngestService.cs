@@ -140,6 +140,23 @@ public sealed class IngestService
 
             return (document, true);
         }
+        catch (CorruptDocumentException)
+        {
+            _logger.LogWarning(
+                "Corrupt document {DocumentId} ({Filename}) — rolling back",
+                document.Id,
+                filename
+            );
+            await DeleteDocumentRowAsync(document.Id, cancellationToken);
+            // Ensure no vectors remain for this document (best-effort)
+            try
+            {
+                await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken);
+            }
+            catch { }
+
+            throw;
+        }
         catch (Exception exception)
         {
             _logger.LogError(exception, "Ingest failed for document {DocumentId}", document.Id);
@@ -334,6 +351,35 @@ public sealed class IngestService
         command.Parameters.AddWithValue("@id", documentId.ToString());
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task DeleteDocumentRowAsync(Guid documentId, CancellationToken cancellationToken)
+    {
+        await using var connection = _db.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            using var deleteChunks = connection.CreateCommand();
+            deleteChunks.Transaction = (SqliteTransaction)transaction;
+            deleteChunks.CommandText = "DELETE FROM Chunks WHERE DocumentId = @id;";
+            deleteChunks.Parameters.AddWithValue("@id", documentId.ToString());
+            await deleteChunks.ExecuteNonQueryAsync(cancellationToken);
+
+            using var deleteDoc = connection.CreateCommand();
+            deleteDoc.Transaction = (SqliteTransaction)transaction;
+            deleteDoc.CommandText = "DELETE FROM Documents WHERE Id = @id;";
+            deleteDoc.Parameters.AddWithValue("@id", documentId.ToString());
+            await deleteDoc.ExecuteNonQueryAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     private async Task<IReadOnlyList<Chunk>> GetOrCreateChunksAsync(

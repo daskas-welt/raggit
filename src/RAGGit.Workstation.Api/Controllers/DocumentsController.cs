@@ -83,34 +83,55 @@ public sealed class DocumentsController : ControllerBase
             createdBy
         );
 
-        await using var stream = file.OpenReadStream();
-        var validatedStream = await DocumentFormatValidator.ValidateAndRewindAsync(
-            stream,
-            mime,
-            cancellationToken
-        );
-
-        var scanPassed = await _virusScanner.ScanAsync(
-            validatedStream,
-            file.FileName,
-            cancellationToken
-        );
-        if (!scanPassed)
+        try
         {
-            _logger.LogWarning("Upload rejected: virus scan failed for {Filename}", file.FileName);
-            return BadRequest(new { error = "File failed security scan." });
+            await using var stream = file.OpenReadStream();
+            var validatedStream = await DocumentFormatValidator.ValidateAndRewindAsync(
+                stream,
+                mime,
+                cancellationToken
+            );
+
+            var scanPassed = await _virusScanner.ScanAsync(
+                validatedStream,
+                file.FileName,
+                cancellationToken
+            );
+            if (!scanPassed)
+            {
+                _logger.LogWarning(
+                    "Upload rejected: virus scan failed for {Filename}",
+                    file.FileName
+                );
+                return BadRequest(new { error = "File failed security scan." });
+            }
+
+            var (document, created) = await _ingestService.IngestAsync(
+                validatedStream,
+                file.FileName,
+                mime,
+                file.Length,
+                createdBy,
+                cancellationToken
+            );
+
+            return created ? StatusCode(StatusCodes.Status201Created, document) : Ok(document);
         }
-
-        var (document, created) = await _ingestService.IngestAsync(
-            validatedStream,
-            file.FileName,
-            mime,
-            file.Length,
-            createdBy,
-            cancellationToken
-        );
-
-        return created ? StatusCode(StatusCodes.Status201Created, document) : Ok(document);
+        catch (CorruptDocumentException ex)
+        {
+            _logger.LogWarning(ex, "Upload rejected: corrupted document {Filename}", file.FileName);
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidDataException ex)
+        {
+            _logger.LogWarning(ex, "Upload rejected: invalid data {Filename}", file.FileName);
+            var msg =
+                ex.Message.Contains("corrupted", StringComparison.OrdinalIgnoreCase) ? ex.Message
+                : mime == DocumentMimeType.Pdf ? "corrupted pdf"
+                : mime == DocumentMimeType.Docx ? "corrupted docx"
+                : "corrupted document";
+            return BadRequest(new { error = msg });
+        }
     }
 
     /// <summary>

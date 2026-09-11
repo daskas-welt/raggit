@@ -44,9 +44,13 @@ public static class DocumentFormatValidator
 
             if (!ValidateMagic(actual, declaredMime))
             {
-                throw new InvalidDataException(
-                    $"File content does not match declared type {declaredMime}."
-                );
+                var message = declaredMime switch
+                {
+                    DocumentMimeType.Pdf => "corrupted pdf",
+                    DocumentMimeType.Docx => "corrupted docx",
+                    _ => "corrupted document",
+                };
+                throw new CorruptDocumentException(message);
             }
 
             if (stream.CanSeek)

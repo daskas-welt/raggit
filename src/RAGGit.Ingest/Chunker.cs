@@ -113,30 +113,64 @@ public static class Chunker
 
     private static string ExtractPdfText(Stream stream)
     {
-        var builder = new StringBuilder();
-        using var document = PdfDocument.Open(stream);
-        foreach (var page in document.GetPages())
+        try
         {
-            builder.AppendLine(page.Text);
-        }
+            var builder = new StringBuilder();
+            using var document = PdfDocument.Open(stream);
+            foreach (var page in document.GetPages())
+            {
+                builder.AppendLine(page.Text);
+            }
 
-        return builder.ToString();
+            var text = builder.ToString();
+            // Truncated PDFs may parse but yield no text — treat as corrupted if we produced no tokens and stream was non-empty
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                // Check if original stream had substantial bytes beyond header: if so, consider it corrupted
+                if (stream.CanSeek && stream.Length > 100)
+                {
+                    // No text extracted from a non-trivial PDF → likely corrupted
+                    throw new CorruptDocumentException("corrupted pdf");
+                }
+            }
+
+            return text;
+        }
+        catch (CorruptDocumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CorruptDocumentException("corrupted pdf", ex);
+        }
     }
 
     private static string ExtractDocxText(Stream stream)
     {
-        using var document = WordprocessingDocument.Open(stream, false);
-        var body = document.MainDocumentPart?.Document.Body;
-        if (body is null)
+        try
         {
-            return string.Empty;
+            using var document = WordprocessingDocument.Open(stream, false);
+            var body = document.MainDocumentPart?.Document.Body;
+            if (body is null)
+            {
+                return string.Empty;
+            }
+
+            var paragraphs = body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Paragraph>()
+                .Select(p => p.InnerText)
+                .Where(t => !string.IsNullOrWhiteSpace(t));
+
+            return string.Join(Environment.NewLine, paragraphs);
         }
-
-        var paragraphs = body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Paragraph>()
-            .Select(p => p.InnerText)
-            .Where(t => !string.IsNullOrWhiteSpace(t));
-
-        return string.Join(Environment.NewLine, paragraphs);
+        catch (CorruptDocumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CorruptDocumentException("corrupted docx", ex);
+        }
     }
 
     private static async Task<string> ExtractPlainTextAsync(Stream stream)

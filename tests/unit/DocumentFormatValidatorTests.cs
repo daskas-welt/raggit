@@ -40,7 +40,7 @@ public sealed class DocumentFormatValidatorTests
         var act = async () =>
             await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Pdf);
 
-        await act.Should().ThrowAsync<InvalidDataException>();
+        await act.Should().ThrowAsync<CorruptDocumentException>();
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class DocumentFormatValidatorTests
         var act = async () =>
             await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Docx);
 
-        await act.Should().ThrowAsync<InvalidDataException>();
+        await act.Should().ThrowAsync<CorruptDocumentException>();
     }
 
     [Fact]
