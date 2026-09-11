@@ -4,21 +4,21 @@
 
 **Constitution**: `v1.1.0` ratified `2026-09-10` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
-**Version**: `1.1.0` (API `contracts/api.yaml` MINOR — adds `GET /api/auth/me` + `400 corrupted pdf` per FR-006). `/health` reports `version:1.1.0`.
+**Version**: `1.2.0` (API `contracts/api.yaml` MINOR — adds `xlsx` `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` + `413 100k cell cap` + `400 deep xlsx validation` per FR-001/005/006; `1.1.0` added `GET /api/auth/me` + `400 corrupted pdf`). `/health` reports `version:1.2.0`.
 
-**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md)
+**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md)
 
 ## Architecture
 
 ```
 Company LAN (no WAN at query time)
 AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET MAUI thin clients)
-├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.1.0 ──┐
+├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.2.0 ──┐
 ├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768) │
 ├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod) │
 └─ SQLite rag.db ──────────────────────────────────────────┘
 MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — HttpClient only, zero local models
-API: POST /api/documents (Admin, 400 corrupted pdf/docx per FR-006, no partial index), GET /api/documents, POST /api/query {answer,citations}, DELETE /api/documents/{id}, GET /api/auth/me {identityType, role} (1.1.0), GET /health {vectorDb, llm, version}
+API: POST /api/documents (Admin, 400 corrupted pdf/docx + 400 xlsx deep/empty + 413 xlsx 100k cap per FR-005/006, no partial index), GET /api/documents, POST /api/query {answer,citations}, DELETE /api/documents/{id}, GET /api/auth/me {identityType, role} (1.1.0), GET /health {vectorDb, llm, version:1.2.0}
 Legacy Qdrant:Path warned if present and disagreeing with VectorDb:Path (single source of truth)
 ```
 
@@ -137,14 +137,14 @@ pwsh ./scripts/measureIngestPerformance.ps1  # SC-001 perf gate: 50-page PDF <30
 dotnet csharpier check .        # formatting gate (CI)
 ```
 
-## Specs — 001-offline-mode
+## Specs — 001-offline-mode / 002 / 003
 
-- **US-1 P1**: Admin upload → index Ready <5min for 50 pages
-- **US-2 P1**: Employee WAN-off query → cited answer <7s p95 or `no relevant content found`
+- **US-1 P1**: Admin upload → index Ready <5min for 50 pages (001) + xlsx multi-sheet Ready <30s (003 SC-001)
+- **US-2 P1**: Employee WAN-off query → cited answer <7s p95 or `no relevant content found` + xlsx hidden never returned (003 SC-002) + formula cached 42.50 (SC-003)
 - **US-3 P2**: Admin delete purges vectors
 - **US-4 P3**: Employee browse read-only (403 on write)
-- **FR-010**: PDF/docx/txt/md only v1 (video/audio out of scope)
-- **FR-011**: 5k docs / ~1M chunks, 512/50, topK=5
+- **FR-010**: pdf/docx/xlsx/txt/md — xlsx added in 1.2.0 (003) with 100k cell cap, hidden sheets skipped, header-repeat, cached formulas (video/audio still out of scope)
+- **FR-011**: 5k docs / ~1M chunks, 512/50, topK=5 (xlsx 100k cap is per-doc guard orthogonal to 100MB)
 
 ## Development Workflow
 
