@@ -1,9 +1,9 @@
 <!-- Sync Impact Report
-Version change: (none / template) → 1.0.0 (initial ratification)
-Modified principles: [PRINCIPLE_1..5 placeholders] → I. Single-Tenant On-Prem, II. Workstation-Owned AI, III. .NET Library-First & Desktop Reuse, IV. Offline Invariant (NON-NEGOTIABLE), V. Citation-Grounded RAG, VI. Test-First (NON-NEGOTIABLE), VII. Simplicity & Proprietary Stewardship
-Added sections: Technology & Deployment Constraints, Development Workflow & Quality Gates
+Version change: 1.0.0 → 1.1.0
+Modified principles: III .NET Library-First & Client Reuse (was Desktop Reuse), VII. Simplicity & Proprietary Stewardship (signing), VI. Test-First gate wording
+Added sections: none
 Removed sections: none
-Follow-up TODOs: none — all placeholders resolved. Future TODO: define concrete hardware baseline (RAM/disk) after first benchmark; confirm workstation OS (Win/Linux) per deploy.
+Follow-up TODOs: resolved MAUI clarification 2026-09-10. Future TODO: define concrete hardware baseline (RAM/disk) after first benchmark; confirm workstation OS (Win/Linux) per deploy.
 -->
 # RAGGit Constitution
 
@@ -17,9 +17,9 @@ Each deployment serves exactly one company (single-tenant). There is no multi-te
 
 The AI Workstation owns all heavy AI: Ollama (embed `nomic-embed-text`/`all-MiniLM` + chat `llama3.2:3b-q4`/`phi-3-mini`/`mistral:7b-q4`), vector store (`Qdrant` via `QdrantClient(path=)` local file or `Sqlite-vec`/`LanceDB` embedded), and the RAG API (ASP.NET Core .NET 8). Employee desktops MUST remain thin: no local model weights, no embedded vector DB, only UI + HttpClient. Model updates happen only on workstations, not on N desktops.
 
-### III. .NET Library-First & Desktop Reuse
+### III. .NET Library-First & Client Reuse
 
-Every feature MUST start as a standalone .NET library under `src/` (e.g., `RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`) that is self-contained, independently testable, and documented with a clear purpose. Libraries expose functionality via both a .NET API and a CLI where applicable (text in/out, JSON + human-readable). Desktop apps MUST reuse these libraries: `WPF` for Windows-only or `Avalonia UI` for cross-platform (Windows/macOS/Linux) sharing the same ViewModel/services. No organizational-only libraries; no copy-pasted RAG logic between workstation and desktop.
+Every feature MUST start as a .NET library under `src/` (`RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`) that is self-contained, independently testable, and documented with a clear purpose. Libraries expose functionality via both a .NET API and a CLI where applicable (text in/out, JSON + human-readable). Clients MUST reuse libraries: .NET MAUI for Windows 11 + iOS/Android (single codebase, `net8.0-windows10.0.19041.0` / `net8.0-ios` / `net8.0-android`) sharing ViewModel/services, OR WPF for Windows-only fallback. No duplicated RAG logic.
 
 ### IV. Offline Invariant (NON-NEGOTIABLE)
 
@@ -31,15 +31,15 @@ Every answer generated from the library MUST include citations (source `document
 
 ### VI. Test-First (NON-NEGOTIABLE)
 
-TDD is mandatory: tests written → reviewed → fail → then implement. Red-Green-Refactor is strictly enforced. Required gates: unit (chunking, payload filtering), contract (OpenAPI in `contracts/api.yaml`), integration (LAN-only offline query, Windows AD auth, `GET/POST /api/documents`), and eval harness. No feature merges without the offline-invariant test passing. Coverage target: ≥80% for libraries, 100% for contracts.
+TDD is mandatory: tests written → reviewed → fail → then implement. Red-Green-Refactor is strictly enforced. Required gates: unit (chunking, payload filtering), contract (OpenAPI in `contracts/api.yaml`), integration (LAN-only offline query, configured auth provider (API key or Windows AD), `GET/POST /api/documents`), and eval harness. No feature merges without the offline-invariant test passing. Coverage target: ≥80% for libraries, 100% for contracts.
 
 ### VII. Simplicity & Proprietary Stewardship
 
-Start simple, keep a single project (`src/` + `RAGGit.Desktop/` + `RAGGit.Workstation.Api/` + `tests/`) until a 4th project is justified in the plan's Complexity Tracking table. Proprietary: artifacts are signed (`MSIX` for WPF, `DMG`/notarized for Avalonia macOS) and distributed privately per company; model weights stay on customer-owned workstations, not redistributed publicly. Use `MAJOR.MINOR.PATCH` versioning; breaking API changes require a MAJOR bump and migration notes.
+Start simple, keep a single project (`src/` + `RAGGit.Client.Maui/` + `RAGGit.Workstation.Api/` + `tests/`) until a 4th project is justified in the plan's Complexity Tracking table. Proprietary: artifacts are signed (MSIX for Windows 11 desktop, private enterprise distribution for mobile: iOS enterprise/Ad-Hoc, Android sideload) and distributed privately per company; model weights stay on customer-owned workstations, not redistributed publicly. Use `MAJOR.MINOR.PATCH` versioning; breaking API changes require a MAJOR bump and migration notes.
 
 ## Technology & Deployment Constraints
 
-**Stack**: C# .NET 8 (Workstation ASP.NET Core API + Desktop WPF/Avalonia), `Qdrant.Client` with `path=` local file (or `Sqlite-vec`/`LanceDB` if Qdrant unsuitable) + `SQLite` for doc metadata, `Ollama` (`OllamaSharp` or `HttpClient` to `localhost:11434`) or `LLamaSharp` (`LLamaWeights.LoadFromFile` + `LLamaEmbedder.GetEmbeddings` for GGUF), `ONNX Runtime` with `bge-micro-v2` as alternative embedder, `Semantic Kernel` for RAG orchestration where it reduces code (OnnxSimpleRAG pattern). **Hardware baseline**: Workstation 16GB RAM + NVIDIA GPU recommended, 10GB disk for models+DB; Desktop 4GB RAM thin. **Network**: LAN/VPN only; workstations have no WAN at query time. **Storage**: `QdrantClient(path="./data/qdrant")` persists to disk on workstation; desktop is stateless.
+**Stack**: C# .NET 8 (Workstation ASP.NET Core API + Client .NET MAUI Windows 11 + iOS/Android, thin HttpClient), `Qdrant.Client` with `path=` local file (or `Sqlite-vec`/`LanceDB` if Qdrant unsuitable) + `SQLite` for doc metadata, `Ollama` (`OllamaSharp` or `HttpClient` to `localhost:11434`) or `LLamaSharp` (`LLamaWeights.LoadFromFile` + `LLamaEmbedder.GetEmbeddings` for GGUF), `ONNX Runtime` with `bge-micro-v2` as alternative embedder, `Semantic Kernel` for RAG orchestration where it reduces code (OnnxSimpleRAG pattern). **Hardware baseline**: Workstation 16GB RAM + NVIDIA GPU recommended, 10GB disk for models+DB; Desktop 4GB RAM thin. **Network**: LAN/VPN only; workstations have no WAN at query time. **Storage**: `QdrantClient(path="./data/qdrant")` persists to disk on workstation; MAUI client is stateless (cache only).
 
 ## Development Workflow & Quality Gates
 
@@ -49,4 +49,4 @@ Code review requires 1 approval and verifies constitution compliance, especially
 
 This constitution supersedes all other practices. Amendments require: (1) documentation in this file with rationale, (2) approval by project owner, (3) a migration plan for affected specs/plans/tasks, and (4) a semantic version bump: MAJOR for incompatible principle removal/redefinition, MINOR for new principle/expanded guidance, PATCH for wording/clarification. All PRs and reviews MUST verify compliance. Use `.specify/memory/constitution.md` as the runtime source of truth for `/speckit.specify`, `/speckit.plan`, and `/speckit.tasks`. Historical values are preserved when re-scaffolding via `resolve-template.ps1`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-08-31
+**Version**: 1.1.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-09-10
