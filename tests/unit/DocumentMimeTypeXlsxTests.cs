@@ -24,8 +24,10 @@ public sealed class DocumentMimeTypeXlsxTests
     [Fact]
     public void Xlsx_GetContentType_Returns_Spreadsheetml()
     {
-        DocumentMimeType.Xlsx.GetContentType()
-            .Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        DocumentMimeType
+            .Xlsx.GetContentType()
+            .Should()
+            .Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 
     [Fact]
@@ -60,9 +62,13 @@ public sealed class DocumentMimeTypeXlsxTests
     [Fact]
     public void EnumDataType_ErrorMessage_Lists_Xlsx()
     {
-        var attr = (System.ComponentModel.DataAnnotations.EnumDataTypeAttribute)typeof(Document)
-            .GetProperty(nameof(Document.Mime))!
-            .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.EnumDataTypeAttribute), false)[0];
+        var attr = (System.ComponentModel.DataAnnotations.EnumDataTypeAttribute)
+            typeof(Document)
+                .GetProperty(nameof(Document.Mime))!
+                .GetCustomAttributes(
+                    typeof(System.ComponentModel.DataAnnotations.EnumDataTypeAttribute),
+                    false
+                )[0];
         attr.ErrorMessage.Should().Contain("xlsx");
     }
 }

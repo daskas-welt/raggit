@@ -77,12 +77,14 @@ public sealed class IngestService
         // For xlsx, validate extraction + cap + empty BEFORE creating Document row so rejections never persist a row (per data-model.md)
         if (mime == DocumentMimeType.Xlsx)
         {
-            if (content.CanSeek && content.Position != 0) content.Position = 0;
+            if (content.CanSeek && content.Position != 0)
+                content.Position = 0;
             var preview = await Chunker.ExtractTextAsync(content, mime);
             if (string.IsNullOrWhiteSpace(preview))
                 throw new NoExtractableContentException("no extractable content");
             // Also cap already thrown as SpreadsheetCellCapExceededException during preview
-            if (content.CanSeek) content.Position = 0;
+            if (content.CanSeek)
+                content.Position = 0;
         }
 
         var document = new Document
@@ -178,7 +180,11 @@ public sealed class IngestService
                 document.Id
             );
             await DeleteDocumentRowAsync(document.Id, cancellationToken);
-            try { await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken); } catch { }
+            try
+            {
+                await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken);
+            }
+            catch { }
             throw;
         }
         catch (NoExtractableContentException)
@@ -189,7 +195,11 @@ public sealed class IngestService
                 document.Id
             );
             await DeleteDocumentRowAsync(document.Id, cancellationToken);
-            try { await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken); } catch { }
+            try
+            {
+                await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken);
+            }
+            catch { }
             throw;
         }
         catch (Exception exception)

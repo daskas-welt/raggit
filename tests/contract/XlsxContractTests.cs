@@ -37,7 +37,9 @@ public sealed class XlsxContractTests : IClassFixture<TestApiFactory>
         var bytes = await LoadFixtureAsync("sample-3sheet.xlsx");
         var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(new MemoryStream(bytes));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(fileContent, "file", "sample-3sheet.xlsx");
 
         var response = await _client.PostAsync("/api/documents", form);
@@ -67,7 +69,9 @@ public sealed class XlsxContractTests : IClassFixture<TestApiFactory>
         var bytes = await LoadFixtureAsync("sample-3sheet.xlsx");
         var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(new MemoryStream(bytes));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(fileContent, "file", "serialize-check.xlsx");
         var post = await _client.PostAsync("/api/documents", form);
         post.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -84,19 +88,50 @@ public sealed class XlsxContractTests : IClassFixture<TestApiFactory>
         var candidates = new[]
         {
             Path.Combine("specs", "003-ingest-breadth", "contracts", "api.yaml"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "specs", "003-ingest-breadth", "contracts", "api.yaml"),
-            Path.Combine(AppContext.BaseDirectory, "specs", "003-ingest-breadth", "contracts", "api.yaml"),
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "..",
+                "specs",
+                "003-ingest-breadth",
+                "contracts",
+                "api.yaml"
+            ),
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "specs",
+                "003-ingest-breadth",
+                "contracts",
+                "api.yaml"
+            ),
         };
         string? yaml = null;
         foreach (var p in candidates)
-            if (File.Exists(p)) { yaml = File.ReadAllText(p); break; }
+            if (File.Exists(p))
+            {
+                yaml = File.ReadAllText(p);
+                break;
+            }
         if (yaml == null)
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
             while (dir != null)
             {
-                var cand = Path.Combine(dir.FullName, "specs", "003-ingest-breadth", "contracts", "api.yaml");
-                if (File.Exists(cand)) { yaml = File.ReadAllText(cand); break; }
+                var cand = Path.Combine(
+                    dir.FullName,
+                    "specs",
+                    "003-ingest-breadth",
+                    "contracts",
+                    "api.yaml"
+                );
+                if (File.Exists(cand))
+                {
+                    yaml = File.ReadAllText(cand);
+                    break;
+                }
                 dir = dir.Parent;
             }
         }
@@ -112,15 +147,34 @@ public sealed class XlsxContractTests : IClassFixture<TestApiFactory>
             Path.Combine("fixtures", "xlsx", fileName),
             Path.Combine(AppContext.BaseDirectory, "fixtures", "xlsx", fileName),
             Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "fixtures", "xlsx", fileName),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "integration", "fixtures", "xlsx", fileName),
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "integration",
+                "fixtures",
+                "xlsx",
+                fileName
+            ),
         };
         foreach (var p in candidates)
-            if (File.Exists(p)) return await File.ReadAllBytesAsync(p);
+            if (File.Exists(p))
+                return await File.ReadAllBytesAsync(p);
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            var cand = Path.Combine(dir.FullName, "tests", "integration", "fixtures", "xlsx", fileName);
-            if (File.Exists(cand)) return await File.ReadAllBytesAsync(cand);
+            var cand = Path.Combine(
+                dir.FullName,
+                "tests",
+                "integration",
+                "fixtures",
+                "xlsx",
+                fileName
+            );
+            if (File.Exists(cand))
+                return await File.ReadAllBytesAsync(cand);
             dir = dir.Parent;
         }
         throw new FileNotFoundException($"Fixture {fileName} not found");
@@ -130,6 +184,6 @@ public sealed class XlsxContractTests : IClassFixture<TestApiFactory>
     {
         var json = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<Document>(json, _jsonOptions)
-               ?? throw new InvalidOperationException("Failed to deserialize Document");
+            ?? throw new InvalidOperationException("Failed to deserialize Document");
     }
 }

@@ -95,7 +95,8 @@ public static class DocumentFormatValidator
     {
         if (stream.CanSeek)
         {
-            if (stream.Position != 0) stream.Position = 0;
+            if (stream.Position != 0)
+                stream.Position = 0;
             return stream;
         }
 

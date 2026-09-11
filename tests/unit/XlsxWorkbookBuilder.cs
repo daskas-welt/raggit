@@ -36,7 +36,11 @@ public sealed class XlsxWorkbookBuilder
     public MemoryStream Build()
     {
         // Handle hidden-only special case: if all sheets are hidden, keep one visible then patch later
-        var needsPatchHiddenOnly = _sheets.Count > 0 && _sheets.All(s => s.State == SheetStateValues.Hidden || s.State == SheetStateValues.VeryHidden);
+        var needsPatchHiddenOnly =
+            _sheets.Count > 0
+            && _sheets.All(s =>
+                s.State == SheetStateValues.Hidden || s.State == SheetStateValues.VeryHidden
+            );
         var patchTargets = needsPatchHiddenOnly ? _sheets.Select(s => s.Name).ToHashSet() : null;
 
         // Temporarily make first sheet visible for openpyxl-like workaround
@@ -48,13 +52,22 @@ public sealed class XlsxWorkbookBuilder
         }
 
         var stream = new MemoryStream();
-        using (var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook, autoSave: true))
+        using (
+            var document = SpreadsheetDocument.Create(
+                stream,
+                SpreadsheetDocumentType.Workbook,
+                autoSave: true
+            )
+        )
         {
             var workbookPart = document.AddWorkbookPart();
             workbookPart.Workbook = new Workbook();
             if (_use1904DateSystem)
             {
-                workbookPart.Workbook.WorkbookProperties = new WorkbookProperties { Date1904 = true };
+                workbookPart.Workbook.WorkbookProperties = new WorkbookProperties
+                {
+                    Date1904 = true,
+                };
             }
 
             workbookPart.Workbook.Sheets = new Sheets();
@@ -66,7 +79,8 @@ public sealed class XlsxWorkbookBuilder
 
             int GetSharedStringIndex(string text)
             {
-                if (sharedStrings.TryGetValue(text, out var idx)) return idx;
+                if (sharedStrings.TryGetValue(text, out var idx))
+                    return idx;
                 idx = sharedStrings.Count;
                 sharedStrings[text] = idx;
                 sstPart.SharedStringTable.AppendChild(new SharedStringItem(new Text(text)));
@@ -82,10 +96,29 @@ public sealed class XlsxWorkbookBuilder
                 stylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
                 // Minimal stylesheet with date format
                 var numberingFormats = new NumberingFormats { Count = 1 };
-                numberingFormats.AppendChild(new NumberingFormat { NumberFormatId = 164, FormatCode = "yyyy-mm-dd" });
+                numberingFormats.AppendChild(
+                    new NumberingFormat { NumberFormatId = 164, FormatCode = "yyyy-mm-dd" }
+                );
                 var cellFormats = new CellFormats { Count = 2 };
-                cellFormats.AppendChild(new CellFormat { NumberFormatId = 0, FontId = 0, FillId = 0, BorderId = 0 });
-                cellFormats.AppendChild(new CellFormat { NumberFormatId = 164, FontId = 0, FillId = 0, BorderId = 0, ApplyNumberFormat = true });
+                cellFormats.AppendChild(
+                    new CellFormat
+                    {
+                        NumberFormatId = 0,
+                        FontId = 0,
+                        FillId = 0,
+                        BorderId = 0,
+                    }
+                );
+                cellFormats.AppendChild(
+                    new CellFormat
+                    {
+                        NumberFormatId = 164,
+                        FontId = 0,
+                        FillId = 0,
+                        BorderId = 0,
+                        ApplyNumberFormat = true,
+                    }
+                );
                 stylesPart.Stylesheet = new Stylesheet(
                     new Fonts(new Font()),
                     new Fills(new Fill(new PatternFill { PatternType = PatternValues.None })),
@@ -138,21 +171,28 @@ public sealed class XlsxWorkbookBuilder
                         if (cellSpec.InlineString)
                         {
                             cell.DataType = CellValues.InlineString;
-                            cell.InlineString = new InlineString(new Text(cellSpec.TextValue ?? string.Empty));
+                            cell.InlineString = new InlineString(
+                                new Text(cellSpec.TextValue ?? string.Empty)
+                            );
                         }
                         else if (cellSpec.UseSharedString)
                         {
                             var idx = GetSharedStringIndex(cellSpec.TextValue ?? string.Empty);
                             cell.DataType = CellValues.SharedString;
-                            cell.CellValue = new CellValue(idx.ToString(CultureInfo.InvariantCulture));
+                            cell.CellValue = new CellValue(
+                                idx.ToString(CultureInfo.InvariantCulture)
+                            );
                         }
                         else if (cellSpec.IsDate)
                         {
                             // Date cell: store OADate double, style index 1 (date)
                             var oa = cellSpec.DateValue!.Value.ToOADate();
                             // Adjust for 1904? OADate is always 1900-based; Excel 1904 stores offset 1462
-                            if (_use1904DateSystem) oa -= 1462;
-                            cell.CellValue = new CellValue(oa.ToString(CultureInfo.InvariantCulture));
+                            if (_use1904DateSystem)
+                                oa -= 1462;
+                            cell.CellValue = new CellValue(
+                                oa.ToString(CultureInfo.InvariantCulture)
+                            );
                             cell.StyleIndex = 1;
                         }
                         else if (cellSpec.IsFormula)
@@ -163,7 +203,9 @@ public sealed class XlsxWorkbookBuilder
                             {
                                 var idx = GetSharedStringIndex(cellSpec.TextValue);
                                 cell.DataType = CellValues.SharedString;
-                                cell.CellValue = new CellValue(idx.ToString(CultureInfo.InvariantCulture));
+                                cell.CellValue = new CellValue(
+                                    idx.ToString(CultureInfo.InvariantCulture)
+                                );
                             }
                             else
                             {
@@ -209,14 +251,22 @@ public sealed class XlsxWorkbookBuilder
         {
             // Re-open zip and set sheet state to hidden for the first sheet
             stream.Position = 0;
-            using var zip = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true);
+            using var zip = new System.IO.Compression.ZipArchive(
+                stream,
+                System.IO.Compression.ZipArchiveMode.Update,
+                leaveOpen: true
+            );
             var entry = zip.GetEntry("xl/workbook.xml");
             if (entry != null)
             {
                 using var reader = new StreamReader(entry.Open());
                 var xml = reader.ReadToEnd();
                 // Replace first sheet without state to hidden
-                xml = xml.Replace($"<sheet ", $"<sheet state=\"hidden\" ", StringComparison.Ordinal);
+                xml = xml.Replace(
+                    $"<sheet ",
+                    $"<sheet state=\"hidden\" ",
+                    StringComparison.Ordinal
+                );
                 // If savedFirstState was VeryHidden, adjust
                 if (savedFirstState == SheetStateValues.VeryHidden)
                     xml = xml.Replace("state=\"hidden\"", "state=\"veryHidden\"");
@@ -247,15 +297,38 @@ public sealed class XlsxWorkbookBuilder
     {
         private readonly XlsxWorkbookBuilder _parent;
         private readonly SheetSpec _spec;
-        internal SheetBuilder(XlsxWorkbookBuilder parent, SheetSpec spec) { _parent = parent; _spec = spec; }
-        public SheetBuilder AddRow(params CellSpec[] cells) { _spec.Rows.Add(new RowSpec { Cells = cells.ToList() }); return this; }
-        public SheetBuilder AddRow(IEnumerable<CellSpec> cells) { _spec.Rows.Add(new RowSpec { Cells = cells.ToList() }); return this; }
-        public SheetBuilder AddRows(int count, Func<int, IEnumerable<CellSpec>> factory)
+
+        internal SheetBuilder(XlsxWorkbookBuilder parent, SheetSpec spec)
         {
-            for (int i = 0; i < count; i++) AddRow(factory(i).ToArray());
+            _parent = parent;
+            _spec = spec;
+        }
+
+        public SheetBuilder AddRow(params CellSpec[] cells)
+        {
+            _spec.Rows.Add(new RowSpec { Cells = cells.ToList() });
             return this;
         }
-        public SheetBuilder WithMergedRange(string range) { _spec.MergedRanges.Add(range); return this; }
+
+        public SheetBuilder AddRow(IEnumerable<CellSpec> cells)
+        {
+            _spec.Rows.Add(new RowSpec { Cells = cells.ToList() });
+            return this;
+        }
+
+        public SheetBuilder AddRows(int count, Func<int, IEnumerable<CellSpec>> factory)
+        {
+            for (int i = 0; i < count; i++)
+                AddRow(factory(i).ToArray());
+            return this;
+        }
+
+        public SheetBuilder WithMergedRange(string range)
+        {
+            _spec.MergedRanges.Add(range);
+            return this;
+        }
+
         public XlsxWorkbookBuilder EndSheet() => _parent;
     }
 
@@ -266,7 +339,12 @@ public sealed class XlsxWorkbookBuilder
         public List<RowSpec> Rows { get; } = new();
         public List<string> MergedRanges { get; } = new();
     }
-    internal sealed class RowSpec { public List<CellSpec> Cells { get; set; } = new(); }
+
+    internal sealed class RowSpec
+    {
+        public List<CellSpec> Cells { get; set; } = new();
+    }
+
     public sealed class CellSpec
     {
         public string? TextValue { get; set; }
@@ -282,11 +360,25 @@ public sealed class XlsxWorkbookBuilder
         public bool IsBlank { get; set; }
         public bool EmitBlankCellTag { get; set; }
 
-        public static CellSpec Text(string text, bool shared = true) => new() { TextValue = text, UseSharedString = shared };
-        public static CellSpec Inline(string text) => new() { TextValue = text, InlineString = true };
+        public static CellSpec Text(string text, bool shared = true) =>
+            new() { TextValue = text, UseSharedString = shared };
+
+        public static CellSpec Inline(string text) =>
+            new() { TextValue = text, InlineString = true };
+
         public static CellSpec Number(string n) => new() { TextValue = n };
-        public static CellSpec Formula(string formula, string cached) => new() { IsFormula = true, FormulaText = formula, CachedValue = cached };
+
+        public static CellSpec Formula(string formula, string cached) =>
+            new()
+            {
+                IsFormula = true,
+                FormulaText = formula,
+                CachedValue = cached,
+            };
+
         public static CellSpec Date(DateTime dt) => new() { IsDate = true, DateValue = dt };
-        public static CellSpec Blank(bool emitTag = false) => new() { IsBlank = true, EmitBlankCellTag = emitTag };
+
+        public static CellSpec Blank(bool emitTag = false) =>
+            new() { IsBlank = true, EmitBlankCellTag = emitTag };
     }
 }

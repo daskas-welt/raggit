@@ -30,17 +30,35 @@ public sealed class XlsxExtractorTests
     {
         // Build 1 sheet with header + 3 data rows
         var builder = new XlsxWorkbookBuilder();
-        builder.AddSheet("Data")
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("H1"), XlsxWorkbookBuilder.CellSpec.Text("H2"), XlsxWorkbookBuilder.CellSpec.Text("H3"))
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("a1"), XlsxWorkbookBuilder.CellSpec.Text("b1"), XlsxWorkbookBuilder.CellSpec.Text("c1"))
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("a2"), XlsxWorkbookBuilder.CellSpec.Text("b2"), XlsxWorkbookBuilder.CellSpec.Text("c2"))
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("a3"), XlsxWorkbookBuilder.CellSpec.Text("b3"), XlsxWorkbookBuilder.CellSpec.Text("c3"))
+        builder
+            .AddSheet("Data")
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("H1"),
+                XlsxWorkbookBuilder.CellSpec.Text("H2"),
+                XlsxWorkbookBuilder.CellSpec.Text("H3")
+            )
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("a1"),
+                XlsxWorkbookBuilder.CellSpec.Text("b1"),
+                XlsxWorkbookBuilder.CellSpec.Text("c1")
+            )
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("a2"),
+                XlsxWorkbookBuilder.CellSpec.Text("b2"),
+                XlsxWorkbookBuilder.CellSpec.Text("c2")
+            )
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("a3"),
+                XlsxWorkbookBuilder.CellSpec.Text("b3"),
+                XlsxWorkbookBuilder.CellSpec.Text("c3")
+            )
             .EndSheet();
 
         await using var stream = builder.Build();
         var text = await Chunker.ExtractTextAsync(stream, DocumentMimeType.Xlsx);
         var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)
-            .Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .ToList();
 
         var headerLine = "H1 | H2 | H3";
         // Expect: [Sheet], header, header+row1, header+row2, header+row3? Per spec: header line then header repeated before each data line
@@ -63,9 +81,15 @@ public sealed class XlsxExtractorTests
         // Verify adjacency: header before each data row
         for (int i = 1; i < lines.Count; i++)
         {
-            if (lines[i].Contains("a1 | b1 | c1") || lines[i].Contains("a2 | b2 | c2") || lines[i].Contains("a3 | b3 | c3"))
+            if (
+                lines[i].Contains("a1 | b1 | c1")
+                || lines[i].Contains("a2 | b2 | c2")
+                || lines[i].Contains("a3 | b3 | c3")
+            )
             {
-                lines[i - 1].Should().Be(headerLine, $"data row {lines[i]} should be preceded by header");
+                lines[i - 1]
+                    .Should()
+                    .Be(headerLine, $"data row {lines[i]} should be preceded by header");
             }
         }
     }
@@ -84,9 +108,16 @@ public sealed class XlsxExtractorTests
     public async Task Extract_SharedString_And_InlineString_Both_Resolve()
     {
         var builder = new XlsxWorkbookBuilder();
-        builder.AddSheet("S")
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("Header1", shared: true), XlsxWorkbookBuilder.CellSpec.Text("Header2", shared: false))
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("shared-val", shared: true), XlsxWorkbookBuilder.CellSpec.Inline("inline-val"))
+        builder
+            .AddSheet("S")
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("Header1", shared: true),
+                XlsxWorkbookBuilder.CellSpec.Text("Header2", shared: false)
+            )
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("shared-val", shared: true),
+                XlsxWorkbookBuilder.CellSpec.Inline("inline-val")
+            )
             .EndSheet();
         await using var stream = builder.Build();
         var text = await Chunker.ExtractTextAsync(stream, DocumentMimeType.Xlsx);
@@ -101,7 +132,8 @@ public sealed class XlsxExtractorTests
         // 1900 system: 2022-01-01 is OADate 44562
         var date = new DateTime(2022, 1, 1);
         var b1900 = new XlsxWorkbookBuilder();
-        b1900.AddSheet("D1900")
+        b1900
+            .AddSheet("D1900")
             .AddRow(XlsxWorkbookBuilder.CellSpec.Text("Date"))
             .AddRow(XlsxWorkbookBuilder.CellSpec.Date(date))
             .EndSheet();
@@ -111,7 +143,8 @@ public sealed class XlsxExtractorTests
 
         // 1904 system
         var b1904 = new XlsxWorkbookBuilder().Use1904DateSystem(true);
-        b1904.AddSheet("D1904")
+        b1904
+            .AddSheet("D1904")
             .AddRow(XlsxWorkbookBuilder.CellSpec.Text("Date"))
             .AddRow(XlsxWorkbookBuilder.CellSpec.Date(date))
             .EndSheet();
@@ -137,9 +170,13 @@ public sealed class XlsxExtractorTests
         var builder = new XlsxWorkbookBuilder();
         var sheet = builder.AddSheet("M");
         sheet.WithMergedRange("A1:B1");
-        sheet.AddRow(XlsxWorkbookBuilder.CellSpec.Text("MergedVal"), XlsxWorkbookBuilder.CellSpec.Blank())
-             .AddRow(XlsxWorkbookBuilder.CellSpec.Text("a"), XlsxWorkbookBuilder.CellSpec.Text("b"))
-             .EndSheet();
+        sheet
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("MergedVal"),
+                XlsxWorkbookBuilder.CellSpec.Blank()
+            )
+            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("a"), XlsxWorkbookBuilder.CellSpec.Text("b"))
+            .EndSheet();
         await using var stream = builder.Build();
         var text = await Chunker.ExtractTextAsync(stream, DocumentMimeType.Xlsx);
         // Anchor has value, merged second cell empty → header row is "MergedVal" (only one value) not duplicated
@@ -154,10 +191,17 @@ public sealed class XlsxExtractorTests
     public async Task Extract_AllBlankRows_Omitted()
     {
         var builder = new XlsxWorkbookBuilder();
-        builder.AddSheet("B")
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("H1"), XlsxWorkbookBuilder.CellSpec.Text("H2"))
+        builder
+            .AddSheet("B")
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("H1"),
+                XlsxWorkbookBuilder.CellSpec.Text("H2")
+            )
             .AddRow(XlsxWorkbookBuilder.CellSpec.Blank(), XlsxWorkbookBuilder.CellSpec.Blank())
-            .AddRow(XlsxWorkbookBuilder.CellSpec.Text("val1"), XlsxWorkbookBuilder.CellSpec.Text("val2"))
+            .AddRow(
+                XlsxWorkbookBuilder.CellSpec.Text("val1"),
+                XlsxWorkbookBuilder.CellSpec.Text("val2")
+            )
             .AddRow(XlsxWorkbookBuilder.CellSpec.Blank(), XlsxWorkbookBuilder.CellSpec.Blank())
             .EndSheet();
         await using var stream = builder.Build();
@@ -174,12 +218,31 @@ public sealed class XlsxExtractorTests
     {
         // Build larger workbook to exceed 512 tokens
         var builder = new XlsxWorkbookBuilder();
-        var headers = new[] { "Name", "Dept", "Refund Policy", "Col4", "Col5", "Col6", "Col7", "Col8" };
+        var headers = new[]
+        {
+            "Name",
+            "Dept",
+            "Refund Policy",
+            "Col4",
+            "Col5",
+            "Col6",
+            "Col7",
+            "Col8",
+        };
         var sheet = builder.AddSheet("Sheet1");
         sheet.AddRow(headers.Select(h => XlsxWorkbookBuilder.CellSpec.Text(h)).ToArray());
         for (int i = 0; i < 80; i++)
         {
-            sheet.AddRow(Enumerable.Range(0, headers.Length).Select(c => XlsxWorkbookBuilder.CellSpec.Text($"val{i}_{c}_longer_token_to_grow_chunk_size")).ToArray());
+            sheet.AddRow(
+                Enumerable
+                    .Range(0, headers.Length)
+                    .Select(c =>
+                        XlsxWorkbookBuilder.CellSpec.Text(
+                            $"val{i}_{c}_longer_token_to_grow_chunk_size"
+                        )
+                    )
+                    .ToArray()
+            );
         }
         sheet.EndSheet();
         await using var stream = builder.Build();
@@ -201,27 +264,37 @@ public sealed class XlsxExtractorTests
 
         var s1 = builder.AddSheet("Sheet1");
         s1.AddRow(headers.Select(h => XlsxWorkbookBuilder.CellSpec.Text(h)).ToArray());
-        for (int i = 0; i < 10; i++) s1.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
+        for (int i = 0; i < 10; i++)
+            s1.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
         s1.EndSheet();
 
         var s2 = builder.AddSheet("Sheet2");
         s2.AddRow(headers.Select(h => XlsxWorkbookBuilder.CellSpec.Text(h)).ToArray());
         for (int i = 0; i < 10; i++)
         {
-            if (i == 3) s2.AddRow(
-                XlsxWorkbookBuilder.CellSpec.Text($"User{i}"),
-                XlsxWorkbookBuilder.CellSpec.Text("refund policy: 30-day full refund with receipt"),
-                XlsxWorkbookBuilder.CellSpec.Text($"row {i}")
-            );
-            else s2.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
+            if (i == 3)
+                s2.AddRow(
+                    XlsxWorkbookBuilder.CellSpec.Text($"User{i}"),
+                    XlsxWorkbookBuilder.CellSpec.Text(
+                        "refund policy: 30-day full refund with receipt"
+                    ),
+                    XlsxWorkbookBuilder.CellSpec.Text($"row {i}")
+                );
+            else
+                s2.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
         }
         // formula cached 42.50
-        s2.AddRow(XlsxWorkbookBuilder.CellSpec.Formula("SUM(A1:A3)", "42.50"), XlsxWorkbookBuilder.CellSpec.Text("extra"), XlsxWorkbookBuilder.CellSpec.Text("row"));
+        s2.AddRow(
+            XlsxWorkbookBuilder.CellSpec.Formula("SUM(A1:A3)", "42.50"),
+            XlsxWorkbookBuilder.CellSpec.Text("extra"),
+            XlsxWorkbookBuilder.CellSpec.Text("row")
+        );
         s2.EndSheet();
 
         var s3 = builder.AddSheet("Sheet3");
         s3.AddRow(headers.Select(h => XlsxWorkbookBuilder.CellSpec.Text(h)).ToArray());
-        for (int i = 0; i < 10; i++) s3.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
+        for (int i = 0; i < 10; i++)
+            s3.AddRow(ToRow(i).Select(v => XlsxWorkbookBuilder.CellSpec.Text(v)).ToArray());
         s3.EndSheet();
 
         // Wide case for date? Not needed.

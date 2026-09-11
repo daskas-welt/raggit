@@ -26,7 +26,9 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         var bytes = await LoadFixtureAsync("sample-overcap.xlsx");
         var form = new MultipartFormDataContent();
         var file = new StreamContent(new MemoryStream(bytes));
-        file.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        file.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(file, "file", "sample-overcap.xlsx");
         var resp = await _client.PostAsync("/api/documents", form);
         resp.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
@@ -42,7 +44,9 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         var bytes = await LoadFixtureAsync("fake-xlsx-from-docx.xlsx");
         var form = new MultipartFormDataContent();
         var file = new StreamContent(new MemoryStream(bytes));
-        file.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        file.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(file, "file", "fake.xlsx");
         var resp = await _client.PostAsync("/api/documents", form);
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -55,11 +59,16 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         var bytes = await LoadFixtureAsync("empty-hidden-only.xlsx");
         var form = new MultipartFormDataContent();
         var file = new StreamContent(new MemoryStream(bytes));
-        file.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        file.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(file, "file", "empty-hidden-only.xlsx");
         var resp = await _client.PostAsync("/api/documents", form);
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await resp.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("no extractable content");
+        (await resp.Content.ReadAsStringAsync())
+            .ToLowerInvariant()
+            .Should()
+            .Contain("no extractable content");
     }
 
     private static async Task<byte[]> LoadFixtureAsync(string name)
@@ -69,12 +78,15 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
             Path.Combine("fixtures", "xlsx", name),
             Path.Combine(AppContext.BaseDirectory, "fixtures", "xlsx", name),
         };
-        foreach (var p in candidates) if (File.Exists(p)) return await File.ReadAllBytesAsync(p);
+        foreach (var p in candidates)
+            if (File.Exists(p))
+                return await File.ReadAllBytesAsync(p);
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
             var cand = Path.Combine(dir.FullName, "tests", "integration", "fixtures", "xlsx", name);
-            if (File.Exists(cand)) return await File.ReadAllBytesAsync(cand);
+            if (File.Exists(cand))
+                return await File.ReadAllBytesAsync(cand);
             dir = dir.Parent;
         }
         throw new FileNotFoundException(name);

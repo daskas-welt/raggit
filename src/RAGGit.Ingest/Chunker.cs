@@ -39,7 +39,8 @@ public static class Chunker
     {
         try
         {
-            if (stream.CanSeek && stream.Position != 0) stream.Position = 0;
+            if (stream.CanSeek && stream.Position != 0)
+                stream.Position = 0;
 
             // Copy to seekable MemoryStream if needed (SpreadsheetDocument requires seekable)
             Stream seekable = stream;
@@ -60,20 +61,30 @@ public static class Chunker
             // SpreadsheetDocument.Open requires a seekable stream; we keep original position at 0 after.
             using var document = SpreadsheetDocument.Open(seekable, false);
             var workbookPart = document.WorkbookPart;
-            if (workbookPart == null) throw new CorruptDocumentException("content does not match type");
+            if (workbookPart == null)
+                throw new CorruptDocumentException("content does not match type");
 
             var workbook = workbookPart.Workbook;
             var sheets = workbook.Sheets?.Elements<Sheet>().ToList() ?? new List<Sheet>();
-            if (sheets.Count == 0) return Task.FromResult(string.Empty);
+            if (sheets.Count == 0)
+                return Task.FromResult(string.Empty);
 
             // Shared strings
             SharedStringTable? sst = null;
-            try { sst = workbookPart.SharedStringTablePart?.SharedStringTable; } catch { sst = null; }
+            try
+            {
+                sst = workbookPart.SharedStringTablePart?.SharedStringTable;
+            }
+            catch
+            {
+                sst = null;
+            }
 
             // Date1904
             var is1904 = workbook.WorkbookProperties?.Date1904?.Value ?? false;
             // Also check Workbook.WorkbookProperties via alternate path
-            if (!is1904 && workbook.GetFirstChild<WorkbookProperties>()?.Date1904?.Value == true) is1904 = true;
+            if (!is1904 && workbook.GetFirstChild<WorkbookProperties>()?.Date1904?.Value == true)
+                is1904 = true;
 
             // Styles / Number formats for date detection
             var stylesPart = workbookPart.WorkbookStylesPart;
@@ -87,28 +98,41 @@ public static class Chunker
                     foreach (var nf in nfs.Elements<NumberingFormat>())
                     {
                         if (nf.NumberFormatId != null && nf.FormatCode != null)
-                            customFormats[(uint)nf.NumberFormatId.Value] = nf.FormatCode.Value ?? string.Empty;
+                            customFormats[(uint)nf.NumberFormatId.Value] =
+                                nf.FormatCode.Value ?? string.Empty;
                     }
                 }
                 var cfs = stylesPart.Stylesheet.CellFormats;
                 if (cfs != null)
                 {
-                    foreach (var cf in cfs.Elements<CellFormat>()) cellFormats.Add(cf);
+                    foreach (var cf in cfs.Elements<CellFormat>())
+                        cellFormats.Add(cf);
                 }
             }
 
             bool IsDateFormat(uint numFmtId)
             {
                 // Built-in date ranges
-                if ((numFmtId >= 14 && numFmtId <= 22) || (numFmtId >= 27 && numFmtId <= 36) || (numFmtId >= 45 && numFmtId <= 47) || (numFmtId >= 50 && numFmtId <= 58))
+                if (
+                    (numFmtId >= 14 && numFmtId <= 22)
+                    || (numFmtId >= 27 && numFmtId <= 36)
+                    || (numFmtId >= 45 && numFmtId <= 47)
+                    || (numFmtId >= 50 && numFmtId <= 58)
+                )
                     return true;
                 if (customFormats.TryGetValue(numFmtId, out var code))
                 {
                     var lower = code.ToLowerInvariant();
                     // heuristic: contains y/m/d/h with date-like pattern
-                    if (lower.Contains("yy") || lower.Contains("yyyy") || lower.Contains("mm") || lower.Contains("dd"))
+                    if (
+                        lower.Contains("yy")
+                        || lower.Contains("yyyy")
+                        || lower.Contains("mm")
+                        || lower.Contains("dd")
+                    )
                         return true;
-                    if (lower.Contains("y") && lower.Contains("m")) return true;
+                    if (lower.Contains("y") && lower.Contains("m"))
+                        return true;
                 }
                 return false;
             }
@@ -143,10 +167,17 @@ public static class Chunker
                                 {
                                     throw new SpreadsheetCellCapExceededException(
                                         DocumentValidation.MaxSpreadsheetCells,
-                                        visibleCellCount);
+                                        visibleCellCount
+                                    );
                                 }
 
-                                var text = GetCellText(cell, sst, is1904, cellFormats, IsDateFormat);
+                                var text = GetCellText(
+                                    cell,
+                                    sst,
+                                    is1904,
+                                    cellFormats,
+                                    IsDateFormat
+                                );
                                 // Keep cellTexts ordered; include empty strings for blank cells? For compact join, skip empty
                                 cellTextsForRow.Add(text ?? string.Empty);
                             }
@@ -164,11 +195,15 @@ public static class Chunker
                     }
                 }
 
-                if (rowsData.Count == 0) continue; // empty visible sheet
+                if (rowsData.Count == 0)
+                    continue; // empty visible sheet
 
                 // First non-empty row is header
                 var headerTexts = rowsData[0];
-                var headerLine = string.Join(" | ", headerTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()));
+                var headerLine = string.Join(
+                    " | ",
+                    headerTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim())
+                );
                 // If header line is empty after trim, treat next row as header? But per spec first non-empty row is header; if it's whitespace-only we already skipped.
 
                 lines.Add($"[Sheet: {sheetName}]");
@@ -178,8 +213,12 @@ public static class Chunker
                 for (int i = 1; i < rowsData.Count; i++)
                 {
                     var dataTexts = rowsData[i];
-                    var dataLine = string.Join(" | ", dataTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()));
-                    if (string.IsNullOrWhiteSpace(dataLine)) continue;
+                    var dataLine = string.Join(
+                        " | ",
+                        dataTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim())
+                    );
+                    if (string.IsNullOrWhiteSpace(dataLine))
+                        continue;
                     lines.Add(headerLine);
                     lines.Add(dataLine);
                 }
@@ -209,8 +248,13 @@ public static class Chunker
         catch (Exception ex)
         {
             // For any other failure during xlsx extraction, map to corrupt if it looks like zip/malformed
-            if (ex.Message.Contains("content does not match type", StringComparison.OrdinalIgnoreCase)
-                || ex is System.IO.IOException)
+            if (
+                ex.Message.Contains(
+                    "content does not match type",
+                    StringComparison.OrdinalIgnoreCase
+                )
+                || ex is System.IO.IOException
+            )
                 throw new CorruptDocumentException("content does not match type", ex);
             throw;
         }
@@ -221,7 +265,8 @@ public static class Chunker
         SharedStringTable? sst,
         bool is1904,
         List<CellFormat> cellFormats,
-        Func<uint, bool> isDateFormat)
+        Func<uint, bool> isDateFormat
+    )
     {
         // Formula: ignore formula text, use cached <v>
         var rawValue = cell.CellValue?.Text ?? cell.InnerText; // InnerText includes v + formula text? Use CellValue
@@ -238,7 +283,15 @@ public static class Chunker
         // SharedString
         if (dataType == CellValues.SharedString)
         {
-            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var idx) && sst != null)
+            if (
+                int.TryParse(
+                    rawValue,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var idx
+                )
+                && sst != null
+            )
             {
                 try
                 {
@@ -267,11 +320,19 @@ public static class Chunker
                     var numFmtId = fmt.NumberFormatId?.Value ?? 0;
                     if (isDateFormat((uint)numFmtId))
                     {
-                        if (double.TryParse(rawValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var oa))
+                        if (
+                            double.TryParse(
+                                rawValue,
+                                NumberStyles.Any,
+                                CultureInfo.InvariantCulture,
+                                out var oa
+                            )
+                        )
                         {
                             // Excel 1904 offset: 1462 days difference, also leap bug for 1900
                             double adjusted = oa;
-                            if (is1904) adjusted += 1462;
+                            if (is1904)
+                                adjusted += 1462;
                             // DateTime.FromOADate handles 1900 leap bug internally? Need to keep as-is.
                             try
                             {
@@ -297,7 +358,8 @@ public static class Chunker
         if (string.IsNullOrEmpty(rawValue))
         {
             // Might be inline string without DataType? Check InlineString element
-            if (cell.InlineString != null) return cell.InlineString.InnerText;
+            if (cell.InlineString != null)
+                return cell.InlineString.InnerText;
             return string.Empty;
         }
 

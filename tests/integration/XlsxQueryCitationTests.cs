@@ -48,7 +48,9 @@ public sealed class XlsxQueryCitationTests
         var bytes = await LoadFixtureAsync("sample-3sheet.xlsx");
         var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(new MemoryStream(bytes));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(fileContent, "file", "sample-3sheet.xlsx");
         var upload = await client.PostAsync("/api/documents", form);
         upload.EnsureSuccessStatusCode();
@@ -57,10 +59,15 @@ public sealed class XlsxQueryCitationTests
         await Task.Delay(500);
 
         // Query refund policy
-        var queryJson = JsonSerializer.Serialize(new { query = "refund policy 30-day full refund" });
+        var queryJson = JsonSerializer.Serialize(
+            new { query = "refund policy 30-day full refund" }
+        );
         var queryClient = factory.CreateClient();
         queryClient.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
-        var queryResp = await queryClient.PostAsync("/api/query", new StringContent(queryJson, Encoding.UTF8, "application/json"));
+        var queryResp = await queryClient.PostAsync(
+            "/api/query",
+            new StringContent(queryJson, Encoding.UTF8, "application/json")
+        );
         queryResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await queryResp.Content.ReadAsStringAsync();
 
@@ -93,7 +100,9 @@ public sealed class XlsxQueryCitationTests
         var bytes = await LoadFixtureAsync("sample-3sheet.xlsx");
         var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(new MemoryStream(bytes));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(fileContent, "file", "sample-3sheet.xlsx");
         await client.PostAsync("/api/documents", form);
         await Task.Delay(500);
@@ -101,10 +110,14 @@ public sealed class XlsxQueryCitationTests
         var queryJson = JsonSerializer.Serialize(new { query = "42.50" });
         var queryClient = factory.CreateClient();
         queryClient.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
-        var queryResp = await queryClient.PostAsync("/api/query", new StringContent(queryJson, Encoding.UTF8, "application/json"));
+        var queryResp = await queryClient.PostAsync(
+            "/api/query",
+            new StringContent(queryJson, Encoding.UTF8, "application/json")
+        );
         queryResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await queryResp.Content.ReadAsStringAsync();
-        if (body.Contains("no relevant content found")) return;
+        if (body.Contains("no relevant content found"))
+            return;
         body.Should().Contain("42.50");
         body.Should().NotContain("SUM");
     }
@@ -116,12 +129,22 @@ public sealed class XlsxQueryCitationTests
             Path.Combine("fixtures", "xlsx", fileName),
             Path.Combine(AppContext.BaseDirectory, "fixtures", "xlsx", fileName),
         };
-        foreach (var p in candidates) if (File.Exists(p)) return await File.ReadAllBytesAsync(p);
+        foreach (var p in candidates)
+            if (File.Exists(p))
+                return await File.ReadAllBytesAsync(p);
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            var cand = Path.Combine(dir.FullName, "tests", "integration", "fixtures", "xlsx", fileName);
-            if (File.Exists(cand)) return await File.ReadAllBytesAsync(cand);
+            var cand = Path.Combine(
+                dir.FullName,
+                "tests",
+                "integration",
+                "fixtures",
+                "xlsx",
+                fileName
+            );
+            if (File.Exists(cand))
+                return await File.ReadAllBytesAsync(cand);
             dir = dir.Parent;
         }
         throw new FileNotFoundException(fileName);

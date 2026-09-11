@@ -63,7 +63,9 @@ public sealed class XlsxCellCapTests
         int cols = 20;
         int rows = (totalCells + cols - 1) / cols;
         var sb = new StringBuilder();
-        sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
+        sb.Append(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>"
+        );
         int remaining = totalCells;
         for (int r = 1; r <= rows && remaining > 0; r++)
         {
@@ -93,7 +95,9 @@ public sealed class XlsxCellCapTests
         int cols = 20;
         int rows = (cellCount + cols - 1) / cols;
         var sb = new StringBuilder();
-        sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
+        sb.Append(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>"
+        );
         int remaining = cellCount;
         for (int r = 1; r <= rows && remaining > 0; r++)
         {
@@ -118,19 +122,32 @@ public sealed class XlsxCellCapTests
             // [Content_Types].xml
             var ct = zip.CreateEntry("[Content_Types].xml");
             using (var w = new StreamWriter(ct.Open(), Encoding.UTF8))
-                w.Write(@"<?xml version=""1.0"" encoding=""UTF-8""?><Types xmlns=""http://schemas.openxmlformats.org/package/2006/content-types""><Default Extension=""rels"" ContentType=""application/vnd.openxmlformats-package.relationships+xml""/><Default Extension=""xml"" ContentType=""application/xml""/><Override PartName=""/xl/workbook.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml""/><Override PartName=""/xl/worksheets/sheet1.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>" + (hiddenSheetXml != null ? @"<Override PartName=""/xl/worksheets/sheet2.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>" : "") + @"</Types>");
+                w.Write(
+                    @"<?xml version=""1.0"" encoding=""UTF-8""?><Types xmlns=""http://schemas.openxmlformats.org/package/2006/content-types""><Default Extension=""rels"" ContentType=""application/vnd.openxmlformats-package.relationships+xml""/><Default Extension=""xml"" ContentType=""application/xml""/><Override PartName=""/xl/workbook.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml""/><Override PartName=""/xl/worksheets/sheet1.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>"
+                        + (
+                            hiddenSheetXml != null
+                                ? @"<Override PartName=""/xl/worksheets/sheet2.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>"
+                                : ""
+                        )
+                        + @"</Types>"
+                );
 
             // _rels/.rels
             var rels = zip.CreateEntry("_rels/.rels");
             using (var w = new StreamWriter(rels.Open(), Encoding.UTF8))
-                w.Write(@"<?xml version=""1.0"" encoding=""UTF-8""?><Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships""><Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"" Target=""xl/workbook.xml""/></Relationships>");
+                w.Write(
+                    @"<?xml version=""1.0"" encoding=""UTF-8""?><Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships""><Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"" Target=""xl/workbook.xml""/></Relationships>"
+                );
 
             // xl/_rels/workbook.xml.rels
             var wbRels = zip.CreateEntry("xl/_rels/workbook.xml.rels");
             using (var w = new StreamWriter(wbRels.Open(), Encoding.UTF8))
             {
-                var relsXml = @"<?xml version=""1.0"" encoding=""UTF-8""?><Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships""><Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet1.xml""/>";
-                if (hiddenSheetXml != null) relsXml += @"<Relationship Id=""rId2"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet2.xml""/>";
+                var relsXml =
+                    @"<?xml version=""1.0"" encoding=""UTF-8""?><Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships""><Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet1.xml""/>";
+                if (hiddenSheetXml != null)
+                    relsXml +=
+                        @"<Relationship Id=""rId2"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet2.xml""/>";
                 relsXml += @"</Relationships>";
                 w.Write(relsXml);
             }
@@ -139,20 +156,25 @@ public sealed class XlsxCellCapTests
             var wb = zip.CreateEntry("xl/workbook.xml");
             using (var w = new StreamWriter(wb.Open(), Encoding.UTF8))
             {
-                var wbXml = @"<?xml version=""1.0"" encoding=""UTF-8""?><workbook xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" xmlns:r=""http://schemas.openxmlformats.org/officeDocument/2006/relationships""><sheets><sheet name=""Sheet1"" sheetId=""1"" r:id=""rId1""/>";
-                if (hiddenSheetXml != null) wbXml += @"<sheet name=""Hidden"" sheetId=""2"" r:id=""rId2"" state=""hidden""/>";
+                var wbXml =
+                    @"<?xml version=""1.0"" encoding=""UTF-8""?><workbook xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" xmlns:r=""http://schemas.openxmlformats.org/officeDocument/2006/relationships""><sheets><sheet name=""Sheet1"" sheetId=""1"" r:id=""rId1""/>";
+                if (hiddenSheetXml != null)
+                    wbXml +=
+                        @"<sheet name=""Hidden"" sheetId=""2"" r:id=""rId2"" state=""hidden""/>";
                 wbXml += @"</sheets></workbook>";
                 w.Write(wbXml);
             }
 
             // xl/worksheets/sheet1.xml
             var s1 = zip.CreateEntry("xl/worksheets/sheet1.xml");
-            using (var w = new StreamWriter(s1.Open(), Encoding.UTF8)) w.Write(sheet1Xml);
+            using (var w = new StreamWriter(s1.Open(), Encoding.UTF8))
+                w.Write(sheet1Xml);
 
             if (hiddenSheetXml != null)
             {
                 var s2 = zip.CreateEntry("xl/worksheets/sheet2.xml");
-                using (var w = new StreamWriter(s2.Open(), Encoding.UTF8)) w.Write(hiddenSheetXml);
+                using (var w = new StreamWriter(s2.Open(), Encoding.UTF8))
+                    w.Write(hiddenSheetXml);
             }
         }
         ms.Position = 0;
@@ -162,7 +184,12 @@ public sealed class XlsxCellCapTests
     private static string GetColLetter(int c)
     {
         var s = "";
-        while (c > 0) { c--; s = (char)('A' + (c % 26)) + s; c /= 26; }
+        while (c > 0)
+        {
+            c--;
+            s = (char)('A' + (c % 26)) + s;
+            c /= 26;
+        }
         return s;
     }
 }

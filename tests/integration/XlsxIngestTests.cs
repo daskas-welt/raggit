@@ -55,7 +55,8 @@ public sealed class XlsxIngestTests
         cmd.Parameters.AddWithValue("@id", doc.Id.ToString());
         var texts = new System.Collections.Generic.List<string>();
         await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync()) texts.Add(reader.GetString(0));
+        while (await reader.ReadAsync())
+            texts.Add(reader.GetString(0));
         texts.Should().NotBeEmpty();
         texts.Should().Contain(t => t.Contains("[Sheet:"));
 
@@ -83,7 +84,9 @@ public sealed class XlsxIngestTests
     {
         var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(new MemoryStream(bytes));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
         form.Add(fileContent, "file", filename);
         return form;
     }
@@ -96,12 +99,22 @@ public sealed class XlsxIngestTests
             Path.Combine(AppContext.BaseDirectory, "fixtures", "xlsx", fileName),
             Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "fixtures", "xlsx", fileName),
         };
-        foreach (var p in candidates) if (File.Exists(p)) return await File.ReadAllBytesAsync(p);
+        foreach (var p in candidates)
+            if (File.Exists(p))
+                return await File.ReadAllBytesAsync(p);
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            var cand = Path.Combine(dir.FullName, "tests", "integration", "fixtures", "xlsx", fileName);
-            if (File.Exists(cand)) return await File.ReadAllBytesAsync(cand);
+            var cand = Path.Combine(
+                dir.FullName,
+                "tests",
+                "integration",
+                "fixtures",
+                "xlsx",
+                fileName
+            );
+            if (File.Exists(cand))
+                return await File.ReadAllBytesAsync(cand);
             dir = dir.Parent;
         }
         throw new FileNotFoundException($"Fixture {fileName} not found");
@@ -110,12 +123,18 @@ public sealed class XlsxIngestTests
     private static async Task<Document> DeserializeDocumentAsync(HttpResponseMessage response)
     {
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<Document>(json, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize Document");
+        return JsonSerializer.Deserialize<Document>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize Document");
     }
 
-    private static async Task<System.Collections.Generic.List<Document>> DeserializeListAsync(HttpResponseMessage response)
+    private static async Task<System.Collections.Generic.List<Document>> DeserializeListAsync(
+        HttpResponseMessage response
+    )
     {
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<System.Collections.Generic.List<Document>>(json, JsonOptions) ?? throw new InvalidOperationException("Failed to deserialize document list.");
+        return JsonSerializer.Deserialize<System.Collections.Generic.List<Document>>(
+                json,
+                JsonOptions
+            ) ?? throw new InvalidOperationException("Failed to deserialize document list.");
     }
 }

@@ -124,7 +124,11 @@ public sealed class DocumentsController : ControllerBase
         }
         catch (NoExtractableContentException ex)
         {
-            _logger.LogWarning(ex, "Upload rejected: no extractable content {Filename}", file.FileName);
+            _logger.LogWarning(
+                ex,
+                "Upload rejected: no extractable content {Filename}",
+                file.FileName
+            );
             return BadRequest(new { error = ex.Message });
         }
         catch (CorruptDocumentException ex)
