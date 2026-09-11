@@ -10,6 +10,7 @@ public enum DocumentMimeType
 {
     Pdf,
     Docx,
+    Xlsx,
     Txt,
     Md,
 }
@@ -37,7 +38,7 @@ public sealed class Document
     [Required(ErrorMessage = "MIME type is required.")]
     [EnumDataType(
         typeof(DocumentMimeType),
-        ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, txt, md."
+        ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, xlsx, txt, md."
     )]
     public DocumentMimeType Mime { get; set; }
 
@@ -77,6 +78,8 @@ public static class DocumentMimeTypeExtensions
             DocumentMimeType.Pdf => "application/pdf",
             DocumentMimeType.Docx =>
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            DocumentMimeType.Xlsx =>
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             DocumentMimeType.Txt => "text/plain",
             DocumentMimeType.Md => "text/markdown",
             _ => "application/octet-stream",
@@ -89,4 +92,5 @@ public static class DocumentMimeTypeExtensions
 public static class DocumentValidation
 {
     public const long MaxFileSizeBytes = 100L * 1024 * 1024;
+    public const int MaxSpreadsheetCells = 100_000;
 }
