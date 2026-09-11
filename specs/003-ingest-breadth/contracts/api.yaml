@@ -1,0 +1,251 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant)
+  version: 1.2.0
+  description: Single-tenant on-prem RAG on AI Workstation (LanceDB local path + Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query time per FR-004/Constitution IV). 1.2.0 adds xlsx MIME to Document.mime (MINOR, FR-001 FR-003 FR-005 FR-006) and extends POST /api/documents 413 for 100k cell cap and 400 for deep xlsx validation; 1.1.0 added GET /api/auth/me (MINOR, Q2 extensible envelope) and annotated 400 for corrupted pdf/docx.
+
+servers:
+  - url: http://ai-workstation.local:5001
+    description: AI Workstation LAN
+
+security:
+  - ApiKey: []
+
+paths:
+  /api/documents:
+    post:
+      summary: Upload document to singleton library (Admin only)
+      description: >
+        Chunks (512/50), embeds locally, indexes into LanceDB file. Rejects
+        unsupported type/size per FR-006. Corrupted/invalid pdf/docx returns 400
+        with no partial index (FR-006, 002 hardening). XLSX added in 1.2.0:
+        deep-validates PK zip streams (requires [Content_Types].xml plus
+        xl/workbook.xml, else 400 content does not match type), extracts all
+        visible sheets with header-row repeat and cached formula values
+        (FR-002..FR-004), counts visible cells and rejects with 413 plus
+        actionable 100k-cap message when >100000 cells (FR-005), rejects
+        empty/hidden-only workbooks with 400 no extractable content (FR-003);
+        every rejection rolls back with no Document/Chunks/vectors. If the
+        uploaded file hash matches an existing document, returns 200 with the
+        existing Document and does not re-index (dedupe per spec.md:74).
+        Ordering: 413 for >100MB first, then 400 for non-xlsx PK before
+        cell-cap, then 413 for cell cap, then 400 for no extractable content.
+      security: [{ ApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        '200':
+          description: Duplicate — returns existing Document (same hash, not re-indexed per spec.md:74)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '201':
+          description: Accepted for indexing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: >
+            Bad request — includes corrupted/invalid pdf/docx with no partial
+            index (002) and xlsx deep-validation failures (renamed docx,
+            truncated/corrupt zip returns content does not match type) and
+            empty/hidden-only workbook (no extractable content) (003
+            FR-006/FR-003); no partial index in any 400
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: content does not match type }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413':
+          description: >
+            Payload too large — File >100MB (existing) or spreadsheet exceeds
+            100000 cells across visible sheets (003 FR-005); message names the
+            100k cap and actual cell count, no Document retained
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: Spreadsheet exceeds 100,000 cell limit (found 110000 cells) }
+    get:
+      summary: List documents in singleton library
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Document' }
+
+  /api/documents/{id}:
+    delete:
+      summary: Delete document and purge its vectors (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted, content: {} }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/query:
+    post:
+      summary: Query library with citations (LAN-only, no cloud egress)
+      security: [{ ApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, minLength: 1 }
+                topK: { type: integer, default: 5, minimum: 1, maximum: 5 }
+              required: [query]
+      responses:
+        '200':
+          description: Grounded answer with citations or no relevant content
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/QueryAnswer'
+                  - $ref: '#/components/schemas/NoRelevantContent'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '503': { description: AI workstation unavailable or model unavailable offline (FR-007) }
+
+  /api/auth/me:
+    get:
+      summary: Authenticated identity and role (for thin client UI gating)
+      description: Returns the caller's identity envelope. Extensible — client MUST ignore unknown fields (Q2 forward-compat for 004). Role determines Admin vs Employee UI (Upload/Delete gating). Added in 1.1.0 MINOR.
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          description: Authenticated identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMe'
+        '401':
+          description: Unauthorized — missing or invalid API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: unauthorized }
+
+  /health:
+    get:
+      summary: Health (no auth) — vectorDb + llm
+      security: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vectorDb: { type: string, enum: [ok, down] }
+                  qdrant: { type: string, enum: [ok, down] }
+                  llm: { type: string, enum: [ok, down] }
+                  version: { type: string }
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Single-tenant API key or Windows AD token (RBAC Admin vs Employee in API)
+
+  schemas:
+    Document:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        filename: { type: string }
+        mime: { type: string, enum: [application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain, text/markdown] }
+        size: { type: integer, format: int64 }
+        hash: { type: string, description: SHA-256 hex for dedupe }
+        status: { type: string, enum: [Indexing, Ready, Failed] }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, filename, mime, size, hash, status, createdAt]
+
+    AuthMe:
+      type: object
+      description: Extensible identity envelope (Q2). Client ignores unknown fields.
+      properties:
+        identityType: { type: string, example: ApiKey, description: Envelope type — ApiKey in 002; future 004 adds User etc. }
+        role: { type: string, enum: [Admin, Employee] }
+      required: [identityType, role]
+      additionalProperties: true
+
+    QueryAnswer:
+      type: object
+      properties:
+        answer: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              documentId: { type: string, format: uuid }
+              chunkId: { type: string, format: uuid }
+              text: { type: string }
+              ordinal: { type: integer }
+            required: [documentId, chunkId, text]
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+      required: [answer, citations]
+
+    NoRelevantContent:
+      type: object
+      properties:
+        answer: { type: string, enum: [no relevant content found] }
+        citations: { type: array, maxItems: 0 }
+      required: [answer]
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+    Forbidden:
+      description: Forbidden — Employee cannot upload/delete, unauthenticated rejected per FR-003
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: forbidden }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
