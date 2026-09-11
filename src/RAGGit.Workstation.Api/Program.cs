@@ -62,8 +62,10 @@ builder.Services.AddAuthorization();
 var vectorDbPath = builder.Configuration["VectorDb:Path"] ?? "./data/lancedb";
 var vectorDbVectorSize = builder.Configuration.GetValue<int?>("VectorDb:VectorSize") ?? 384;
 var ollamaUrl = builder.Configuration["Ollama:Url"] ?? "http://localhost:11434";
-var embedModel = builder.Configuration["Ollama:EmbedModel"] ?? "nomic-embed-text";
-var chatModel = builder.Configuration["Ollama:ChatModel"] ?? "llama3.2:3b";
+var embedModel = builder.Configuration["Ollama:EmbedModel"] ?? "all-minilm";
+var chatModel = builder.Configuration["Ollama:ChatModel"] ?? "phi3:mini";
+var ollamaTimeoutMs = builder.Configuration.GetValue<int?>("Ollama:TimeoutMs") ?? 5000;
+Log.Information("Ollama timeout configured: {TimeoutMs}ms", ollamaTimeoutMs);
 var connectionString = builder.Configuration.GetConnectionString("RagDb") ?? "Data Source=./data/rag.db";
 
 // Backward compatibility: fall back to legacy Qdrant:Path if VectorDb:Path is missing.
@@ -71,6 +73,20 @@ if (!builder.Configuration.GetSection("VectorDb:Path").Exists() &&
     !string.IsNullOrEmpty(builder.Configuration["Qdrant:Path"]))
 {
     vectorDbPath = builder.Configuration["Qdrant:Path"]!;
+}
+
+// Validation per T005 / FR-001
+{
+    var qdrantPath = builder.Configuration["Qdrant:Path"];
+    var validation = RAGGit.Workstation.Api.Config.WorkstationConfigValidator.Validate(vectorDbVectorSize, embedModel, vectorDbPath, qdrantPath);
+    if (!validation.IsValid)
+    {
+        throw new InvalidOperationException(validation.Error);
+    }
+    foreach (var w in validation.Warnings)
+    {
+        Log.Warning("Config warning: {Warning}", w);
+    }
 }
 
 // Data
