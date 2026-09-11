@@ -18,7 +18,8 @@ public sealed class GenerationService
     private readonly ILlmClient _llmClient;
     private static readonly Regex CitationRegex = new(
         @"\[([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\]",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled
+    );
 
     public GenerationService(ILlmClient llmClient)
     {
@@ -32,7 +33,8 @@ public sealed class GenerationService
     public async Task<(string Answer, IReadOnlyList<Guid> CitationIds)> GenerateAsync(
         string query,
         IReadOnlyList<SearchResult> chunks,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
         ArgumentNullException.ThrowIfNull(chunks);
@@ -65,10 +67,10 @@ public sealed class GenerationService
 
     private static string BuildSystemPrompt()
     {
-        return "You are a helpful assistant for a single-tenant company document library. " +
-            "Answer the user's question using ONLY the provided context. " +
-            "Cite your sources by including the chunk IDs in square brackets, e.g. [aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee]. " +
-            "If the context does not contain the answer, say 'no relevant content found'.";
+        return "You are a helpful assistant for a single-tenant company document library. "
+            + "Answer the user's question using ONLY the provided context. "
+            + "Cite your sources by including the chunk IDs in square brackets, e.g. [aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee]. "
+            + "If the context does not contain the answer, say 'no relevant content found'.";
     }
 
     private static string BuildUserPrompt(string query, IEnumerable<SearchResult> chunks)
@@ -78,7 +80,9 @@ public sealed class GenerationService
 
         foreach (var chunk in chunks)
         {
-            builder.AppendLine($"[{chunk.ChunkId}] (Document: {chunk.DocumentId}, Ordinal: {chunk.Ordinal}) {chunk.Text}");
+            builder.AppendLine(
+                $"[{chunk.ChunkId}] (Document: {chunk.DocumentId}, Ordinal: {chunk.Ordinal}) {chunk.Text}"
+            );
         }
 
         builder.AppendLine();

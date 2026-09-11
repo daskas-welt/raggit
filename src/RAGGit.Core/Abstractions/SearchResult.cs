@@ -10,4 +10,5 @@ public sealed record SearchResult(
     string DocumentId,
     string Text,
     int Ordinal,
-    float Score);
+    float Score
+);

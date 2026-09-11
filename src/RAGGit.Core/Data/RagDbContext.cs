@@ -17,7 +17,8 @@ public sealed class RagDbContext : IAsyncDisposable
 
     public RagDbContext(string connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        _connectionString =
+            connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     public SqliteConnection CreateConnection() => new(_connectionString);
@@ -33,14 +34,18 @@ public sealed class RagDbContext : IAsyncDisposable
         await connection.OpenAsync(cancellationToken);
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
+        command.CommandText =
+            @"
             INSERT INTO Queries (Id, UserId, Prompt, RetrievedChunkIds, Answer, CitationIds, LatencyMs, CreatedAt)
             VALUES (@id, @userId, @prompt, @retrievedChunkIds, @answer, @citationIds, @latencyMs, @createdAt);";
 
         command.Parameters.AddWithValue("@id", query.Id.ToString());
         command.Parameters.AddWithValue("@userId", query.UserId);
         command.Parameters.AddWithValue("@prompt", query.Prompt);
-        command.Parameters.AddWithValue("@retrievedChunkIds", SerializeGuids(query.RetrievedChunkIds));
+        command.Parameters.AddWithValue(
+            "@retrievedChunkIds",
+            SerializeGuids(query.RetrievedChunkIds)
+        );
         command.Parameters.AddWithValue("@answer", query.Answer ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@citationIds", SerializeGuids(query.CitationIds));
         command.Parameters.AddWithValue("@latencyMs", query.LatencyMs);
@@ -52,7 +57,9 @@ public sealed class RagDbContext : IAsyncDisposable
     /// <summary>
     /// Returns the latency (ms) of the most recent 100 queries for health reporting.
     /// </summary>
-    public async Task<IReadOnlyList<int>> GetRecentLatenciesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<int>> GetRecentLatenciesAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         await using var connection = CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -70,8 +77,8 @@ public sealed class RagDbContext : IAsyncDisposable
         return latencies;
     }
 
-    private static string SerializeGuids(IEnumerable<Guid> guids)
-        => System.Text.Json.JsonSerializer.Serialize(guids);
+    private static string SerializeGuids(IEnumerable<Guid> guids) =>
+        System.Text.Json.JsonSerializer.Serialize(guids);
 
     /// <summary>
     /// Creates the schema if it does not exist and seeds the singleton Library row (id=1).
@@ -93,7 +100,8 @@ public sealed class RagDbContext : IAsyncDisposable
 
         using var seedCommand = connection.CreateCommand();
         seedCommand.Transaction = (SqliteTransaction)transaction;
-        seedCommand.CommandText = @"
+        seedCommand.CommandText =
+            @"
             INSERT OR IGNORE INTO Library (Id, Name, CreatedAt)
             VALUES (1, 'RAGGit Library', @createdAt);";
         seedCommand.Parameters.AddWithValue("@createdAt", DateTime.UtcNow.ToString("O"));

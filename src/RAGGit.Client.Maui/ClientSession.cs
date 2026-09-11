@@ -9,5 +9,6 @@ public sealed class ClientSession
 
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsValid => !string.IsNullOrWhiteSpace(WorkstationUrl) && !string.IsNullOrWhiteSpace(ApiKey);
+    public bool IsValid =>
+        !string.IsNullOrWhiteSpace(WorkstationUrl) && !string.IsNullOrWhiteSpace(ApiKey);
 }

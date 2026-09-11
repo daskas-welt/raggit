@@ -47,7 +47,11 @@ public sealed class RealLoopTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_tempDir, recursive: true); } catch { }
+        try
+        {
+            Directory.Delete(_tempDir, recursive: true);
+        }
+        catch { }
     }
 
     private sealed class RealFactory : WebApplicationFactory<Program>
@@ -69,11 +73,14 @@ public sealed class RealLoopTests : IDisposable
         {
             builder.ConfigureServices(services =>
             {
-                services.Configure<ApiKeyAuthOptions>(ApiKeyAuthOptions.Scheme, o =>
-                {
-                    o.AdminApiKey = AdminKey;
-                    o.EmployeeApiKey = EmployeeKey;
-                });
+                services.Configure<ApiKeyAuthOptions>(
+                    ApiKeyAuthOptions.Scheme,
+                    o =>
+                    {
+                        o.AdminApiKey = AdminKey;
+                        o.EmployeeApiKey = EmployeeKey;
+                    }
+                );
                 services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
                 // Real vector store on temp path (384 dev default)
                 services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lancePath, 384));
@@ -90,7 +97,9 @@ public sealed class RealLoopTests : IDisposable
         var ollamaUrl = OllamaProbe.DefaultUrl;
         if (!await OllamaProbe.IsAvailableAsync(ollamaUrl, 2000))
         {
-            _output.WriteLine($"[SKIP] Ollama not available at {ollamaUrl} — graceful skip per SC-003.");
+            _output.WriteLine(
+                $"[SKIP] Ollama not available at {ollamaUrl} — graceful skip per SC-003."
+            );
             return;
         }
 
@@ -98,7 +107,11 @@ public sealed class RealLoopTests : IDisposable
         if (!File.Exists(fixturePath))
         {
             // Fallback to repo-relative
-            fixturePath = Path.Combine(Directory.GetCurrentDirectory(), "fixtures", "sample-50pages.pdf");
+            fixturePath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "fixtures",
+                "sample-50pages.pdf"
+            );
         }
         if (!File.Exists(fixturePath))
         {
@@ -117,17 +130,21 @@ public sealed class RealLoopTests : IDisposable
         await using var pdfStream = File.OpenRead(fixturePath);
         var form = new MultipartFormDataContent
         {
-            { new StreamContent(pdfStream), "file", "sample-50pages.pdf" }
+            { new StreamContent(pdfStream), "file", "sample-50pages.pdf" },
         };
         var uploadResp = await client.PostAsync("/api/documents", form);
         swUpload.Stop();
-        _output.WriteLine($"POST /api/documents → {(int)uploadResp.StatusCode} in {swUpload.ElapsedMilliseconds}ms");
+        _output.WriteLine(
+            $"POST /api/documents → {(int)uploadResp.StatusCode} in {swUpload.ElapsedMilliseconds}ms"
+        );
         var uploadBody = await uploadResp.Content.ReadAsStringAsync();
         _output.WriteLine($"Upload body: {uploadBody}");
         Assert.True(uploadResp.IsSuccessStatusCode, $"Upload failed: {uploadBody}");
 
         var uploadJson = JsonDocument.Parse(uploadBody);
-        var docId = uploadJson.RootElement.TryGetProperty("id", out var idProp) ? idProp.GetString() : null;
+        var docId = uploadJson.RootElement.TryGetProperty("id", out var idProp)
+            ? idProp.GetString()
+            : null;
         Assert.False(string.IsNullOrWhiteSpace(docId));
 
         // Poll GET /api/documents until Ready <300s (SC-001)
@@ -145,18 +162,27 @@ public sealed class RealLoopTests : IDisposable
             {
                 if (doc.TryGetProperty("id", out var did) && did.GetString() == docId)
                 {
-                    status = doc.TryGetProperty("status", out var sp) ? sp.GetString() ?? "unknown" : "unknown";
+                    status = doc.TryGetProperty("status", out var sp)
+                        ? sp.GetString() ?? "unknown"
+                        : "unknown";
                     break;
                 }
             }
             _output.WriteLine($"Poll {swPoll.Elapsed.TotalSeconds:F1}s status={status}");
-            if (status == "Ready") break;
-            if (status == "Failed") Assert.Fail("Document ingestion failed");
+            if (status == "Ready")
+                break;
+            if (status == "Failed")
+                Assert.Fail("Document ingestion failed");
         }
         swPoll.Stop();
-        _output.WriteLine($"Poll finished in {swPoll.ElapsedMilliseconds}ms status={status} total={swTotal.ElapsedMilliseconds}ms");
+        _output.WriteLine(
+            $"Poll finished in {swPoll.ElapsedMilliseconds}ms status={status} total={swTotal.ElapsedMilliseconds}ms"
+        );
         Assert.Equal("Ready", status);
-        Assert.True(swTotal.Elapsed < TimeSpan.FromSeconds(300), $"SC-001 Ready exceeded 300s: {swTotal.Elapsed}");
+        Assert.True(
+            swTotal.Elapsed < TimeSpan.FromSeconds(300),
+            $"SC-001 Ready exceeded 300s: {swTotal.Elapsed}"
+        );
 
         // Query refund policy (SC-002) — use Employee key for retrieval
         client.DefaultRequestHeaders.Remove("X-Api-Key");
@@ -166,25 +192,40 @@ public sealed class RealLoopTests : IDisposable
         var queryResp = await client.PostAsJsonAsync("/api/query", queryPayload);
         swQuery.Stop();
         var queryBody = await queryResp.Content.ReadAsStringAsync();
-        _output.WriteLine($"POST /api/query {(int)queryResp.StatusCode} in {swQuery.ElapsedMilliseconds}ms body={queryBody}");
+        _output.WriteLine(
+            $"POST /api/query {(int)queryResp.StatusCode} in {swQuery.ElapsedMilliseconds}ms body={queryBody}"
+        );
         Assert.Equal(HttpStatusCode.OK, queryResp.StatusCode);
         var queryJson = JsonDocument.Parse(queryBody);
-        if (queryJson.RootElement.TryGetProperty("answer", out var ans) && ans.GetString() == "no relevant content found")
+        if (
+            queryJson.RootElement.TryGetProperty("answer", out var ans)
+            && ans.GetString() == "no relevant content found"
+        )
         {
-            _output.WriteLine("No relevant content found — acceptable per spec but citation path preferred.");
+            _output.WriteLine(
+                "No relevant content found — acceptable per spec but citation path preferred."
+            );
         }
         else
         {
-            Assert.True(queryJson.RootElement.TryGetProperty("citations", out var cits), "Missing citations");
+            Assert.True(
+                queryJson.RootElement.TryGetProperty("citations", out var cits),
+                "Missing citations"
+            );
             var count = cits.GetArrayLength();
             _output.WriteLine($"Citations: {count}");
             Assert.True(count >= 1, "Expected ≥1 citation referencing the document");
             // Verify citation references our docId
-            var hasDoc = cits.EnumerateArray().Any(c => c.TryGetProperty("documentId", out var did) && did.GetString() == docId);
+            var hasDoc = cits.EnumerateArray()
+                .Any(c => c.TryGetProperty("documentId", out var did) && did.GetString() == docId);
             Assert.True(hasDoc, "Citation should reference uploaded document");
         }
 
-        _output.WriteLine($"SC-001 wall time Ready: {swTotal.ElapsedMilliseconds}ms (<300s) SC-002 query: {swQuery.ElapsedMilliseconds}ms");
-        _output.WriteLine("Note: <7s on reference workstation is production assumption to verify at deploy, not asserted here per verification.md.");
+        _output.WriteLine(
+            $"SC-001 wall time Ready: {swTotal.ElapsedMilliseconds}ms (<300s) SC-002 query: {swQuery.ElapsedMilliseconds}ms"
+        );
+        _output.WriteLine(
+            "Note: <7s on reference workstation is production assumption to verify at deploy, not asserted here per verification.md."
+        );
     }
 }

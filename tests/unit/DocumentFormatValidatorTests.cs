@@ -19,7 +19,10 @@ public sealed class DocumentFormatValidatorTests
     [InlineData(DocumentMimeType.Docx, "PK\x03\x04")]
     [InlineData(DocumentMimeType.Txt, "This is plain text.")]
     [InlineData(DocumentMimeType.Md, "# Markdown header")]
-    public async Task ValidateAndRewindAsync_MatchingMagic_ReturnsSeekableStream(DocumentMimeType mime, string content)
+    public async Task ValidateAndRewindAsync_MatchingMagic_ReturnsSeekableStream(
+        DocumentMimeType mime,
+        string content
+    )
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -34,7 +37,8 @@ public sealed class DocumentFormatValidatorTests
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Not a PDF"));
 
-        var act = async () => await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Pdf);
+        var act = async () =>
+            await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Pdf);
 
         await act.Should().ThrowAsync<InvalidDataException>();
     }
@@ -44,7 +48,8 @@ public sealed class DocumentFormatValidatorTests
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Not a zip archive"));
 
-        var act = async () => await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Docx);
+        var act = async () =>
+            await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Docx);
 
         await act.Should().ThrowAsync<InvalidDataException>();
     }
@@ -55,7 +60,10 @@ public sealed class DocumentFormatValidatorTests
         var bytes = Encoding.UTF8.GetBytes("Plain text content");
         var stream = new NonSeekableStream(bytes);
 
-        var result = await DocumentFormatValidator.ValidateAndRewindAsync(stream, DocumentMimeType.Txt);
+        var result = await DocumentFormatValidator.ValidateAndRewindAsync(
+            stream,
+            DocumentMimeType.Txt
+        );
 
         result.CanSeek.Should().BeTrue();
         result.Position.Should().Be(0);
@@ -100,8 +108,13 @@ public sealed class DocumentFormatValidatorTests
         }
 
         public override void Flush() { }
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
         public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
     }
 }

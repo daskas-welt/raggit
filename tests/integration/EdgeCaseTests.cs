@@ -26,7 +26,7 @@ public sealed class EdgeCaseTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -40,7 +40,11 @@ public sealed class EdgeCaseTests
         var tasks = new Task<HttpResponseMessage>[count];
         for (var i = 0; i < count; i++)
         {
-            tasks[i] = UploadTextAsync(client, $"bulk-{i}.txt", $"Bulk document {i} with enough text to chunk.");
+            tasks[i] = UploadTextAsync(
+                client,
+                $"bulk-{i}.txt",
+                $"Bulk document {i} with enough text to chunk."
+            );
         }
 
         var responses = await Task.WhenAll(tasks);
@@ -90,7 +94,11 @@ public sealed class EdgeCaseTests
         var llm = (FakeLlmClient)factory.Services.GetRequiredService<ILlmClient>();
         llm.Healthy = false;
 
-        var response = await employeeClient.PostAsJsonAsync("/api/query", new { query = "offline content" }, JsonOptions);
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/query",
+            new { query = "offline content" },
+            JsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         var body = await response.Content.ReadAsStringAsync();
@@ -115,7 +123,11 @@ public sealed class EdgeCaseTests
         Directory.CreateDirectory(blockedPath);
         Directory.Move(vectorStore.StoragePath, Path.Combine(blockedPath, "lancedb"));
 
-        var response = await client.PostAsJsonAsync("/api/query", new { query = "anything" }, JsonOptions);
+        var response = await client.PostAsJsonAsync(
+            "/api/query",
+            new { query = "anything" },
+            JsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
     }
@@ -123,7 +135,11 @@ public sealed class EdgeCaseTests
     [Fact]
     public async Task RestartPersistence_DocumentAndQuerySurviveNewFactory()
     {
-        var baseDir = Path.Combine(Path.GetTempPath(), "raggit-restart-tests", Guid.NewGuid().ToString());
+        var baseDir = Path.Combine(
+            Path.GetTempPath(),
+            "raggit-restart-tests",
+            Guid.NewGuid().ToString()
+        );
         Directory.CreateDirectory(baseDir);
         var dbPath = Path.Combine(baseDir, "rag.db");
         var lanceDbPath = Path.Combine(baseDir, "lancedb");
@@ -136,13 +152,21 @@ public sealed class EdgeCaseTests
             var adminClient = factory1.CreateClient();
             adminClient.DefaultRequestHeaders.Add("X-Api-Key", factory1.AdminKey);
 
-            var upload = await UploadTextAsync(adminClient, "persist.txt", "Persisted content for restart test.");
+            var upload = await UploadTextAsync(
+                adminClient,
+                "persist.txt",
+                "Persisted content for restart test."
+            );
             upload.StatusCode.Should().Be(HttpStatusCode.Created);
             persistedDocument = await DeserializeDocumentAsync(upload);
 
             var employeeClient = factory1.CreateClient();
             employeeClient.DefaultRequestHeaders.Add("X-Api-Key", factory1.EmployeeKey);
-            var queryResponse = await employeeClient.PostAsJsonAsync("/api/query", new { query = "Persisted content" }, JsonOptions);
+            var queryResponse = await employeeClient.PostAsJsonAsync(
+                "/api/query",
+                new { query = "Persisted content" },
+                JsonOptions
+            );
             queryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
@@ -155,16 +179,26 @@ public sealed class EdgeCaseTests
             var listResponse = await adminClient.GetAsync("/api/documents");
             listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
             var documents = await DeserializeListAsync(listResponse);
-            documents.Should().Contain(d => d.Id == persistedDocument.Id && d.Status == DocumentStatus.Ready);
+            documents
+                .Should()
+                .Contain(d => d.Id == persistedDocument.Id && d.Status == DocumentStatus.Ready);
 
             var employeeClient = factory2.CreateClient();
             employeeClient.DefaultRequestHeaders.Add("X-Api-Key", factory2.EmployeeKey);
-            var queryResponse = await employeeClient.PostAsJsonAsync("/api/query", new { query = "Persisted content" }, JsonOptions);
+            var queryResponse = await employeeClient.PostAsJsonAsync(
+                "/api/query",
+                new { query = "Persisted content" },
+                JsonOptions
+            );
             queryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);
@@ -181,11 +215,15 @@ public sealed class EdgeCaseTests
             ?? throw new InvalidOperationException("Failed to deserialize Document.");
     }
 
-    private static async Task<System.Collections.Generic.List<Document>> DeserializeListAsync(HttpResponseMessage response)
+    private static async Task<System.Collections.Generic.List<Document>> DeserializeListAsync(
+        HttpResponseMessage response
+    )
     {
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<System.Collections.Generic.List<Document>>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Failed to deserialize document list.");
+        return JsonSerializer.Deserialize<System.Collections.Generic.List<Document>>(
+                json,
+                JsonOptions
+            ) ?? throw new InvalidOperationException("Failed to deserialize document list.");
     }
 
     /// <summary>
@@ -195,8 +233,6 @@ public sealed class EdgeCaseTests
     private sealed class RestartableFactory : IntegrationTestFactory
     {
         public RestartableFactory(string dbPath, string lanceDbPath)
-            : base(dbPath, lanceDbPath)
-        {
-        }
+            : base(dbPath, lanceDbPath) { }
     }
 }

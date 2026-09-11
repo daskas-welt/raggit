@@ -4,7 +4,13 @@ using System.IO;
 
 namespace RAGGit.Client.Maui.Config;
 
-public sealed record ClientConfigResult(bool IsValid, string? WorkstationUrl, string? ApiKey, string? Error, bool HttpAttempted = false);
+public sealed record ClientConfigResult(
+    bool IsValid,
+    string? WorkstationUrl,
+    string? ApiKey,
+    string? Error,
+    bool HttpAttempted = false
+);
 
 public static class ClientConfigResolver
 {
@@ -14,13 +20,34 @@ public static class ClientConfigResolver
         var apiKey = ResolveApiKey(config);
 
         if (string.IsNullOrWhiteSpace(url))
-            return new ClientConfigResult(false, null, null, "Missing Workstation:Url", HttpAttempted: false);
+            return new ClientConfigResult(
+                false,
+                null,
+                null,
+                "Missing Workstation:Url",
+                HttpAttempted: false
+            );
         if (string.IsNullOrWhiteSpace(apiKey))
-            return new ClientConfigResult(false, null, null, "Missing ApiKey (Workstation:ApiKey or Api:AdminKey/Api:EmployeeKey)", HttpAttempted: false);
+            return new ClientConfigResult(
+                false,
+                null,
+                null,
+                "Missing ApiKey (Workstation:ApiKey or Api:AdminKey/Api:EmployeeKey)",
+                HttpAttempted: false
+            );
 
         // Validate URL shape without attempting HTTP
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
-            return new ClientConfigResult(false, null, null, "Invalid Workstation:Url", HttpAttempted: false);
+        if (
+            !Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != "http" && uri.Scheme != "https")
+        )
+            return new ClientConfigResult(
+                false,
+                null,
+                null,
+                "Invalid Workstation:Url",
+                HttpAttempted: false
+            );
 
         return new ClientConfigResult(true, url, apiKey, null, HttpAttempted: false);
     }
@@ -40,7 +67,13 @@ public static class ClientConfigResolver
     {
         if (!Directory.Exists(sourceRoot))
             return false;
-        var disallowed = new[] { "http://localhost:5001", "http://ai-workstation", "dev-admin-key", "dev-employee-key" };
+        var disallowed = new[]
+        {
+            "http://localhost:5001",
+            "http://ai-workstation",
+            "dev-admin-key",
+            "dev-employee-key",
+        };
         var files = Directory.GetFiles(sourceRoot, "*.cs", SearchOption.AllDirectories);
         foreach (var file in files)
         {
@@ -60,7 +93,8 @@ public static class ClientConfigResolver
                     foreach (var line in lines)
                     {
                         var trimmed = line.TrimStart();
-                        if (trimmed.StartsWith("//")) continue;
+                        if (trimmed.StartsWith("//"))
+                            continue;
                         if (line.Contains(lit, StringComparison.Ordinal))
                             return true;
                     }

@@ -28,7 +28,8 @@ public sealed class DocumentsController : ControllerBase
     public DocumentsController(
         IngestService ingestService,
         IVirusScanner virusScanner,
-        ILogger<DocumentsController> logger)
+        ILogger<DocumentsController> logger
+    )
     {
         _ingestService = ingestService ?? throw new ArgumentNullException(nameof(ingestService));
         _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
@@ -52,24 +53,48 @@ public sealed class DocumentsController : ControllerBase
 
         if (file.Length > DocumentValidation.MaxFileSizeBytes)
         {
-            _logger.LogWarning("Upload rejected: file {Filename} size {Size} exceeds 100MB", file.FileName, file.Length);
-            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { error = "File exceeds 100MB." });
+            _logger.LogWarning(
+                "Upload rejected: file {Filename} size {Size} exceeds 100MB",
+                file.FileName,
+                file.Length
+            );
+            return StatusCode(
+                StatusCodes.Status413PayloadTooLarge,
+                new { error = "File exceeds 100MB." }
+            );
         }
 
         if (!TryMapMime(file.ContentType, file.FileName, out var mime))
         {
             var extension = Path.GetExtension(file.FileName);
-            _logger.LogWarning("Upload rejected: unsupported type {Extension} for {Filename}", extension, file.FileName);
+            _logger.LogWarning(
+                "Upload rejected: unsupported type {Extension} for {Filename}",
+                extension,
+                file.FileName
+            );
             return BadRequest(new { error = $"unsupported type: {extension}" });
         }
 
         var createdBy = User.Identity?.Name ?? "unknown";
-        _logger.LogInformation("Admin uploading {Filename} ({Mime}) as {User}", file.FileName, mime, createdBy);
+        _logger.LogInformation(
+            "Admin uploading {Filename} ({Mime}) as {User}",
+            file.FileName,
+            mime,
+            createdBy
+        );
 
         await using var stream = file.OpenReadStream();
-        var validatedStream = await DocumentFormatValidator.ValidateAndRewindAsync(stream, mime, cancellationToken);
+        var validatedStream = await DocumentFormatValidator.ValidateAndRewindAsync(
+            stream,
+            mime,
+            cancellationToken
+        );
 
-        var scanPassed = await _virusScanner.ScanAsync(validatedStream, file.FileName, cancellationToken);
+        var scanPassed = await _virusScanner.ScanAsync(
+            validatedStream,
+            file.FileName,
+            cancellationToken
+        );
         if (!scanPassed)
         {
             _logger.LogWarning("Upload rejected: virus scan failed for {Filename}", file.FileName);
@@ -82,11 +107,10 @@ public sealed class DocumentsController : ControllerBase
             mime,
             file.Length,
             createdBy,
-            cancellationToken);
+            cancellationToken
+        );
 
-        return created
-            ? StatusCode(StatusCodes.Status201Created, document)
-            : Ok(document);
+        return created ? StatusCode(StatusCodes.Status201Created, document) : Ok(document);
     }
 
     /// <summary>

@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-       xmlns:views="clr-namespace:RAGGit.Client.Maui.Views"
-       x:Class="RAGGit.Client.Maui.AppShell"
-       Title="RAGGit">
-  <!-- Icons stripped for MVP (VII simplicity) — add FontImageSource later: Icon="{FontImage Glyph='&#xE8F6;' FontFamily='MaterialSymbols' Size=24}" after adding font to Resources/Fonts + App.xaml -->
-  <TabBar>
-    <ShellContent Title="Library" ContentTemplate="{DataTemplate views:LibraryView}" Route="library" />
-    <ShellContent Title="Ask" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
-    <ShellContent Title="Upload" ContentTemplate="{DataTemplate views:UploadView}" Route="upload" />
-  </TabBar>
+<Shell
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:RAGGit.Client.Maui.Views"
+    x:Class="RAGGit.Client.Maui.AppShell"
+    Title="RAGGit"
+>
+    <!-- Icons stripped for MVP (VII simplicity) — add FontImageSource later: Icon="{FontImage Glyph='&#xE8F6;' FontFamily='MaterialSymbols' Size=24}" after adding font to Resources/Fonts + App.xaml -->
+    <TabBar>
+        <ShellContent
+            Title="Library"
+            ContentTemplate="{DataTemplate views:LibraryView}"
+            Route="library"
+        />
+        <ShellContent Title="Ask" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
+        <ShellContent
+            Title="Upload"
+            ContentTemplate="{DataTemplate views:UploadView}"
+            Route="upload"
+        />
+    </TabBar>
 </Shell>

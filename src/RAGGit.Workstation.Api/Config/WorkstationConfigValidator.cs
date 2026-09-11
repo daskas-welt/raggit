@@ -7,7 +7,12 @@ public sealed record ValidationResult(bool IsValid, IReadOnlyList<string> Warnin
 
 public static class WorkstationConfigValidator
 {
-    public static ValidationResult Validate(int vectorSize, string embedModel, string? vectorDbPath, string? qdrantPath)
+    public static ValidationResult Validate(
+        int vectorSize,
+        string embedModel,
+        string? vectorDbPath,
+        string? qdrantPath
+    )
     {
         var warnings = new List<string>();
         string? error = null;
@@ -20,7 +25,9 @@ public static class WorkstationConfigValidator
 
         if (!IsEmbedModelAligned(embedModel, vectorSize))
         {
-            warnings.Add($"EmbedModel '{embedModel}' mismatched with VectorSize {vectorSize} — expected {(vectorSize == 384 ? "all-minilm ↔ 384" : "nomic-embed-text ↔ 768")}.");
+            warnings.Add(
+                $"EmbedModel '{embedModel}' mismatched with VectorSize {vectorSize} — expected {(vectorSize == 384 ? "all-minilm ↔ 384" : "nomic-embed-text ↔ 768")}."
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(qdrantPath) && !string.IsNullOrWhiteSpace(vectorDbPath))
@@ -29,14 +36,17 @@ public static class WorkstationConfigValidator
             var normQdrant = qdrantPath.Trim().TrimEnd('/', '\\');
             if (!string.Equals(normVector, normQdrant, StringComparison.OrdinalIgnoreCase))
             {
-                warnings.Add($"Legacy Qdrant:Path '{qdrantPath}' disagrees with VectorDb:Path '{vectorDbPath}' — VectorDb:Path is the single source of truth.");
+                warnings.Add(
+                    $"Legacy Qdrant:Path '{qdrantPath}' disagrees with VectorDb:Path '{vectorDbPath}' — VectorDb:Path is the single source of truth."
+                );
             }
         }
 
         return new ValidationResult(true, warnings, null);
     }
 
-    public static bool IsSupportedVectorSize(int vectorSize) => vectorSize == 384 || vectorSize == 768;
+    public static bool IsSupportedVectorSize(int vectorSize) =>
+        vectorSize == 384 || vectorSize == 768;
 
     public static bool IsEmbedModelAligned(string embedModel, int vectorSize)
     {

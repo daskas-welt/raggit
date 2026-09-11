@@ -43,10 +43,14 @@ public sealed class ChunkingTests
 
         for (var i = 0; i < chunks.Count - 1; i++)
         {
-            var currentTokens = chunks[i].Text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
-            var nextTokens = chunks[i + 1].Text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+            var currentTokens = chunks[i]
+                .Text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+            var nextTokens = chunks[i + 1]
+                .Text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
             var actualOverlap = CountOverlap(currentTokens, nextTokens);
-            actualOverlap.Should().Be(overlap, $"chunks {i} and {i + 1} should share {overlap} tokens");
+            actualOverlap
+                .Should()
+                .Be(overlap, $"chunks {i} and {i + 1} should share {overlap} tokens");
         }
     }
 

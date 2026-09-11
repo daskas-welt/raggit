@@ -31,7 +31,7 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
     private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public DocumentsContractTests(TestApiFactory factory)
@@ -85,9 +85,14 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var array = await JsonSerializer.DeserializeAsync<List<Document>>(
             await response.Content.ReadAsStreamAsync(),
-            _jsonOptions);
+            _jsonOptions
+        );
         array.Should().NotBeNull();
-        array.Should().Contain(d => d.Filename == "contract-test.pdf" || d.Filename == "list-contract-content.pdf");
+        array
+            .Should()
+            .Contain(d =>
+                d.Filename == "contract-test.pdf" || d.Filename == "list-contract-content.pdf"
+            );
     }
 
     private static MultipartFormDataContent CreatePdfContent(string text)

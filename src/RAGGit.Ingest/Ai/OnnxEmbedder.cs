@@ -36,15 +36,14 @@ public sealed class OnnxEmbedder : IEmbedder, IDisposable
         _session = new InferenceSession(_modelPath);
 
         var vocabPath = Path.Combine(Path.GetDirectoryName(_modelPath) ?? ".", "vocab.txt");
-        _vocab = File.Exists(vocabPath)
-            ? LoadVocab(vocabPath)
-            : new Dictionary<string, int>();
+        _vocab = File.Exists(vocabPath) ? LoadVocab(vocabPath) : new Dictionary<string, int>();
     }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var inputList = inputs?.ToList() ?? throw new ArgumentNullException(nameof(inputs));
         if (inputList.Count == 0)
@@ -79,23 +78,38 @@ public sealed class OnnxEmbedder : IEmbedder, IDisposable
         }
 
         var inputIdsTensor = new DenseTensor<long>(inputIds, new[] { 1, _maxSequenceLength });
-        var attentionMaskTensor = new DenseTensor<long>(attentionMask, new[] { 1, _maxSequenceLength });
-        var tokenTypeIdsTensor = new DenseTensor<long>(tokenTypeIds, new[] { 1, _maxSequenceLength });
+        var attentionMaskTensor = new DenseTensor<long>(
+            attentionMask,
+            new[] { 1, _maxSequenceLength }
+        );
+        var tokenTypeIdsTensor = new DenseTensor<long>(
+            tokenTypeIds,
+            new[] { 1, _maxSequenceLength }
+        );
 
         var inputNames = _session.InputMetadata.Keys.ToList();
         var inputs = new List<NamedOnnxValue>();
 
         foreach (var name in inputNames)
         {
-            if (name.Contains("input", StringComparison.OrdinalIgnoreCase) && name.Contains("id", StringComparison.OrdinalIgnoreCase))
+            if (
+                name.Contains("input", StringComparison.OrdinalIgnoreCase)
+                && name.Contains("id", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 inputs.Add(NamedOnnxValue.CreateFromTensor(name, inputIdsTensor));
             }
-            else if (name.Contains("attention", StringComparison.OrdinalIgnoreCase) || name.Contains("mask", StringComparison.OrdinalIgnoreCase))
+            else if (
+                name.Contains("attention", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("mask", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 inputs.Add(NamedOnnxValue.CreateFromTensor(name, attentionMaskTensor));
             }
-            else if (name.Contains("token", StringComparison.OrdinalIgnoreCase) && name.Contains("type", StringComparison.OrdinalIgnoreCase))
+            else if (
+                name.Contains("token", StringComparison.OrdinalIgnoreCase)
+                && name.Contains("type", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 inputs.Add(NamedOnnxValue.CreateFromTensor(name, tokenTypeIdsTensor));
             }
@@ -143,7 +157,8 @@ public sealed class OnnxEmbedder : IEmbedder, IDisposable
     private List<long> Tokenize(string text)
     {
         var tokens = new List<long> { 101 }; // [CLS]
-        var words = text.ToLowerInvariant().Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+        var words = text.ToLowerInvariant()
+            .Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var word in words)
         {

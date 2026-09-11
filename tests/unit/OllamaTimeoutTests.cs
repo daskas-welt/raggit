@@ -17,6 +17,7 @@ namespace RAGGit.Tests.Unit;
 public sealed class OllamaTimeoutTests
 {
     private readonly ITestOutputHelper _output;
+
     public OllamaTimeoutTests(ITestOutputHelper output) => _output = output;
 
     [Fact]
@@ -26,11 +27,21 @@ public sealed class OllamaTimeoutTests
         var timeoutMs = 1500;
         var embedder = new OllamaEmbedder(unreachable, "all-minilm", timeoutMs);
         var sw = Stopwatch.StartNew();
-        var ex = await Assert.ThrowsAnyAsync<Exception>(() => embedder.GetEmbeddingsAsync(new[] { "hello" }));
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() =>
+            embedder.GetEmbeddingsAsync(new[] { "hello" })
+        );
         sw.Stop();
-        _output.WriteLine($"Embedder threw {ex.GetType().Name}: {ex.Message} in {sw.ElapsedMilliseconds}ms");
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(3), $"Embedder fail-fast exceeded {timeoutMs}ms window: {sw.ElapsedMilliseconds}ms");
-        Assert.True(sw.Elapsed < TimeSpan.FromMilliseconds(timeoutMs + 1500), $"Expected ~{timeoutMs}ms, got {sw.ElapsedMilliseconds}ms");
+        _output.WriteLine(
+            $"Embedder threw {ex.GetType().Name}: {ex.Message} in {sw.ElapsedMilliseconds}ms"
+        );
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromSeconds(3),
+            $"Embedder fail-fast exceeded {timeoutMs}ms window: {sw.ElapsedMilliseconds}ms"
+        );
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromMilliseconds(timeoutMs + 1500),
+            $"Expected ~{timeoutMs}ms, got {sw.ElapsedMilliseconds}ms"
+        );
     }
 
     [Fact]
@@ -42,8 +53,13 @@ public sealed class OllamaTimeoutTests
         var sw = Stopwatch.StartNew();
         var ex = await Assert.ThrowsAnyAsync<Exception>(() => llm.ChatAsync("system", "user"));
         sw.Stop();
-        _output.WriteLine($"Llm threw {ex.GetType().Name}: {ex.Message} in {sw.ElapsedMilliseconds}ms");
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(3), $"Llm fail-fast exceeded {timeoutMs}ms window: {sw.ElapsedMilliseconds}ms");
+        _output.WriteLine(
+            $"Llm threw {ex.GetType().Name}: {ex.Message} in {sw.ElapsedMilliseconds}ms"
+        );
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromSeconds(3),
+            $"Llm fail-fast exceeded {timeoutMs}ms window: {sw.ElapsedMilliseconds}ms"
+        );
     }
 
     [Fact]
@@ -53,11 +69,19 @@ public sealed class OllamaTimeoutTests
         var timeoutMs = 800;
         var embedder = new OllamaEmbedder(unreachable, "all-minilm", timeoutMs);
         var sw = Stopwatch.StartNew();
-        await Assert.ThrowsAnyAsync<Exception>(() => embedder.GetEmbeddingsAsync(new[] { "a", "b" }));
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            embedder.GetEmbeddingsAsync(new[] { "a", "b" })
+        );
         sw.Stop();
         _output.WriteLine($"800ms timeout elapsed {sw.ElapsedMilliseconds}ms");
         // Must be ~800ms, not 100s default — proves HttpClient.Timeout wired, not hanging.
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(2), $"Timeout not wired: elapsed {sw.ElapsedMilliseconds}ms for {timeoutMs}ms timeout");
-        Assert.True(sw.Elapsed >= TimeSpan.FromMilliseconds(200), "Too fast — likely not actually attempting network");
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromSeconds(2),
+            $"Timeout not wired: elapsed {sw.ElapsedMilliseconds}ms for {timeoutMs}ms timeout"
+        );
+        Assert.True(
+            sw.Elapsed >= TimeSpan.FromMilliseconds(200),
+            "Too fast — likely not actually attempting network"
+        );
     }
 }

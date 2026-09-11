@@ -12,10 +12,9 @@ public sealed class MauiFilePicker : IFilePicker
 {
     public async Task<PickedFile?> PickAsync()
     {
-        var result = await FilePicker.Default.PickAsync(new PickOptions
-        {
-            PickerTitle = "Select a document"
-        });
+        var result = await FilePicker.Default.PickAsync(
+            new PickOptions { PickerTitle = "Select a document" }
+        );
 
         if (result is null)
         {
@@ -23,7 +22,11 @@ public sealed class MauiFilePicker : IFilePicker
         }
 
         var stream = await result.OpenReadAsync();
-        return new PickedFile(result.FileName, stream, result.ContentType ?? "application/octet-stream");
+        return new PickedFile(
+            result.FileName,
+            stream,
+            result.ContentType ?? "application/octet-stream"
+        );
     }
 }
 #endif

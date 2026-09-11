@@ -21,10 +21,18 @@ public sealed class NoOpVirusScanner : IVirusScanner
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task<bool> ScanAsync(Stream stream, string filename, CancellationToken cancellationToken = default)
+    public Task<bool> ScanAsync(
+        Stream stream,
+        string filename,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(stream);
-        _logger.LogInformation("Virus scan stub passed for {Filename} ({Length} bytes)", filename, stream.Length);
+        _logger.LogInformation(
+            "Virus scan stub passed for {Filename} ({Length} bytes)",
+            filename,
+            stream.Length
+        );
         return Task.FromResult(true);
     }
 }

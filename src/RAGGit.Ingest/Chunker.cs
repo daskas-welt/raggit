@@ -27,7 +27,7 @@ public static class Chunker
             DocumentMimeType.Pdf => ExtractPdfText(stream),
             DocumentMimeType.Docx => ExtractDocxText(stream),
             DocumentMimeType.Txt or DocumentMimeType.Md => await ExtractPlainTextAsync(stream),
-            _ => throw new NotSupportedException($"Unsupported MIME type: {mime}")
+            _ => throw new NotSupportedException($"Unsupported MIME type: {mime}"),
         };
     }
 
@@ -40,18 +40,25 @@ public static class Chunker
         string text,
         Guid documentId,
         int chunkSize = 512,
-        int overlap = 50)
+        int overlap = 50
+    )
     {
         ArgumentNullException.ThrowIfNull(text);
 
         if (chunkSize <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(chunkSize), "Chunk size must be positive.");
+            throw new ArgumentOutOfRangeException(
+                nameof(chunkSize),
+                "Chunk size must be positive."
+            );
         }
 
         if (overlap < 0 || overlap >= chunkSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(overlap), "Overlap must be non-negative and less than chunk size.");
+            throw new ArgumentOutOfRangeException(
+                nameof(overlap),
+                "Overlap must be non-negative and less than chunk size."
+            );
         }
 
         var tokens = text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
@@ -70,14 +77,16 @@ public static class Chunker
             var chunkTokens = tokens[start..(start + length)];
             var chunkText = string.Join(' ', chunkTokens);
 
-            chunks.Add(new Chunk
-            {
-                Id = Guid.NewGuid(),
-                DocumentId = documentId,
-                Ordinal = ordinal++,
-                Text = chunkText,
-                TokenCount = length
-            });
+            chunks.Add(
+                new Chunk
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = documentId,
+                    Ordinal = ordinal++,
+                    Text = chunkText,
+                    TokenCount = length,
+                }
+            );
         }
 
         return chunks;
@@ -132,7 +141,12 @@ public static class Chunker
 
     private static async Task<string> ExtractPlainTextAsync(Stream stream)
     {
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
+        using var reader = new StreamReader(
+            stream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            leaveOpen: true
+        );
         return await reader.ReadToEndAsync();
     }
 }

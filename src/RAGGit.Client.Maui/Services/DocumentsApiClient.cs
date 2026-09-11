@@ -21,7 +21,7 @@ public sealed class DocumentsApiClient
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public DocumentsApiClient(HttpClient httpClient)
@@ -32,14 +32,19 @@ public sealed class DocumentsApiClient
     /// <summary>
     /// GET /api/documents
     /// </summary>
-    public async Task<IReadOnlyList<Document>> GetDocumentsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Document>> GetDocumentsAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
             var response = await _httpClient.GetAsync("api/documents", cancellationToken);
             await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-            var documents = await response.Content.ReadFromJsonAsync<List<Document>>(_jsonOptions, cancellationToken);
+            var documents = await response.Content.ReadFromJsonAsync<List<Document>>(
+                _jsonOptions,
+                cancellationToken
+            );
             return documents ?? new List<Document>();
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
@@ -58,9 +63,13 @@ public sealed class DocumentsApiClient
 
     private async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response, CancellationToken ct)
     {
-        if (response.IsSuccessStatusCode) return;
+        if (response.IsSuccessStatusCode)
+            return;
         var body = await response.Content.ReadAsStringAsync(ct);
-        if (response.StatusCode == HttpStatusCode.ServiceUnavailable && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        if (
+            response.StatusCode == HttpStatusCode.ServiceUnavailable
+            && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        )
             throw new HttpRequestException("model unavailable offline");
         if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
             throw new HttpRequestException($"AI workstation unavailable: {body}");
@@ -72,11 +81,11 @@ public sealed class DocumentsApiClient
     }
 
     private static bool IsMappedError(HttpRequestException ex) =>
-        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
+        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// POST /api/documents with a file stream and optional progress reporting.
@@ -86,7 +95,8 @@ public sealed class DocumentsApiClient
         string fileName,
         string contentType,
         IProgress<double>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(fileStream);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
@@ -97,7 +107,9 @@ public sealed class DocumentsApiClient
         StreamContent fileContent;
         if (progress is not null && fileStream.CanSeek)
         {
-            fileContent = new StreamContent(new ProgressStream(fileStream, progress, fileStream.Length));
+            fileContent = new StreamContent(
+                new ProgressStream(fileStream, progress, fileStream.Length)
+            );
         }
         else
         {
@@ -123,13 +135,19 @@ public sealed class DocumentsApiClient
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions, cancellationToken);
-            throw new UnsupportedDocumentTypeException(error?.Error ?? $"unsupported type: {Path.GetExtension(fileName)}");
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
+                _jsonOptions,
+                cancellationToken
+            );
+            throw new UnsupportedDocumentTypeException(
+                error?.Error ?? $"unsupported type: {Path.GetExtension(fileName)}"
+            );
         }
 
         await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var document = await response.Content.ReadFromJsonAsync<Document>(_jsonOptions, cancellationToken)
+        var document =
+            await response.Content.ReadFromJsonAsync<Document>(_jsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Failed to deserialize document response.");
 
         return document;
@@ -142,7 +160,10 @@ public sealed class DocumentsApiClient
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"api/documents/{documentId}", cancellationToken);
+            var response = await _httpClient.DeleteAsync(
+                $"api/documents/{documentId}",
+                cancellationToken
+            );
             await EnsureSuccessOrThrowAsync(response, cancellationToken);
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
@@ -171,9 +192,7 @@ public sealed class DocumentsApiClient
 public sealed class UnsupportedDocumentTypeException : Exception
 {
     public UnsupportedDocumentTypeException(string message)
-        : base(message)
-    {
-    }
+        : base(message) { }
 }
 
 /// <summary>
@@ -212,7 +231,12 @@ internal sealed class ProgressStream : Stream
         return read;
     }
 
-    public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    public override async Task<int> ReadAsync(
+        byte[] buffer,
+        int offset,
+        int count,
+        CancellationToken cancellationToken
+    )
     {
         var read = await _inner.ReadAsync(buffer.AsMemory(offset, count), cancellationToken);
         _read += read;
@@ -221,7 +245,11 @@ internal sealed class ProgressStream : Stream
     }
 
     public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
+
     public override void SetLength(long value) => _inner.SetLength(value);
-    public override void Write(byte[] buffer, int offset, int count) => _inner.Write(buffer, offset, count);
+
+    public override void Write(byte[] buffer, int offset, int count) =>
+        _inner.Write(buffer, offset, count);
+
     public override void Flush() => _inner.Flush();
 }

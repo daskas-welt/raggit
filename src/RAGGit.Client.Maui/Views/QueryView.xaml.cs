@@ -12,7 +12,10 @@ public partial class QueryView : ContentPage
     private void OnSuggestionTapped(object sender, EventArgs e)
     {
         // Forward Syncfusion suggestion chip (e.g., "Summarize citations") to ViewModel AskCommand
-        if (BindingContext is QueryViewModel vm && sender is Syncfusion.Maui.AIAssistView.SfAIAssistView assist)
+        if (
+            BindingContext is QueryViewModel vm
+            && sender is Syncfusion.Maui.AIAssistView.SfAIAssistView assist
+        )
         {
             // Placeholder: SfAIAssistView SuggestionItemTapped args carry Text; wire to QueryText for retry
         }

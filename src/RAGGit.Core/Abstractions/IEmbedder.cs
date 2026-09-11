@@ -11,5 +11,6 @@ public interface IEmbedder
 {
     Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }

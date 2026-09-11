@@ -26,7 +26,7 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
     private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public QueryContractTests(TestApiFactory factory)
@@ -43,24 +43,31 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         var documentId = Guid.NewGuid();
         var chunkId = Guid.NewGuid();
         var vectorStore = GetVectorStore();
-        vectorStore.Seed(new[]
-        {
-            new VectorRecord(
-                chunkId,
-                new float[384],
-                new Dictionary<string, object?>
-                {
-                    ["documentId"] = documentId.ToString(),
-                    ["text"] = "Customers may return items within 30 days for a full refund.",
-                    ["ordinal"] = 0
-                })
-        });
+        vectorStore.Seed(
+            new[]
+            {
+                new VectorRecord(
+                    chunkId,
+                    new float[384],
+                    new Dictionary<string, object?>
+                    {
+                        ["documentId"] = documentId.ToString(),
+                        ["text"] = "Customers may return items within 30 days for a full refund.",
+                        ["ordinal"] = 0,
+                    }
+                ),
+            }
+        );
 
         var llm = GetLlmClient();
         llm.Healthy = true;
         llm.ResponseText = $"Customers can return items within 30 days. [{chunkId}]";
 
-        var response = await _client.PostAsJsonAsync("/api/query", new { query = "refund policy" }, _jsonOptions);
+        var response = await _client.PostAsJsonAsync(
+            "/api/query",
+            new { query = "refund policy" },
+            _jsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -71,7 +78,11 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         var citation = json.GetProperty("citations")[0];
         citation.GetProperty("documentId").GetString().Should().Be(documentId.ToString());
         citation.GetProperty("chunkId").GetString().Should().Be(chunkId.ToString());
-        citation.GetProperty("text").GetString().Should().Be("Customers may return items within 30 days for a full refund.");
+        citation
+            .GetProperty("text")
+            .GetString()
+            .Should()
+            .Be("Customers may return items within 30 days for a full refund.");
         citation.GetProperty("ordinal").GetInt32().Should().Be(0);
     }
 
@@ -80,7 +91,11 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
     {
         GetVectorStore().Clear();
 
-        var response = await _client.PostAsJsonAsync("/api/query", new { query = "xyz nonsense query" }, _jsonOptions);
+        var response = await _client.PostAsJsonAsync(
+            "/api/query",
+            new { query = "xyz nonsense query" },
+            _jsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -89,9 +104,9 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         json.GetProperty("citations").GetArrayLength().Should().Be(0);
     }
 
-    private FakeVectorStore GetVectorStore()
-        => (FakeVectorStore)_factory.Services.GetRequiredService<IVectorStore>();
+    private FakeVectorStore GetVectorStore() =>
+        (FakeVectorStore)_factory.Services.GetRequiredService<IVectorStore>();
 
-    private FakeLlmClient GetLlmClient()
-        => (FakeLlmClient)_factory.Services.GetRequiredService<ILlmClient>();
+    private FakeLlmClient GetLlmClient() =>
+        (FakeLlmClient)_factory.Services.GetRequiredService<ILlmClient>();
 }

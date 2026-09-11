@@ -41,39 +41,38 @@ public sealed class ApiKeyAuthHandler : AuthenticationHandler<ApiKeyAuthOptions>
     public ApiKeyAuthHandler(
         IOptionsMonitor<ApiKeyAuthOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder)
-        : base(options, logger, encoder)
-    {
-    }
+        UrlEncoder encoder
+    )
+        : base(options, logger, encoder) { }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue(Options.HeaderName, out var headerValues))
         {
-            return Task.FromResult(AuthenticateResult.Fail($"Missing {Options.HeaderName} header."));
+            return Task.FromResult(
+                AuthenticateResult.Fail($"Missing {Options.HeaderName} header.")
+            );
         }
 
         var apiKey = headerValues.FirstOrDefault();
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            return Task.FromResult(AuthenticateResult.Fail($"Missing {Options.HeaderName} header."));
+            return Task.FromResult(
+                AuthenticateResult.Fail($"Missing {Options.HeaderName} header.")
+            );
         }
 
         Claim[] claims;
         if (apiKey == Options.AdminApiKey && !string.IsNullOrEmpty(Options.AdminApiKey))
         {
-            claims =
-            [
-                new Claim(ClaimTypes.Name, "admin"),
-                new Claim(ClaimTypes.Role, "Admin")
-            ];
+            claims = [new Claim(ClaimTypes.Name, "admin"), new Claim(ClaimTypes.Role, "Admin")];
         }
         else if (apiKey == Options.EmployeeApiKey && !string.IsNullOrEmpty(Options.EmployeeApiKey))
         {
             claims =
             [
                 new Claim(ClaimTypes.Name, "employee"),
-                new Claim(ClaimTypes.Role, "Employee")
+                new Claim(ClaimTypes.Role, "Employee"),
             ];
         }
         else

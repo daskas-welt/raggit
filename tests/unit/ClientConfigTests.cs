@@ -14,7 +14,7 @@ public sealed class ClientConfigTests
         var config = new Dictionary<string, string?>
         {
             ["Workstation:ApiKey"] = "some-key",
-            ["Api:AdminKey"] = "admin-key"
+            ["Api:AdminKey"] = "admin-key",
         };
         var result = ClientConfigResolver.Resolve(config);
         result.IsValid.Should().BeFalse();
@@ -28,7 +28,7 @@ public sealed class ClientConfigTests
     {
         var config = new Dictionary<string, string?>
         {
-            ["Workstation:Url"] = "http://localhost:5001"
+            ["Workstation:Url"] = "http://localhost:5001",
         };
         var result = ClientConfigResolver.Resolve(config);
         result.IsValid.Should().BeFalse();
@@ -54,7 +54,7 @@ public sealed class ClientConfigTests
             ["Workstation:Url"] = "http://localhost:5001",
             ["Workstation:ApiKey"] = "workstation-key",
             ["Api:AdminKey"] = "admin-key",
-            ["Api:EmployeeKey"] = "employee-key"
+            ["Api:EmployeeKey"] = "employee-key",
         };
         var resolved = ClientConfigResolver.ResolveApiKey(config);
         resolved.Should().Be("workstation-key");
@@ -66,13 +66,13 @@ public sealed class ClientConfigTests
         var configAdmin = new Dictionary<string, string?>
         {
             ["Api:AdminKey"] = "admin-key",
-            ["Api:EmployeeKey"] = "employee-key"
+            ["Api:EmployeeKey"] = "employee-key",
         };
         ClientConfigResolver.ResolveApiKey(configAdmin).Should().Be("admin-key");
 
         var configEmployee = new Dictionary<string, string?>
         {
-            ["Api:EmployeeKey"] = "employee-key"
+            ["Api:EmployeeKey"] = "employee-key",
         };
         ClientConfigResolver.ResolveApiKey(configEmployee).Should().Be("employee-key");
     }
@@ -83,7 +83,7 @@ public sealed class ClientConfigTests
         var config = new Dictionary<string, string?>
         {
             ["Workstation:Url"] = "http://localhost:5001",
-            ["Api:EmployeeKey"] = "employee-key"
+            ["Api:EmployeeKey"] = "employee-key",
         };
         var result = ClientConfigResolver.Resolve(config);
         result.IsValid.Should().BeTrue();
@@ -94,23 +94,54 @@ public sealed class ClientConfigTests
     [Fact]
     public void NoHardcodedUrlOrKeyLiterals_InClientMauiSource()
     {
-        var root = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "RAGGit.Client.Maui");
+        var root = Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "RAGGit.Client.Maui"
+        );
         // Normalize for test run location (bin/Debug/net8.0)
         if (!Directory.Exists(root))
-            root = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "..", "src", "RAGGit.Client.Maui"));
+            root = Path.GetFullPath(
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "src",
+                    "RAGGit.Client.Maui"
+                )
+            );
 
         Directory.Exists(root).Should().BeTrue($"client source root should exist at {root}");
 
-        var disallowed = new[] { "http://localhost:5001", "http://ai-workstation", "dev-admin-key", "dev-employee-key" };
+        var disallowed = new[]
+        {
+            "http://localhost:5001",
+            "http://ai-workstation",
+            "dev-admin-key",
+            "dev-employee-key",
+        };
         var files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
         foreach (var file in files)
         {
             var text = File.ReadAllText(file);
             // Allow comments and config file literals? Only check .cs for hard-coded production URLs/keys
-            if (file.EndsWith("ClientConfig.cs")) continue; // stub / config resolver itself may contain example literals in tests
+            if (file.EndsWith("ClientConfig.cs"))
+                continue; // stub / config resolver itself may contain example literals in tests
             foreach (var lit in disallowed)
             {
-                text.Should().NotContain(lit, $"file {Path.GetFileName(file)} should not hard-code {lit} (FR-003)");
+                text.Should()
+                    .NotContain(
+                        lit,
+                        $"file {Path.GetFileName(file)} should not hard-code {lit} (FR-003)"
+                    );
             }
         }
 

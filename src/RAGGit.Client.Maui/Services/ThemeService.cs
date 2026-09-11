@@ -11,21 +11,27 @@ public static class ThemeService
     public static void SetTheme(string visualTheme)
     {
         var app = Application.Current;
-        if (app is null) return;
+        if (app is null)
+            return;
         var merged = app.Resources.MergedDictionaries;
         var existing = merged.OfType<SyncfusionThemeResourceDictionary>().FirstOrDefault();
-        if (existing is not null) merged.Remove(existing);
+        if (existing is not null)
+            merged.Remove(existing);
         merged.Insert(0, new SyncfusionThemeResourceDictionary { VisualTheme = visualTheme });
     }
 
     public static void Toggle()
     {
         var app = Application.Current;
-        var current = app?.Resources.MergedDictionaries.OfType<SyncfusionThemeResourceDictionary>().FirstOrDefault()?.VisualTheme;
+        var current = app
+            ?.Resources.MergedDictionaries.OfType<SyncfusionThemeResourceDictionary>()
+            .FirstOrDefault()
+            ?.VisualTheme;
         SetTheme(current == "MaterialLight" ? "MaterialDark" : "MaterialLight");
     }
 #else
-    public static void SetTheme(string _) {}
-    public static void Toggle() {}
+    public static void SetTheme(string _) { }
+
+    public static void Toggle() { }
 #endif
 }

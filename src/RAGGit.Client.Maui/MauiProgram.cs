@@ -1,3 +1,5 @@
+using System;
+using System.Net.Http;
 #if MAUI
 using System.Collections.Generic;
 using System.Linq;
@@ -5,8 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Syncfusion.Licensing;
 using Syncfusion.Maui.Core.Hosting;
 #endif
-using System;
-using System.Net.Http;
 
 namespace RAGGit.Client.Maui;
 
@@ -32,21 +32,35 @@ public static class MauiProgram
         builder.Logging.AddDebug();
         builder.Configuration.AddUserSecrets<App>(optional: true);
 #endif
-        builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+        builder.Configuration.AddJsonFile(
+            "appsettings.json",
+            optional: true,
+            reloadOnChange: false
+        );
 
         // Resolve workstation config (FR-003) — no unauthenticated calls
-        var configDict = builder.Configuration.AsEnumerable()
+        var configDict = builder
+            .Configuration.AsEnumerable()
             .Where(kv => kv.Value != null)
             .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
         var startupConfig = Config.ClientConfigResolver.Resolve(
-            new Dictionary<string, string?>(configDict, StringComparer.OrdinalIgnoreCase));
+            new Dictionary<string, string?>(configDict, StringComparer.OrdinalIgnoreCase)
+        );
 
         var session = new ClientSession
         {
-            WorkstationUrl = startupConfig.WorkstationUrl ?? builder.Configuration["Workstation:Url"] ?? string.Empty,
-            ApiKey = startupConfig.ApiKey ?? Config.ClientConfigResolver.ResolveApiKey(new Dictionary<string, string?>(configDict, StringComparer.OrdinalIgnoreCase)) ?? string.Empty,
+            WorkstationUrl =
+                startupConfig.WorkstationUrl
+                ?? builder.Configuration["Workstation:Url"]
+                ?? string.Empty,
+            ApiKey =
+                startupConfig.ApiKey
+                ?? Config.ClientConfigResolver.ResolveApiKey(
+                    new Dictionary<string, string?>(configDict, StringComparer.OrdinalIgnoreCase)
+                )
+                ?? string.Empty,
             Role = string.Empty,
-            IdentityType = "ApiKey"
+            IdentityType = "ApiKey",
         };
 
         if (!startupConfig.IsValid)
@@ -54,17 +68,41 @@ public static class MauiProgram
             // Surface launch config-error: never attempt HTTP
             System.Diagnostics.Debug.WriteLine($"Client config error: {startupConfig.Error}");
             builder.Services.AddSingleton(session);
-            builder.Services.AddSingleton(new ConfigErrorState(startupConfig.Error ?? "Invalid client configuration"));
-            builder.Services.AddSingleton(new WorkstationConnectionState { ErrorMessage = startupConfig.Error });
+            builder.Services.AddSingleton(
+                new ConfigErrorState(startupConfig.Error ?? "Invalid client configuration")
+            );
+            builder.Services.AddSingleton(
+                new WorkstationConnectionState { ErrorMessage = startupConfig.Error }
+            );
             // Still register ViewModels so UI can show error (use ClientSession ctor per T022)
-            builder.Services.AddTransient<ViewModels.LibraryViewModel>(sp => new ViewModels.LibraryViewModel(
-                new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }), session));
-            builder.Services.AddTransient<ViewModels.QueryViewModel>(sp => new ViewModels.QueryViewModel(
-                new Services.QueryApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") })));
-            builder.Services.AddTransient<ViewModels.UploadViewModel>(sp => new ViewModels.UploadViewModel(
-                new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }), new Services.DummyFilePicker(), session));
+            builder.Services.AddTransient<ViewModels.LibraryViewModel>(
+                sp => new ViewModels.LibraryViewModel(
+                    new Services.DocumentsApiClient(
+                        new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                    ),
+                    session
+                )
+            );
+            builder.Services.AddTransient<ViewModels.QueryViewModel>(
+                sp => new ViewModels.QueryViewModel(
+                    new Services.QueryApiClient(
+                        new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                    )
+                )
+            );
+            builder.Services.AddTransient<ViewModels.UploadViewModel>(
+                sp => new ViewModels.UploadViewModel(
+                    new Services.DocumentsApiClient(
+                        new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                    ),
+                    new Services.DummyFilePicker(),
+                    session
+                )
+            );
             // Auth client stub (never called due to invalid config)
-            builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }));
+            builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(
+                new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+            ));
             return builder.Build();
         }
 
@@ -76,22 +114,30 @@ public static class MauiProgram
 #else
         builder.Services.AddSingleton<Services.IFilePicker, Services.DummyFilePicker>();
 #endif
-        builder.Services.AddTransient<Services.ApiKeyDelegatingHandler>(_ => new Services.ApiKeyDelegatingHandler(session.ApiKey));
+        builder.Services.AddTransient<Services.ApiKeyDelegatingHandler>(
+            _ => new Services.ApiKeyDelegatingHandler(session.ApiKey)
+        );
 
-        builder.Services.AddHttpClient<Services.DocumentsApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(session.WorkstationUrl);
-        }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+        builder
+            .Services.AddHttpClient<Services.DocumentsApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+            })
+            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
 
-        builder.Services.AddHttpClient<Services.QueryApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(session.WorkstationUrl);
-        }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+        builder
+            .Services.AddHttpClient<Services.QueryApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+            })
+            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
 
-        builder.Services.AddHttpClient<Services.AuthApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(session.WorkstationUrl);
-        }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+        builder
+            .Services.AddHttpClient<Services.AuthApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+            })
+            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
 
         builder.Services.AddTransient<ViewModels.LibraryViewModel>();
         builder.Services.AddTransient<ViewModels.QueryViewModel>();
@@ -105,10 +151,24 @@ public static class MauiProgram
     private static void RegisterSyncfusionLicense()
     {
         string? key = null;
-        var keyPath = Path.Combine(AppContext.BaseDirectory, "..", "..", ".vscode", "syncfusion-key.txt");
+        var keyPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            ".vscode",
+            "syncfusion-key.txt"
+        );
         foreach (var p in new[] { ".vscode/syncfusion-key.txt", keyPath })
         {
-            try { if (File.Exists(p)) { key = File.ReadAllText(p).Trim(); break; } } catch {}
+            try
+            {
+                if (File.Exists(p))
+                {
+                    key = File.ReadAllText(p).Trim();
+                    break;
+                }
+            }
+            catch { }
         }
         key ??= Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
         if (!string.IsNullOrWhiteSpace(key))
@@ -120,14 +180,18 @@ public static class MauiProgram
 public sealed class ConfigErrorState
 {
     public string Message { get; }
+
     public ConfigErrorState(string message) => Message = message;
 }
 
 public sealed class WorkstationConnectionState
 {
     public string? ErrorMessage { get; set; }
-    public bool IsUnavailable => !string.IsNullOrWhiteSpace(ErrorMessage) &&
-        (ErrorMessage.Contains("AI workstation", StringComparison.OrdinalIgnoreCase) ||
-         ErrorMessage.Contains("cannot reach", StringComparison.OrdinalIgnoreCase));
+    public bool IsUnavailable =>
+        !string.IsNullOrWhiteSpace(ErrorMessage)
+        && (
+            ErrorMessage.Contains("AI workstation", StringComparison.OrdinalIgnoreCase)
+            || ErrorMessage.Contains("cannot reach", StringComparison.OrdinalIgnoreCase)
+        );
     public Func<Task>? RetryAction { get; set; }
 }

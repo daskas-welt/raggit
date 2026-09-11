@@ -22,14 +22,15 @@ public sealed class OllamaEmbedder : IEmbedder
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
-        if (timeoutMs <= 0) throw new ArgumentOutOfRangeException(nameof(timeoutMs));
+        if (timeoutMs <= 0)
+            throw new ArgumentOutOfRangeException(nameof(timeoutMs));
 
         _modelName = modelName;
         _timeoutMs = timeoutMs;
         var httpClient = new System.Net.Http.HttpClient
         {
             BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
-            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs),
         };
         // Never trigger ollama pull — fail fast if model not present (Constitution IV, FR-007)
         _client = new OllamaApiClient(httpClient, modelName);
@@ -44,7 +45,8 @@ public sealed class OllamaEmbedder : IEmbedder
     /// <inheritdoc />
     public async Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var inputList = inputs?.ToList() ?? throw new ArgumentNullException(nameof(inputs));
         if (inputList.Count == 0)
@@ -52,11 +54,10 @@ public sealed class OllamaEmbedder : IEmbedder
             return Array.Empty<float[]>();
         }
 
-        var response = await _client.EmbedAsync(new EmbedRequest
-        {
-            Model = _modelName,
-            Input = inputList
-        }, cancellationToken);
+        var response = await _client.EmbedAsync(
+            new EmbedRequest { Model = _modelName, Input = inputList },
+            cancellationToken
+        );
 
         return response.Embeddings.Select(e => e.ToArray()).ToList();
     }

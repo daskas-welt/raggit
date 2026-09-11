@@ -80,7 +80,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
 
             _table = await _connection.CreateTable(
                 TableName,
-                new CreateTableOptions { Schema = schema, ExistOk = true });
+                new CreateTableOptions { Schema = schema, ExistOk = true }
+            );
 
             // Best-effort HNSW index creation. Already indexed or empty tables are ignored.
             try
@@ -91,9 +92,10 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                     {
                         DistanceType = DistanceType.Cosine,
                         NumEdges = 16,
-                        EfConstruction = 128
+                        EfConstruction = 128,
                     },
-                    waitTimeout: TimeSpan.FromSeconds(30));
+                    waitTimeout: TimeSpan.FromSeconds(30)
+                );
             }
             catch
             {
@@ -112,7 +114,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     /// <inheritdoc />
     public async Task UpsertAsync(
         IEnumerable<VectorRecord> vectors,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(vectors);
 
@@ -124,7 +127,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             return;
         }
 
-        await table.MergeInsert("id")
+        await table
+            .MergeInsert("id")
             .WhenMatchedUpdateAll()
             .WhenNotMatchedInsertAll()
             .Execute(batch);
@@ -135,7 +139,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         float[] queryVector,
         int limit,
         string? documentIdFilter = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(queryVector);
 
@@ -143,12 +148,14 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         {
             throw new ArgumentException(
                 $"Query vector size mismatch: expected {_vectorSize}, got {queryVector.Length}.",
-                nameof(queryVector));
+                nameof(queryVector)
+            );
         }
 
         var table = await EnsureTableAsync(cancellationToken);
 
-        var query = table.Query()
+        var query = table
+            .Query()
             .NearestTo(queryVector)
             .DistanceType(DistanceType.Cosine)
             .Limit(limit);
@@ -158,16 +165,15 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             query = query.Where(Expr.Col("documentId").Eq(Expr.Lit(documentIdFilter)));
         }
 
-        var rows = await query.ToList(TimeSpan.FromSeconds(30), limit * 2)
+        var rows = await query
+            .ToList(TimeSpan.FromSeconds(30), limit * 2)
             .WaitAsync(cancellationToken);
 
         return rows.Select(MapRow).ToList();
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(
-        string documentId,
-        CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string documentId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(documentId);
 
@@ -180,7 +186,10 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     /// Validates that the configured vector size matches the persisted collection dimension.
     /// Reads Arrow schema vector FixedSizeList size (R1 resolved probe).
     /// </summary>
-    public async Task ValidateDimensionAsync(int configuredVectorSize, CancellationToken cancellationToken = default)
+    public async Task ValidateDimensionAsync(
+        int configuredVectorSize,
+        CancellationToken cancellationToken = default
+    )
     {
         // No table yet → lazy-create allowed
         if (!Directory.Exists(_storagePath))
@@ -204,7 +213,11 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         }
     }
 
-    private static async Task ValidateDimensionInternalAsync(lancedb.Table table, int configuredVectorSize, CancellationToken cancellationToken)
+    private static async Task ValidateDimensionInternalAsync(
+        lancedb.Table table,
+        int configuredVectorSize,
+        CancellationToken cancellationToken
+    )
     {
         var schema = await table.Schema();
         var vectorField = schema.GetFieldByName("vector");
@@ -281,7 +294,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             {
                 throw new ArgumentException(
                     $"Vector size mismatch: expected {_vectorSize}, got {vector.Vector.Length}.",
-                    nameof(vectors));
+                    nameof(vectors)
+                );
             }
 
             idBuilder.Append(vector.Id.ToString());
@@ -305,20 +319,26 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 documentIdBuilder.Build(),
                 textBuilder.Build(),
                 ordinalBuilder.Build(),
-                vectorBuilder.Build()
+                vectorBuilder.Build(),
             },
-            count);
+            count
+        );
     }
 
     private static SearchResult MapRow(IReadOnlyDictionary<string, object?> row)
     {
         var id = Guid.Parse((string?)row["id"] ?? Guid.Empty.ToString());
         var documentId = (string?)row["documentId"] ?? string.Empty;
-        var text = (string?)(row.TryGetValue("text", out var textValue) ? textValue : null) ?? string.Empty;
-        var ordinal = (int?)(row.TryGetValue("ordinal", out var ordinalValue) ? ordinalValue ?? 0 : 0) ?? 0;
+        var text =
+            (string?)(row.TryGetValue("text", out var textValue) ? textValue : null)
+            ?? string.Empty;
+        var ordinal =
+            (int?)(row.TryGetValue("ordinal", out var ordinalValue) ? ordinalValue ?? 0 : 0) ?? 0;
 
         // LanceDB returns cosine distance (0 = identical). Convert to similarity score.
-        var distance = (float?)(row.TryGetValue("_distance", out var distanceValue) ? distanceValue ?? 0f : 0f) ?? 0f;
+        var distance =
+            (float?)(row.TryGetValue("_distance", out var distanceValue) ? distanceValue ?? 0f : 0f)
+            ?? 0f;
         var score = 1.0f - distance;
 
         return new SearchResult(id, documentId, text, ordinal, score);
@@ -342,7 +362,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 uint ui => (int)ui,
                 ulong ul => (int)ul,
                 short s => s,
-                _ => int.TryParse(value.ToString(), out var parsed) ? parsed : 0
+                _ => int.TryParse(value.ToString(), out var parsed) ? parsed : 0,
             };
         }
 

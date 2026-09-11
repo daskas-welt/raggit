@@ -29,7 +29,7 @@ public sealed class QueryOfflineTests
 {
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -49,10 +49,16 @@ public sealed class QueryOfflineTests
         for (var i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
-            var response = await employeeClient.PostAsJsonAsync("/api/query", new { query = "refund policy" }, _jsonOptions);
+            var response = await employeeClient.PostAsJsonAsync(
+                "/api/query",
+                new { query = "refund policy" },
+                _jsonOptions
+            );
             sw.Stop();
 
-            response.StatusCode.Should().Be(HttpStatusCode.OK, $"iteration {i} should succeed offline");
+            response
+                .StatusCode.Should()
+                .Be(HttpStatusCode.OK, $"iteration {i} should succeed offline");
             latencies.Add(sw.ElapsedMilliseconds);
 
             var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -72,7 +78,11 @@ public sealed class QueryOfflineTests
         using var factory = new IntegrationTestFactory();
         var employeeClient = CreateEmployeeClient(factory);
 
-        var response = await employeeClient.PostAsJsonAsync("/api/query", new { query = "xyz irrelevant" }, _jsonOptions);
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/query",
+            new { query = "xyz irrelevant" },
+            _jsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -91,7 +101,11 @@ public sealed class QueryOfflineTests
         llm.Healthy = false;
         llm.ThrowOnChat = true;
 
-        var response = await employeeClient.PostAsJsonAsync("/api/query", new { query = "refund policy" }, _jsonOptions);
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/query",
+            new { query = "refund policy" },
+            _jsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
     }
@@ -110,7 +124,9 @@ public sealed class QueryOfflineTests
 
         var form = new MultipartFormDataContent();
         var unique = Guid.NewGuid().ToString("N")[..8];
-        var bytes = Encoding.UTF8.GetBytes($"The refund policy allows returns within 30 days with a full refund. {unique}");
+        var bytes = Encoding.UTF8.GetBytes(
+            $"The refund policy allows returns within 30 days with a full refund. {unique}"
+        );
         var file = new StreamContent(new MemoryStream(bytes));
         file.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         form.Add(file, "file", $"refund-policy-{unique}.txt");
@@ -119,6 +135,6 @@ public sealed class QueryOfflineTests
         response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
     }
 
-    private static FakeLlmClient GetLlmClient(IntegrationTestFactory factory)
-        => (FakeLlmClient)factory.Services.GetRequiredService<ILlmClient>();
+    private static FakeLlmClient GetLlmClient(IntegrationTestFactory factory) =>
+        (FakeLlmClient)factory.Services.GetRequiredService<ILlmClient>();
 }

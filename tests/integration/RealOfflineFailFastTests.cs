@@ -42,7 +42,11 @@ public sealed class RealOfflineFailFastTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_tempDir, recursive: true); } catch { }
+        try
+        {
+            Directory.Delete(_tempDir, recursive: true);
+        }
+        catch { }
     }
 
     private sealed class OfflineFactory : WebApplicationFactory<Program>
@@ -64,16 +68,21 @@ public sealed class RealOfflineFailFastTests : IDisposable
         {
             builder.ConfigureServices(services =>
             {
-                services.Configure<ApiKeyAuthOptions>(ApiKeyAuthOptions.Scheme, o =>
-                {
-                    o.AdminApiKey = AdminKey;
-                    o.EmployeeApiKey = EmployeeKey;
-                });
+                services.Configure<ApiKeyAuthOptions>(
+                    ApiKeyAuthOptions.Scheme,
+                    o =>
+                    {
+                        o.AdminApiKey = AdminKey;
+                        o.EmployeeApiKey = EmployeeKey;
+                    }
+                );
                 services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
                 services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lancePath, 384));
                 // Unreachable Ollama — timeout 2000ms for test speed (prog default 5000)
                 services.AddSingleton<IEmbedder>(new OllamaEmbedder(_unreachableUrl, "all-minilm"));
-                services.AddSingleton<ILlmClient>(new OllamaLlmClient(_unreachableUrl, "phi3:mini"));
+                services.AddSingleton<ILlmClient>(
+                    new OllamaLlmClient(_unreachableUrl, "phi3:mini")
+                );
             });
         }
     }
@@ -89,15 +98,23 @@ public sealed class RealOfflineFailFastTests : IDisposable
         client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
 
         var sw = Stopwatch.StartNew();
-        var resp = await client.PostAsJsonAsync("/api/query", new { query = "refund policy", topK = 5 });
+        var resp = await client.PostAsJsonAsync(
+            "/api/query",
+            new { query = "refund policy", topK = 5 }
+        );
         sw.Stop();
         var body = await resp.Content.ReadAsStringAsync();
-        _output.WriteLine($"POST /api/query unreachable → {(int)resp.StatusCode} in {sw.ElapsedMilliseconds}ms body={body}");
+        _output.WriteLine(
+            $"POST /api/query unreachable → {(int)resp.StatusCode} in {sw.ElapsedMilliseconds}ms body={body}"
+        );
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, resp.StatusCode);
         Assert.Contains("unavailable", body, StringComparison.OrdinalIgnoreCase);
         // Must not hang — R7 timeout 5000; we allow 7000 for CI slop. Current buggy impl would hang ~100s.
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(7), $"Fail-fast exceeded timeout: {sw.ElapsedMilliseconds}ms (expected <7000ms, Ollama:TimeoutMs 5000)");
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromSeconds(7),
+            $"Fail-fast exceeded timeout: {sw.ElapsedMilliseconds}ms (expected <7000ms, Ollama:TimeoutMs 5000)"
+        );
         // Never attempts ollama pull — error is fail-fast, not hanging.
     }
 }

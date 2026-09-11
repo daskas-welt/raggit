@@ -41,14 +41,16 @@ public sealed class HealthController : ControllerBase
         var llmHealthy = await _llmClient.IsHealthyAsync(cancellationToken);
         var p95Latency = await GetP95LatencyAsync(cancellationToken);
 
-        return Ok(new
-        {
-            vectorDb = vectorDbHealthy ? "ok" : "down",
-            qdrant = vectorDbHealthy ? "ok" : "down",
-            llm = llmHealthy ? "ok" : "down",
-            p95LatencyMs = p95Latency,
-            version = GetApiVersion()
-        });
+        return Ok(
+            new
+            {
+                vectorDb = vectorDbHealthy ? "ok" : "down",
+                qdrant = vectorDbHealthy ? "ok" : "down",
+                llm = llmHealthy ? "ok" : "down",
+                p95LatencyMs = p95Latency,
+                version = GetApiVersion(),
+            }
+        );
     }
 
     private async Task<int> GetP95LatencyAsync(CancellationToken cancellationToken)
@@ -73,9 +75,6 @@ public sealed class HealthController : ControllerBase
 
     private static string GetApiVersion()
     {
-        return Assembly.GetExecutingAssembly()
-            .GetName()
-            .Version?
-            .ToString(3) ?? "1.0.0";
+        return Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
     }
 }

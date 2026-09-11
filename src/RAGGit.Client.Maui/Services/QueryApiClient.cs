@@ -17,7 +17,7 @@ public sealed class QueryApiClient
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public QueryApiClient(HttpClient httpClient)
@@ -31,15 +31,12 @@ public sealed class QueryApiClient
     public async Task<QueryResponse> QueryAsync(
         string query,
         int topK = 5,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        var request = new QueryRequest
-        {
-            Query = query,
-            TopK = topK
-        };
+        var request = new QueryRequest { Query = query, TopK = topK };
 
         try
         {
@@ -47,11 +44,15 @@ public sealed class QueryApiClient
                 "api/query",
                 request,
                 _jsonOptions,
-                cancellationToken);
+                cancellationToken
+            );
 
             await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-            var result = await response.Content.ReadFromJsonAsync<QueryResponse>(_jsonOptions, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<QueryResponse>(
+                _jsonOptions,
+                cancellationToken
+            );
             return result ?? new QueryResponse();
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
@@ -70,9 +71,13 @@ public sealed class QueryApiClient
 
     private async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response, CancellationToken ct)
     {
-        if (response.IsSuccessStatusCode) return;
+        if (response.IsSuccessStatusCode)
+            return;
         var body = await response.Content.ReadAsStringAsync(ct);
-        if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        if (
+            response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
+            && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        )
             throw new HttpRequestException("model unavailable offline");
         if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
             throw new HttpRequestException($"AI workstation unavailable: {body}");
@@ -84,9 +89,9 @@ public sealed class QueryApiClient
     }
 
     private static bool IsMappedError(HttpRequestException ex) =>
-        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase) ||
-        ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
+        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
 }

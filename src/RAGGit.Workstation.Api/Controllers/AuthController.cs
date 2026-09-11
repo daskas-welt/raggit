@@ -1,6 +1,6 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace RAGGit.Workstation.Api.Controllers;
 
@@ -12,7 +12,13 @@ public sealed class AuthController : ControllerBase
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var role = User.FindFirstValue(ClaimTypes.Role) ?? (User.IsInRole("Admin") ? "Admin" : User.IsInRole("Employee") ? "Employee" : "Unknown");
+        var role =
+            User.FindFirstValue(ClaimTypes.Role)
+            ?? (
+                User.IsInRole("Admin") ? "Admin"
+                : User.IsInRole("Employee") ? "Employee"
+                : "Unknown"
+            );
         // Ensure role is Admin or Employee
         if (role != "Admin" && role != "Employee")
         {

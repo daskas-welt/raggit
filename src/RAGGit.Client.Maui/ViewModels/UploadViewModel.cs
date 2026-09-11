@@ -46,7 +46,11 @@ public sealed partial class UploadViewModel : ObservableObject
         IsUploadEnabled = !value;
     }
 
-    public UploadViewModel(DocumentsApiClient apiClient, IFilePicker filePicker, ClientSession? session = null)
+    public UploadViewModel(
+        DocumentsApiClient apiClient,
+        IFilePicker filePicker,
+        ClientSession? session = null
+    )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         _filePicker = filePicker ?? throw new ArgumentNullException(nameof(filePicker));
@@ -76,7 +80,11 @@ public sealed partial class UploadViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanUpload))]
     private async Task UploadAsync()
     {
-        if (_selectedFileStream is null || string.IsNullOrWhiteSpace(SelectedFileName) || string.IsNullOrWhiteSpace(_selectedContentType))
+        if (
+            _selectedFileStream is null
+            || string.IsNullOrWhiteSpace(SelectedFileName)
+            || string.IsNullOrWhiteSpace(_selectedContentType)
+        )
         {
             StatusMessage = "No file selected.";
             return;
@@ -93,7 +101,8 @@ public sealed partial class UploadViewModel : ObservableObject
                 _selectedFileStream,
                 SelectedFileName,
                 _selectedContentType,
-                progress);
+                progress
+            );
 
             StatusMessage = $"Uploaded {document.Filename} ({document.Status}).";
         }
@@ -101,9 +110,13 @@ public sealed partial class UploadViewModel : ObservableObject
         {
             StatusMessage = exception.Message;
         }
-        catch (HttpRequestException ex) when (ex.Message.Contains("403", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+        catch (HttpRequestException ex)
+            when (ex.Message.Contains("403", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase)
+            )
         {
-            StatusMessage = "Forbidden: you do not have permission to upload documents (Admin only).";
+            StatusMessage =
+                "Forbidden: you do not have permission to upload documents (Admin only).";
         }
         catch (Exception exception)
         {

@@ -35,10 +35,13 @@ public sealed class QueryController : ControllerBase
         GenerationService generationService,
         ILlmClient llmClient,
         RagDbContext dbContext,
-        ILogger<QueryController> logger)
+        ILogger<QueryController> logger
+    )
     {
-        _retrievalService = retrievalService ?? throw new ArgumentNullException(nameof(retrievalService));
-        _generationService = generationService ?? throw new ArgumentNullException(nameof(generationService));
+        _retrievalService =
+            retrievalService ?? throw new ArgumentNullException(nameof(retrievalService));
+        _generationService =
+            generationService ?? throw new ArgumentNullException(nameof(generationService));
         _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,7 +52,10 @@ public sealed class QueryController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Employee")]
-    public async Task<IActionResult> Post([FromBody] QueryRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Post(
+        [FromBody] QueryRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -66,10 +72,17 @@ public sealed class QueryController : ControllerBase
             if (!await _llmClient.IsHealthyAsync(cancellationToken))
             {
                 _logger.LogWarning("Query rejected: LLM is not healthy for user {UserId}", userId);
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "AI workstation unavailable" });
+                return StatusCode(
+                    StatusCodes.Status503ServiceUnavailable,
+                    new { error = "AI workstation unavailable" }
+                );
             }
 
-            var chunks = await _retrievalService.RetrieveAsync(request.Query, topK, cancellationToken);
+            var chunks = await _retrievalService.RetrieveAsync(
+                request.Query,
+                topK,
+                cancellationToken
+            );
 
             if (chunks.Count == 0)
             {
@@ -81,24 +94,25 @@ public sealed class QueryController : ControllerBase
                     "no relevant content found",
                     Array.Empty<Guid>(),
                     noContentLatency,
-                    cancellationToken);
+                    cancellationToken
+                );
 
                 _logger.LogInformation(
                     "Query from {UserId} returned no relevant content in {LatencyMs}ms",
                     userId,
-                    noContentLatency);
+                    noContentLatency
+                );
 
-                return Ok(new
-                {
-                    answer = "no relevant content found",
-                    citations = Array.Empty<object>()
-                });
+                return Ok(
+                    new { answer = "no relevant content found", citations = Array.Empty<object>() }
+                );
             }
 
             var (answer, citationIds) = await _generationService.GenerateAsync(
                 request.Query,
                 chunks,
-                cancellationToken);
+                cancellationToken
+            );
 
             var latencyMs = (int)stopwatch.ElapsedMilliseconds;
             var retrievedChunkIds = chunks.Select(c => c.ChunkId).ToList();
@@ -110,7 +124,8 @@ public sealed class QueryController : ControllerBase
                 answer,
                 citationIds,
                 latencyMs,
-                cancellationToken);
+                cancellationToken
+            );
 
             var citations = chunks
                 .Where(c => citationIds.Contains(c.ChunkId))
@@ -119,7 +134,7 @@ public sealed class QueryController : ControllerBase
                     DocumentId = Guid.Parse(c.DocumentId),
                     ChunkId = c.ChunkId,
                     Text = c.Text,
-                    Ordinal = c.Ordinal
+                    Ordinal = c.Ordinal,
                 })
                 .ToList();
 
@@ -127,36 +142,68 @@ public sealed class QueryController : ControllerBase
                 "Query from {UserId} answered with {CitationCount} citations in {LatencyMs}ms",
                 userId,
                 citations.Count,
-                latencyMs);
+                latencyMs
+            );
 
-            return Ok(new QueryResponse
-            {
-                Answer = answer,
-                Citations = citations,
-                RetrievedChunkIds = retrievedChunkIds,
-                LatencyMs = latencyMs
-            });
+            return Ok(
+                new QueryResponse
+                {
+                    Answer = answer,
+                    Citations = citations,
+                    RetrievedChunkIds = retrievedChunkIds,
+                    LatencyMs = latencyMs,
+                }
+            );
         }
         catch (HttpRequestException exception)
         {
-            _logger.LogError(exception, "Query failed because LLM is unreachable for user {UserId}", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
+            _logger.LogError(
+                exception,
+                "Query failed because LLM is unreachable for user {UserId}",
+                userId
+            );
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "model unavailable offline" }
+            );
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             // HttpClient timeout (Ollama:TimeoutMs) — fail fast per R7/FR-007, never hang or pull
-            _logger.LogError(exception, "Query timed out (Ollama:TimeoutMs) for user {UserId}", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
+            _logger.LogError(
+                exception,
+                "Query timed out (Ollama:TimeoutMs) for user {UserId}",
+                userId
+            );
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "model unavailable offline" }
+            );
         }
-        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception)
+            when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(exception, "Query operation canceled (timeout) for user {UserId}", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
+            _logger.LogError(
+                exception,
+                "Query operation canceled (timeout) for user {UserId}",
+                userId
+            );
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "model unavailable offline" }
+            );
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Query failed due to AI workstation error for user {UserId}", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "AI workstation unavailable" });
+            _logger.LogError(
+                exception,
+                "Query failed due to AI workstation error for user {UserId}",
+                userId
+            );
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "AI workstation unavailable" }
+            );
         }
     }
 
@@ -167,7 +214,8 @@ public sealed class QueryController : ControllerBase
         string? answer,
         IReadOnlyList<Guid> citationIds,
         int latencyMs,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var query = new Query
         {
@@ -178,7 +226,7 @@ public sealed class QueryController : ControllerBase
             Answer = answer,
             CitationIds = citationIds,
             LatencyMs = latencyMs,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         await _dbContext.InsertQueryAsync(query, cancellationToken);

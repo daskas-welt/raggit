@@ -27,7 +27,7 @@ public sealed class DeleteIntegrationTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -38,7 +38,11 @@ public sealed class DeleteIntegrationTests
         var employeeClient = CreateEmployeeClient(factory);
 
         const string uniqueTerm = "xyz-unique-delete-term-42";
-        var uploaded = await UploadTextAsync(adminClient, "purge-test.txt", $"This document contains the {uniqueTerm} marker.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "purge-test.txt",
+            $"This document contains the {uniqueTerm} marker."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -48,7 +52,11 @@ public sealed class DeleteIntegrationTests
         await AssertDocumentRemovedFromSQLiteAsync(factory, document.Id);
         await AssertLanceDBPurgedAsync(factory, document.Id);
 
-        var queryResponse = await employeeClient.PostAsJsonAsync("/api/query", new { query = uniqueTerm }, JsonOptions);
+        var queryResponse = await employeeClient.PostAsJsonAsync(
+            "/api/query",
+            new { query = uniqueTerm },
+            JsonOptions
+        );
         queryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await queryResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
         json.GetProperty("answer").GetString().Should().Be("no relevant content found");
@@ -62,7 +70,11 @@ public sealed class DeleteIntegrationTests
         var adminClient = CreateAdminClient(factory);
         var employeeClient = CreateEmployeeClient(factory);
 
-        var uploaded = await UploadTextAsync(adminClient, "employee-delete-forbidden.txt", "Employee cannot delete.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "employee-delete-forbidden.txt",
+            "Employee cannot delete."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -84,7 +96,11 @@ public sealed class DeleteIntegrationTests
         return client;
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);
@@ -94,7 +110,10 @@ public sealed class DeleteIntegrationTests
         return await client.PostAsync("/api/documents", form);
     }
 
-    private static async Task AssertDocumentRemovedFromSQLiteAsync(IntegrationTestFactory factory, Guid documentId)
+    private static async Task AssertDocumentRemovedFromSQLiteAsync(
+        IntegrationTestFactory factory,
+        Guid documentId
+    )
     {
         var db = factory.Services.GetRequiredService<RagDbContext>();
         await using var connection = db.CreateConnection();
@@ -113,10 +132,17 @@ public sealed class DeleteIntegrationTests
         chunkCount.Should().Be(0, "Chunks rows should be removed after delete");
     }
 
-    private static async Task AssertLanceDBPurgedAsync(IntegrationTestFactory factory, Guid documentId)
+    private static async Task AssertLanceDBPurgedAsync(
+        IntegrationTestFactory factory,
+        Guid documentId
+    )
     {
         var store = factory.Services.GetRequiredService<IVectorStore>();
-        var hits = await store.SearchAsync(factory.QueryVector, limit: 100, documentIdFilter: documentId.ToString());
+        var hits = await store.SearchAsync(
+            factory.QueryVector,
+            limit: 100,
+            documentIdFilter: documentId.ToString()
+        );
         hits.Count.Should().Be(0, "LanceDB vectors for documentId should be purged after delete");
     }
 

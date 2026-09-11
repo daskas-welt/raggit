@@ -30,7 +30,8 @@ public sealed class CachedEmbedder : IEmbedder, IDisposable
         IMemoryCache cache,
         string modelName,
         int capacity,
-        int ttlHours)
+        int ttlHours
+    )
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
@@ -41,7 +42,8 @@ public sealed class CachedEmbedder : IEmbedder, IDisposable
     /// <inheritdoc />
     public async Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var inputList = inputs?.ToList() ?? throw new ArgumentNullException(nameof(inputs));
         if (inputList.Count == 0)
@@ -87,7 +89,8 @@ public sealed class CachedEmbedder : IEmbedder, IDisposable
                 if (embeddings.Count != missingInputs.Count)
                 {
                     throw new InvalidOperationException(
-                        $"Embedder returned {embeddings.Count} vectors for {missingInputs.Count} inputs.");
+                        $"Embedder returned {embeddings.Count} vectors for {missingInputs.Count} inputs."
+                    );
                 }
 
                 for (var m = 0; m < missingIndices.Count; m++)

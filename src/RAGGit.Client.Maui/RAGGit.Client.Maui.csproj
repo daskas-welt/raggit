@@ -1,53 +1,52 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- Required MAUI TFMs per plan.md (T001). Fallback to plain net8.0 outside Visual Studio so the solution builds when the .NET MAUI workload is not installed. -->
+        <TargetFrameworks>net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'"
+            >net8.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
+        <SingleProject Condition="'$(TargetFramework)' != 'net8.0'">true</SingleProject>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Required MAUI TFMs per plan.md (T001). Fallback to plain net8.0 outside Visual Studio so the solution builds when the .NET MAUI workload is not installed. -->
-    <TargetFrameworks>net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android</TargetFrameworks>
-    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'">net8.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
-    <SingleProject Condition="'$(TargetFramework)' != 'net8.0'">true</SingleProject>
-  </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+        <PackageReference Include="Syncfusion.Maui.AIAssistView" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.Core" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.DataGrid" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.Popup" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.ProgressBar" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.PullToRefresh" Version="28.2.7" />
+        <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.11" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <PackageReference Include="Syncfusion.Maui.AIAssistView" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.Core" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.DataGrid" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.Popup" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.ProgressBar" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.PullToRefresh" Version="28.2.7" />
-    <PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.11" />
-  </ItemGroup>
+    <!-- MAUI XAML pages are only compiled for the real MAUI TFMs. -->
+    <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
+        <MauiXaml Include="Views\*.xaml" />
+        <MauiXaml Include="App.xaml" />
+        <MauiXaml Include="AppShell.xaml" />
+    </ItemGroup>
 
-  <!-- MAUI XAML pages are only compiled for the real MAUI TFMs. -->
-  <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
-    <MauiXaml Include="Views\*.xaml" />
-    <MauiXaml Include="App.xaml" />
-    <MauiXaml Include="AppShell.xaml" />
-  </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <Compile Remove="Views\**\*.xaml.cs" />
+        <Compile Remove="App.xaml.cs" />
+        <Compile Remove="AppShell.xaml.cs" />
+        <Compile Remove="Services\MauiFilePicker.cs" />
+        <Compile Remove="MauiProgram.cs" />
+        <None Include="Views\**\*.xaml" />
+        <None Include="App.xaml" />
+        <None Include="AppShell.xaml" />
+    </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-    <Compile Remove="Views\**\*.xaml.cs" />
-    <Compile Remove="App.xaml.cs" />
-    <Compile Remove="AppShell.xaml.cs" />
-    <Compile Remove="Services\MauiFilePicker.cs" />
-    <Compile Remove="MauiProgram.cs" />
-    <None Include="Views\**\*.xaml" />
-    <None Include="App.xaml" />
-    <None Include="AppShell.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <MauiAsset Include="appsettings.json" Condition="'$(TargetFramework)' != 'net8.0'" />
-    <Content Include="appsettings.json" Condition="'$(TargetFramework)' == 'net8.0'">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
+    <ItemGroup>
+        <MauiAsset Include="appsettings.json" Condition="'$(TargetFramework)' != 'net8.0'" />
+        <Content Include="appsettings.json" Condition="'$(TargetFramework)' == 'net8.0'">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

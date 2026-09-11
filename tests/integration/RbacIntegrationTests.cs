@@ -21,7 +21,7 @@ public sealed class RbacIntegrationTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -31,7 +31,11 @@ public sealed class RbacIntegrationTests
         var adminClient = CreateAdminClient(factory);
         var employeeClient = CreateEmployeeClient(factory);
 
-        var uploaded = await UploadTextAsync(adminClient, "rbac-integration.txt", "RBAC integration read-only content.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "rbac-integration.txt",
+            "RBAC integration read-only content."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -43,10 +47,16 @@ public sealed class RbacIntegrationTests
         employeeList.StatusCode.Should().Be(HttpStatusCode.OK);
         var employeeDocuments = await DeserializeListAsync(employeeList);
 
-        employeeDocuments.Should().BeEquivalentTo(adminDocuments, options => options.WithStrictOrdering());
+        employeeDocuments
+            .Should()
+            .BeEquivalentTo(adminDocuments, options => options.WithStrictOrdering());
         employeeDocuments.Should().Contain(d => d.Id == document.Id);
 
-        var employeeUpload = await UploadTextAsync(employeeClient, "employee-upload.txt", "Employee upload attempt.");
+        var employeeUpload = await UploadTextAsync(
+            employeeClient,
+            "employee-upload.txt",
+            "Employee upload attempt."
+        );
         employeeUpload.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var employeeDelete = await employeeClient.DeleteAsync($"/api/documents/{document.Id}");
@@ -70,7 +80,11 @@ public sealed class RbacIntegrationTests
         return client;
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);

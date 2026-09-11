@@ -18,7 +18,13 @@ public sealed class DimensionGuardTests
         return new VectorRecord(
             Guid.NewGuid(),
             vector,
-            new Dictionary<string, object?> { ["documentId"] = documentId, ["text"] = "hello", ["ordinal"] = 0 });
+            new Dictionary<string, object?>
+            {
+                ["documentId"] = documentId,
+                ["text"] = "hello",
+                ["ordinal"] = 0,
+            }
+        );
     }
 
     [Fact]
@@ -46,7 +52,11 @@ public sealed class DimensionGuardTests
         }
         finally
         {
-            try { Directory.Delete(tempPath, recursive: true); } catch { }
+            try
+            {
+                Directory.Delete(tempPath, recursive: true);
+            }
+            catch { }
         }
     }
 
@@ -69,7 +79,11 @@ public sealed class DimensionGuardTests
         }
         finally
         {
-            try { Directory.Delete(tempPath, recursive: true); } catch { }
+            try
+            {
+                Directory.Delete(tempPath, recursive: true);
+            }
+            catch { }
         }
     }
 
@@ -87,7 +101,11 @@ public sealed class DimensionGuardTests
         }
         finally
         {
-            try { Directory.Delete(tempPath, recursive: true); } catch { }
+            try
+            {
+                Directory.Delete(tempPath, recursive: true);
+            }
+            catch { }
         }
     }
 }

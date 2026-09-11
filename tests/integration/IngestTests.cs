@@ -34,7 +34,7 @@ public sealed class IngestTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -49,10 +49,13 @@ public sealed class IngestTests
 
         for (var i = 0; i < count; i++)
         {
-            var text = $"This is document number {i}. It contains enough text to produce at least one chunk for embedding. " +
-                       $"The refund policy is described in document {i}.";
+            var text =
+                $"This is document number {i}. It contains enough text to produce at least one chunk for embedding. "
+                + $"The refund policy is described in document {i}.";
             var response = await UploadTextAsync(client, $"doc-{i}.txt", text);
-            response.StatusCode.Should().Be(HttpStatusCode.Created, $"upload {i} should be accepted");
+            response
+                .StatusCode.Should()
+                .Be(HttpStatusCode.Created, $"upload {i} should be accepted");
         }
 
         var listResponse = await client.GetAsync("/api/documents");
@@ -62,7 +65,11 @@ public sealed class IngestTests
         documents.Should().OnlyContain(d => d.Status == DocumentStatus.Ready);
 
         var store = factory.Services.GetRequiredService<IVectorStore>();
-        var hits = await store.SearchAsync(factory.QueryVector, limit: 100, cancellationToken: default);
+        var hits = await store.SearchAsync(
+            factory.QueryVector,
+            limit: 100,
+            cancellationToken: default
+        );
         hits.Count.Should().BeGreaterThan(0, "LanceDB should contain indexed vectors");
 
         sw.Stop();
@@ -127,7 +134,11 @@ public sealed class IngestTests
         duplicate.Hash.Should().Be(existing.Hash);
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);
@@ -167,7 +178,11 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
     public IntegrationTestFactory()
     {
-        var baseDir = Path.Combine(Path.GetTempPath(), "raggit-integration-tests", Guid.NewGuid().ToString());
+        var baseDir = Path.Combine(
+            Path.GetTempPath(),
+            "raggit-integration-tests",
+            Guid.NewGuid().ToString()
+        );
         Directory.CreateDirectory(baseDir);
         _dbPath = Path.Combine(baseDir, "rag.db");
         _lanceDbPath = Path.Combine(baseDir, "lancedb");
@@ -183,11 +198,14 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            services.Configure<ApiKeyAuthOptions>(ApiKeyAuthOptions.Scheme, options =>
-            {
-                options.AdminApiKey = AdminKey;
-                options.EmployeeApiKey = EmployeeKey;
-            });
+            services.Configure<ApiKeyAuthOptions>(
+                ApiKeyAuthOptions.Scheme,
+                options =>
+                {
+                    options.AdminApiKey = AdminKey;
+                    options.EmployeeApiKey = EmployeeKey;
+                }
+            );
 
             services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
             services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lanceDbPath, 384));
@@ -213,26 +231,29 @@ internal sealed class FakeEmbedder : IEmbedder
 
     public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var overrides = VectorOverrides;
-        var embeddings = inputs.Select(input =>
-        {
-            if (overrides is not null)
+        var embeddings = inputs
+            .Select(input =>
             {
-                foreach (var pair in overrides)
+                if (overrides is not null)
                 {
-                    if (input.Contains(pair.Key, StringComparison.OrdinalIgnoreCase))
+                    foreach (var pair in overrides)
                     {
-                        return pair.Value;
+                        if (input.Contains(pair.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return pair.Value;
+                        }
                     }
                 }
-            }
 
-            var vector = new float[384];
-            vector[0] = 1.0f;
-            return vector;
-        }).ToList();
+                var vector = new float[384];
+                vector[0] = 1.0f;
+                return vector;
+            })
+            .ToList();
 
         return Task.FromResult<IReadOnlyList<float[]>>(embeddings);
     }
@@ -244,7 +265,11 @@ internal sealed class FakeLlmClient : ILlmClient
     public bool Healthy { get; set; } = true;
     public bool ThrowOnChat { get; set; }
 
-    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
+    public Task<string> ChatAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default
+    )
     {
         if (ThrowOnChat)
         {
@@ -254,7 +279,8 @@ internal sealed class FakeLlmClient : ILlmClient
         return Task.FromResult(ResponseText);
     }
 
-    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(Healthy);
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(Healthy);
 }
 
 /// <summary>
@@ -301,12 +327,15 @@ internal sealed class LengthOnlyStream : Stream
             SeekOrigin.Begin => offset,
             SeekOrigin.Current => _position + offset,
             SeekOrigin.End => Length + offset,
-            _ => throw new ArgumentOutOfRangeException(nameof(origin))
+            _ => throw new ArgumentOutOfRangeException(nameof(origin)),
         };
         return _position;
     }
 
     public override void SetLength(long value) => throw new NotSupportedException();
-    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+    public override void Write(byte[] buffer, int offset, int count) =>
+        throw new NotSupportedException();
+
     public override void Flush() { }
 }

@@ -24,7 +24,7 @@ public sealed class RbacContractTests : IClassFixture<TestApiFactory>
     private readonly TestApiFactory _factory;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public RbacContractTests(TestApiFactory factory)
@@ -36,7 +36,11 @@ public sealed class RbacContractTests : IClassFixture<TestApiFactory>
     public async Task Employee_GetDocuments_Returns200_SameListAsAdmin()
     {
         var adminClient = CreateAdminClient();
-        var uploaded = await UploadTextAsync(adminClient, "rbac-list.txt", "RBAC list contract content.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "rbac-list.txt",
+            "RBAC list contract content."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var adminList = await adminClient.GetAsync("/api/documents");
@@ -48,14 +52,20 @@ public sealed class RbacContractTests : IClassFixture<TestApiFactory>
         employeeList.StatusCode.Should().Be(HttpStatusCode.OK);
         var employeeDocuments = await DeserializeListAsync(employeeList);
 
-        employeeDocuments.Should().BeEquivalentTo(adminDocuments, options => options.WithStrictOrdering());
+        employeeDocuments
+            .Should()
+            .BeEquivalentTo(adminDocuments, options => options.WithStrictOrdering());
     }
 
     [Fact]
     public async Task Employee_PostDocument_Returns403()
     {
         var employeeClient = CreateEmployeeClient();
-        var response = await UploadTextAsync(employeeClient, "employee-upload.txt", "Employee upload attempt.");
+        var response = await UploadTextAsync(
+            employeeClient,
+            "employee-upload.txt",
+            "Employee upload attempt."
+        );
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -63,7 +73,11 @@ public sealed class RbacContractTests : IClassFixture<TestApiFactory>
     public async Task Employee_DeleteDocument_Returns403()
     {
         var adminClient = CreateAdminClient();
-        var uploaded = await UploadTextAsync(adminClient, "rbac-delete.txt", "RBAC delete contract content.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "rbac-delete.txt",
+            "RBAC delete contract content."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -86,7 +100,11 @@ public sealed class RbacContractTests : IClassFixture<TestApiFactory>
         return client;
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);

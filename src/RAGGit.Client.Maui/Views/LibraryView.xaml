@@ -1,52 +1,79 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
-             xmlns:pull="clr-namespace:Syncfusion.Maui.PullToRefresh;assembly=Syncfusion.Maui.PullToRefresh"
-             xmlns:popup="clr-namespace:Syncfusion.Maui.Popup;assembly=Syncfusion.Maui.Popup"
-             xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
-             x:Class="RAGGit.Client.Maui.Views.LibraryView"
-             Title="Library">
-  <Grid RowDefinitions="Auto,*" Padding="12">
-    <HorizontalStackLayout Grid.Row="0" Spacing="8" Margin="0,0,0,12">
-      <Button Text="Upload" Command="{Binding UploadCommand}" IsVisible="{Binding IsAdmin}" />
-      <Button Text="Toggle Theme" Clicked="OnToggleThemeClicked" />
-    </HorizontalStackLayout>
-    <!-- Syncfusion SfDataGrid replaces CollectionView for 5k docs virtualization + sorting -->
-    <Grid Grid.Row="1">
-      <!-- Shimmer while loading (SF-Toolkit) -->
-      <toolkit:SfShimmer Grid.RowSpan="2"
-                         IsActive="{Binding IsBusy}"
-                         IsVisible="{Binding IsBusy}"
-                         VerticalOptions="FillAndExpand" />
-      <syncfusion:SfPullToRefresh x:Name="PullToRefresh" IsRefreshing="{Binding IsBusy}" Refreshing="OnPullRefreshing">
-        <syncfusion:SfDataGrid x:Name="DataGrid"
-                               ItemsSource="{Binding Documents}"
-                               AutoGenerateColumnsMode="None"
-                               AllowSorting="True"
-                               AllowTriStateSorting="True"
-                               SelectionMode="Single"
-                               GridLinesVisibility="Both"
-                               HeaderGridLinesVisibility="Both"
-                               ColumnWidthMode="Star">
-          <syncfusion:SfDataGrid.Columns>
-            <syncfusion:DataGridTextColumn MappingName="Filename" HeaderText="Filename" />
-            <syncfusion:DataGridTextColumn MappingName="Status" HeaderText="Status" ColumnWidthMode="FitByCell" />
-            <syncfusion:DataGridTextColumn MappingName="CreatedAt" HeaderText="Created" Format="g" />
-          </syncfusion:SfDataGrid.Columns>
-          <syncfusion:SfDataGrid.EmptyView>
-            <Label Text="No documents in the library." HorizontalOptions="Center" VerticalOptions="Center" />
-          </syncfusion:SfDataGrid.EmptyView>
-        </syncfusion:SfDataGrid>
-      </syncfusion:SfPullToRefresh>
-      <!-- Themed delete via SfPopup (replaces DisplayAlert on MAUI TFMs; fallback handled in code-behind) -->
-      <popup:SfPopup x:Name="DeletePopup" />
-      <Button Text="Delete Selected"
-              IsVisible="{Binding IsAdmin}"
-              Clicked="OnDeleteClicked"
-              VerticalOptions="End"
-              HorizontalOptions="End"
-              Margin="12" />
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+    xmlns:pull="clr-namespace:Syncfusion.Maui.PullToRefresh;assembly=Syncfusion.Maui.PullToRefresh"
+    xmlns:popup="clr-namespace:Syncfusion.Maui.Popup;assembly=Syncfusion.Maui.Popup"
+    xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
+    x:Class="RAGGit.Client.Maui.Views.LibraryView"
+    Title="Library"
+>
+    <Grid RowDefinitions="Auto,*" Padding="12">
+        <HorizontalStackLayout Grid.Row="0" Spacing="8" Margin="0,0,0,12">
+            <Button Text="Upload" Command="{Binding UploadCommand}" IsVisible="{Binding IsAdmin}" />
+            <Button Text="Toggle Theme" Clicked="OnToggleThemeClicked" />
+        </HorizontalStackLayout>
+        <!-- Syncfusion SfDataGrid replaces CollectionView for 5k docs virtualization + sorting -->
+        <Grid Grid.Row="1">
+            <!-- Shimmer while loading (SF-Toolkit) -->
+            <toolkit:SfShimmer
+                Grid.RowSpan="2"
+                IsActive="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                VerticalOptions="FillAndExpand"
+            />
+            <syncfusion:SfPullToRefresh
+                x:Name="PullToRefresh"
+                IsRefreshing="{Binding IsBusy}"
+                Refreshing="OnPullRefreshing"
+            >
+                <syncfusion:SfDataGrid
+                    x:Name="DataGrid"
+                    ItemsSource="{Binding Documents}"
+                    AutoGenerateColumnsMode="None"
+                    AllowSorting="True"
+                    AllowTriStateSorting="True"
+                    SelectionMode="Single"
+                    GridLinesVisibility="Both"
+                    HeaderGridLinesVisibility="Both"
+                    ColumnWidthMode="Star"
+                >
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:DataGridTextColumn
+                            MappingName="Filename"
+                            HeaderText="Filename"
+                        />
+                        <syncfusion:DataGridTextColumn
+                            MappingName="Status"
+                            HeaderText="Status"
+                            ColumnWidthMode="FitByCell"
+                        />
+                        <syncfusion:DataGridTextColumn
+                            MappingName="CreatedAt"
+                            HeaderText="Created"
+                            Format="g"
+                        />
+                    </syncfusion:SfDataGrid.Columns>
+                    <syncfusion:SfDataGrid.EmptyView>
+                        <Label
+                            Text="No documents in the library."
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                        />
+                    </syncfusion:SfDataGrid.EmptyView>
+                </syncfusion:SfDataGrid>
+            </syncfusion:SfPullToRefresh>
+            <!-- Themed delete via SfPopup (replaces DisplayAlert on MAUI TFMs; fallback handled in code-behind) -->
+            <popup:SfPopup x:Name="DeletePopup" />
+            <Button
+                Text="Delete Selected"
+                IsVisible="{Binding IsAdmin}"
+                Clicked="OnDeleteClicked"
+                VerticalOptions="End"
+                HorizontalOptions="End"
+                Margin="12"
+            />
+        </Grid>
     </Grid>
-  </Grid>
 </ContentPage>

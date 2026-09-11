@@ -25,7 +25,7 @@ public sealed class DeleteContractTests : IClassFixture<TestApiFactory>
     private readonly TestApiFactory _factory;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     public DeleteContractTests(TestApiFactory factory)
@@ -38,7 +38,11 @@ public sealed class DeleteContractTests : IClassFixture<TestApiFactory>
     {
         var adminClient = CreateAdminClient();
 
-        var uploaded = await UploadTextAsync(adminClient, "delete-contract.txt", "Delete contract unique content.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "delete-contract.txt",
+            "Delete contract unique content."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -72,7 +76,11 @@ public sealed class DeleteContractTests : IClassFixture<TestApiFactory>
     public async Task Employee_DeleteDocument_Returns403()
     {
         var adminClient = CreateAdminClient();
-        var uploaded = await UploadTextAsync(adminClient, "delete-employee-forbidden.txt", "Employee delete forbidden content.");
+        var uploaded = await UploadTextAsync(
+            adminClient,
+            "delete-employee-forbidden.txt",
+            "Employee delete forbidden content."
+        );
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
@@ -96,7 +104,11 @@ public sealed class DeleteContractTests : IClassFixture<TestApiFactory>
         return client;
     }
 
-    private static async Task<HttpResponseMessage> UploadTextAsync(HttpClient client, string filename, string text)
+    private static async Task<HttpResponseMessage> UploadTextAsync(
+        HttpClient client,
+        string filename,
+        string text
+    )
     {
         var form = new MultipartFormDataContent();
         var bytes = Encoding.UTF8.GetBytes(text);

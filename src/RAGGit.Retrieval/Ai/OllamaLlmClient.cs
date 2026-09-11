@@ -21,14 +21,15 @@ public sealed class OllamaLlmClient : ILlmClient
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
-        if (timeoutMs <= 0) throw new ArgumentOutOfRangeException(nameof(timeoutMs));
+        if (timeoutMs <= 0)
+            throw new ArgumentOutOfRangeException(nameof(timeoutMs));
 
         _modelName = modelName;
         _timeoutMs = timeoutMs;
         var httpClient = new System.Net.Http.HttpClient
         {
             BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
-            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs),
         };
         _client = new OllamaApiClient(httpClient, modelName);
     }
@@ -37,7 +38,8 @@ public sealed class OllamaLlmClient : ILlmClient
     public async Task<string> ChatAsync(
         string systemPrompt,
         string userPrompt,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(systemPrompt);
         ArgumentException.ThrowIfNullOrWhiteSpace(userPrompt);
@@ -49,8 +51,8 @@ public sealed class OllamaLlmClient : ILlmClient
             Messages =
             [
                 new Message(ChatRole.System, systemPrompt),
-                new Message(ChatRole.User, userPrompt)
-            ]
+                new Message(ChatRole.User, userPrompt),
+            ],
         };
 
         var responseBuilder = new StringBuilder();

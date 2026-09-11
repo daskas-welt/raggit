@@ -33,7 +33,8 @@ public sealed class IngestService
         RagDbContext db,
         ILogger<IngestService> logger,
         IOptions<IngestOptions>? options = null,
-        IMemoryCache? chunkCache = null)
+        IMemoryCache? chunkCache = null
+    )
     {
         _embedder = embedder ?? throw new ArgumentNullException(nameof(embedder));
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
@@ -53,7 +54,8 @@ public sealed class IngestService
         DocumentMimeType mime,
         long size,
         string createdBy,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(filename);
@@ -64,7 +66,11 @@ public sealed class IngestService
         var existing = await FindByHashAsync(hash, cancellationToken);
         if (existing is not null)
         {
-            _logger.LogInformation("Duplicate hash detected for {Filename}; returning existing document {DocumentId}", filename, existing.Id);
+            _logger.LogInformation(
+                "Duplicate hash detected for {Filename}; returning existing document {DocumentId}",
+                filename,
+                existing.Id
+            );
             return (existing, false);
         }
 
@@ -76,11 +82,15 @@ public sealed class IngestService
             Size = size,
             Hash = hash,
             Status = DocumentStatus.Indexing,
-            CreatedBy = createdBy
+            CreatedBy = createdBy,
         };
 
         await InsertDocumentAsync(document, cancellationToken);
-        _logger.LogInformation("Started ingest for document {DocumentId} ({Filename})", document.Id, filename);
+        _logger.LogInformation(
+            "Started ingest for document {DocumentId} ({Filename})",
+            document.Id,
+            filename
+        );
 
         try
         {
@@ -90,21 +100,35 @@ public sealed class IngestService
             }
 
             var chunks = await GetOrCreateChunksAsync(content, mime, document, cancellationToken);
-            _logger.LogInformation("Document {DocumentId} produced {ChunkCount} chunks", document.Id, chunks.Count);
+            _logger.LogInformation(
+                "Document {DocumentId} produced {ChunkCount} chunks",
+                document.Id,
+                chunks.Count
+            );
 
             if (chunks.Count > 0)
             {
-                var embeddings = await EmbedInBatchesAsync(chunks, _options.EmbedBatchSize, cancellationToken);
+                var embeddings = await EmbedInBatchesAsync(
+                    chunks,
+                    _options.EmbedBatchSize,
+                    cancellationToken
+                );
 
-                var records = chunks.Select((chunk, index) => new VectorRecord(
-                    chunk.Id,
-                    embeddings[index],
-                    new Dictionary<string, object?>
-                    {
-                        ["documentId"] = document.Id.ToString(),
-                        ["text"] = chunk.Text,
-                        ["ordinal"] = chunk.Ordinal
-                    })).ToList();
+                var records = chunks
+                    .Select(
+                        (chunk, index) =>
+                            new VectorRecord(
+                                chunk.Id,
+                                embeddings[index],
+                                new Dictionary<string, object?>
+                                {
+                                    ["documentId"] = document.Id.ToString(),
+                                    ["text"] = chunk.Text,
+                                    ["ordinal"] = chunk.Ordinal,
+                                }
+                            )
+                    )
+                    .ToList();
 
                 await _vectorStore.UpsertAsync(records, cancellationToken);
                 await InsertChunksAsync(chunks, cancellationToken);
@@ -127,13 +151,16 @@ public sealed class IngestService
     /// <summary>
     /// Lists all documents in the singleton library, newest first.
     /// </summary>
-    public async Task<IReadOnlyList<Document>> ListDocumentsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Document>> ListDocumentsAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         await using var connection = _db.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
+        command.CommandText =
+            @"
             SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt
             FROM Documents
             ORDER BY CreatedAt DESC;";
@@ -153,7 +180,10 @@ public sealed class IngestService
     /// from the configured vector store. Returns <c>true</c> when the document
     /// existed and was deleted, <c>false</c> when it was not found.
     /// </summary>
-    public async Task<bool> DeleteDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteDocumentAsync(
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
     {
         await using var connection = _db.CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -200,7 +230,10 @@ public sealed class IngestService
     /// <summary>
     /// Finds a document by its SHA-256 hash.
     /// </summary>
-    public async Task<Document?> FindByHashAsync(string hash, CancellationToken cancellationToken = default)
+    public async Task<Document?> FindByHashAsync(
+        string hash,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hash);
 
@@ -208,7 +241,8 @@ public sealed class IngestService
         await connection.OpenAsync(cancellationToken);
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
+        command.CommandText =
+            @"
             SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt
             FROM Documents
             WHERE Hash = @hash
@@ -230,7 +264,8 @@ public sealed class IngestService
         await connection.OpenAsync(cancellationToken);
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
+        command.CommandText =
+            @"
             INSERT INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt)
             VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdAt);";
 
@@ -246,7 +281,10 @@ public sealed class IngestService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private async Task InsertChunksAsync(IEnumerable<Chunk> chunks, CancellationToken cancellationToken)
+    private async Task InsertChunksAsync(
+        IEnumerable<Chunk> chunks,
+        CancellationToken cancellationToken
+    )
     {
         await using var connection = _db.CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -258,7 +296,8 @@ public sealed class IngestService
             {
                 using var command = connection.CreateCommand();
                 command.Transaction = (SqliteTransaction)transaction;
-                command.CommandText = @"
+                command.CommandText =
+                    @"
                     INSERT INTO Chunks (Id, DocumentId, Ordinal, Text, TokenCount)
                     VALUES (@id, @documentId, @ordinal, @text, @tokenCount);";
 
@@ -280,7 +319,11 @@ public sealed class IngestService
         }
     }
 
-    private async Task UpdateDocumentStatusAsync(Guid documentId, DocumentStatus status, CancellationToken cancellationToken)
+    private async Task UpdateDocumentStatusAsync(
+        Guid documentId,
+        DocumentStatus status,
+        CancellationToken cancellationToken
+    )
     {
         await using var connection = _db.CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -297,33 +340,49 @@ public sealed class IngestService
         Stream content,
         DocumentMimeType mime,
         Document document,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var cacheKey = $"chunks:{document.Hash}";
-        if (_options.EnableChunkCache && _chunkCache is not null &&
-            _chunkCache.TryGetValue(cacheKey, out IReadOnlyList<Chunk>? cached) && cached is not null)
+        if (
+            _options.EnableChunkCache
+            && _chunkCache is not null
+            && _chunkCache.TryGetValue(cacheKey, out IReadOnlyList<Chunk>? cached)
+            && cached is not null
+        )
         {
             _logger.LogDebug("Chunk cache hit for document {DocumentId}", document.Id);
-            return cached.Select(c => new Chunk
-            {
-                Id = Guid.NewGuid(),
-                DocumentId = document.Id,
-                Ordinal = c.Ordinal,
-                Text = c.Text,
-                TokenCount = c.TokenCount
-            }).ToList();
+            return cached
+                .Select(c => new Chunk
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = document.Id,
+                    Ordinal = c.Ordinal,
+                    Text = c.Text,
+                    TokenCount = c.TokenCount,
+                })
+                .ToList();
         }
 
         var text = await Chunker.ExtractTextAsync(content, mime);
-        var chunks = Chunker.ChunkText(text, document.Id, _options.ChunkSize, _options.ChunkOverlap);
+        var chunks = Chunker.ChunkText(
+            text,
+            document.Id,
+            _options.ChunkSize,
+            _options.ChunkOverlap
+        );
 
         if (_options.EnableChunkCache && _chunkCache is not null)
         {
-            _chunkCache.Set(cacheKey, chunks, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = _options.ChunkCacheTtl,
-                Size = chunks.Count
-            });
+            _chunkCache.Set(
+                cacheKey,
+                chunks,
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = _options.ChunkCacheTtl,
+                    Size = chunks.Count,
+                }
+            );
         }
 
         return chunks;
@@ -332,7 +391,8 @@ public sealed class IngestService
     private async Task<IReadOnlyList<float[]>> EmbedInBatchesAsync(
         IReadOnlyList<Chunk> chunks,
         int batchSize,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         batchSize = Math.Max(1, batchSize);
         var allEmbeddings = new List<float[]>(chunks.Count);
@@ -344,7 +404,9 @@ public sealed class IngestService
 
             if (embeddings.Count != batch.Count)
             {
-                throw new InvalidOperationException($"Embedder returned {embeddings.Count} vectors for {batch.Count} chunks.");
+                throw new InvalidOperationException(
+                    $"Embedder returned {embeddings.Count} vectors for {batch.Count} chunks."
+                );
             }
 
             allEmbeddings.AddRange(embeddings);
@@ -359,15 +421,18 @@ public sealed class IngestService
         var mime = mimeText switch
         {
             "application/pdf" => DocumentMimeType.Pdf,
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => DocumentMimeType.Docx,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" =>
+                DocumentMimeType.Docx,
             "text/plain" => DocumentMimeType.Txt,
             "text/markdown" => DocumentMimeType.Md,
-            _ => throw new InvalidOperationException($"Unknown MIME type in database: {mimeText}")
+            _ => throw new InvalidOperationException($"Unknown MIME type in database: {mimeText}"),
         };
 
         if (!Enum.TryParse<DocumentStatus>(reader.GetString(5), out var status))
         {
-            throw new InvalidOperationException($"Unknown status in database: {reader.GetString(5)}");
+            throw new InvalidOperationException(
+                $"Unknown status in database: {reader.GetString(5)}"
+            );
         }
 
         return new Document
@@ -379,7 +444,7 @@ public sealed class IngestService
             Hash = reader.GetString(4),
             Status = status,
             CreatedBy = reader.GetString(6),
-            CreatedAt = DateTime.Parse(reader.GetString(7))
+            CreatedAt = DateTime.Parse(reader.GetString(7)),
         };
     }
 }

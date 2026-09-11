@@ -21,7 +21,7 @@ public sealed class AuthApiClient
     {
         PropertyNameCaseInsensitive = true,
         // System.Text.Json ignores unknown fields by default; explicit for clarity
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
     };
 
     public AuthApiClient(HttpClient httpClient)
@@ -47,12 +47,21 @@ public sealed class AuthApiClient
             {
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
                 // Map 503 model unavailable offline verbatim if present
-                if (response.StatusCode == HttpStatusCode.ServiceUnavailable && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+                if (
+                    response.StatusCode == HttpStatusCode.ServiceUnavailable
+                    && body.Contains(
+                        "model unavailable offline",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                     return AuthMeResult.Unavailable("model unavailable offline");
                 return AuthMeResult.Failure($"auth/me failed: {(int)response.StatusCode} {body}");
             }
 
-            var authMe = await response.Content.ReadFromJsonAsync<AuthMe>(_jsonOptions, cancellationToken);
+            var authMe = await response.Content.ReadFromJsonAsync<AuthMe>(
+                _jsonOptions,
+                cancellationToken
+            );
             if (authMe is null || string.IsNullOrWhiteSpace(authMe.Role))
                 return AuthMeResult.Failure("Invalid auth/me response");
 
@@ -94,9 +103,15 @@ public sealed class AuthMeResult
     }
 
     public static AuthMeResult Success(AuthMe data) => new(true, data, AuthMeErrorKind.None, null);
-    public static AuthMeResult Unauthorized(string? msg = null) => new(false, null, AuthMeErrorKind.Unauthorized, msg ?? "unauthorized");
-    public static AuthMeResult Unavailable(string? msg = null) => new(false, null, AuthMeErrorKind.Unavailable, msg ?? "cannot reach AI workstation");
-    public static AuthMeResult Failure(string msg) => new(false, null, AuthMeErrorKind.Unknown, msg);
+
+    public static AuthMeResult Unauthorized(string? msg = null) =>
+        new(false, null, AuthMeErrorKind.Unauthorized, msg ?? "unauthorized");
+
+    public static AuthMeResult Unavailable(string? msg = null) =>
+        new(false, null, AuthMeErrorKind.Unavailable, msg ?? "cannot reach AI workstation");
+
+    public static AuthMeResult Failure(string msg) =>
+        new(false, null, AuthMeErrorKind.Unknown, msg);
 
     public bool IsUnauthorized => ErrorKind == AuthMeErrorKind.Unauthorized;
     public bool IsUnavailable => ErrorKind == AuthMeErrorKind.Unavailable;
@@ -107,5 +122,5 @@ public enum AuthMeErrorKind
     None,
     Unauthorized,
     Unavailable,
-    Unknown
+    Unknown,
 }

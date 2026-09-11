@@ -28,7 +28,8 @@ public sealed class RetrievalService
     public async Task<IReadOnlyList<SearchResult>> RetrieveAsync(
         string query,
         int topK = 5,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
@@ -41,7 +42,11 @@ public sealed class RetrievalService
         }
 
         var queryVector = embeddings[0];
-        var results = await _vectorStore.SearchAsync(queryVector, topK, cancellationToken: cancellationToken);
+        var results = await _vectorStore.SearchAsync(
+            queryVector,
+            topK,
+            cancellationToken: cancellationToken
+        );
 
         // Drop results with no meaningful similarity so the controller can
         // return the "no relevant content found" branch per SC-004.

@@ -30,7 +30,7 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
     private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() }
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
     private readonly List<Category> _categories = new();
@@ -65,7 +65,8 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             var response = await _client.PostAsJsonAsync(
                 "/api/query",
                 new { query = question.Query, topK = TopK },
-                _jsonOptions);
+                _jsonOptions
+            );
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -78,7 +79,9 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             if (question.ExpectedCategory >= 0)
             {
                 relevantAsked++;
-                var hasRelevant = retrievedChunkIds.Any(id => _chunkCategoryIndex.GetValueOrDefault(id, -1) == question.ExpectedCategory);
+                var hasRelevant = retrievedChunkIds.Any(id =>
+                    _chunkCategoryIndex.GetValueOrDefault(id, -1) == question.ExpectedCategory
+                );
                 if (hasRelevant)
                 {
                     relevantCount++;
@@ -101,8 +104,12 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         var precision = relevantAsked == 0 ? 1.0 : relevantCount / (double)relevantAsked;
         precision.Should().BeGreaterOrEqualTo(0.80, "SC-003 requires >=80% top-5 relevance");
 
-        citationCoverage.Should().Be(relevantAsked, "SC-004 requires 100% citation coverage for sourced answers");
-        hallucinationCount.Should().Be(0, "SC-004 requires 0% hallucination for queries without relevant source");
+        citationCoverage
+            .Should()
+            .Be(relevantAsked, "SC-004 requires 100% citation coverage for sourced answers");
+        hallucinationCount
+            .Should()
+            .Be(0, "SC-004 requires 0% hallucination for queries without relevant source");
     }
 
     private async Task SeedLibraryAsync()
@@ -120,7 +127,12 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             var vector = new float[VectorSize];
             vector[i] = 1.0f;
 
-            var category = new Category { Index = i, Name = name, DocumentId = docId };
+            var category = new Category
+            {
+                Index = i,
+                Name = name,
+                DocumentId = docId,
+            };
             _categories.Add(category);
             overrides[name] = vector;
 
@@ -130,15 +142,19 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
                 category.ChunkIds.Add(chunkId);
                 _chunkCategoryIndex[chunkId] = i;
 
-                records.Add(new VectorRecord(
-                    chunkId,
-                    vector,
-                    new Dictionary<string, object?>
-                    {
-                        ["documentId"] = docId.ToString(),
-                        ["text"] = $"This chunk describes {name} policy details (ordinal {ordinal}).",
-                        ["ordinal"] = ordinal
-                    }));
+                records.Add(
+                    new VectorRecord(
+                        chunkId,
+                        vector,
+                        new Dictionary<string, object?>
+                        {
+                            ["documentId"] = docId.ToString(),
+                            ["text"] =
+                                $"This chunk describes {name} policy details (ordinal {ordinal}).",
+                            ["ordinal"] = ordinal,
+                        }
+                    )
+                );
             }
         }
 
@@ -159,15 +175,18 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
                 var chunkId = Guid.NewGuid();
                 _chunkCategoryIndex[chunkId] = -1;
 
-                records.Add(new VectorRecord(
-                    chunkId,
-                    vector,
-                    new Dictionary<string, object?>
-                    {
-                        ["documentId"] = docId.ToString(),
-                        ["text"] = $"Distractor {d} content (ordinal {ordinal}).",
-                        ["ordinal"] = ordinal
-                    }));
+                records.Add(
+                    new VectorRecord(
+                        chunkId,
+                        vector,
+                        new Dictionary<string, object?>
+                        {
+                            ["documentId"] = docId.ToString(),
+                            ["text"] = $"Distractor {d} content (ordinal {ordinal}).",
+                            ["ordinal"] = ordinal,
+                        }
+                    )
+                );
             }
         }
 
@@ -184,11 +203,13 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         {
             for (var q = 0; q < 4; q++)
             {
-                questions.Add(new EvalQuestion
-                {
-                    Query = $"What is the {category.Name} policy? variation {q}",
-                    ExpectedCategory = category.Index
-                });
+                questions.Add(
+                    new EvalQuestion
+                    {
+                        Query = $"What is the {category.Name} policy? variation {q}",
+                        ExpectedCategory = category.Index,
+                    }
+                );
             }
         }
 
@@ -196,11 +217,13 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         // FakeEmbedder to a vector dimension no seeded chunk uses.
         for (var q = 0; q < 10; q++)
         {
-            questions.Add(new EvalQuestion
-            {
-                Query = $"unrelated topic {Guid.NewGuid():N} {q}",
-                ExpectedCategory = -1
-            });
+            questions.Add(
+                new EvalQuestion
+                {
+                    Query = $"unrelated topic {Guid.NewGuid():N} {q}",
+                    ExpectedCategory = -1,
+                }
+            );
         }
 
         return questions;

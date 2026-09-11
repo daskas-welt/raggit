@@ -9,4 +9,5 @@ namespace RAGGit.Core.Abstractions;
 public sealed record VectorRecord(
     Guid Id,
     float[] Vector,
-    IReadOnlyDictionary<string, object?> Payload);
+    IReadOnlyDictionary<string, object?> Payload
+);

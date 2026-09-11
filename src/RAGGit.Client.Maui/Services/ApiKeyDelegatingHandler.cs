@@ -15,7 +15,10 @@ public sealed class ApiKeyDelegatingHandler : DelegatingHandler
         _headerName = headerName;
     }
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken
+    )
     {
         if (!request.Headers.Contains(_headerName) && !string.IsNullOrWhiteSpace(_apiKey))
         {

@@ -19,7 +19,8 @@ public static class OllamaProbe
     public static async Task<bool> IsAvailableAsync(
         string baseUrl,
         int timeoutMs = 1500,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
             return false;

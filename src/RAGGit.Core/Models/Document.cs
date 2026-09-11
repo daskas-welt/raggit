@@ -11,7 +11,7 @@ public enum DocumentMimeType
     Pdf,
     Docx,
     Txt,
-    Md
+    Md,
 }
 
 /// <summary>
@@ -21,7 +21,7 @@ public enum DocumentStatus
 {
     Indexing,
     Ready,
-    Failed
+    Failed,
 }
 
 /// <summary>
@@ -35,10 +35,17 @@ public sealed class Document
     public string Filename { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "MIME type is required.")]
-    [EnumDataType(typeof(DocumentMimeType), ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, txt, md.")]
+    [EnumDataType(
+        typeof(DocumentMimeType),
+        ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, txt, md."
+    )]
     public DocumentMimeType Mime { get; set; }
 
-    [Range(0, DocumentValidation.MaxFileSizeBytes, ErrorMessage = "File size must not exceed 100MB.")]
+    [Range(
+        0,
+        DocumentValidation.MaxFileSizeBytes,
+        ErrorMessage = "File size must not exceed 100MB."
+    )]
     public long Size { get; set; }
 
     [Required(ErrorMessage = "Hash is required.")]
@@ -64,14 +71,16 @@ public sealed class Document
 /// </summary>
 public static class DocumentMimeTypeExtensions
 {
-    public static string GetContentType(this DocumentMimeType mime) => mime switch
-    {
-        DocumentMimeType.Pdf => "application/pdf",
-        DocumentMimeType.Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        DocumentMimeType.Txt => "text/plain",
-        DocumentMimeType.Md => "text/markdown",
-        _ => "application/octet-stream"
-    };
+    public static string GetContentType(this DocumentMimeType mime) =>
+        mime switch
+        {
+            DocumentMimeType.Pdf => "application/pdf",
+            DocumentMimeType.Docx =>
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            DocumentMimeType.Txt => "text/plain",
+            DocumentMimeType.Md => "text/markdown",
+            _ => "application/octet-stream",
+        };
 }
 
 /// <summary>

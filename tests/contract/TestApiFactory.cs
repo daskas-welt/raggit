@@ -25,7 +25,11 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
 
     public TestApiFactory()
     {
-        var baseDir = Path.Combine(Path.GetTempPath(), "raggit-contract-tests", Guid.NewGuid().ToString());
+        var baseDir = Path.Combine(
+            Path.GetTempPath(),
+            "raggit-contract-tests",
+            Guid.NewGuid().ToString()
+        );
         Directory.CreateDirectory(baseDir);
         _dbPath = Path.Combine(baseDir, "rag.db");
     }
@@ -34,11 +38,14 @@ public sealed class TestApiFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            services.Configure<ApiKeyAuthOptions>(ApiKeyAuthOptions.Scheme, options =>
-            {
-                options.AdminApiKey = AdminKey;
-                options.EmployeeApiKey = EmployeeKey;
-            });
+            services.Configure<ApiKeyAuthOptions>(
+                ApiKeyAuthOptions.Scheme,
+                options =>
+                {
+                    options.AdminApiKey = AdminKey;
+                    options.EmployeeApiKey = EmployeeKey;
+                }
+            );
 
             services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
             services.AddSingleton<IVectorStore>(new FakeVectorStore());
@@ -68,7 +75,10 @@ internal sealed class FakeVectorStore : IVectorStore
         }
     }
 
-    public Task UpsertAsync(IEnumerable<VectorRecord> vectors, CancellationToken cancellationToken = default)
+    public Task UpsertAsync(
+        IEnumerable<VectorRecord> vectors,
+        CancellationToken cancellationToken = default
+    )
     {
         lock (_records)
         {
@@ -82,7 +92,8 @@ internal sealed class FakeVectorStore : IVectorStore
         float[] queryVector,
         int limit,
         string? documentIdFilter = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         lock (_records)
         {
@@ -90,7 +101,8 @@ internal sealed class FakeVectorStore : IVectorStore
             if (!string.IsNullOrWhiteSpace(documentIdFilter))
             {
                 query = query.Where(r =>
-                    GetPayloadString(r.Payload, "documentId") == documentIdFilter);
+                    GetPayloadString(r.Payload, "documentId") == documentIdFilter
+                );
             }
 
             var results = query
@@ -100,7 +112,8 @@ internal sealed class FakeVectorStore : IVectorStore
                     GetPayloadString(r.Payload, "documentId"),
                     GetPayloadString(r.Payload, "text"),
                     GetPayloadInt32(r.Payload, "ordinal"),
-                    1.0f))
+                    1.0f
+                ))
                 .ToList();
 
             return Task.FromResult<IReadOnlyList<SearchResult>>(results);
@@ -117,7 +130,8 @@ internal sealed class FakeVectorStore : IVectorStore
         return Task.CompletedTask;
     }
 
-    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(true);
 
     private static string GetPayloadString(IReadOnlyDictionary<string, object?> payload, string key)
     {
@@ -134,7 +148,7 @@ internal sealed class FakeVectorStore : IVectorStore
             {
                 int i => i,
                 long l => (int)l,
-                _ => int.TryParse(value.ToString(), out var parsed) ? parsed : 0
+                _ => int.TryParse(value.ToString(), out var parsed) ? parsed : 0,
             };
         }
 
@@ -146,14 +160,17 @@ internal sealed class FakeEmbedder : IEmbedder
 {
     public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
         IEnumerable<string> inputs,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        var embeddings = inputs.Select(_ =>
-        {
-            var vector = new float[384];
-            vector[0] = 1.0f;
-            return vector;
-        }).ToList();
+        var embeddings = inputs
+            .Select(_ =>
+            {
+                var vector = new float[384];
+                vector[0] = 1.0f;
+                return vector;
+            })
+            .ToList();
 
         return Task.FromResult<IReadOnlyList<float[]>>(embeddings);
     }
@@ -164,8 +181,12 @@ internal sealed class FakeLlmClient : ILlmClient
     public string ResponseText { get; set; } = "fake answer";
     public bool Healthy { get; set; } = true;
 
-    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
-        => Task.FromResult(ResponseText);
+    public Task<string> ChatAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default
+    ) => Task.FromResult(ResponseText);
 
-    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) => Task.FromResult(Healthy);
+    public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(Healthy);
 }

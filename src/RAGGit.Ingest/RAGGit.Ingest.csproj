@@ -1,26 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Apache.Arrow" Version="22.1.0" />
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.0" />
+        <PackageReference Include="LanceDB" Version="2.5.0" />
+        <PackageReference Include="LLamaSharp" Version="0.27.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
+        <PackageReference Include="OllamaSharp" Version="5.4.30" />
+        <PackageReference Include="PdfPig" Version="0.1.16" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Apache.Arrow" Version="22.1.0" />
-    <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.0" />
-    <PackageReference Include="LanceDB" Version="2.5.0" />
-    <PackageReference Include="LLamaSharp" Version="0.27.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
-    <PackageReference Include="OllamaSharp" Version="5.4.30" />
-    <PackageReference Include="PdfPig" Version="0.1.16" />
-  </ItemGroup>
-
-
-  <ItemGroup>
-    <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
-  </ItemGroup>
-
+    <ItemGroup>
+        <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+    </ItemGroup>
 </Project>

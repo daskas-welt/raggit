@@ -24,7 +24,8 @@ public static class DocumentFormatValidator
     public static async Task<Stream> ValidateAndRewindAsync(
         Stream stream,
         DocumentMimeType declaredMime,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(stream);
 
@@ -43,7 +44,9 @@ public static class DocumentFormatValidator
 
             if (!ValidateMagic(actual, declaredMime))
             {
-                throw new InvalidDataException($"File content does not match declared type {declaredMime}.");
+                throw new InvalidDataException(
+                    $"File content does not match declared type {declaredMime}."
+                );
             }
 
             if (stream.CanSeek)
@@ -82,7 +85,7 @@ public static class DocumentFormatValidator
             DocumentMimeType.Pdf => StartsWith(header, "%PDF"u8.ToArray()),
             DocumentMimeType.Docx => StartsWith(header, PkZipMagic),
             DocumentMimeType.Txt or DocumentMimeType.Md => IsUtf8Like(header),
-            _ => false
+            _ => false,
         };
     }
 

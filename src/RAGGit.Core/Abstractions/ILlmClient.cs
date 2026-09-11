@@ -11,7 +11,8 @@ public interface ILlmClient
     Task<string> ChatAsync(
         string systemPrompt,
         string userPrompt,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Returns true if the LLM is reachable and operational.

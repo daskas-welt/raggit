@@ -11,7 +11,9 @@ public sealed class DimensionMismatchException : InvalidOperationException
     public int StoredDimension { get; }
 
     public DimensionMismatchException(int configuredDimension, int storedDimension)
-        : base($"Configured VectorSize {configuredDimension} does not match existing collection dimension {storedDimension} — delete data/lancedb or re-index/migrate")
+        : base(
+            $"Configured VectorSize {configuredDimension} does not match existing collection dimension {storedDimension} — delete data/lancedb or re-index/migrate"
+        )
     {
         ConfiguredDimension = configuredDimension;
         StoredDimension = storedDimension;

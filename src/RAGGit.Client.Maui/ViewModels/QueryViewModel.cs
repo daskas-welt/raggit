@@ -47,12 +47,18 @@ public sealed partial class QueryViewModel : ObservableObject
     private ObservableCollection<object> _responses = new();
 
     [ObservableProperty]
-    private ObservableCollection<string> _suggestions = new() { "Summarize with citations", "Show sources", "Try a broader query" };
+    private ObservableCollection<string> _suggestions = new()
+    {
+        "Summarize with citations",
+        "Show sources",
+        "Try a broader query",
+    };
 
     [ObservableProperty]
     private bool _hasStatusMessage;
 
-    partial void OnStatusMessageChanged(string? value) => HasStatusMessage = !string.IsNullOrWhiteSpace(value);
+    partial void OnStatusMessageChanged(string? value) =>
+        HasStatusMessage = !string.IsNullOrWhiteSpace(value);
 
     public QueryViewModel(QueryApiClient apiClient)
     {
@@ -87,7 +93,14 @@ public sealed partial class QueryViewModel : ObservableObject
             HasCitations = response.Citations.Count > 0;
             IsResultVisible = true;
             // Push to Responses — AIAssistView renders assistant bubble; citations as footer cards handled via HasCitations pane
-            Responses.Add(new { Text = response.Answer, Citations = response.Citations, Timestamp = DateTime.Now });
+            Responses.Add(
+                new
+                {
+                    Text = response.Answer,
+                    Citations = response.Citations,
+                    Timestamp = DateTime.Now,
+                }
+            );
 
             if (response.Citations.Count == 0)
             {
@@ -95,20 +108,36 @@ public sealed partial class QueryViewModel : ObservableObject
             }
             else
             {
-                StatusMessage = $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).";
+                StatusMessage =
+                    $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).";
             }
         }
-        catch (HttpRequestException exception) when (exception.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains(
+                    "model unavailable offline",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
         {
             StatusMessage = "model unavailable offline";
         }
-        catch (HttpRequestException exception) when (exception.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase))
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains(
+                    "cannot reach AI workstation",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
         {
             StatusMessage = $"cannot reach AI workstation: {exception.Message}";
         }
         catch (HttpRequestException exception)
         {
-            if (exception.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase))
+            if (
+                exception.Message.Contains(
+                    "AI workstation unavailable",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
                 StatusMessage = exception.Message;
             else if (exception.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
                 StatusMessage = "Forbidden: you do not have permission.";

@@ -16,5 +16,9 @@ public interface IVirusScanner
     /// Scans <paramref name="stream"/> and returns <c>true</c> if clean.
     /// The stream is seekable and positioned at 0.
     /// </summary>
-    Task<bool> ScanAsync(Stream stream, string filename, CancellationToken cancellationToken = default);
+    Task<bool> ScanAsync(
+        Stream stream,
+        string filename,
+        CancellationToken cancellationToken = default
+    );
 }

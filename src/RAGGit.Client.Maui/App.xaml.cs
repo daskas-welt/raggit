@@ -9,6 +9,7 @@ public partial class App : Application
 {
 #if MAUI
     private readonly IServiceProvider? _services;
+
     public App(IServiceProvider services)
     {
         InitializeComponent();
@@ -36,12 +37,14 @@ public partial class App : Application
 #if MAUI
     private async Task DiscoverRoleAsync()
     {
-        if (_services is null) return;
+        if (_services is null)
+            return;
         var session = _services.GetService<ClientSession>();
         var auth = _services.GetService<Services.AuthApiClient>();
         var connectionState = _services.GetService<WorkstationConnectionState>();
         var configError = _services.GetService<ConfigErrorState>();
-        if (session is null || auth is null) return;
+        if (session is null || auth is null)
+            return;
 
         var result = await auth.GetAuthMeAsync();
         if (result.IsSuccess && result.Data is not null)
@@ -59,7 +62,8 @@ public partial class App : Application
             // 401 -> configuration error UI (never unauthenticated)
             session.Role = string.Empty;
             if (connectionState is not null)
-                connectionState.ErrorMessage = result.ErrorMessage ?? "unauthorized — check Workstation:ApiKey / Api:AdminKey";
+                connectionState.ErrorMessage =
+                    result.ErrorMessage ?? "unauthorized — check Workstation:ApiKey / Api:AdminKey";
             // ConfigErrorState is already registered for initial invalid config; for 401 we surface via connectionState
             System.Diagnostics.Debug.WriteLine($"Auth 401: {result.ErrorMessage}");
         }
