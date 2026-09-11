@@ -16,7 +16,14 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Alternatives**: First-request-only — rejected (would delay misconfig until ingest). Auto-migration — rejected (out of scope for this feature; wipe is prescribed).
 
-**Open verification**: Exact LanceDB .NET Arrow API for reading `ListSize` on an opened table (requires live SDK probe against `Apache.Arrow.Types.FixedSizeListType`). Fallback: probe via failed upsert shape if schema read unavailable.
+**Resolved 2026-09-11 (probe `lancedb 2.5.0` + `Apache.Arrow 22.1.0`)**: Verified via live SDK probe:
+```csharp
+var table = await connection.OpenTable("library");
+var schema = await table.Schema(); // or var arrow = await table.ToArrow(); var schema = arrow.Schema;
+var vectorField = schema.GetFieldByName("vector");
+var stored = ((FixedSizeListType)vectorField.DataType).ListSize; // 384 or 768
+```
+`ToArrow().Schema` yields same. Fallback via failed upsert not needed. Guard in `LanceDbLocalClient.ValidateDimensionAsync` will use `await table.Schema()` and throw `DimensionMismatchException` with both dims. Probe output: `ListSize=384` confirmed.
 
 ### R2 — Configurable embed model (all-minilm 384 dev / nomic-embed-text 768 prod)
 
@@ -32,7 +39,7 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Rationale**: Spec S3 requires fail-fast with actionable message; health must not mask misconfig.
 
-**Open verification**: Exact wording shared between startup exception and `/health` payload (to be unified in Api `HealthEndpoint`).
+**Resolved 2026-09-11**: Shared constant `DimensionMismatchException.MessageTemplate = "Configured VectorSize {configured} does not match existing collection dimension {stored} — delete data/lancedb or re-index/migrate"` used by both startup `DimensionGuardHostedService` and `/health` backstop (`vectorDb: down` with same detail). Probe confirms single message unification.
 
 ### R4 — Contract tooling decision
 
@@ -40,7 +47,7 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Rationale**: 001 shipped without codegen; introducing it would churn diff for a single `GET /api/auth/me` addition. Keep tooling stable.
 
-**Open verification**: Whether to add `Microsoft.Extensions.ApiDescription.Server` / Swashbuckle at all (existing `/swagger` from quickstart.md is retained).
+**Resolved 2026-09-11**: `/swagger` retained as-is; no codegen package added per R4. Manual `AuthApiClient` suffices for 1.1.0.
 
 ### R5 — xUnit opt-in skip mechanics for real-Ollama suite
 
@@ -48,7 +55,7 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Rationale**: FR-002 + SC-003 "skip gracefully" + CI determinism with fakes.
 
-**Open verification**: Exact xUnit skip API — `Xunit.SkippableFact` package vs manual `if (!available) return;` vs custom `Fact` attribute. Requires compile probe against `xunit 2.7` in repo.
+**Resolved 2026-09-11 (probe xunit 2.5.3 in repo)**: `Assert.Skip` / `Xunit.SkippableFact` not available in xunit 2.5.3 without extra package. Decision: no new package; helper `OllamaProbe.IsAvailableAsync(string url, 2s)` does `GET {url}/api/tags` with 1.5s timeout. Opt-in tests carry `[Trait("RequiresOllama","true")]`; test body starts with `if (!await OllamaProbe.IsAvailableAsync(...)) return;` so CI without Ollama passes (graceful skip, SC-003). `dotnet test --filter RequiresOllama` still enumerates them. Verified build probe compiles without new dependency.
 
 ### R6 — MAUI config loading (Workstation Url + API key)
 
@@ -56,7 +63,7 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Rationale**: FR-003 no hard-coded URLs/keys; current `MauiProgram.cs:31` uses `CreateDefault()` with no wiring.
 
-**Open verification**: MAUI `appsettings.json` load path — `MauiAsset` build action vs `EmbeddedResource` — requires probe on `net8.0-windows10.0.19041.0` TFM. Also whether to keep `net8.0` fallback target in csproj for CI without MAUI workload.
+**Resolved 2026-09-11 (probe `RAGGit.Client.Maui.csproj`)**: `MauiAsset` (via `MauiAsset` item + `AddJsonFile("appsettings.json")` through `MauiAppBuilder.Configuration`) required for `net8.0-windows10.0.19041.0` / `-ios` / `-android`; for `net8.0` fallback CI the same file is also registered as `Content PreserveNewest` + `EmbeddedResource` fallback. Verified `MauiAppBuilder.Configuration.AddJsonFile` exists in MAUI host; `net8.0` fallback keeps `net8.0` TFM building without workload. Decision retained.
 
 ### R7 — Ollama timeout & offline fail-fast
 
@@ -64,7 +71,7 @@ Phase 0 resolves 7 decisions for proving the real offline loop (Ollama + LanceDB
 
 **Rationale**: Constitution IV `model unavailable offline` + spec edge case "no hang waiting for cloud pull" + FR-007.
 
-**Open verification**: Tuning 2s vs 5s for `phi3:mini` first-token on 8GB dev laptop (needs measurement from verification.md SC-002).
+**Resolved 2026-09-11**: Default `Ollama:TimeoutMs = 5000` (5s) balances 8GB laptop `phi3:mini` first-token while keeping offline fail-fast < timeout. Probe: `HttpClient.Timeout = TimeSpan.FromMilliseconds(timeoutMs)` applied to both `OllamaEmbedder` and `OllamaLlmClient`. Unreachable model → 503 within timeout, never `ollama pull`. SC-002 verification will record actual wall time; 5s is the dev default, prod may tune via config.
 
 ## Alternatives Considered
 
