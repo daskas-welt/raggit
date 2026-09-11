@@ -178,6 +178,9 @@ public sealed class DocumentsController : ControllerBase
                 case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                     mime = DocumentMimeType.Docx;
                     return true;
+                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                    mime = DocumentMimeType.Xlsx;
+                    return true;
                 case "text/plain":
                     mime = DocumentMimeType.Txt;
                     return true;
@@ -196,6 +199,9 @@ public sealed class DocumentsController : ControllerBase
                 return true;
             case ".docx":
                 mime = DocumentMimeType.Docx;
+                return true;
+            case ".xlsx":
+                mime = DocumentMimeType.Xlsx;
                 return true;
             case ".txt":
                 mime = DocumentMimeType.Txt;
