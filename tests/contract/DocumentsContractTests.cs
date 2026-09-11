@@ -121,6 +121,89 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
         return builder.Build();
     }
 
+    [Fact]
+    public async Task Post_CorruptedPdf_Returns400CorruptedPdf()
+    {
+        var bytes = await LoadFixtureBytesAsync("bad.pdf");
+
+        var stream = new MemoryStream(bytes);
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        var form = new MultipartFormDataContent();
+        form.Add(fileContent, "file", "bad.pdf");
+
+        var response = await _client.PostAsync("/api/documents", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("corrupted pdf");
+    }
+
+    [Fact]
+    public async Task Post_CorruptedDocx_Returns400Corrupted()
+    {
+        var bytes = await LoadFixtureBytesAsync("bad.docx");
+
+        var stream = new MemoryStream(bytes);
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
+        var form = new MultipartFormDataContent();
+        form.Add(fileContent, "file", "bad.docx");
+
+        var response = await _client.PostAsync("/api/documents", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ToLowerInvariant().Should().Contain("corrupted");
+    }
+
+    private static async Task<byte[]> LoadFixtureBytesAsync(string filename)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "fixtures", filename),
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "integration",
+                "fixtures",
+                filename
+            ),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "fixtures", filename),
+            Path.Combine("tests", "integration", "fixtures", filename),
+            Path.Combine("..", "integration", "fixtures", filename),
+            $"fixtures/{filename}",
+        };
+        foreach (var p in candidates)
+        {
+            if (File.Exists(p))
+                return await File.ReadAllBytesAsync(p);
+        }
+
+        // Fallback: search up from base
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(
+                dir.FullName,
+                "tests",
+                "integration",
+                "fixtures",
+                filename
+            );
+            if (File.Exists(candidate))
+                return await File.ReadAllBytesAsync(candidate);
+            dir = dir.Parent;
+        }
+
+        throw new FileNotFoundException($"Fixture {filename} not found");
+    }
+
     private async Task<Document> DeserializeDocumentAsync(HttpResponseMessage response)
     {
         var json = await response.Content.ReadAsStringAsync();
