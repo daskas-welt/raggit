@@ -6,11 +6,10 @@
              x:Class="RAGGit.Client.Maui.Views.LibraryView"
              Title="Library">
   <Grid RowDefinitions="Auto,*" Padding="12">
-    <Button Grid.Row="0"
-            Text="Upload"
-            Command="{Binding UploadCommand}"
-            IsVisible="{Binding IsAdmin}"
-            Margin="0,0,0,12" />
+    <HorizontalStackLayout Grid.Row="0" Spacing="8" Margin="0,0,0,12">
+      <Button Text="Upload" Command="{Binding UploadCommand}" IsVisible="{Binding IsAdmin}" />
+      <Button Text="Toggle Theme" Clicked="OnToggleThemeClicked" />
+    </HorizontalStackLayout>
     <!-- Syncfusion SfDataGrid replaces CollectionView for 5k docs virtualization + sorting -->
     <Grid Grid.Row="1">
       <!-- Shimmer while loading (SF-Toolkit) -->
@@ -39,11 +38,10 @@
           </syncfusion:SfDataGrid.EmptyView>
         </syncfusion:SfDataGrid>
       </RefreshView>
-      <!-- Fallback delete action: swipe or context menu wired to DeleteDocumentCommand; kept Button in row details for Win11 -->
+      <!-- SfPopup confirmation replaces DisplayAlert for MAUI -->
       <Button Text="Delete Selected"
               IsVisible="{Binding IsAdmin}"
-              Command="{Binding DeleteDocumentCommand}"
-              CommandParameter="{Binding Source={x:Reference DataGrid}, Path=SelectedRow}"
+              Clicked="OnDeleteClicked"
               VerticalOptions="End"
               HorizontalOptions="End"
               Margin="12" />

@@ -28,7 +28,19 @@ public sealed partial class UploadViewModel : ObservableObject
     private bool _isUploading;
 
     [ObservableProperty]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    private bool _isUploadEnabled = true;
+
+    [ObservableProperty]
     private string? _statusMessage;
+
+    partial void OnIsUploadingChanged(bool value)
+    {
+        IsBusy = value;
+        IsUploadEnabled = !value;
+    }
 
     public UploadViewModel(DocumentsApiClient apiClient, IFilePicker filePicker)
     {

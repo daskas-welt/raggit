@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:syncProgress="clr-namespace:Syncfusion.Maui.ProgressBar;assembly=Syncfusion.Maui.ProgressBar"
+             xmlns:buttons="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+             xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
              x:Class="RAGGit.Client.Maui.Views.UploadView"
              Title="Upload Document">
-  <VerticalStackLayout Padding="20" Spacing="12">
-    <Button Text="Pick File"
-            Command="{Binding PickFileCommand}" />
-    <Label Text="{Binding SelectedFileName}"
-           FontAttributes="Italic" />
-    <ProgressBar Progress="{Binding UploadProgress}" />
-    <Button Text="Upload"
-            Command="{Binding UploadCommand}" />
-    <Label Text="{Binding StatusMessage}" />
+  <VerticalStackLayout Padding="20" Spacing="16">
+    <buttons:SfButton Text="Pick File" Command="{Binding PickFileCommand}" />
+    <toolkit:SfTextInputLayout Hint="Selected file" ContainerType="Outlined">
+      <Entry Text="{Binding SelectedFileName}" IsReadOnly="True" Placeholder="No file selected" />
+    </toolkit:SfTextInputLayout>
+    <!-- Syncfusion Linear ProgressBar replaces ProgressBar for determinate upload -->
+    <syncProgress:SfLinearProgressBar Progress="{Binding UploadProgress}" Minimum="0" Maximum="1" />
+    <toolkit:SfBusyIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Title="Uploading..." />
+    <buttons:SfButton Text="Upload" Command="{Binding UploadCommand}" IsEnabled="{Binding IsUploadEnabled}" />
+    <Label Text="{Binding StatusMessage}" TextColor="{StaticResource PrimaryBrush}" LineBreakMode="WordWrap" />
   </VerticalStackLayout>
 </ContentPage>
