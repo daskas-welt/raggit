@@ -55,17 +55,21 @@ public static class MauiProgram
             System.Diagnostics.Debug.WriteLine($"Client config error: {startupConfig.Error}");
             builder.Services.AddSingleton(session);
             builder.Services.AddSingleton(new ConfigErrorState(startupConfig.Error ?? "Invalid client configuration"));
+            builder.Services.AddSingleton(new WorkstationConnectionState { ErrorMessage = startupConfig.Error });
             // Still register ViewModels so UI can show error
             builder.Services.AddTransient<ViewModels.LibraryViewModel>(sp => new ViewModels.LibraryViewModel(
                 new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") })));
             builder.Services.AddTransient<ViewModels.QueryViewModel>(sp => new ViewModels.QueryViewModel(
                 new Services.QueryApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") })));
             builder.Services.AddTransient<ViewModels.UploadViewModel>();
+            // Auth client stub (never called due to invalid config)
+            builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }));
             return builder.Build();
         }
 
         // Valid config — register named HttpClients with BaseAddress + X-Api-Key handler
         builder.Services.AddSingleton(session);
+        builder.Services.AddSingleton(new WorkstationConnectionState());
         builder.Services.AddTransient<Services.ApiKeyDelegatingHandler>(_ => new Services.ApiKeyDelegatingHandler(session.ApiKey));
 
         builder.Services.AddHttpClient<Services.DocumentsApiClient>(client =>
@@ -74,6 +78,11 @@ public static class MauiProgram
         }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
 
         builder.Services.AddHttpClient<Services.QueryApiClient>(client =>
+        {
+            client.BaseAddress = new Uri(session.WorkstationUrl);
+        }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+
+        builder.Services.AddHttpClient<Services.AuthApiClient>(client =>
         {
             client.BaseAddress = new Uri(session.WorkstationUrl);
         }).AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
@@ -106,4 +115,13 @@ public sealed class ConfigErrorState
 {
     public string Message { get; }
     public ConfigErrorState(string message) => Message = message;
+}
+
+public sealed class WorkstationConnectionState
+{
+    public string? ErrorMessage { get; set; }
+    public bool IsUnavailable => !string.IsNullOrWhiteSpace(ErrorMessage) &&
+        (ErrorMessage.Contains("AI workstation", StringComparison.OrdinalIgnoreCase) ||
+         ErrorMessage.Contains("cannot reach", StringComparison.OrdinalIgnoreCase));
+    public Func<Task>? RetryAction { get; set; }
 }
