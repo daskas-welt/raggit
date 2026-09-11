@@ -98,7 +98,24 @@ public sealed partial class QueryViewModel : ObservableObject
                 StatusMessage = $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).";
             }
         }
+        catch (HttpRequestException exception) when (exception.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusMessage = "model unavailable offline";
+        }
+        catch (HttpRequestException exception) when (exception.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusMessage = $"cannot reach AI workstation: {exception.Message}";
+        }
         catch (HttpRequestException exception)
+        {
+            if (exception.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase))
+                StatusMessage = exception.Message;
+            else if (exception.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+                StatusMessage = "Forbidden: you do not have permission.";
+            else
+                StatusMessage = $"AI workstation unavailable: {exception.Message}";
+        }
+        catch (TaskCanceledException exception)
         {
             StatusMessage = $"AI workstation unavailable: {exception.Message}";
         }
@@ -111,6 +128,12 @@ public sealed partial class QueryViewModel : ObservableObject
             IsBusy = false;
             IsAskEnabled = true;
         }
+    }
+
+    [RelayCommand]
+    private async Task RetryAsync()
+    {
+        await AskAsync();
     }
 
     private bool CanAsk => IsAskEnabled && !string.IsNullOrWhiteSpace(QueryText);

@@ -34,12 +34,49 @@ public sealed class DocumentsApiClient
     /// </summary>
     public async Task<IReadOnlyList<Document>> GetDocumentsAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync("api/documents", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var response = await _httpClient.GetAsync("api/documents", cancellationToken);
+            await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var documents = await response.Content.ReadFromJsonAsync<List<Document>>(_jsonOptions, cancellationToken);
-        return documents ?? new List<Document>();
+            var documents = await response.Content.ReadFromJsonAsync<List<Document>>(_jsonOptions, cancellationToken);
+            return documents ?? new List<Document>();
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
     }
+
+    private async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode) return;
+        var body = await response.Content.ReadAsStringAsync(ct);
+        if (response.StatusCode == HttpStatusCode.ServiceUnavailable && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+            throw new HttpRequestException("model unavailable offline");
+        if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            throw new HttpRequestException($"AI workstation unavailable: {body}");
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            throw new HttpRequestException($"unauthorized: {body}");
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+            throw new HttpRequestException($"forbidden: {body}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    private static bool IsMappedError(HttpRequestException ex) =>
+        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// POST /api/documents with a file stream and optional progress reporting.
@@ -70,7 +107,19 @@ public sealed class DocumentsApiClient
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         content.Add(fileContent, "file", fileName);
 
-        var response = await _httpClient.PostAsync("api/documents", content, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.PostAsync("api/documents", content, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (!IsMappedError(ex))
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
@@ -78,7 +127,7 @@ public sealed class DocumentsApiClient
             throw new UnsupportedDocumentTypeException(error?.Error ?? $"unsupported type: {Path.GetExtension(fileName)}");
         }
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
         var document = await response.Content.ReadFromJsonAsync<Document>(_jsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Failed to deserialize document response.");
@@ -91,8 +140,23 @@ public sealed class DocumentsApiClient
     /// </summary>
     public async Task DeleteAsync(Guid documentId, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.DeleteAsync($"api/documents/{documentId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/documents/{documentId}", cancellationToken);
+            await EnsureSuccessOrThrowAsync(response, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
     }
 
     private sealed class ErrorResponse

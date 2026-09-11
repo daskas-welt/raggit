@@ -51,6 +51,26 @@ public sealed partial class LibraryViewModel : ObservableObject
             var documents = await _apiClient.GetDocumentsAsync();
             Documents = new ObservableCollection<Document>(documents);
         }
+        catch (HttpRequestException ex) when (ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "model unavailable offline";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = $"cannot reach AI workstation: {ex.Message}";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = $"AI workstation unavailable: {ex.Message}";
+        }
+        catch (TaskCanceledException ex)
+        {
+            ErrorMessage = $"AI workstation unavailable: {ex.Message}";
+        }
         catch (Exception exception)
         {
             ErrorMessage = $"Failed to load library: {exception.Message}";
@@ -59,6 +79,12 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task RetryAsync()
+    {
+        await LoadDocumentsAsync();
     }
 
     [RelayCommand]
@@ -81,6 +107,22 @@ public sealed partial class LibraryViewModel : ObservableObject
         catch (HttpRequestException ex) when (ex.Message.Contains("403", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
         {
             ErrorMessage = $"Forbidden: you do not have permission to delete documents (Admin only).";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "model unavailable offline";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = $"cannot reach AI workstation: {ex.Message}";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (TaskCanceledException ex)
+        {
+            ErrorMessage = $"AI workstation unavailable: {ex.Message}";
         }
         catch (Exception exception)
         {

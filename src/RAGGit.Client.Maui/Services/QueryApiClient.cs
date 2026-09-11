@@ -41,15 +41,52 @@ public sealed class QueryApiClient
             TopK = topK
         };
 
-        var response = await _httpClient.PostAsJsonAsync(
-            "api/query",
-            request,
-            _jsonOptions,
-            cancellationToken);
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "api/query",
+                request,
+                _jsonOptions,
+                cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+            await EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var result = await response.Content.ReadFromJsonAsync<QueryResponse>(_jsonOptions, cancellationToken);
-        return result ?? new QueryResponse();
+            var result = await response.Content.ReadFromJsonAsync<QueryResponse>(_jsonOptions, cancellationToken);
+            return result ?? new QueryResponse();
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
     }
+
+    private async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode) return;
+        var body = await response.Content.ReadAsStringAsync(ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && body.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase))
+            throw new HttpRequestException("model unavailable offline");
+        if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            throw new HttpRequestException($"AI workstation unavailable: {body}");
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new HttpRequestException($"unauthorized: {body}");
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            throw new HttpRequestException($"forbidden: {body}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    private static bool IsMappedError(HttpRequestException ex) =>
+        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase);
 }
