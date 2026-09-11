@@ -15,14 +15,22 @@ public sealed class OllamaLlmClient : ILlmClient
 {
     private readonly OllamaApiClient _client;
     private readonly string _modelName;
+    private readonly int _timeoutMs;
 
-    public OllamaLlmClient(string baseUrl, string modelName)
+    public OllamaLlmClient(string baseUrl, string modelName, int timeoutMs = 5000)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
+        if (timeoutMs <= 0) throw new ArgumentOutOfRangeException(nameof(timeoutMs));
 
-        _client = new OllamaApiClient(baseUrl, modelName);
         _modelName = modelName;
+        _timeoutMs = timeoutMs;
+        var httpClient = new System.Net.Http.HttpClient
+        {
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+        };
+        _client = new OllamaApiClient(httpClient, modelName);
     }
 
     /// <inheritdoc />

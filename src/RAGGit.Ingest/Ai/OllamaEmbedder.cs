@@ -16,15 +16,30 @@ public sealed class OllamaEmbedder : IEmbedder
 {
     private readonly OllamaApiClient _client;
     private readonly string _modelName;
+    private readonly int _timeoutMs;
 
-    public OllamaEmbedder(string baseUrl, string modelName)
+    public OllamaEmbedder(string baseUrl, string modelName, int timeoutMs = 5000)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
+        if (timeoutMs <= 0) throw new ArgumentOutOfRangeException(nameof(timeoutMs));
 
-        _client = new OllamaApiClient(baseUrl, modelName);
         _modelName = modelName;
+        _timeoutMs = timeoutMs;
+        var httpClient = new System.Net.Http.HttpClient
+        {
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+        };
+        // Never trigger ollama pull — fail fast if model not present (Constitution IV, FR-007)
+        _client = new OllamaApiClient(httpClient, modelName);
     }
+
+    /// <summary>
+    /// Back-compat ctor without timeout — defaults to 5000ms (R7).
+    /// </summary>
+    public OllamaEmbedder(string baseUrl, string modelName, TimeSpan timeout)
+        : this(baseUrl, modelName, (int)timeout.TotalMilliseconds) { }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
