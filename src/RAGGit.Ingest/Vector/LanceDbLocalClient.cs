@@ -62,6 +62,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             if (names.Contains(TableName))
             {
                 _table = await _connection.OpenTable(TableName);
+                // Dimension guard — first-request backstop per Q3
+                await ValidateDimensionInternalAsync(_table, _vectorSize, cancellationToken);
                 _initialized = true;
                 return _table;
             }
@@ -176,11 +178,45 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
 
     /// <summary>
     /// Validates that the configured vector size matches the persisted collection dimension.
-    /// Stub for T004 red test — real guard lands in T008.
+    /// Reads Arrow schema vector FixedSizeList size (R1 resolved probe).
     /// </summary>
-    public Task ValidateDimensionAsync(int configuredVectorSize, CancellationToken cancellationToken = default)
+    public async Task ValidateDimensionAsync(int configuredVectorSize, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        // No table yet → lazy-create allowed
+        if (!Directory.Exists(_storagePath))
+            return;
+
+        // Quick probe without reusing _connection/_table to avoid init deadlock
+        var probeConn = new Connection();
+        try
+        {
+            await probeConn.Connect(_storagePath, new ConnectionOptions());
+            var names = await probeConn.TableNames();
+            if (!names.Contains(TableName))
+                return;
+
+            var table = await probeConn.OpenTable(TableName);
+            await ValidateDimensionInternalAsync(table, configuredVectorSize, cancellationToken);
+        }
+        finally
+        {
+            probeConn.Dispose();
+        }
+    }
+
+    private static async Task ValidateDimensionInternalAsync(lancedb.Table table, int configuredVectorSize, CancellationToken cancellationToken)
+    {
+        var schema = await table.Schema();
+        var vectorField = schema.GetFieldByName("vector");
+        if (vectorField is null)
+            return;
+
+        if (vectorField.DataType is FixedSizeListType fsl)
+        {
+            var stored = fsl.ListSize;
+            if (stored != configuredVectorSize)
+                throw new DimensionMismatchException(configuredVectorSize, stored);
+        }
     }
 
     /// <summary>
