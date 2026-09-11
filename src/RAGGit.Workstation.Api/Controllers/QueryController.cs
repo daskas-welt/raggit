@@ -140,7 +140,18 @@ public sealed class QueryController : ControllerBase
         catch (HttpRequestException exception)
         {
             _logger.LogError(exception, "Query failed because LLM is unreachable for user {UserId}", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "AI workstation unavailable" });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
+        }
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // HttpClient timeout (Ollama:TimeoutMs) — fail fast per R7/FR-007, never hang or pull
+            _logger.LogError(exception, "Query timed out (Ollama:TimeoutMs) for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(exception, "Query operation canceled (timeout) for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "model unavailable offline" });
         }
         catch (Exception exception)
         {
