@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\RAGGit.Ingest\RAGGit.Ingest.csproj" />
     <ProjectReference Include="..\..\src\RAGGit.Retrieval\RAGGit.Retrieval.csproj" />
     <ProjectReference Include="..\..\src\RAGGit.Workstation.Api\RAGGit.Workstation.Api.csproj" />
+    <ProjectReference Include="..\..\src\RAGGit.Client.Maui\RAGGit.Client.Maui.csproj" />
   </ItemGroup>
 
 </Project>
