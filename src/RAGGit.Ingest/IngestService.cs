@@ -469,6 +469,8 @@ public sealed class IngestService
             "application/pdf" => DocumentMimeType.Pdf,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" =>
                 DocumentMimeType.Docx,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" =>
+                DocumentMimeType.Xlsx,
             "text/plain" => DocumentMimeType.Txt,
             "text/markdown" => DocumentMimeType.Md,
             _ => throw new InvalidOperationException($"Unknown MIME type in database: {mimeText}"),
