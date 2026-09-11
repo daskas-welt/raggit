@@ -26,4 +26,19 @@
     <ProjectReference Include="..\..\src\RAGGit.Workstation.Api\RAGGit.Workstation.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="fixtures\sample-50pages.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="fixtures\bad.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="fixtures\bad.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="fixtures\README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
