@@ -98,7 +98,7 @@ builder.Services.AddSingleton<IVectorStore>(new LanceDbLocalClient(vectorDbPath,
 if (cacheEnabled)
 {
     builder.Services.AddSingleton<IEmbedder>(sp => new CachedEmbedder(
-        new OllamaEmbedder(ollamaUrl, embedModel),
+        new OllamaEmbedder(ollamaUrl, embedModel, ollamaTimeoutMs),
         sp.GetRequiredService<IMemoryCache>(),
         embedModel,
         embedCap,
@@ -106,10 +106,10 @@ if (cacheEnabled)
 }
 else
 {
-    builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel));
+    builder.Services.AddSingleton<IEmbedder>(new OllamaEmbedder(ollamaUrl, embedModel, ollamaTimeoutMs));
 }
 
-builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel));
+builder.Services.AddSingleton<ILlmClient>(new OllamaLlmClient(ollamaUrl, chatModel, ollamaTimeoutMs));
 builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
@@ -168,6 +168,23 @@ app.MapControllers();
 await using (var db = app.Services.GetRequiredService<RagDbContext>())
 {
     await db.EnsureCreatedAsync();
+}
+
+// Startup dimension guard (Q3 normative) — fail fast before accepting traffic per FR-001/SC-004.
+{
+    var vectorStore = app.Services.GetRequiredService<IVectorStore>();
+    if (vectorStore is LanceDbLocalClient lance)
+    {
+        try
+        {
+            await lance.ValidateDimensionAsync(vectorDbVectorSize);
+        }
+        catch (DimensionMismatchException ex)
+        {
+            Log.Fatal(ex, "Startup dimension guard failed: {Message}", ex.Message);
+            throw;
+        }
+    }
 }
 
 app.Run();
