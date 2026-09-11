@@ -47,6 +47,9 @@ public sealed partial class QueryViewModel : ObservableObject
     private ObservableCollection<object> _responses = new();
 
     [ObservableProperty]
+    private ObservableCollection<string> _suggestions = new() { "Summarize with citations", "Show sources", "Try a broader query" };
+
+    [ObservableProperty]
     private bool _hasStatusMessage;
 
     partial void OnStatusMessageChanged(string? value) => HasStatusMessage = !string.IsNullOrWhiteSpace(value);

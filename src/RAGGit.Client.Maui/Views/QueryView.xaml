@@ -12,7 +12,9 @@
                               Requests="{Binding Requests}"
                               AssistItems="{Binding Responses}"
                               ShowTypingIndicator="{Binding IsBusy}"
-                              AllowStopResponse="True">
+                              AllowStopResponse="True"
+                              Suggestions="{Binding Suggestions}"
+                              SuggestionItemTapped="OnSuggestionTapped">
       <syncfusion:SfAIAssistView.Header>
         <Label Text="Ask the library" FontSize="18" FontAttributes="Bold" />
       </syncfusion:SfAIAssistView.Header>

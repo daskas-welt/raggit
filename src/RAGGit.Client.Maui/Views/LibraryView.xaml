@@ -2,6 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+             xmlns:pull="clr-namespace:Syncfusion.Maui.PullToRefresh;assembly=Syncfusion.Maui.PullToRefresh"
+             xmlns:popup="clr-namespace:Syncfusion.Maui.Popup;assembly=Syncfusion.Maui.Popup"
              xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
              x:Class="RAGGit.Client.Maui.Views.LibraryView"
              Title="Library">
@@ -17,8 +19,7 @@
                          IsActive="{Binding IsBusy}"
                          IsVisible="{Binding IsBusy}"
                          VerticalOptions="FillAndExpand" />
-      <RefreshView Command="{Binding LoadDocumentsCommand}"
-                   IsRefreshing="{Binding IsBusy}">
+      <syncfusion:SfPullToRefresh x:Name="PullToRefresh" IsRefreshing="{Binding IsBusy}" Refreshing="OnPullRefreshing">
         <syncfusion:SfDataGrid x:Name="DataGrid"
                                ItemsSource="{Binding Documents}"
                                AutoGenerateColumnsMode="None"
@@ -37,8 +38,9 @@
             <Label Text="No documents in the library." HorizontalOptions="Center" VerticalOptions="Center" />
           </syncfusion:SfDataGrid.EmptyView>
         </syncfusion:SfDataGrid>
-      </RefreshView>
-      <!-- SfPopup confirmation replaces DisplayAlert for MAUI -->
+      </syncfusion:SfPullToRefresh>
+      <!-- Themed delete via SfPopup (replaces DisplayAlert on MAUI TFMs; fallback handled in code-behind) -->
+      <popup:SfPopup x:Name="DeletePopup" />
       <Button Text="Delete Selected"
               IsVisible="{Binding IsAdmin}"
               Clicked="OnDeleteClicked"
