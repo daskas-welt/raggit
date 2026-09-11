@@ -14,6 +14,7 @@ public sealed partial class UploadViewModel : ObservableObject
 {
     private readonly DocumentsApiClient _apiClient;
     private readonly IFilePicker _filePicker;
+    private readonly ClientSession? _session;
 
     private Stream? _selectedFileStream;
     private string? _selectedContentType;
@@ -36,17 +37,24 @@ public sealed partial class UploadViewModel : ObservableObject
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private bool _isAdmin;
+
     partial void OnIsUploadingChanged(bool value)
     {
         IsBusy = value;
         IsUploadEnabled = !value;
     }
 
-    public UploadViewModel(DocumentsApiClient apiClient, IFilePicker filePicker)
+    public UploadViewModel(DocumentsApiClient apiClient, IFilePicker filePicker, ClientSession? session = null)
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         _filePicker = filePicker ?? throw new ArgumentNullException(nameof(filePicker));
+        _session = session;
+        IsAdmin = _session?.IsAdmin ?? true; // fallback true to keep existing behavior until wired
     }
+
+    public void RefreshRole() => IsAdmin = _session?.IsAdmin ?? IsAdmin;
 
     [RelayCommand]
     private async Task PickFileAsync()
@@ -93,9 +101,16 @@ public sealed partial class UploadViewModel : ObservableObject
         {
             StatusMessage = exception.Message;
         }
+        catch (HttpRequestException ex) when (ex.Message.Contains("403", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusMessage = "Forbidden: you do not have permission to upload documents (Admin only).";
+        }
         catch (Exception exception)
         {
-            StatusMessage = $"Upload failed: {exception.Message}";
+            if (exception is HttpRequestException || exception is TaskCanceledException)
+                StatusMessage = $"cannot reach AI workstation: {exception.Message}";
+            else
+                StatusMessage = $"Upload failed: {exception.Message}";
         }
         finally
         {

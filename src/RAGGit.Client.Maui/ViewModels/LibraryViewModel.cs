@@ -14,6 +14,7 @@ namespace RAGGit.Client.Maui.ViewModels;
 public sealed partial class LibraryViewModel : ObservableObject
 {
     private readonly DocumentsApiClient _apiClient;
+    private readonly ClientSession _session;
 
     [ObservableProperty]
     private ObservableCollection<Document> _documents = new();
@@ -27,11 +28,17 @@ public sealed partial class LibraryViewModel : ObservableObject
     [ObservableProperty]
     private string? _errorMessage;
 
-    public LibraryViewModel(DocumentsApiClient apiClient, string role = "Employee")
+    public LibraryViewModel(DocumentsApiClient apiClient, ClientSession session)
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-        IsAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+        _session = session ?? throw new ArgumentNullException(nameof(session));
+        IsAdmin = _session.IsAdmin;
     }
+
+    /// <summary>
+    /// Refresh IsAdmin from current session (call after role discovery).
+    /// </summary>
+    public void RefreshRole() => IsAdmin = _session.IsAdmin;
 
     [RelayCommand]
     private async Task LoadDocumentsAsync()
@@ -70,6 +77,10 @@ public sealed partial class LibraryViewModel : ObservableObject
         try
         {
             await _apiClient.DeleteAsync(document.Id);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("403", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = $"Forbidden: you do not have permission to delete documents (Admin only).";
         }
         catch (Exception exception)
         {

@@ -56,12 +56,13 @@ public static class MauiProgram
             builder.Services.AddSingleton(session);
             builder.Services.AddSingleton(new ConfigErrorState(startupConfig.Error ?? "Invalid client configuration"));
             builder.Services.AddSingleton(new WorkstationConnectionState { ErrorMessage = startupConfig.Error });
-            // Still register ViewModels so UI can show error
+            // Still register ViewModels so UI can show error (use ClientSession ctor per T022)
             builder.Services.AddTransient<ViewModels.LibraryViewModel>(sp => new ViewModels.LibraryViewModel(
-                new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") })));
+                new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }), session));
             builder.Services.AddTransient<ViewModels.QueryViewModel>(sp => new ViewModels.QueryViewModel(
                 new Services.QueryApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") })));
-            builder.Services.AddTransient<ViewModels.UploadViewModel>();
+            builder.Services.AddTransient<ViewModels.UploadViewModel>(sp => new ViewModels.UploadViewModel(
+                new Services.DocumentsApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }), new Services.DummyFilePicker(), session));
             // Auth client stub (never called due to invalid config)
             builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(new HttpClient { BaseAddress = new Uri("http://invalid-config") }));
             return builder.Build();
@@ -70,6 +71,11 @@ public static class MauiProgram
         // Valid config — register named HttpClients with BaseAddress + X-Api-Key handler
         builder.Services.AddSingleton(session);
         builder.Services.AddSingleton(new WorkstationConnectionState());
+#if MAUI
+        builder.Services.AddSingleton<Services.IFilePicker, Services.MauiFilePicker>();
+#else
+        builder.Services.AddSingleton<Services.IFilePicker, Services.DummyFilePicker>();
+#endif
         builder.Services.AddTransient<Services.ApiKeyDelegatingHandler>(_ => new Services.ApiKeyDelegatingHandler(session.ApiKey));
 
         builder.Services.AddHttpClient<Services.DocumentsApiClient>(client =>

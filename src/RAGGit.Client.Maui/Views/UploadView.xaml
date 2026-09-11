@@ -7,14 +7,14 @@
              x:Class="RAGGit.Client.Maui.Views.UploadView"
              Title="Upload Document">
   <VerticalStackLayout Padding="20" Spacing="16">
-    <buttons:SfButton Text="Pick File" Command="{Binding PickFileCommand}" />
-    <toolkit:SfTextInputLayout Hint="Selected file" ContainerType="Outlined">
+    <buttons:SfButton Text="Pick File" Command="{Binding PickFileCommand}" IsVisible="{Binding IsAdmin}" />
+    <toolkit:SfTextInputLayout Hint="Selected file" ContainerType="Outlined" IsVisible="{Binding IsAdmin}">
       <Entry Text="{Binding SelectedFileName}" IsReadOnly="True" Placeholder="No file selected" />
     </toolkit:SfTextInputLayout>
     <!-- Syncfusion Linear ProgressBar replaces ProgressBar for determinate upload -->
-    <syncProgress:SfLinearProgressBar Progress="{Binding UploadProgress}" Minimum="0" Maximum="1" />
+    <syncProgress:SfLinearProgressBar Progress="{Binding UploadProgress}" Minimum="0" Maximum="1" IsVisible="{Binding IsAdmin}" />
     <toolkit:SfBusyIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Title="Uploading..." />
-    <buttons:SfButton Text="Upload" Command="{Binding UploadCommand}" IsEnabled="{Binding IsUploadEnabled}" />
+    <buttons:SfButton Text="Upload" Command="{Binding UploadCommand}" IsEnabled="{Binding IsUploadEnabled}" IsVisible="{Binding IsAdmin}" />
     <Label Text="{Binding StatusMessage}" TextColor="{StaticResource PrimaryBrush}" LineBreakMode="WordWrap" />
   </VerticalStackLayout>
 </ContentPage>
