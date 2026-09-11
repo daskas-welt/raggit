@@ -92,6 +92,18 @@ OllamaProbe GET http://localhost:11434/api/tags → unreachable → skip gracefu
 | After wipe + re-ingest 768 | queries succeed — PASS — lazy-create path allows absent table; fake perf test re-ingests at 384/768 without error; RealLoopTests temp paths isolate per run |
 | Notes | Guard lives in LanceDbLocalClient.ValidateDimensionAsync reading Arrow FixedSizeList ListSize; Q3 normative startup + first-request backstop in EnsureTableAsync. Message template: Configured VectorSize {configured} does not match existing collection dimension {stored} — delete data/lancedb or re-index/migrate |
 
+## US-2 — Thin Client Actually Connects (FR-003/FR-004/FR-007) — SC-002 RBAC, LAN, UI roles
+
+| Field | Value |
+|-------|-------|
+| Client config | `src/RAGGit.Client.Maui/appsettings.json` `Workstation:Url` = `http://localhost:5001`, `Workstation:ApiKey` precedence over `Api:AdminKey`/`Api:EmployeeKey` (ClientConfigTests). `MauiProgram` registers named `HttpClient` `BaseAddress = Workstation:Url` + `ApiKeyDelegatingHandler` (`X-Api-Key`). No hard-coded URL/key literals in `src/RAGGit.Client.Maui/` (verified). |
+| Auth discovery | `GET /api/auth/me` 200 `{identityType:"ApiKey", role:"Admin"}` for Admin key, `{role:"Employee"}` for Employee (AuthContractTests + AuthMeRoleTests). Client `AuthApiClient` deserializes ignoring unknown fields (Q2 forward-compat), maps 401→config error, HttpRequestException/TaskCanceledException→unavailable. `App.xaml.cs` `DiscoverRoleAsync` populates `ClientSession.Role`/`IsAdmin` at launch, 401→config error UI, unreachable→`AI workstation unavailable` with retry (MauiProgram + WorkstationConnectionState). |
+| Admin run | `dotnet run --project src/RAGGit.Client.Maui -f net8.0` (fallback) + `WebApplicationFactory` integration: Admin `POST /api/documents` → 201, `DELETE` → 204 (RbacIntegrationTests, AuthMeRoleTests). `LibraryViewModel` `IsAdmin==true` shows Upload/Delete (LibraryView.xaml `IsVisible="{Binding IsAdmin}"`, UploadView.xaml `IsVisible="{Binding IsAdmin}"`). Unit `ClientRoleGatingTests` asserts `LibraryViewModel(ClientSession Role=Admin).IsAdmin==true`. |
+| Employee run | Same workstation, Employee key: `GET /api/documents` → 200 same list as Admin (RbacContractTests), `POST /api/documents` → 403, `DELETE` → 403 (AuthMeRoleTests, RbacIntegrationTests). `LibraryViewModel` `IsAdmin==false` hides Upload/Delete (ClientRoleGatingTests). Attempted action maps 403 to `Forbidden: you do not have permission…` friendly message (LibraryViewModel Delete, UploadViewModel Upload). |
+| LAN offline | Kill API / unreachable `http://127.0.0.1:59999` → `HttpRequestException`/`TaskCanceledException` mapped to `cannot reach AI workstation` / `AI workstation unavailable` within `Ollama:TimeoutMs 5000` (<7s). `DocumentsApiClient`/`QueryApiClient` ensure `model unavailable offline` verbatim for 503, no fallback endpoints. `QueryViewModel`/`LibraryViewModel` surface phrase + `RetryCommand` (ClientOfflineErrorTests). Verified via `RealOfflineFailFastTests` 2210ms to 503 and unit stub handler tests. |
+| Manual LAN | Per quickstart step 6, Windows/desktop fallback `dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0` (MAUI workload) would hit same `BaseAddress` LAN; `net8.0` fallback exercises same ViewModel + ApiClient logic via WebApplicationFactory. BaseAddress configurable, no cloud fallback. |
+| Result | PASS — US-2 Independent Test satisfied via contract+integration+unit (AuthMeRoleTests 5 passed, ClientRoleGating 4 passed, ClientOffline 5 passed; full suite 88). No WAN, no unauthenticated calls, no hard-coded keys. |
+
 ## SC-005 — Corrupted pdf → 400, no partial index
 
 | Field | Value |
@@ -105,8 +117,9 @@ OllamaProbe GET http://localhost:11434/api/tags → unreachable → skip gracefu
 
 - [x] SC-001 measured and <5 min on dev laptop — 1624ms fake + RealLoopTests 300s guard, fixture 50 pages 41807 bytes
 - [x] SC-002 measured and wall time recorded (prod <7s noted as assumption, not asserted) — 85ms fake, 2210ms offline 503, OllamaProbe skip when absent
-- [x] SC-003 opt-in skipped gracefully when Ollama absent, CI green with fakes — 74 passed, 0 failed; RequiresOllama trait + probe 1.5s
+- [x] SC-003 opt-in skipped gracefully when Ollama absent, CI green with fakes — 88 passed (17 contract + 25 integration + 46 unit), 0 failed; RequiresOllama trait + probe 1.5s (updated for US2)
 - [x] SC-004 guard fails fast and recovers after wipe — startup ValidateDimensionAsync throws naming 768 vs 384 + recovery, backstop in EnsureTableAsync
-- [ ] SC-005 corrupted pdf 400 with no partial — out of scope for US1, tracked for T029/T030 (Pol)
+- [x] US-2 thin client connects with role gating + LAN offline — AuthMeRoleTests + ClientRoleGatingTests + ClientOfflineErrorTests green, no hard-coded URL/key, HttpClient BaseAddress configurable, retry exposed
+- [ ] SC-005 corrupted pdf 400 with no partial — out of scope for US1/US2, tracked for T029/T030 (Pol)
 
 Operator: ________________  Date: ________________
