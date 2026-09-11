@@ -22,6 +22,8 @@ public sealed class DocumentMimeTypeConverter : JsonConverter<DocumentMimeType>
             "application/pdf" => DocumentMimeType.Pdf,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" =>
                 DocumentMimeType.Docx,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" =>
+                DocumentMimeType.Xlsx,
             "text/plain" => DocumentMimeType.Txt,
             "text/markdown" => DocumentMimeType.Md,
             _ => throw new JsonException($"Unsupported MIME type: {value}"),
