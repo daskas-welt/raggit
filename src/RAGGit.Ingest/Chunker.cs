@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using RAGGit.Core.Models;
 using UglyToad.PdfPig;
 
@@ -26,10 +29,283 @@ public static class Chunker
         {
             DocumentMimeType.Pdf => ExtractPdfText(stream),
             DocumentMimeType.Docx => ExtractDocxText(stream),
-            DocumentMimeType.Xlsx => string.Empty,
+            DocumentMimeType.Xlsx => await ExtractXlsxTextAsync(stream),
             DocumentMimeType.Txt or DocumentMimeType.Md => await ExtractPlainTextAsync(stream),
             _ => throw new NotSupportedException($"Unsupported MIME type: {mime}"),
         };
+    }
+
+    private static Task<string> ExtractXlsxTextAsync(Stream stream)
+    {
+        try
+        {
+            if (stream.CanSeek && stream.Position != 0) stream.Position = 0;
+
+            // Copy to seekable MemoryStream if needed (SpreadsheetDocument requires seekable)
+            Stream seekable = stream;
+            if (!stream.CanSeek)
+            {
+                var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                ms.Position = 0;
+                seekable = ms;
+            }
+            else
+            {
+                // Ensure we work on a copy to avoid disposing original? SpreadsheetDocument with leaveOpen false will close.
+                // Use MemoryStream copy to keep original stream open for caller? But ExtractTextAsync is pure and stream is ingestion copy.
+                // We'll open with leaveOpen handling via closing seekable as appropriate.
+            }
+
+            // SpreadsheetDocument.Open requires a seekable stream; we keep original position at 0 after.
+            using var document = SpreadsheetDocument.Open(seekable, false);
+            var workbookPart = document.WorkbookPart;
+            if (workbookPart == null) throw new CorruptDocumentException("content does not match type");
+
+            var workbook = workbookPart.Workbook;
+            var sheets = workbook.Sheets?.Elements<Sheet>().ToList() ?? new List<Sheet>();
+            if (sheets.Count == 0) return Task.FromResult(string.Empty);
+
+            // Shared strings
+            SharedStringTable? sst = null;
+            try { sst = workbookPart.SharedStringTablePart?.SharedStringTable; } catch { sst = null; }
+
+            // Date1904
+            var is1904 = workbook.WorkbookProperties?.Date1904?.Value ?? false;
+            // Also check Workbook.WorkbookProperties via alternate path
+            if (!is1904 && workbook.GetFirstChild<WorkbookProperties>()?.Date1904?.Value == true) is1904 = true;
+
+            // Styles / Number formats for date detection
+            var stylesPart = workbookPart.WorkbookStylesPart;
+            Dictionary<uint, string> customFormats = new();
+            List<CellFormat> cellFormats = new();
+            if (stylesPart?.Stylesheet != null)
+            {
+                var nfs = stylesPart.Stylesheet.NumberingFormats;
+                if (nfs != null)
+                {
+                    foreach (var nf in nfs.Elements<NumberingFormat>())
+                    {
+                        if (nf.NumberFormatId != null && nf.FormatCode != null)
+                            customFormats[(uint)nf.NumberFormatId.Value] = nf.FormatCode.Value ?? string.Empty;
+                    }
+                }
+                var cfs = stylesPart.Stylesheet.CellFormats;
+                if (cfs != null)
+                {
+                    foreach (var cf in cfs.Elements<CellFormat>()) cellFormats.Add(cf);
+                }
+            }
+
+            bool IsDateFormat(uint numFmtId)
+            {
+                // Built-in date ranges
+                if ((numFmtId >= 14 && numFmtId <= 22) || (numFmtId >= 27 && numFmtId <= 36) || (numFmtId >= 45 && numFmtId <= 47) || (numFmtId >= 50 && numFmtId <= 58))
+                    return true;
+                if (customFormats.TryGetValue(numFmtId, out var code))
+                {
+                    var lower = code.ToLowerInvariant();
+                    // heuristic: contains y/m/d/h with date-like pattern
+                    if (lower.Contains("yy") || lower.Contains("yyyy") || lower.Contains("mm") || lower.Contains("dd"))
+                        return true;
+                    if (lower.Contains("y") && lower.Contains("m")) return true;
+                }
+                return false;
+            }
+
+            var lines = new List<string>();
+            long visibleCellCount = 0;
+
+            foreach (var sheet in sheets)
+            {
+                // Hidden check
+                var state = sheet.State?.Value;
+                if (state == SheetStateValues.Hidden || state == SheetStateValues.VeryHidden)
+                    continue;
+
+                var sheetName = sheet.Name?.Value ?? "Sheet";
+                var wsPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+                // SAX reader over worksheet
+                var rowsData = new List<List<string>>();
+
+                using (var reader = OpenXmlReader.Create(wsPart))
+                {
+                    while (reader.Read())
+                    {
+                        if (reader.ElementType == typeof(Row))
+                        {
+                            var row = (Row)reader.LoadCurrentElement();
+                            var cellTextsForRow = new List<string>();
+                            foreach (var cell in row.Elements<Cell>())
+                            {
+                                visibleCellCount++;
+                                if (visibleCellCount > DocumentValidation.MaxSpreadsheetCells)
+                                {
+                                    throw new SpreadsheetCellCapExceededException(
+                                        DocumentValidation.MaxSpreadsheetCells,
+                                        visibleCellCount);
+                                }
+
+                                var text = GetCellText(cell, sst, is1904, cellFormats, IsDateFormat);
+                                // Keep cellTexts ordered; include empty strings for blank cells? For compact join, skip empty
+                                cellTextsForRow.Add(text ?? string.Empty);
+                            }
+                            // If row has no cells with <c>, it may be empty; but Elements<Cell>() empty → skip? Check row InnerText
+                            // Keep row only if at least one non-whitespace cell
+                            if (cellTextsForRow.Any(t => !string.IsNullOrWhiteSpace(t)))
+                            {
+                                rowsData.Add(cellTextsForRow);
+                            }
+                            else
+                            {
+                                // row with all blanks/whitespace → skip (do not add)
+                            }
+                        }
+                    }
+                }
+
+                if (rowsData.Count == 0) continue; // empty visible sheet
+
+                // First non-empty row is header
+                var headerTexts = rowsData[0];
+                var headerLine = string.Join(" | ", headerTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()));
+                // If header line is empty after trim, treat next row as header? But per spec first non-empty row is header; if it's whitespace-only we already skipped.
+
+                lines.Add($"[Sheet: {sheetName}]");
+                lines.Add(headerLine);
+
+                // Data rows: header repeated before each data row
+                for (int i = 1; i < rowsData.Count; i++)
+                {
+                    var dataTexts = rowsData[i];
+                    var dataLine = string.Join(" | ", dataTexts.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()));
+                    if (string.IsNullOrWhiteSpace(dataLine)) continue;
+                    lines.Add(headerLine);
+                    lines.Add(dataLine);
+                }
+            }
+
+            // Cap already checked per-cell above; if over cap we threw.
+            // If zero non-empty rows across visible sheets → caller (IngestService) will treat as no extractable content
+            var result = string.Join(Environment.NewLine, lines);
+            return Task.FromResult(result);
+        }
+        catch (SpreadsheetCellCapExceededException)
+        {
+            throw;
+        }
+        catch (CorruptDocumentException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is InvalidDataException || ex is System.Xml.XmlException)
+        {
+            throw new CorruptDocumentException("content does not match type", ex);
+        }
+        catch (OpenXmlPackageException ex)
+        {
+            throw new CorruptDocumentException("content does not match type", ex);
+        }
+        catch (Exception ex)
+        {
+            // For any other failure during xlsx extraction, map to corrupt if it looks like zip/malformed
+            if (ex.Message.Contains("content does not match type", StringComparison.OrdinalIgnoreCase)
+                || ex is System.IO.IOException)
+                throw new CorruptDocumentException("content does not match type", ex);
+            throw;
+        }
+    }
+
+    private static string? GetCellText(
+        Cell cell,
+        SharedStringTable? sst,
+        bool is1904,
+        List<CellFormat> cellFormats,
+        Func<uint, bool> isDateFormat)
+    {
+        // Formula: ignore formula text, use cached <v>
+        var rawValue = cell.CellValue?.Text ?? cell.InnerText; // InnerText includes v + formula text? Use CellValue
+        // For formula, CellValue is cached
+        // Need to resolve DataType
+        var dataType = cell.DataType?.Value;
+
+        // InlineString
+        if (dataType == CellValues.InlineString)
+        {
+            return cell.InlineString?.InnerText ?? rawValue;
+        }
+
+        // SharedString
+        if (dataType == CellValues.SharedString)
+        {
+            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var idx) && sst != null)
+            {
+                try
+                {
+                    var ssi = sst.ElementAt(idx);
+                    // Concatenate all <t> for rich strings
+                    return string.Concat(ssi.Descendants<Text>().Select(t => t.Text));
+                }
+                catch
+                {
+                    return rawValue;
+                }
+            }
+            return rawValue;
+        }
+
+        // Date handling via style
+        if (cell.StyleIndex != null)
+        {
+            // Try to detect date
+            try
+            {
+                var styleIdx = (int)cell.StyleIndex.Value;
+                if (styleIdx < cellFormats.Count)
+                {
+                    var fmt = cellFormats[styleIdx];
+                    var numFmtId = fmt.NumberFormatId?.Value ?? 0;
+                    if (isDateFormat((uint)numFmtId))
+                    {
+                        if (double.TryParse(rawValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var oa))
+                        {
+                            // Excel 1904 offset: 1462 days difference, also leap bug for 1900
+                            double adjusted = oa;
+                            if (is1904) adjusted += 1462;
+                            // DateTime.FromOADate handles 1900 leap bug internally? Need to keep as-is.
+                            try
+                            {
+                                var dt = DateTime.FromOADate(adjusted);
+                                return dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+        else if (false)
+        {
+            // No SST but still check date via customFormats built above (need fmt map)
+            // Fallback: if style exists but we couldn't load formats, treat as date if raw is double-like and style suggests date
+            // For unit test with no StylesPart, fallback to raw
+        }
+
+        // Handle booleans etc. as raw
+        // If raw is null/empty, cell may be empty
+        if (string.IsNullOrEmpty(rawValue))
+        {
+            // Might be inline string without DataType? Check InlineString element
+            if (cell.InlineString != null) return cell.InlineString.InnerText;
+            return string.Empty;
+        }
+
+        // SharedString fallback when DataType missing but SST present and value is integer index? Not needed.
+
+        // For formula cells where dataType is SharedString, we already handled.
+        // Otherwise return raw cached value
+        return rawValue;
     }
 
     /// <summary>
