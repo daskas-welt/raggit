@@ -87,4 +87,18 @@ public sealed class ApiKeyAuthHandler : AuthenticationHandler<ApiKeyAuthOptions>
 
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
+
+    protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        Response.ContentType = "application/json";
+        await Response.WriteAsync("{\"error\":\"unauthorized\"}");
+    }
+
+    protected override async Task HandleForbiddenAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 403;
+        Response.ContentType = "application/json";
+        await Response.WriteAsync("{\"error\":\"forbidden\"}");
+    }
 }
