@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant)
+  version: 1.3.0
+  description: >
+    Single-tenant on-prem RAG on AI Workstation (LanceDB local path +
+    Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query
+    time per FR-004/Constitution IV). 1.3.0 (004-identity, MINOR/ADDITIVE per
+    FR-013): local per-person accounts — POST /api/auth/login and
+    POST /api/auth/refresh issue workstation-signed JWT bearer tokens (8h);
+    /api/users CRUD (Admin-only) manages the people directory; GET /api/auth/me
+    gains ADDITIVE optional fields (displayName, username, sub) — 1.2.0
+    required fields unchanged, clients MUST ignore unknown fields; Bearer
+    security scheme added alongside retained ApiKey (machine/bootstrap per
+    FR-012); credentials and session tokens traverse the LAN over HTTPS only
+    (FR-008); 429 added for sign-in lockout (FR-009, 5 attempts / 15 min);
+    Documents.createdBy and Queries attribution carry the stable person id for
+    Local sessions while legacy "admin"/"employee" values remain valid
+    (FR-007). No breaking changes: every 1.2.0 path, schema, and required
+    field is preserved. 1.2.0 added xlsx MIME + rejection ordering; 1.1.0
+    added GET /api/auth/me (extensible envelope) and pdf/docx 400 hardening.
+
+servers:
+  - url: https://ai-workstation.local:5001
+    description: AI Workstation LAN — HTTPS required for credential and token traffic (FR-008)
+  - url: http://localhost:5001
+    description: Development / in-memory test host only — never on the LAN, never for auth traffic
+
+security:
+  - ApiKey: []
+  - Bearer: []
+
+paths:
+  /api/auth/login:
+    post:
+      summary: Sign in with local per-person credentials (004)
+      description: >
+        HTTPS only. Verifies the password against the PBKDF2-SHA256 (310000
+        iterations, salted, non-recoverable) hash in the Users table (FR-002).
+        Unknown username and wrong password return the IDENTICAL generic 401 —
+        no user enumeration (US2.3). Five consecutive failures lock the account
+        for 15 minutes: further attempts return 429 with Retry-After (FR-009).
+        Inactive accounts receive the generic 401 (FR-010). Success issues an
+        8-hour workstation-signed JWT (HS256) identifying the person, role, and
+        display name (FR-003). Identity resolution is entirely local — no cloud
+        IdP contact at any time; if the identity store is unavailable the API
+        fails fast with 503, never a hang and never a remote fallback (FR-011).
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated — session credential issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials or inactive account — single generic error (no enumeration)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Account locked — 5 failed sign-ins within 15 minutes (FR-009); retry after LockoutUntil
+          headers:
+            Retry-After:
+              schema: { type: integer, example: 900 }
+              description: Seconds until the lockout expires
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: identity store unavailable — fail fast, offline-consistent (FR-011)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/refresh:
+    post:
+      summary: Re-issue session credential from a still-valid token (004, optional — P3)
+      description: >
+        Presents a current unexpired Bearer token and receives a fresh 8h
+        token. The client uses this opportunistically before expiry; when the
+        token has already expired the client MUST re-prompt sign-in — never a
+        silent fallback to a shared API key for person actions (US4.2).
+      operationId: refreshToken
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: New session credential issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/me:
+    get:
+      summary: Authenticated identity and role (for thin client UI gating)
+      description: >
+        Returns the caller's identity envelope. Extensible — client MUST ignore
+        unknown fields (Q2 forward-compat). Role determines Admin vs Employee
+        UI (Upload/Delete gating). Added 1.1.0 MINOR. 1.3.0 ADDITIVE —
+        displayName, username, and sub are returned for Local (per-person JWT)
+        sessions; ApiKey (machine/bootstrap) sessions keep returning the 1.2.0
+        shape unchanged (FR-006, FR-013). sub is the stable person id used for
+        attribution (FR-007).
+      operationId: getAuthMe
+      security:
+        - ApiKey: []
+        - Bearer: []
+      responses:
+        '200':
+          description: Authenticated identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMe'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users:
+    get:
+      summary: List person accounts (Admin only)
+      description: >
+        Returns the people directory. PasswordHash is NEVER serialized.
+        Requires Admin — via Local JWT role claim or Admin API key (bootstrap).
+        Employee callers receive 403 (US3.3).
+      operationId: listUsers
+      security:
+        - ApiKey: []
+        - Bearer: []
+      responses:
+        '200':
+          description: People directory
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      summary: Create a person account (Admin only)
+      description: >
+        Creates an account with role Admin|Employee and a PBKDF2-hashed
+        password (FR-001, FR-005). Takes effect immediately — no restart
+        (SC-006). Duplicate username (case-insensitive) returns 409.
+      operationId: createUser
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Created — account can sign in immediately
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Username already exists (case-insensitive uniqueness)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+        description: Stable person id (User.Id)
+    get:
+      summary: Read one person account (Admin only)
+      operationId: getUser
+      security:
+        - ApiKey: []
+        - Bearer: []
+      responses:
+        '200':
+          description: Account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Change role / deactivate / reactivate / rename (Admin only)
+      description: >
+        Partial update — only role, isActive, displayName. Deactivation
+        (isActive=false) refuses the account's VERY NEXT request on any
+        existing session — live tokens are checked against the Users row per
+        request (FR-010, SC-003); takes effect without restarting the
+        workstation (SC-006). Accounts are never hard-deleted (attribution
+        references persist).
+      operationId: patchUser
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/users/{id}/reset-password:
+    post:
+      summary: Reset a person's password (Admin only)
+      description: >
+        Sets a new password (PBKDF2-hashed) and optionally forces a change at
+        next sign-in (mustChangePassword — spec edge case). Clears lockout and
+        failure counters. No restart required (SC-006).
+      operationId: resetUserPassword
+      security:
+        - ApiKey: []
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password: { type: string, format: password, minLength: 10 }
+                mustChangePassword: { type: boolean, default: false }
+              required: [password]
+      responses:
+        '204': { description: Password reset, content: {} }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/documents:
+    post:
+      summary: Upload document to singleton library (Admin only)
+      description: >
+        Chunks (512/50), embeds locally, indexes into LanceDB file. Rejects
+        unsupported type/size per FR-006. Corrupted/invalid pdf/docx returns 400
+        with no partial index (FR-006, 002 hardening). XLSX (1.2.0) deep
+        validation, cell cap 413, no-extractable-content 400 — rejection
+        ordering unchanged from 1.2.0. Dedupe by hash returns 200 with the
+        existing Document. 1.3.0 semantics — when authenticated with a Local
+        Bearer token, createdBy is set to the caller's stable person id
+        (User.Id uuid, FR-007); ApiKey sessions keep "admin"/"employee".
+      operationId: uploadDocument
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+              required: [file]
+      responses:
+        '200':
+          description: Duplicate — returns existing Document (same hash, not re-indexed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '201':
+          description: Accepted for indexing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request — corrupted/invalid content or unsupported type; no partial index
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413':
+          description: Payload too large — >100MB or >100000 spreadsheet cells
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List documents in singleton library
+      operationId: listDocuments
+      security:
+        - ApiKey: []
+        - Bearer: []
+      responses:
+        '200':
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Document' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/documents/{id}:
+    delete:
+      summary: Delete document and purge its vectors (Admin only)
+      operationId: deleteDocument
+      security:
+        - ApiKey: []
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted, content: {} }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/query:
+    post:
+      summary: Query library with citations (LAN-only, no cloud egress)
+      description: >
+        1.3.0 semantics — when authenticated with a Local Bearer token the
+        query record is attributed to the caller's stable person id
+        (Queries.UserId = User.Id, FR-007); ApiKey sessions keep
+        "admin"/"employee". Behavior otherwise unchanged from 1.2.0.
+      operationId: query
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, minLength: 1 }
+                topK: { type: integer, default: 5, minimum: 1, maximum: 5 }
+              required: [query]
+      responses:
+        '200':
+          description: Grounded answer with citations or no relevant content
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/QueryAnswer'
+                  - $ref: '#/components/schemas/NoRelevantContent'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { description: AI workstation unavailable or model unavailable offline }
+
+  /health:
+    get:
+      summary: Health (no auth) — vectorDb + llm
+      operationId: health
+      security: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vectorDb: { type: string, enum: [ok, down] }
+                  qdrant: { type: string, enum: [ok, down], description: legacy alias }
+                  llm: { type: string, enum: [ok, down] }
+                  version: { type: string }
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: >
+        Single-tenant machine/bootstrap key (FR-012). Retained for machine
+        integration and initial bring-up; NOT used for per-person attribution
+        when a Local session exists (FR-007). Windows AD remains a documented
+        future provider.
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Workstation-signed HS256 JWT issued by POST /api/auth/login (004).
+        8-hour lifetime; identifies a person (sub = stable person id), role,
+        and display name. HTTPS-only transport (FR-008). Deactivated or
+        locked-out accounts are refused per request (FR-010).
+
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        username: { type: string, minLength: 3, maxLength: 64, example: ada }
+        password: { type: string, format: password, minLength: 1 }
+      required: [username, password]
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string, description: JWT (HS256) — present only over HTTPS }
+        token_type: { type: string, example: Bearer }
+        expires_in: { type: integer, example: 28800, description: Seconds — default 8h (Auth:TokenLifetimeHours) }
+      required: [access_token, token_type, expires_in]
+
+    User:
+      type: object
+      description: Person account (004). PasswordHash is never serialized. No tenant/company field (Constitution I).
+      properties:
+        id: { type: string, format: uuid, description: Stable person id — attribution key (FR-007) }
+        username: { type: string, example: ada }
+        displayName: { type: string, example: Ada Lovelace }
+        role: { type: string, enum: [Admin, Employee] }
+        isActive: { type: boolean }
+        mustChangePassword: { type: boolean }
+        lockedOut: { type: boolean, description: Derived — now < LockoutUntil }
+        lastSignInAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, username, displayName, role, isActive, createdAt]
+
+    UserCreate:
+      type: object
+      properties:
+        username: { type: string, minLength: 3, maxLength: 64, pattern: '^[A-Za-z0-9._-]+$' }
+        displayName: { type: string, minLength: 1, maxLength: 100 }
+        role: { type: string, enum: [Admin, Employee] }
+        password: { type: string, format: password, minLength: 10 }
+      required: [username, displayName, role, password]
+
+    UserPatch:
+      type: object
+      description: Partial update — only these three fields accepted (400 on unknown members)
+      properties:
+        role: { type: string, enum: [Admin, Employee] }
+        isActive: { type: boolean, description: false ⇒ refuses sign-in AND kills live sessions next request }
+        displayName: { type: string, minLength: 1, maxLength: 100 }
+
+    Document:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        filename: { type: string }
+        mime: { type: string, enum: [application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain, text/markdown] }
+        size: { type: integer, format: int64 }
+        hash: { type: string, description: SHA-256 hex for dedupe }
+        status: { type: string, enum: [Indexing, Ready, Failed] }
+        createdBy: { type: string, description: '1.3.0 — stable person id (User uuid) for Local sessions; legacy "admin"/"employee" for ApiKey sessions' }
+        createdAt: { type: string, format: date-time }
+      required: [id, filename, mime, size, hash, status, createdAt]
+
+    AuthMe:
+      type: object
+      description: >
+        Extensible identity envelope (Q2). Client ignores unknown fields.
+        1.3.0 ADDITIVE — displayName, username, sub are present for Local
+        (per-person) sessions; ApiKey sessions return the 1.2.0 shape
+        (identityType + role only).
+      properties:
+        identityType: { type: string, enum: [ApiKey, Local], example: Local, description: "'Local' = per-person JWT session (004); 'ApiKey' = machine/bootstrap (002). Future providers (e.g. AD) are additive." }
+        role: { type: string, enum: [Admin, Employee] }
+        displayName: { type: string, description: ADDED 1.3.0 (optional) — Local sessions only }
+        username: { type: string, description: ADDED 1.3.0 (optional) — Local sessions only }
+        sub: { type: string, format: uuid, description: ADDED 1.3.0 (optional) — stable person id; attribution key }
+      required: [identityType, role]
+      additionalProperties: true
+
+    QueryAnswer:
+      type: object
+      properties:
+        answer: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              documentId: { type: string, format: uuid }
+              chunkId: { type: string, format: uuid }
+              text: { type: string }
+              ordinal: { type: integer }
+            required: [documentId, chunkId, text]
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+      required: [answer, citations]
+
+    NoRelevantContent:
+      type: object
+      properties:
+        answer: { type: string, enum: [no relevant content found] }
+        citations: { type: array, maxItems: 0 }
+      required: [answer]
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: unauthorized }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing/invalid/expired credential, or inactive account (generic)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden — Employee cannot perform Admin-only actions (upload/delete/people management)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

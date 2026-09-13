@@ -48,3 +48,8 @@ nuget.exe
 # Publish
 publish/
 app.publish/
+
+# Archify visual-check sidecars (evidence, regenerated on demand)
+*.visual-check.html
+*.visual-check.json
+*.visual-check.*.png
