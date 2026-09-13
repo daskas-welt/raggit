@@ -8,6 +8,8 @@
         <Nullable>enable</Nullable>
         <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
         <SingleProject Condition="'$(TargetFramework)' != 'net8.0'">true</SingleProject>
+        <DefineConstants Condition="'$(TargetFramework)' != 'net8.0'"
+            >$(DefineConstants);MAUI</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
