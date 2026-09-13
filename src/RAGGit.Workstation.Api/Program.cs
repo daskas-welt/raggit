@@ -129,6 +129,7 @@ builder.Services.Configure<LockoutPolicyOptions>(options =>
     options.Threshold = lockoutThreshold;
     options.Minutes = lockoutMinutes;
 });
+builder.Services.AddSingleton<LockoutPolicy>();
 
 builder
     .Services.AddAuthentication(ApiKeyAuthOptions.Scheme)

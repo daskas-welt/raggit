@@ -16,20 +16,19 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserStore _userStore;
     private readonly JwtTokenService _tokenService;
-    private readonly LockoutPolicyOptions _lockoutOptions;
+    private readonly LockoutPolicy _lockoutPolicy;
     private readonly IHostEnvironment _environment;
 
     public AuthController(
         UserStore userStore,
         JwtTokenService tokenService,
-        IOptions<LockoutPolicyOptions> lockoutOptions,
+        LockoutPolicy lockoutPolicy,
         IHostEnvironment environment
     )
     {
         _userStore = userStore ?? throw new ArgumentNullException(nameof(userStore));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
-        _lockoutOptions =
-            lockoutOptions?.Value ?? throw new ArgumentNullException(nameof(lockoutOptions));
+        _lockoutPolicy = lockoutPolicy ?? throw new ArgumentNullException(nameof(lockoutPolicy));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
@@ -67,8 +66,7 @@ public sealed class AuthController : ControllerBase
 
             if (user.IsLockedOut)
             {
-                var retryAfter = (int)(user.LockoutUntil!.Value - DateTime.UtcNow).TotalSeconds + 1;
-                Response.Headers.RetryAfter = retryAfter.ToString();
+                Response.Headers.RetryAfter = _lockoutPolicy.RetryAfterSeconds(user).ToString();
                 return StatusCode(
                     StatusCodes.Status429TooManyRequests,
                     new { error = "account locked" }
@@ -82,18 +80,11 @@ public sealed class AuthController : ControllerBase
 
             if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
             {
-                user.FailedAccessCount++;
-                if (user.FailedAccessCount >= _lockoutOptions.Threshold)
-                {
-                    user.LockoutUntil = DateTime.UtcNow.AddMinutes(_lockoutOptions.Minutes);
-                }
-
-                await _userStore.UpdateAsync(user, HttpContext.RequestAborted);
+                await _lockoutPolicy.RecordFailureAsync(user, HttpContext.RequestAborted);
                 return Unauthorized(new { error = "unauthorized" });
             }
 
-            user.FailedAccessCount = 0;
-            user.LockoutUntil = null;
+            await _lockoutPolicy.RecordSuccessAsync(user, HttpContext.RequestAborted);
             user.LastSignInAt = DateTime.UtcNow;
             await _userStore.UpdateAsync(user, HttpContext.RequestAborted);
 
