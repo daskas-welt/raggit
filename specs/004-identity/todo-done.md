@@ -9,3 +9,8 @@
 - [x] T007 Add `UserStore.cs` [DONE: 2026-09-13] [By: coder]
 - [x] T008 Configure `Program.cs` JwtBearer HS256 + OnTokenValidated + HTTPS [DONE: 2026-09-13] [By: coder]
 - [x] T009 Add `JwtTokenService.cs` [DONE: 2026-09-13] [By: coder]
+- [x] T012 Implement `OperatorCli.cs` — `user add` direct DB write with PBKDF2 hashes, exit codes 0/2/3 [DONE: 2026-09-13] [By: coder]
+- [x] T010 Add `OperatorCliTests.cs` — duplicate case-insensitive → exit 2, invalid role → exit 3 [DONE: 2026-09-13] [By: coder]
+- [x] T011 Add `BootWithZeroAccountsTests.cs` — API boots with zero accounts, health OK, login 401 [DONE: 2026-09-13] [By: coder]
+- [x] T013 Wire CLI intercept in `Program.cs` before `builder.Build()` [DONE: 2026-09-13] [By: coder]
+- [x] T014 Document operator CLI in `docs/operator-cli.md` and `quickstart.md` step 1 [DONE: 2026-09-13] [By: coder]

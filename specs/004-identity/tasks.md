@@ -40,14 +40,14 @@
 
 ### Tests for US1
 
-- [ ] T010 [P] [US1] Contract/CLI test for operator verb in `tests/integration/OperatorCliTests.cs` — `user add` creates Users, duplicate case-insensitive → exit 2, invalid role → exit 3
-- [ ] T011 [P] [US1] Unit test for no-first-run-wizard in `tests/unit/BootWithZeroAccountsTests.cs` — API boots with zero Users and serves `GET /health` / `POST /api/auth/login` → 401
+- [x] T010 [P] [US1] Contract/CLI test for operator verb in `tests/integration/OperatorCliTests.cs` — `user add` creates Users, duplicate case-insensitive → exit 2, invalid role → exit 3
+- [x] T011 [P] [US1] Unit test for no-first-run-wizard in `tests/unit/BootWithZeroAccountsTests.cs` — API boots with zero Users and serves `GET /health` / `POST /api/auth/login` → 401
 
 ### Implementation for US1
 
-- [ ] T012 [US1] Implement `src/RAGGit.Workstation.Api/Cli/OperatorCli.cs` — arg intercept `user add --username --display-name --role Admin|Employee --password-stdin|--password` → UserStore + PasswordHasher, direct DB write, exit codes 0/2/3 (depends on T004-T007)
-- [ ] T013 [US1] Wire CLI intercept in `src/RAGGit.Workstation.Api/Program.cs` before `builder.Build()` — when `args[0]=="user"` handle and exit, else run host (depends on T012)
-- [ ] T014 [US1] Document operator CLI in `docs/operator-cli.md` and `specs/004-identity/quickstart.md` step 1 (no secret in config)
+- [x] T012 [US1] Implement `src/RAGGit.Workstation.Api/Cli/OperatorCli.cs` — arg intercept `user add --username --display-name --role Admin|Employee --password-stdin|--password` → UserStore + PasswordHasher, direct DB write, exit codes 0/2/3 (depends on T004-T007)
+- [x] T013 [US1] Wire CLI intercept in `src/RAGGit.Workstation.Api/Program.cs` before `builder.Build()` — when `args[0]=="user"` handle and exit, else run host (depends on T012)
+- [x] T014 [US1] Document operator CLI in `docs/operator-cli.md` and `specs/004-identity/quickstart.md` step 1 (no secret in config)
 
 **Checkpoint**: US1 independently functional — operator can seed a deployment offline.
 

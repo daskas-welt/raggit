@@ -8,7 +8,7 @@ Seven end-to-end validation steps. Each maps to a user story, FRs, and SCs; the 
 
 ## 1. Operator CLI provisions the first people (US1 · FR-002/FR-004 · workflow `cli-provision → seed-users`)
 
-On the workstation (OS trust anchor — no first-run wizard):
+On the workstation (OS trust anchor — no first-run wizard). See also [`docs/operator-cli.md`](../../docs/operator-cli.md) for full usage, exit codes, and security notes.
 
 ```powershell
 # aliased as `raggit` in deployment docs; runs against data/rag.db directly, server need not be up
