@@ -1,7 +1,7 @@
 ---
 description: Implements tasks from plan/tasks.md — writes code, tests, runs verification, one commit per task
 mode: subagent
-model: opencode-go/kimi-k2.7-code
+model: opencode-go/mimo-v2.5
 temperature: 0.2
 permission:
   edit: allow
