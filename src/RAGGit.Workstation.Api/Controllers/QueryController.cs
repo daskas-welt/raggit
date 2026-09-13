@@ -74,6 +74,29 @@ public sealed class QueryController : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/queries/{id} — full prompt/answer + citations iff owned (005).
+    /// 401 when no person identity; 404 when not found, not owned, or legacy.
+    /// The :guid constraint keeps /api/queries/history from matching here.
+    /// </summary>
+    [HttpGet("/api/queries/{id:guid}")]
+    public async Task<IActionResult> Detail(Guid id, CancellationToken cancellationToken)
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub))
+        {
+            return Unauthorized(new { error = "unauthorized" });
+        }
+
+        var detail = await _historyStore.GetDetailAsync(sub, id, cancellationToken);
+        if (detail is null)
+        {
+            return NotFound(new { error = "not found" });
+        }
+
+        return Ok(detail);
+    }
+
+    /// <summary>
     /// POST /api/query — grounded answer with citations or "no relevant content found".
     /// </summary>
     [HttpPost]
