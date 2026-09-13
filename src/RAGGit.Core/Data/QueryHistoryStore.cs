@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Core.Models;
@@ -139,6 +141,123 @@ public sealed class QueryHistoryStore
     }
 
     /// <summary>
+    /// Returns the full prompt/answer plus citations ordered by ordinal for one
+    /// owned query, or null when not found / not owned / legacy.
+    /// Ownership and legacy exclusion are enforced in SQL (FR-004/FR-007/FR-008).
+    /// Offline: SQLite-only (Queries + Chunks reads).
+    /// </summary>
+    public async Task<QueryDetail?> GetDetailAsync(
+        string sub,
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sub);
+
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        string prompt;
+        string answer;
+        List<Guid> citationIds;
+        int latencyMs;
+        DateTime createdAt;
+
+        using (var detailCommand = connection.CreateCommand())
+        {
+            detailCommand.CommandText = DetailSql;
+            detailCommand.Parameters.AddWithValue("@id", id.ToString());
+            detailCommand.Parameters.AddWithValue("@sub", sub);
+
+            await using var reader = await detailCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            prompt = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            answer = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            citationIds = ParseGuidList(reader.IsDBNull(2) ? null : reader.GetString(2));
+            latencyMs = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+            createdAt = DateTime.Parse(
+                reader.GetString(4),
+                null,
+                System.Globalization.DateTimeStyles.RoundtripKind
+            );
+        }
+
+        var citations = new List<HistoryCitation>();
+        if (citationIds.Count > 0)
+        {
+            var ordinals = new Dictionary<Guid, int>();
+            var placeholders = new List<string>();
+            for (var i = 0; i < citationIds.Count; i++)
+            {
+                var name = $"@c{i}";
+                placeholders.Add(name);
+                ordinals[citationIds[i]] = i;
+            }
+
+            using var chunksCommand = connection.CreateCommand();
+            chunksCommand.CommandText =
+                "SELECT Id, DocumentId, Ordinal, Text FROM Chunks WHERE Id IN ("
+                + string.Join(",", placeholders)
+                + ");";
+            for (var i = 0; i < citationIds.Count; i++)
+            {
+                chunksCommand.Parameters.AddWithValue($"@c{i}", citationIds[i].ToString());
+            }
+
+            await using var chunkReader = await chunksCommand.ExecuteReaderAsync(cancellationToken);
+            while (await chunkReader.ReadAsync(cancellationToken))
+            {
+                var chunkId = Guid.Parse(chunkReader.GetString(0));
+                citations.Add(
+                    new HistoryCitation
+                    {
+                        DocumentId = Guid.Parse(chunkReader.GetString(1)),
+                        ChunkId = chunkId,
+                        Text = chunkReader.IsDBNull(3) ? string.Empty : chunkReader.GetString(3),
+                        Ordinal = chunkReader.IsDBNull(2)
+                            ? ordinals.GetValueOrDefault(chunkId)
+                            : chunkReader.GetInt32(2),
+                    }
+                );
+            }
+
+            citations = citations.OrderBy(c => c.Ordinal).ToList();
+        }
+
+        return new QueryDetail
+        {
+            Id = id,
+            Prompt = prompt,
+            Answer = answer,
+            Citations = citations,
+            LatencyMs = latencyMs,
+            CreatedAt = createdAt,
+        };
+    }
+
+    private static List<Guid> ParseGuidList(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return new List<Guid>();
+        }
+
+        try
+        {
+            var guids = JsonSerializer.Deserialize<List<Guid>>(json);
+            return guids ?? new List<Guid>();
+        }
+        catch (JsonException)
+        {
+            return new List<Guid>();
+        }
+    }
+
+    /// <summary>
     /// Runs EXPLAIN QUERY PLAN for the history list query so T008 can decide
     /// whether the optional IX_Queries_UserId_CreatedAt_Id index is needed.
     /// </summary>
@@ -187,6 +306,12 @@ public sealed class QueryHistoryStore
             SELECT COUNT(*)
             FROM Queries
             WHERE UserId = @sub AND UserId NOT IN ('admin','employee');";
+
+    internal const string DetailSql =
+        @"
+            SELECT Prompt, Answer, CitationIds, LatencyMs, CreatedAt
+            FROM Queries
+            WHERE Id = @id AND UserId = @sub AND UserId NOT IN ('admin','employee');";
 
     internal static bool IsLegacyUserId(string userId) => LegacyUserIds.Contains(userId);
 }
