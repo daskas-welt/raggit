@@ -99,10 +99,16 @@ public static class MauiProgram
                     session
                 )
             );
-            // Auth client stub (never called due to invalid config)
+            // Auth + Users client stubs (never called due to invalid config)
             builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(
                 new HttpClient { BaseAddress = new Uri("http://invalid-config") }
             ));
+            builder.Services.AddTransient<Services.UsersApiClient>(
+                sp => new Services.UsersApiClient(
+                    new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                )
+            );
+            builder.Services.AddTransient<ViewModels.AdminUsersViewModel>();
             return builder.Build();
         }
 
@@ -144,9 +150,17 @@ public static class MauiProgram
             })
             .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
 
+        builder
+            .Services.AddHttpClient<Services.UsersApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+            })
+            .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
+
         builder.Services.AddTransient<ViewModels.LibraryViewModel>();
         builder.Services.AddTransient<ViewModels.QueryViewModel>();
         builder.Services.AddTransient<ViewModels.UploadViewModel>();
+        builder.Services.AddTransient<ViewModels.AdminUsersViewModel>();
 
         return builder.Build();
     }
