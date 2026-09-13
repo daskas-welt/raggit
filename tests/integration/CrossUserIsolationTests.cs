@@ -10,9 +10,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
+using RAGGit.Workstation.Api.Auth;
 using Xunit;
 
 namespace RAGGit.Tests.Integration;
@@ -183,6 +185,114 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
                 .StatusCode.Should()
                 .Be(HttpStatusCode.NotFound);
         }
+    }
+
+    [Fact]
+    public async Task HistoryAndDetail_ExpiredToken_Returns401_NoData()
+    {
+        // T022: expired JWT is rejected by JwtBearer lifetime validation —
+        // history and detail return 401 with no rows, never 200/404.
+        var (user, _) = await ProvisionAndLoginAsync(
+            $"iso-exp-{Guid.NewGuid():N}",
+            "Iso Expired",
+            UserRole.Employee,
+            "iso-exp-pass-1"
+        );
+        var queryId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = queryId,
+                    UserId = user.Id.ToString(),
+                    Prompt = "expired prompt",
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = "expired answer",
+                    CitationIds = Array.Empty<Guid>(),
+                    LatencyMs = 2,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
+        var expiredClient = CreateBearerClient(IssueExpiredToken(user));
+
+        (await expiredClient.GetAsync("/api/queries/history?limit=20&offset=0"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized);
+        (await expiredClient.GetAsync($"/api/queries/{queryId}"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task HistoryAndDetail_DeactivatedMidBrowse_NextRequestsAre401()
+    {
+        // T022: OnTokenValidated refuses the deactivated account on its very
+        // next request — history page and detail both 401, no data returned.
+        var (user, token) = await ProvisionAndLoginAsync(
+            $"iso-deact-{Guid.NewGuid():N}",
+            "Iso Deactivated",
+            UserRole.Employee,
+            "iso-deact-pass-1"
+        );
+        var queryId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = queryId,
+                    UserId = user.Id.ToString(),
+                    Prompt = "deact prompt",
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = "deact answer",
+                    CitationIds = Array.Empty<Guid>(),
+                    LatencyMs = 2,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
+        var client = CreateBearerClient(token);
+        (await client.GetAsync("/api/queries/history?limit=20&offset=0"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.OK);
+
+        var adminClient = _factory.CreateClient();
+        adminClient.DefaultRequestHeaders.Add("X-Api-Key", _factory.AdminKey);
+        var patch = await adminClient.PatchAsJsonAsync(
+            $"/api/users/{user.Id}",
+            new { isActive = false }
+        );
+        patch.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await client.GetAsync("/api/queries/history?limit=20&offset=0"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized);
+        (await client.GetAsync($"/api/queries/{queryId}"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized);
+    }
+
+    private string IssueExpiredToken(User user)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var existingOptions = scope
+            .ServiceProvider.GetRequiredService<IOptions<JwtTokenServiceOptions>>()
+            .Value;
+
+        var expiredOptions = Options.Create(
+            new JwtTokenServiceOptions
+            {
+                SigningKey = existingOptions.SigningKey,
+                TokenLifetimeHours = -1,
+            }
+        );
+        return new JwtTokenService(expiredOptions).IssueToken(user);
     }
 
     private async Task<string> GetSubFromTokenAsync(string token)
