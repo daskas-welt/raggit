@@ -24,13 +24,23 @@
                     <Label Text="{Binding ErrorMessage}" TextColor="Red" />
                     <Border Padding="10" StrokeShape="RoundRectangle 6">
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="Prompt" FontAttributes="Bold" FontSize="12" TextColor="Gray" />
+                            <Label
+                                Text="Prompt"
+                                FontAttributes="Bold"
+                                FontSize="12"
+                                TextColor="Gray"
+                            />
                             <Label Text="{Binding Detail.Prompt}" />
                         </VerticalStackLayout>
                     </Border>
                     <Border Padding="10" StrokeShape="RoundRectangle 6">
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="Answer" FontAttributes="Bold" FontSize="12" TextColor="Gray" />
+                            <Label
+                                Text="Answer"
+                                FontAttributes="Bold"
+                                FontSize="12"
+                                TextColor="Gray"
+                            />
                             <Label Text="{Binding Detail.Answer}" />
                         </VerticalStackLayout>
                     </Border>
@@ -40,10 +50,7 @@
                             <DataTemplate>
                                 <Border Padding="10" StrokeShape="RoundRectangle 6" Margin="0,4">
                                     <VerticalStackLayout Spacing="4">
-                                        <Label
-                                            Text="{Binding Text}"
-                                            LineBreakMode="WordWrap"
-                                        />
+                                        <Label Text="{Binding Text}" LineBreakMode="WordWrap" />
                                         <Label FontSize="12" TextColor="Gray">
                                             <Label.Text>
                                                 <MultiBinding StringFormat="[{0}] {1} / {2}">
