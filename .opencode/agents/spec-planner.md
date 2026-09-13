@@ -1,7 +1,7 @@
 ---
 description: Plans specs, clarifies requirements, and creates technical plans without writing code — use for /speckit.specify, /speckit.clarify, /speckit.plan, /speckit.analyze. Owns the Archify diagram set (architecture, workflow, sequence always; data-flow/lifecycle when needed), light theme, for coder consumption.
 mode: subagent
-model: opencode-go/qwen3.8-flash
+model: opencode-go/mimo-v2.5
 temperature: 0.1
 permission:
   edit: deny
