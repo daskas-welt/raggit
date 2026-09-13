@@ -29,6 +29,7 @@ public sealed class QueryController : ControllerBase
     private readonly GenerationService _generationService;
     private readonly ILlmClient _llmClient;
     private readonly RagDbContext _dbContext;
+    private readonly QueryHistoryStore _historyStore;
     private readonly ILogger<QueryController> _logger;
 
     public QueryController(
@@ -36,6 +37,7 @@ public sealed class QueryController : ControllerBase
         GenerationService generationService,
         ILlmClient llmClient,
         RagDbContext dbContext,
+        QueryHistoryStore historyStore,
         ILogger<QueryController> logger
     )
     {
@@ -45,7 +47,30 @@ public sealed class QueryController : ControllerBase
             generationService ?? throw new ArgumentNullException(nameof(generationService));
         _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// GET /api/queries/history — own query history, paginated, sub-scoped (005).
+    /// 401 when no person identity (e.g. legacy API-key caller); 200 with empty
+    /// items when the person has no queries.
+    /// </summary>
+    [HttpGet("/api/queries/history")]
+    public async Task<IActionResult> History(
+        [FromQuery] int? limit,
+        [FromQuery] int? offset,
+        CancellationToken cancellationToken
+    )
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub))
+        {
+            return Unauthorized(new { error = "unauthorized" });
+        }
+
+        var page = await _historyStore.ListAsync(sub, limit, offset, cancellationToken);
+        return Ok(page);
     }
 
     /// <summary>

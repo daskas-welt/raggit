@@ -276,6 +276,8 @@ if (
 
 // Data
 builder.Services.AddSingleton(new RagDbContext(connectionString));
+builder.Services.AddSingleton<QueryHistoryStore>();
+builder.Services.AddSingleton<DocumentMineStore>();
 
 // AI services
 builder.Services.AddSingleton<IVectorStore>(
