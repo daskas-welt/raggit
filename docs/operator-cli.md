@@ -1,6 +1,6 @@
 # Operator CLI
 
-The operator CLI provisions the first person accounts directly on the AI Workstation. It writes to the local SQLite metadata database (`data/rag.db` by default) so the API does not need to be running, and it never stores a plaintext password in configuration or logs.
+The operator CLI provisions the first person accounts directly on the AI Workstation (1.3.0). It writes to the local SQLite metadata database (`data/rag.db` by default) so the API does not need to be running, and it never stores a plaintext password in configuration or logs. After provisioning, people sign in with username/password over HTTPS via `POST /api/auth/login` or the MAUI `LoginView`.
 
 ## Usage
 

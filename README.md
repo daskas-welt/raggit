@@ -4,7 +4,7 @@
 
 **Constitution**: `v1.1.0` ratified `2026-09-10` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
-**Version**: `1.2.0` (API `contracts/api.yaml` MINOR — adds `xlsx` `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` + `413 100k cell cap` + `400 deep xlsx validation` per FR-001/005/006; `1.1.0` added `GET /api/auth/me` + `400 corrupted pdf`). `/health` reports `version:1.2.0`.
+**Version**: `1.3.0` (API `contracts/api.yaml` MINOR — adds local per-person accounts: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` additive envelope, `/api/users` Admin CRUD, HTTPS-only credentials, PBKDF2 + JWT 8h, lockout 5/15m; `1.2.0` added `xlsx` MIME + cap; `1.1.0` added `GET /api/auth/me` + corrupted-pdf 400). `/health` reports `version:1.3.0`.
 
 **Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md) | `004-identity` — [spec](./specs/004-identity/spec.md) | [arch](./specs/004-identity/docs/architecture.html?theme=light) | [workflow](./specs/004-identity/docs/workflow.html?theme=light) | [sequence](./specs/004-identity/docs/sequence.html?theme=light) | [dataflow](./specs/004-identity/docs/dataflow.html?theme=light)
 
@@ -30,13 +30,13 @@
 ```
 Company LAN (no WAN at query time) — see architecture diagram above for interactive topology
 AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET MAUI thin clients)
-├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.3.0 (004 adds /auth/login + /users) ──┐
+├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.3.0 — local per-person accounts ─────┐
 ├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768)                 │
 ├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod)                │
-├─ SQLite rag.db — Users (PBKDF2, role, lockout 5/15m, 8h JWT, HTTPS) + Documents/Queries ──┘
-MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — SecureStorage token cache + Bearer handler + Admin UsersView (SfDataGrid) + LoginView
-Operator CLI: raggit user add — OS trust anchor, no first-run wizard
-API 004: POST /api/auth/login (HTTPS), GET /api/auth/me {identityType:"Local", role, displayName} (1.3.0), /api/users CRUD (Admin), 401/403/429, no partial index, offline invariant
+├─ SQLite rag.db — Users (PBKDF2-SHA256, role, lockout 5/15m, 8h JWT, HTTPS) + Documents/Queries ──┘
+MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — SecureStorage token cache + Bearer handler + LoginView + Admin UsersView (SfDataGrid)
+Operator CLI: `raggit user add` — OS trust anchor, no first-run wizard, no plaintext secret in config
+API 1.3.0: POST /api/auth/login (HTTPS), POST /api/auth/refresh, GET /api/auth/me {identityType:"Local", role, displayName, username, sub}, /api/users CRUD (Admin), 401/403/429, offline invariant
 Legacy Qdrant:Path warned if disagreeing with VectorDb:Path
 ```
 
@@ -70,14 +70,15 @@ RAGGit.sln (v1.1.0)
 └── models/                       # .gitignored: *.gguf, *.onnx
 ```
 
-## Quickstart — Single-Machine Dev (v1.1.0)
+## Quickstart — Single-Machine Dev (v1.3.0)
 
-No workstation needed. Everything runs on `localhost`.
+No workstation needed. Everything runs on `localhost`. Identity is now local per-person accounts; API keys remain valid for machine/bootstrap.
 
 ### Prereqs
 
 - .NET 8 SDK (`dotnet --version` ≥8.0), Git LFS for ONNX (optional)
 - 16GB RAM recommended (8GB works with `all-minilm` + `phi-3-mini` 384d), 10GB disk
+- A dev HTTPS certificate: `dotnet dev-certs https --trust` (single-machine dev only); production uses an internal-CA or distributed self-signed workstation certificate
 
 ### 1. Build
 
@@ -109,19 +110,31 @@ ollama pull phi3:mini
 }
 ```
 Prod block in `appsettings.Development.json` comments `nomic-embed-text`/`768`/`llama3.2:3b`. Legacy `Qdrant:Path` is deprecated — startup Warns if disagreeing with `VectorDb:Path`.
+
 ```powershell
+# Bootstrap API keys are optional in 1.3.0; per-person accounts are the primary credential.
 dotnet user-secrets set "Api:AdminKey" "dev-admin-key" --project src/RAGGit.Workstation.Api
 dotnet user-secrets set "Api:EmployeeKey" "dev-employee-key" --project src/RAGGit.Workstation.Api
 ```
 
-### 3. Run (2 terminals)
+### 3. Provision the first people (1.3.0 Operator CLI)
+
+On the workstation, use the operator CLI to seed the first accounts before anyone signs in. The command writes directly to `data/rag.db` and does not need the API to be running.
+
+```powershell
+dotnet run --project src/RAGGit.Workstation.Api -- user add --username ada --display-name "Ada Lovelace" --role Admin --password-stdin
+dotnet run --project src/RAGGit.Workstation.Api -- user add --username bob --display-name "Bob Moore" --role Employee --password-stdin
+```
+
+### 4. Run (2 terminals)
 
 ```powershell
 # Terminal A — workstation (your "AI workstation")
 Remove-Item -Recurse -Force ./data/lancedb -ErrorAction SilentlyContinue  # fresh DB after dimension swap
-dotnet run --project src/RAGGit.Workstation.Api --urls http://localhost:5001
-# Swagger http://localhost:5001/swagger  Health http://localhost:5001/health → {vectorDb:ok, llm:ok, version:"1.1.0"}
-# Auth: curl http://localhost:5001/api/auth/me -H "X-Api-Key: dev-admin-key" → {identityType:"ApiKey", role:"Admin"}
+dotnet run --project src/RAGGit.Workstation.Api --urls https://localhost:5001
+# Swagger https://localhost:5001/swagger  Health https://localhost:5001/health → {vectorDb:ok, llm:ok, version:"1.3.0"}
+# Bootstrap auth: curl -s https://localhost:5001/api/auth/me -H "X-Api-Key: dev-admin-key" → {identityType:"ApiKey", role:"Admin"}
+# Per-person auth: curl -s https://localhost:5001/api/auth/login -H "Content-Type: application/json" -d '{"username":"bob","password":"<bob-pw>"}' → {access_token, token_type:"Bearer", expires_in:28800}
 
 # Terminal B — MAUI client (Windows 11 desktop primary; iOS/Android TFMs buildable but not acceptance per Q1)
 dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0
@@ -129,23 +142,26 @@ dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0
 dotnet run --project src/RAGGit.Client.Maui -f net8.0
 ```
 
-Client reads `src/RAGGit.Client.Maui/appsettings.json` (`Workstation:Url`, `Workstation:ApiKey` > `Api:AdminKey`/`Api:EmployeeKey`) and discovers role via `GET /api/auth/me` at launch (FR-003/FR-004). No hard-coded URLs/keys per `ClientConfigTests`.
+Client reads `src/RAGGit.Client.Maui/appsettings.json` (`Workstation:Url`). If a cached session exists it restores it; otherwise the `LoginView` prompts for username/password over HTTPS. Role is discovered from `GET /api/auth/me` (FR-003/FR-004/FR-008). No hard-coded URLs/keys per `ClientConfigTests`.
 
-### 4. Verify Offline Invariant + Corruption Hardening
+### 5. Verify Offline Invariant + Corruption Hardening
 
 ```powershell
-curl -X POST http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key" -F "file=@sample.pdf"
-curl http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key"  # → [{status:Ready}] <5 min SC-001
+# Sign in as the Admin you provisioned and capture the Bearer token:
+$token = (curl -s -X POST https://localhost:5001/api/auth/login -H "Content-Type: application/json" -d '{"username":"ada","password":"<ada-pw>"}' | ConvertFrom-Json).access_token
+
+curl -X POST https://localhost:5001/api/documents -H "Authorization: Bearer $token" -F "file=@sample.pdf"
+curl https://localhost:5001/api/documents -H "Authorization: Bearer $token"  # → [{status:Ready}] <5 min SC-001
 # Corrupted pdf (FR-006 SC-005):
-curl -X POST http://localhost:5001/api/documents -H "X-Api-Key: dev-admin-key" -F "file=@bad.pdf"
+curl -X POST https://localhost:5001/api/documents -H "Authorization: Bearer $token" -F "file=@bad.pdf"
 # → 400 {error:"corrupted pdf"}  # no partial index; GET /api/documents does not list it
 # Disable WiFi (keep localhost), then:
-curl -X POST http://localhost:5001/api/query -H "X-Api-Key: dev-employee-key" -H "Content-Type: application/json" -d '{"query":"refund policy"}'
+curl -X POST https://localhost:5001/api/query -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d '{"query":"refund policy"}'
 # → {answer, citations:[{documentId, chunkId, text}]} or no relevant content found
 # With Ollama stopped → 503 {error:"model unavailable offline"} within TimeoutMs 5000, never hang (FR-007)
 ```
 
-### 5. Tests
+### 6. Tests
 
 ```powershell
 dotnet test                    # fakes only, no Ollama — CI must stay green (SC-003)
