@@ -7,13 +7,11 @@
         <AssemblyVersion>1.2.0.0</AssemblyVersion>
         <FileVersion>1.2.0.0</FileVersion>
         <InformationalVersion>1.2.0</InformationalVersion>
+        <UserSecretsId>0b5199f7-755d-4fea-b177-b1e26b754807</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference
-            Include="Microsoft.AspNetCore.Authentication.JwtBearer"
-            Version="8.0.10"
-        />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.31" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
