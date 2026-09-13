@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <!-- Required MAUI TFMs per plan.md (T001). Fallback to plain net8.0 outside Visual Studio so the solution builds when the .NET MAUI workload is not installed. -->
-        <!-- VS with only SDK 10.0.401 has net8.0-android/ios out of support and net8.0-windows fails to resolve MAUI workload. Fall back to plain net8.0 in VS until .NET 8 SDK is installed; Windows MAUI TFM is opt-in via DOTNET_BUILD_WINDOWS=true. -->
-        <TargetFrameworks>net8.0</TargetFrameworks>
-        <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == 'true' AND '$(DOTNET_BUILD_WINDOWS)' == 'true'">net8.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'"
+            >net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
