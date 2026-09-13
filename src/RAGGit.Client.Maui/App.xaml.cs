@@ -43,7 +43,21 @@ public partial class App : Application
         if (cachedSession is not null)
         {
             var window = new Window(new AppShell(_services));
-            _ = Task.Run(async () => await DiscoverRoleAsync());
+            _ = Task.Run(async () =>
+            {
+                // Opportunistically refresh if the token expires within the next 15 minutes.
+                var auth = _services.GetRequiredService<Services.AuthApiClient>();
+                if (cachedSession.ExpiresAt - DateTimeOffset.UtcNow < TimeSpan.FromMinutes(15))
+                {
+                    var refresh = await auth.RefreshAsync();
+                    if (!refresh.IsSuccess)
+                    {
+                        await store.ClearAsync();
+                    }
+                }
+
+                await DiscoverRoleAsync();
+            });
             return window;
         }
 

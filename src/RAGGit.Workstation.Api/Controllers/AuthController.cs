@@ -109,6 +109,45 @@ public sealed class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// POST /api/auth/refresh — trivial re-issue of an 8h token from a still-valid token.
+    /// </summary>
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
+        {
+            return Unauthorized(new { error = "unauthorized" });
+        }
+
+        try
+        {
+            var user = await _userStore.GetByIdAsync(userId, cancellationToken);
+            if (user is null || !user.IsActive || user.IsLockedOut)
+            {
+                return Unauthorized(new { error = "unauthorized" });
+            }
+
+            var token = _tokenService.IssueToken(user);
+            return Ok(
+                new TokenResponse
+                {
+                    AccessToken = token,
+                    TokenType = "Bearer",
+                    ExpiresIn = _tokenService.TokenLifetimeHours * 3600,
+                }
+            );
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
+        }
+    }
+
+    /// <summary>
     /// GET /api/auth/me — additive identity envelope.
     /// </summary>
     [HttpGet("me")]
