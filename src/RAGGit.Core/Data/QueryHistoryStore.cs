@@ -75,9 +75,9 @@ public sealed class QueryHistoryStore
 
     /// <summary>
     /// Lists the caller's own queries (UserId == sub, legacy excluded),
-    /// ordered CreatedAt DESC, Id DESC. Implemented in T008.
+    /// ordered CreatedAt DESC, Id DESC. Offline: SQLite-only.
     /// </summary>
-    public Task<HistoryPage> ListAsync(
+    public async Task<HistoryPage> ListAsync(
         string sub,
         int? limit,
         int? offset,
@@ -85,7 +85,57 @@ public sealed class QueryHistoryStore
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sub);
-        throw new NotImplementedException("Implemented in T008.");
+
+        var clampedLimit = ClampLimit(limit);
+        var clampedOffset = ClampOffset(offset);
+
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        int total;
+        using (var countCommand = connection.CreateCommand())
+        {
+            countCommand.CommandText = CountSql;
+            countCommand.Parameters.AddWithValue("@sub", sub);
+            total = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken));
+        }
+
+        var items = new List<HistoryItem>();
+        using (var listCommand = connection.CreateCommand())
+        {
+            listCommand.CommandText = ListSql;
+            listCommand.Parameters.AddWithValue("@sub", sub);
+            listCommand.Parameters.AddWithValue("@limit", clampedLimit);
+            listCommand.Parameters.AddWithValue("@offset", clampedOffset);
+
+            await using var reader = await listCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                items.Add(
+                    new HistoryItem
+                    {
+                        Id = Guid.Parse(reader.GetString(0)),
+                        PromptPreview = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                        AnswerPreview = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                        CitationCount = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                        LatencyMs = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                        CreatedAt = DateTime.Parse(
+                            reader.GetString(5),
+                            null,
+                            System.Globalization.DateTimeStyles.RoundtripKind
+                        ),
+                    }
+                );
+            }
+        }
+
+        return new HistoryPage
+        {
+            Items = items,
+            Total = total,
+            Limit = clampedLimit,
+            Offset = clampedOffset,
+        };
     }
 
     /// <summary>
@@ -122,7 +172,11 @@ public sealed class QueryHistoryStore
 
     internal const string ListSql =
         @"
-            SELECT Id, Prompt, Answer, CitationIds, LatencyMs, CreatedAt
+            SELECT Id,
+                CASE WHEN length(Prompt) > 120 THEN substr(Prompt, 1, 120) || '…' ELSE Prompt END,
+                CASE WHEN length(Answer) > 120 THEN substr(Answer, 1, 120) || '…' ELSE Answer END,
+                json_array_length(COALESCE(CitationIds, '[]')),
+                LatencyMs, CreatedAt
             FROM Queries
             WHERE UserId = @sub AND UserId NOT IN ('admin','employee')
             ORDER BY CreatedAt DESC, Id DESC
