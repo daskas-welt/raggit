@@ -49,6 +49,54 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         employeePage.Items.Should().OnlyContain(i => i.Prompt.StartsWith("bob query"));
     }
 
+    [Fact]
+    public async Task Detail_QueryWithNoRelevantContent_ReturnsEmptyCitations()
+    {
+        var (_, employeeToken) = await ProvisionAndLoginAsync(
+            $"iso-nocite-{Guid.NewGuid():N}",
+            "Iso NoCite",
+            UserRole.Employee,
+            "iso-nocite-pass-1"
+        );
+
+        var queryId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = queryId,
+                    UserId = await GetSubFromTokenAsync(employeeToken),
+                    Prompt = "unanswerable question",
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = "no relevant content found",
+                    CitationIds = Array.Empty<Guid>(),
+                    LatencyMs = 3,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
+        var client = CreateBearerClient(employeeToken);
+        var response = await client.GetAsync($"/api/queries/{queryId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("answer").GetString().Should().Be("no relevant content found");
+        doc.RootElement.GetProperty("citations").EnumerateArray().Should().BeEmpty();
+    }
+
+    private async Task<string> GetSubFromTokenAsync(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await client.GetAsync("/api/auth/me");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return doc.RootElement.GetProperty("sub").GetString()!;
+    }
+
     private async Task<IsolationSeed> SeedTwoUsersAsync()
     {
         var (admin, adminToken) = await ProvisionAndLoginAsync(
