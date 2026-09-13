@@ -16,7 +16,7 @@ namespace RAGGit.Tests.Contract;
 /// Shared factory for contract tests. Replaces AI/vector dependencies with fast
 /// in-memory fakes and points SQLite/LanceDB at temp paths.
 /// </summary>
-public sealed class TestApiFactory : WebApplicationFactory<Program>
+public class TestApiFactory : WebApplicationFactory<Program>
 {
     public string AdminKey { get; } = "admin-contract-test";
     public string EmployeeKey { get; } = "employee-contract-test";

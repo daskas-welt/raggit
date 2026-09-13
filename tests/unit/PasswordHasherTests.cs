@@ -53,4 +53,32 @@ public sealed class PasswordHasherTests
         Action act = () => PasswordHasher.HashPassword(password!);
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void HashPassword_DoesNotContainPlaintextPassword()
+    {
+        var password = "correct horse battery staple";
+        var hash = PasswordHasher.HashPassword(password);
+
+        hash.Should().NotContain(password);
+        hash.Should().NotContain(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password)));
+    }
+
+    [Fact]
+    public void VerifyPassword_MalformedHash_ReturnsFalse()
+    {
+        PasswordHasher.VerifyPassword("any", "PBKDF2-SHA256$310000$short$short").Should().BeFalse();
+        PasswordHasher.VerifyPassword("any", "PBKDF2-MD5$310000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").Should().BeFalse();
+        PasswordHasher.VerifyPassword("any", "not-a-hash").Should().BeFalse();
+    }
+
+    [Fact]
+    public void VerifyPassword_DifferentWrongPasswords_BothFalse()
+    {
+        var hash = PasswordHasher.HashPassword("my secure password");
+
+        PasswordHasher.VerifyPassword("wrong password", hash).Should().BeFalse();
+        PasswordHasher.VerifyPassword("x", hash).Should().BeFalse();
+        PasswordHasher.VerifyPassword(new string('a', 200), hash).Should().BeFalse();
+    }
 }
