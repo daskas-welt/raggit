@@ -31,7 +31,7 @@ Every answer generated from the library MUST include citations (source `document
 
 ### VI. Test-First (NON-NEGOTIABLE)
 
-TDD is mandatory: tests written → reviewed → fail → then implement. Red-Green-Refactor is strictly enforced. Required gates: unit (chunking, payload filtering), contract (OpenAPI in `contracts/api.yaml`), integration (LAN-only offline query, configured auth provider (API key or Windows AD), `GET/POST /api/documents`), and eval harness. No feature merges without the offline-invariant test passing. Coverage target: ≥80% for libraries, 100% for contracts.
+TDD is mandatory: tests written → reviewed → fail → then implement. Red-Green-Refactor is strictly enforced. Required gates: unit (chunking, payload filtering), contract (OpenAPI in `contracts/api.yaml`), integration (LAN-only offline query, configured auth provider (API key, local per-person accounts, or Windows AD), `GET/POST /api/documents`), and eval harness. No feature merges without the offline-invariant test passing. Coverage target: ≥80% for libraries, 100% for contracts.
 
 ### VII. Simplicity & Proprietary Stewardship
 
@@ -49,4 +49,10 @@ Code review requires 1 approval and verifies constitution compliance, especially
 
 This constitution supersedes all other practices. Amendments require: (1) documentation in this file with rationale, (2) approval by project owner, (3) a migration plan for affected specs/plans/tasks, and (4) a semantic version bump: MAJOR for incompatible principle removal/redefinition, MINOR for new principle/expanded guidance, PATCH for wording/clarification. All PRs and reviews MUST verify compliance. Use `.specify/memory/constitution.md` as the runtime source of truth for `/speckit.specify`, `/speckit.plan`, and `/speckit.tasks`. Historical values are preserved when re-scaffolding via `resolve-template.ps1`.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-09-10
+**Version**: 1.2.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-09-13
+
+### Amendment 1.1.0 → 1.2.0 (MINOR)
+
+- **Modified principle**: VI. Test-First — expanded the configured auth provider list from "API key or Windows AD" to "API key, local per-person accounts, or Windows AD".
+- **Rationale**: `004-identity` introduces local per-person accounts as the per-person authentication provider on the AI Workstation. API key remains valid for machine/bootstrap use; Windows AD remains a documented future provider.
+- **Migration plan**: Historical specs `001`–`003` are unaffected. `004-identity` and onward use the amended wording. No code migration is required.
