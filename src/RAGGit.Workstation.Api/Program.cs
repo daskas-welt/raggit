@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
@@ -52,6 +54,16 @@ builder.Services.AddCors(options =>
 });
 
 // Auth / RBAC
+var jwtSigningKeyPath = builder.Configuration["Auth:JwtSigningKeyPath"] ?? "./data/auth.key";
+var tokenLifetimeHours = builder.Configuration.GetValue<int?>("Auth:TokenLifetimeHours") ?? 8;
+var pbkdf2Iterations = builder.Configuration.GetValue<int?>("Auth:Pbkdf2Iterations") ?? 310_000;
+var lockoutThreshold = builder.Configuration.GetValue<int?>("Auth:LockoutThreshold") ?? 5;
+var lockoutMinutes = builder.Configuration.GetValue<int?>("Auth:LockoutMinutes") ?? 15;
+
+var jwtKey = AuthKeyLoader.LoadOrCreateKey(jwtSigningKeyPath);
+
+builder.Services.AddSingleton<UserStore>();
+
 builder
     .Services.AddAuthentication(ApiKeyAuthOptions.Scheme)
     .AddScheme<ApiKeyAuthOptions, ApiKeyAuthHandler>(
@@ -60,6 +72,56 @@ builder
         {
             options.AdminApiKey = builder.Configuration["Api:AdminKey"] ?? string.Empty;
             options.EmployeeApiKey = builder.Configuration["Api:EmployeeKey"] ?? string.Empty;
+        }
+    )
+    .AddJwtBearer(
+        JwtBearerDefaults.AuthenticationScheme,
+        options =>
+        {
+            options.TokenValidationParameters =
+                new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = "raggit-workstation",
+                    ValidAudience = "raggit-workstation",
+                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                        jwtKey
+                    ),
+                    ClockSkew = TimeSpan.FromMinutes(5),
+                };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var subClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier);
+                    if (subClaim is null || !Guid.TryParse(subClaim.Value, out var userId))
+                    {
+                        context.Fail("Invalid subject claim.");
+                        return;
+                    }
+
+                    var store = context.HttpContext.RequestServices.GetRequiredService<UserStore>();
+                    try
+                    {
+                        var user = await store.GetByIdAsync(
+                            userId,
+                            context.HttpContext.RequestAborted
+                        );
+                        if (user is null || !user.IsActive || user.IsLockedOut)
+                        {
+                            context.Fail("Account is inactive or locked.");
+                        }
+                    }
+                    catch
+                    {
+                        context.Fail("Identity store unavailable.");
+                    }
+                },
+            };
         }
     );
 
@@ -185,6 +247,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<RequestIdMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseCors("Lan");
+app.UseHttpsRedirection();
 app.UseResponseCaching();
 app.UseAuthentication();
 app.UseAuthorization();
