@@ -1,9 +1,13 @@
+using System.Collections.Generic;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.CommandLine;
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RAGGit.Core.Abstractions;
@@ -15,9 +19,60 @@ using RAGGit.Ingest.Vector;
 using RAGGit.Retrieval;
 using RAGGit.Retrieval.Ai;
 using RAGGit.Workstation.Api.Auth;
+using RAGGit.Workstation.Api.Cli;
 using RAGGit.Workstation.Api.Middleware;
 using Serilog;
 using Serilog.Enrichers;
+
+// Operator CLI intercept before the web host is built so provisioning can run
+// offline with no plaintext secret in configuration.
+if (args.Length > 0 && string.Equals(args[0], "user", StringComparison.OrdinalIgnoreCase))
+{
+    var cliConnectionString =
+        new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .AddCommandLine(args)
+            .Build()
+            .GetConnectionString("RagDb")
+        ?? "Data Source=./data/rag.db";
+
+    var dataDir =
+        Path.GetDirectoryName(cliConnectionString.Replace("Data Source=", "")) ?? "./data";
+    Directory.CreateDirectory(dataDir);
+
+    await using var cliDb = new RagDbContext(cliConnectionString);
+    await cliDb.EnsureCreatedAsync();
+    var cliStore = new UserStore(cliDb);
+    var cli = new OperatorCli();
+    var cliArgs = FilterOperatorArgs(args);
+    var exitCode = await cli.RunAsync(cliArgs, cliStore);
+    Environment.Exit(exitCode);
+}
+
+static string[] FilterOperatorArgs(string[] args)
+{
+    var result = new List<string>(args.Length);
+    for (var i = 0; i < args.Length; i++)
+    {
+        var arg = args[i];
+        if (
+            arg.StartsWith("--connectionstrings:", StringComparison.OrdinalIgnoreCase)
+            || arg.StartsWith("--ConnectionStrings:", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            // If the value was supplied as a separate token, skip it too.
+            if (!arg.Contains('=') && i + 1 < args.Length)
+            {
+                i++;
+            }
+            continue;
+        }
+        result.Add(arg);
+    }
+    return result.ToArray();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
