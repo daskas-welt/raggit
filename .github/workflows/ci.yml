@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity']
+    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history']
   pull_request:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity']
+    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history']
 
 jobs:
   build-and-test:
@@ -40,18 +40,21 @@ jobs:
       # WAN-disabled offline integration suite per Constitution IV/VI.
       # unshare -n removes network access while keeping localhost (fakes only, no
       # external egress). Must pass without Ollama per SC-003 (RequiresOllama skips).
+      # 005-per-person-history runs here too: OfflineHistoryTests proves history/mine
+      # are SQLite-only (SC-004) and CrossUserIsolationTests asserts 0 cross-user
+      # leak (SC-002) under the same network isolation.
       # Hosted runners may forbid unshare → fallback to plain run with a warning.
       - name: WAN-disabled offline integration tests
         run: |
           if unshare -n true 2>/dev/null; then
-            unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests" --no-build --configuration Release
+            unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
           else
             echo "::warning::unshare not permitted on this runner, running offline tests without network isolation"
-            dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests" --no-build --configuration Release
+            dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
           fi
 
       - name: Remaining integration tests (incl. SC-005 corruption, performance gate, RequiresOllama skips)
-        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests&FullyQualifiedName!~OfflineIdentityTests" --no-build --configuration Release
+        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests&FullyQualifiedName!~OfflineIdentityTests&FullyQualifiedName!~OfflineHistoryTests&FullyQualifiedName!~CrossUserIsolationTests" --no-build --configuration Release
 
       - name: Verify no Ollama required (SC-003)
         run: |
