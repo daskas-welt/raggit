@@ -91,6 +91,7 @@ public sealed class QueryHistoryStore
         var clampedLimit = ClampLimit(limit);
         var clampedOffset = ClampOffset(offset);
 
+        // offline: SQLite-only read over the Queries table (T030).
         await using var connection = _dbContext.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
@@ -154,6 +155,7 @@ public sealed class QueryHistoryStore
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sub);
 
+        // offline: SQLite-only read over Queries + Chunks (T030).
         await using var connection = _dbContext.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
