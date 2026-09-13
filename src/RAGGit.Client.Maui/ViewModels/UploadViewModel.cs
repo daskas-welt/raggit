@@ -13,7 +13,7 @@ namespace RAGGit.Client.Maui.ViewModels;
 public sealed partial class UploadViewModel : ObservableObject
 {
     private readonly DocumentsApiClient _apiClient;
-    private readonly IFilePicker _filePicker;
+    private readonly Services.IFilePicker _filePicker;
     private readonly ClientSession? _session;
 
     private Stream? _selectedFileStream;
@@ -48,7 +48,7 @@ public sealed partial class UploadViewModel : ObservableObject
 
     public UploadViewModel(
         DocumentsApiClient apiClient,
-        IFilePicker filePicker,
+        Services.IFilePicker filePicker,
         ClientSession? session = null
     )
     {

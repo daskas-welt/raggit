@@ -23,7 +23,7 @@
                 IsVisible="{Binding IsBusy}"
                 VerticalOptions="FillAndExpand"
             />
-            <syncfusion:SfPullToRefresh
+            <pull:SfPullToRefresh
                 x:Name="PullToRefresh"
                 IsRefreshing="{Binding IsBusy}"
                 Refreshing="OnPullRefreshing"
@@ -63,7 +63,7 @@
                         />
                     </syncfusion:SfDataGrid.EmptyView>
                 </syncfusion:SfDataGrid>
-            </syncfusion:SfPullToRefresh>
+            </pull:SfPullToRefresh>
             <!-- Themed delete via SfPopup (replaces DisplayAlert on MAUI TFMs; fallback handled in code-behind) -->
             <popup:SfPopup x:Name="DeletePopup" />
             <Button
