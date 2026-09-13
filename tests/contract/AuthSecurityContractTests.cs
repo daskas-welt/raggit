@@ -29,7 +29,13 @@ public sealed class AuthSecurityContractTests
     public async Task Login_OverHttp_InProduction_Returns403HttpsRequired()
     {
         using var factory = new SecurityTestApiFactory();
-        var user = await CreateUserAsync(factory, "http-user", "HTTP User", UserRole.Admin, "strong-pass-1");
+        var user = await CreateUserAsync(
+            factory,
+            "http-user",
+            "HTTP User",
+            UserRole.Admin,
+            "strong-pass-1"
+        );
         var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(
@@ -46,7 +52,13 @@ public sealed class AuthSecurityContractTests
     public async Task CreateUser_WeakPassword_Returns400()
     {
         using var factory = new SecurityTestApiFactory();
-        var admin = await CreateUserAsync(factory, "admin-weak", "Admin", UserRole.Admin, "strong-pass-1");
+        var admin = await CreateUserAsync(
+            factory,
+            "admin-weak",
+            "Admin",
+            UserRole.Admin,
+            "strong-pass-1"
+        );
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
@@ -55,7 +67,13 @@ public sealed class AuthSecurityContractTests
 
         var response = await client.PostAsJsonAsync(
             "/api/users",
-            new { username = "new-user", displayName = "New", role = "Employee", password = "short" }
+            new
+            {
+                username = "new-user",
+                displayName = "New",
+                role = "Employee",
+                password = "short",
+            }
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -66,8 +84,20 @@ public sealed class AuthSecurityContractTests
     public async Task ListUsers_Response_DoesNotContainPasswordHash()
     {
         using var factory = new SecurityTestApiFactory();
-        var admin = await CreateUserAsync(factory, "admin-list", "Admin", UserRole.Admin, "strong-pass-1");
-        await CreateUserAsync(factory, "employee-list", "Employee", UserRole.Employee, "strong-pass-2");
+        var admin = await CreateUserAsync(
+            factory,
+            "admin-list",
+            "Admin",
+            UserRole.Admin,
+            "strong-pass-1"
+        );
+        await CreateUserAsync(
+            factory,
+            "employee-list",
+            "Employee",
+            UserRole.Employee,
+            "strong-pass-2"
+        );
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
@@ -86,12 +116,21 @@ public sealed class AuthSecurityContractTests
     public async Task TamperedToken_MissingSignature_Returns401()
     {
         using var factory = new SecurityTestApiFactory();
-        var user = await CreateUserAsync(factory, "tamper-user", "Tamper", UserRole.Employee, "strong-pass-1");
+        var user = await CreateUserAsync(
+            factory,
+            "tamper-user",
+            "Tamper",
+            UserRole.Employee,
+            "strong-pass-1"
+        );
         var token = IssueToken(factory, user);
         var tampered = token[..token.LastIndexOf('.')] + ".ZmFrZXNpZ25hdHVyZQ";
 
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tampered);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            tampered
+        );
 
         var response = await client.GetAsync("/api/auth/me");
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

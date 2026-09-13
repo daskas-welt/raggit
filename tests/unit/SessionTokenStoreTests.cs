@@ -108,7 +108,12 @@ public sealed class SessionTokenStoreTests
     public async Task Get_TokenMissingButOtherKeysPresent_ReturnsNull()
     {
         var storage = new InMemorySecureStorage();
-        await storage.SetAsync("raggit.session.expires_at", DateTimeOffset.UtcNow.AddHours(1).ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+        await storage.SetAsync(
+            "raggit.session.expires_at",
+            DateTimeOffset
+                .UtcNow.AddHours(1)
+                .ToString("O", System.Globalization.CultureInfo.InvariantCulture)
+        );
         await storage.SetAsync("some-api-key", "fallback-key");
 
         var store = new SessionTokenStore(storage);

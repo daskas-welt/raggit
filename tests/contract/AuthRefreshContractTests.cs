@@ -27,7 +27,12 @@ public sealed class AuthRefreshContractTests : IClassFixture<TestApiFactory>
     [Fact]
     public async Task Refresh_ValidToken_ReturnsNewBearerTokenResponse()
     {
-        var user = await CreateUserAsync("refresh-ok", "Refresh OK", UserRole.Employee, "refresh-pass-1");
+        var user = await CreateUserAsync(
+            "refresh-ok",
+            "Refresh OK",
+            UserRole.Employee,
+            "refresh-pass-1"
+        );
         var token = await LoginAsync(user.Username, "refresh-pass-1");
 
         var client = _factory.CreateClient();
@@ -135,15 +140,15 @@ public sealed class AuthRefreshContractTests : IClassFixture<TestApiFactory>
     private string IssueExpiredToken(User user)
     {
         using var scope = _factory.Services.CreateScope();
-        var key = scope.ServiceProvider.GetRequiredService<RAGGit.Workstation.Api.Auth.JwtTokenService>();
+        var key =
+            scope.ServiceProvider.GetRequiredService<RAGGit.Workstation.Api.Auth.JwtTokenService>();
         // Abuse the same signing key with a negative lifetime to mint an expired token.
         var options = Microsoft.Extensions.Options.Options.Create(
             new RAGGit.Workstation.Api.Auth.JwtTokenServiceOptions
             {
-                SigningKey =
-                    scope
-                        .ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<RAGGit.Workstation.Api.Auth.JwtTokenServiceOptions>>()
-                        .Value.SigningKey,
+                SigningKey = scope
+                    .ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<RAGGit.Workstation.Api.Auth.JwtTokenServiceOptions>>()
+                    .Value.SigningKey,
                 TokenLifetimeHours = -1,
             }
         );

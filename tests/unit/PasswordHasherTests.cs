@@ -61,14 +61,21 @@ public sealed class PasswordHasherTests
         var hash = PasswordHasher.HashPassword(password);
 
         hash.Should().NotContain(password);
-        hash.Should().NotContain(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password)));
+        hash.Should()
+            .NotContain(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password)));
     }
 
     [Fact]
     public void VerifyPassword_MalformedHash_ReturnsFalse()
     {
         PasswordHasher.VerifyPassword("any", "PBKDF2-SHA256$310000$short$short").Should().BeFalse();
-        PasswordHasher.VerifyPassword("any", "PBKDF2-MD5$310000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").Should().BeFalse();
+        PasswordHasher
+            .VerifyPassword(
+                "any",
+                "PBKDF2-MD5$310000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            )
+            .Should()
+            .BeFalse();
         PasswordHasher.VerifyPassword("any", "not-a-hash").Should().BeFalse();
     }
 

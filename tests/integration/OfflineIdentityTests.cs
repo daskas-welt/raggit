@@ -32,13 +32,26 @@ public sealed class OfflineIdentityTests
         using var factory = new IntegrationTestFactory();
 
         // Provision an Admin and an Employee directly on the workstation (operator CLI simulation).
-        var (admin, adminPassword) = await ProvisionPersonAsync(factory, "offline-ada", "Offline Ada", UserRole.Admin);
-        var (employee, employeePassword) = await ProvisionPersonAsync(factory, "offline-bob", "Offline Bob", UserRole.Employee);
+        var (admin, adminPassword) = await ProvisionPersonAsync(
+            factory,
+            "offline-ada",
+            "Offline Ada",
+            UserRole.Admin
+        );
+        var (employee, employeePassword) = await ProvisionPersonAsync(
+            factory,
+            "offline-bob",
+            "Offline Bob",
+            UserRole.Employee
+        );
 
         // Admin login and identity discovery.
         var adminClient = factory.CreateClient();
         var adminToken = await LoginAsync(adminClient, admin.Username, adminPassword);
-        adminClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        adminClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            adminToken
+        );
 
         var adminMe = await adminClient.GetAsync("/api/auth/me");
         adminMe.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -48,7 +61,11 @@ public sealed class OfflineIdentityTests
         adminMeJson.GetProperty("sub").GetString().Should().Be(admin.Id.ToString());
 
         // Admin uploads a document.
-        var upload = await UploadTextAsync(adminClient, "offline-person.txt", "Refunds accepted within 30 days.");
+        var upload = await UploadTextAsync(
+            adminClient,
+            "offline-person.txt",
+            "Refunds accepted within 30 days."
+        );
         upload.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await upload.Content.ReadFromJsonAsync<Document>(_jsonOptions);
         document.Should().NotBeNull();
@@ -57,7 +74,10 @@ public sealed class OfflineIdentityTests
         // Employee login and cited query — entirely local.
         var employeeClient = factory.CreateClient();
         var employeeToken = await LoginAsync(employeeClient, employee.Username, employeePassword);
-        employeeClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        employeeClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            employeeToken
+        );
 
         var employeeMe = await employeeClient.GetAsync("/api/auth/me");
         employeeMe.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -80,7 +100,11 @@ public sealed class OfflineIdentityTests
         answer.GetProperty("citations").GetArrayLength().Should().BeGreaterThan(0);
     }
 
-    private static async Task<string> LoginAsync(HttpClient client, string username, string password)
+    private static async Task<string> LoginAsync(
+        HttpClient client,
+        string username,
+        string password
+    )
     {
         var login = await client.PostAsJsonAsync("/api/auth/login", new { username, password });
         login.StatusCode.Should().Be(HttpStatusCode.OK);

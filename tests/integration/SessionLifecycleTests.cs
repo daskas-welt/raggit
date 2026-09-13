@@ -121,7 +121,9 @@ public sealed class SessionLifecycleTests : IClassFixture<IntegrationTestFactory
     private string IssueExpiredToken(User user)
     {
         using var scope = _factory.Services.CreateScope();
-        var existingOptions = scope.ServiceProvider.GetRequiredService<IOptions<JwtTokenServiceOptions>>().Value;
+        var existingOptions = scope
+            .ServiceProvider.GetRequiredService<IOptions<JwtTokenServiceOptions>>()
+            .Value;
 
         // Issue with a negative lifetime so the token is already expired.
         var expiredOptions = Options.Create(

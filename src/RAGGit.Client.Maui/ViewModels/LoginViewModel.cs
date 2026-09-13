@@ -74,10 +74,7 @@ public sealed partial class LoginViewModel : ObservableObject
             return;
         }
 
-        if (
-            string.IsNullOrWhiteSpace(Username)
-            || string.IsNullOrWhiteSpace(Password)
-        )
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
         {
             ErrorMessage = "Username and password are required.";
             return;
@@ -109,8 +106,7 @@ public sealed partial class LoginViewModel : ObservableObject
                 }
 
                 ErrorMessage =
-                    meResult.ErrorMessage
-                    ?? "Signed in, but identity discovery failed. Try again.";
+                    meResult.ErrorMessage ?? "Signed in, but identity discovery failed. Try again.";
                 return;
             }
 

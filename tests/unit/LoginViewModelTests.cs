@@ -63,7 +63,10 @@ public sealed class LoginViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
 
-        var client = new HttpClient(handler) { BaseAddress = new Uri("https://workstation.local/") };
+        var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://workstation.local/"),
+        };
         var auth = new AuthApiClient(client);
         var vm = new LoginViewModel(
             auth,
@@ -92,7 +95,10 @@ public sealed class LoginViewModelTests
         var handler = new TestMessageHandler(_ => new HttpResponseMessage(
             HttpStatusCode.Unauthorized
         ));
-        var client = new HttpClient(handler) { BaseAddress = new Uri("https://workstation.local/") };
+        var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://workstation.local/"),
+        };
         var auth = new AuthApiClient(client);
         var vm = new LoginViewModel(auth, session);
 
