@@ -61,6 +61,54 @@ public sealed class DocumentsApiClient
         }
     }
 
+    /// <summary>
+    /// GET api/documents/mine?limit=&amp;offset= — own recent documents (005 US3).
+    /// Nulls omitted, server clamps. Scoped by the person JWT via BearerDelegatingHandler.
+    /// </summary>
+    public async Task<DocumentsMinePage> GetMineAsync(
+        int? limit = null,
+        int? offset = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var query = "api/documents/mine";
+        var separator = "?";
+        if (limit is not null)
+        {
+            query += $"{separator}limit={limit.Value}";
+            separator = "&";
+        }
+
+        if (offset is not null)
+        {
+            query += $"{separator}offset={offset.Value}";
+        }
+
+        try
+        {
+            var response = await _httpClient.GetAsync(query, cancellationToken);
+            await EnsureSuccessOrThrowAsync(response, cancellationToken);
+
+            var page = await response.Content.ReadFromJsonAsync<DocumentsMinePage>(
+                _jsonOptions,
+                cancellationToken
+            );
+            return page ?? new DocumentsMinePage();
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
+    }
+
     private async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response, CancellationToken ct)
     {
         if (response.IsSuccessStatusCode)
