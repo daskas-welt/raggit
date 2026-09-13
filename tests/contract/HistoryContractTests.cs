@@ -116,6 +116,69 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
     }
 
     [Fact]
+    public async Task History_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/queries/history");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task History_NewUser_ReturnsEmptyPage()
+    {
+        var (_, token) = await ProvisionAndLoginAsync(
+            $"hist-empty-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+
+        var client = CreateBearerClient(token);
+        var response = await client.GetAsync("/api/queries/history");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var page = await ParsePageAsync(response);
+        page.Total.Should().Be(0);
+        page.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task History_LongPromptAndAnswer_TruncatedTo121()
+    {
+        var (sub, token) = await ProvisionAndLoginAsync(
+            $"hist-trunc-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var longPrompt = new string('p', 200);
+        var longAnswer = new string('a', 200);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = sub,
+                    Prompt = longPrompt,
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = longAnswer,
+                    CitationIds = new[] { Guid.NewGuid(), Guid.NewGuid() },
+                    LatencyMs = 9,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
+        var client = CreateBearerClient(token);
+        var page = await ParsePageAsync(await client.GetAsync("/api/queries/history"));
+
+        page.Total.Should().Be(1);
+        var item = page.Items.Should().ContainSingle().Subject;
+        item.PromptPreview.Should().HaveLength(121).And.EndWith("…");
+        item.AnswerPreview.Should().HaveLength(121).And.EndWith("…");
+        item.CitationCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task History_OffsetBeyondTotal_ReturnsEmpty_WithTotal()
     {
         var (sub, token) = await ProvisionAndLoginAsync(
