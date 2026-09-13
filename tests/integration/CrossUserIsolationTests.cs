@@ -278,6 +278,41 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
             .Be(HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task Mine_EachPerson_SeesOnlyOwnDocuments()
+    {
+        // T024 [US3] FR-005/FR-007: ≥2 users with uploads; GET /api/documents/mine
+        // returns only rows where CreatedBy == sub — zero cross-user leakage.
+        var (admin, adminToken) = await ProvisionAndLoginAsync(
+            $"iso-mine-ada-{Guid.NewGuid():N}",
+            "Iso Mine Ada",
+            UserRole.Admin,
+            "iso-mine-ada-pass-1"
+        );
+        var (employee, employeeToken) = await ProvisionAndLoginAsync(
+            $"iso-mine-bob-{Guid.NewGuid():N}",
+            "Iso Mine Bob",
+            UserRole.Employee,
+            "iso-mine-bob-pass-1"
+        );
+
+        await SeedDocumentsAsync(
+            admin.Id.ToString(),
+            new[] { "ada-doc-one.txt", "ada-doc-two.txt" }
+        );
+        await SeedDocumentsAsync(employee.Id.ToString(), new[] { "bob-doc-one.txt" });
+
+        var adminPage = await GetMineAsync(CreateBearerClient(adminToken));
+        var employeePage = await GetMineAsync(CreateBearerClient(employeeToken));
+
+        adminPage.Total.Should().Be(2);
+        adminPage.Items.Should().HaveCount(2);
+        adminPage.Items.Should().OnlyContain(i => i.Filename.StartsWith("ada-doc"));
+
+        employeePage.Total.Should().Be(1);
+        employeePage.Items.Should().ContainSingle().Which.Filename.Should().Be("bob-doc-one.txt");
+    }
+
     private string IssueExpiredToken(User user)
     {
         using var scope = _factory.Services.CreateScope();
@@ -418,6 +453,32 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         }
     }
 
+    private async Task SeedDocumentsAsync(string sub, IEnumerable<string> filenames)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        await using var connection = db.CreateConnection();
+        await connection.OpenAsync();
+
+        foreach (var filename in filenames)
+        {
+            var id = Guid.NewGuid();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                @"INSERT INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt)
+                  VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdAt);";
+            command.Parameters.AddWithValue("@id", id.ToString());
+            command.Parameters.AddWithValue("@filename", filename);
+            command.Parameters.AddWithValue("@mime", "text/plain");
+            command.Parameters.AddWithValue("@size", 64);
+            command.Parameters.AddWithValue("@hash", $"iso-mine-{id:N}");
+            command.Parameters.AddWithValue("@status", "Ready");
+            command.Parameters.AddWithValue("@createdBy", sub);
+            command.Parameters.AddWithValue("@createdAt", DateTime.UtcNow.ToString("O"));
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private static async Task<HttpResponseMessage> UploadTextAsync(
         HttpClient client,
         string filename,
@@ -429,6 +490,26 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         file.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         form.Add(file, "file", filename);
         return await client.PostAsync("/api/documents", form);
+    }
+
+    private static async Task<MineShape> GetMineAsync(HttpClient client)
+    {
+        var response = await client.GetAsync("/api/documents/mine?limit=100&offset=0");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return new MineShape
+        {
+            Total = doc.RootElement.GetProperty("total").GetInt32(),
+            Items = doc
+                .RootElement.GetProperty("items")
+                .EnumerateArray()
+                .Select(i => new MineRow
+                {
+                    Id = i.GetProperty("id").GetString()!,
+                    Filename = i.GetProperty("filename").GetString()!,
+                })
+                .ToList(),
+        };
     }
 
     private static async Task<HistoryShape> GetHistoryAsync(HttpClient client)
@@ -470,5 +551,19 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         public string Id { get; set; } = string.Empty;
 
         public string Prompt { get; set; } = string.Empty;
+    }
+
+    private sealed class MineShape
+    {
+        public int Total { get; set; }
+
+        public List<MineRow> Items { get; set; } = new();
+    }
+
+    private sealed class MineRow
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Filename { get; set; } = string.Empty;
     }
 }
