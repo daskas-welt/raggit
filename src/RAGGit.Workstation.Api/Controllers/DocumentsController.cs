@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
 
@@ -24,16 +25,19 @@ public sealed class DocumentsController : ControllerBase
 {
     private readonly IngestService _ingestService;
     private readonly IVirusScanner _virusScanner;
+    private readonly DocumentMineStore _mineStore;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IngestService ingestService,
         IVirusScanner virusScanner,
+        DocumentMineStore mineStore,
         ILogger<DocumentsController> logger
     )
     {
         _ingestService = ingestService ?? throw new ArgumentNullException(nameof(ingestService));
         _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
+        _mineStore = mineStore ?? throw new ArgumentNullException(nameof(mineStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -149,6 +153,30 @@ public sealed class DocumentsController : ControllerBase
                 : "corrupted document";
             return BadRequest(new { error = msg });
         }
+    }
+
+    /// <summary>
+    /// GET /api/documents/mine — own recent documents, paginated, sub-scoped (005).
+    /// 401 when no person identity; 200 with empty items when the person
+    /// uploaded nothing. Isolation (FR-005/FR-007): store filters
+    /// CreatedBy == sub AND NOT IN legacy; deactivation/expiry enforced
+    /// per-request by JwtBearer + OnTokenValidated (004), never bypassed here.
+    /// </summary>
+    [HttpGet("/api/documents/mine")]
+    public async Task<IActionResult> Mine(
+        [FromQuery] int? limit,
+        [FromQuery] int? offset,
+        CancellationToken cancellationToken
+    )
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub))
+        {
+            return Unauthorized(new { error = "unauthorized" });
+        }
+
+        var page = await _mineStore.ListAsync(sub, limit, offset, cancellationToken);
+        return Ok(page);
     }
 
     /// <summary>
