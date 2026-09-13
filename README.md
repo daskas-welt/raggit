@@ -4,9 +4,9 @@
 
 **Constitution**: `v1.2.0` ratified `2026-08-31`, last amended `2026-09-13` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
-**Version**: `1.3.0` (API `contracts/api.yaml` MINOR — adds local per-person accounts: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` additive envelope, `/api/users` Admin CRUD, HTTPS-only credentials, PBKDF2 + JWT 8h, lockout 5/15m; `1.2.0` added `xlsx` MIME + cap; `1.1.0` added `GET /api/auth/me` + corrupted-pdf 400). `/health` reports `version:1.3.0`.
+**Version**: `1.4.0` (API `specs/005-per-person-history/contracts/api.yaml` MINOR additive — adds `GET /api/queries/history`, `GET /api/queries/{id}`, `GET /api/documents/mine` scoped to JWT `sub`, zero cross-user leak, legacy `admin`/`employee` excluded, stable pagination, offline LAN-only; no breaking change. `1.3.0` added local per-person accounts: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` additive envelope, `/api/users` Admin CRUD, HTTPS-only credentials, PBKDF2 + JWT 8h, lockout 5/15m; `1.2.0` added `xlsx` MIME + cap; `1.1.0` added `GET /api/auth/me` + corrupted-pdf 400). `/health` reports `version:1.4.0`.
 
-**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md) | `004-identity` — [spec](./specs/004-identity/spec.md) | [arch](./specs/004-identity/docs/architecture.html?theme=light) | [workflow](./specs/004-identity/docs/workflow.html?theme=light) | [sequence](./specs/004-identity/docs/sequence.html?theme=light) | [dataflow](./specs/004-identity/docs/dataflow.html?theme=light)
+**Features**: `001-offline-mode` — [spec](./specs/001-offline-mode/spec.md) | `002-real-bringup` — [spec](./specs/002-real-bringup/spec.md) | [plan](./specs/002-real-bringup/plan.md) | [verification](./specs/002-real-bringup/verification.md) | `003-ingest-breadth` — [spec](./specs/003-ingest-breadth/spec.md) | [plan](./specs/003-ingest-breadth/plan.md) | [verification](./specs/003-ingest-breadth/verification.md) | `004-identity` — [spec](./specs/004-identity/spec.md) | [arch](./specs/004-identity/docs/architecture.html?theme=light) | [workflow](./specs/004-identity/docs/workflow.html?theme=light) | [sequence](./specs/004-identity/docs/sequence.html?theme=light) | [dataflow](./specs/004-identity/docs/dataflow.html?theme=light) | `005-per-person-history` — [spec](./specs/005-per-person-history/spec.md) | [plan](./specs/005-per-person-history/plan.md) | [verification](./specs/005-per-person-history/verification.md) | [contract](./specs/005-per-person-history/contracts/api.yaml)
 
 ## Architecture
 
@@ -30,13 +30,13 @@
 ```
 Company LAN (no WAN at query time) — see architecture diagram above for interactive topology
 AI Workstation (on-prem) ── LAN ── Employee Desktops (.NET MAUI thin clients)
-├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.3.0 — local per-person accounts ─────┐
+├─ ASP.NET Core API (src/RAGGit.Workstation.Api) v1.4.0 — local per-person accounts + per-person history/mine ─────┐
 ├─ LanceDB file data/lancedb (VectorDb:Path, VectorDb:VectorSize 384|768)                 │
 ├─ Ollama localhost:11434 (all-minilm 384 dev / nomic-embed-text 768 prod)                │
 ├─ SQLite rag.db — Users (PBKDF2-SHA256, role, lockout 5/15m, 8h JWT, HTTPS) + Documents/Queries ──┘
 MAUI Client: net8.0-windows10.0.19041.0 / net8.0-ios / net8.0-android + net8.0 CI fallback — SecureStorage token cache + Bearer handler + LoginView + Admin UsersView (SfDataGrid)
 Operator CLI: `raggit user add` — OS trust anchor, no first-run wizard, no plaintext secret in config
-API 1.3.0: POST /api/auth/login (HTTPS), POST /api/auth/refresh, GET /api/auth/me {identityType:"Local", role, displayName, username, sub}, /api/users CRUD (Admin), 401/403/429, offline invariant
+API 1.4.0: POST /api/auth/login (HTTPS), POST /api/auth/refresh, GET /api/auth/me {identityType:"Local", role, displayName, username, sub}, /api/users CRUD (Admin), 401/403/429, offline invariant + per-person history GET /api/queries/history?limit=&offset=, GET /api/queries/{id} (404 if not owned), GET /api/documents/mine (additive, no breaking change)
 Legacy Qdrant:Path warned if disagreeing with VectorDb:Path
 ```
 
@@ -53,12 +53,12 @@ Legacy Qdrant:Path warned if disagreeing with VectorDb:Path
 ## Project Structure
 
 ```
-RAGGit.sln (v1.3.0)
+RAGGit.sln (v1.4.0)
 ├── src/
 │   ├── RAGGit.Core/              # Models Document/Chunk/Query, abstractions IVectorStore/IEmbedder/ILlmClient
 │   ├── RAGGit.Ingest/            # Chunker 512/50 → embed (Ollama) → LanceDB upsert (CorruptDocumentException → 400)
 │   ├── RAGGit.Retrieval/         # embed query → LanceDB search topK=5 → prompt → local LLM (timeout → 503)
-│   ├── RAGGit.Workstation.Api/   # ASP.NET Core: /api/documents, /api/query, /api/auth/me, /health (v1.1.0)
+│   ├── RAGGit.Workstation.Api/   # ASP.NET Core: /api/documents (+/mine 1.4.0), /api/query, /api/queries/history + /{id} (1.4.0), /api/auth/me, /health
 │   └── RAGGit.Client.Maui/       # .NET MAUI net8.0-windows10.0.19041.0 / ios / android + net8.0 fallback — role-gated UI
 ├── tests/
 │   ├── unit/ | contract/ | integration/  # WAN-disabled offline suite + opt-in RequiresOllama + SC-001 perf gate + SC-005 corruption
@@ -70,7 +70,7 @@ RAGGit.sln (v1.3.0)
 └── models/                       # .gitignored: *.gguf, *.onnx
 ```
 
-## Quickstart — Single-Machine Dev (v1.3.0)
+## Quickstart — Single-Machine Dev (v1.4.0)
 
 No workstation needed. Everything runs on `localhost`. Identity is now local per-person accounts; API keys remain valid for machine/bootstrap.
 
