@@ -78,17 +78,17 @@
 
 ### Tests for US3
 
-- [ ] T024 [P] [US3] Contract test `GET|POST /api/users` in `tests/contract/UsersCrudContractTests.cs` — Admin list/create → 200/201 with PasswordHash never serialized, duplicate → 409, Employee → 403
-- [ ] T025 [P] [US3] Contract test `PATCH /api/users/{id}` + `POST /reset-password` in `tests/contract/UsersPatchContractTests.cs` — deactivation → next request 401, reset → 204 + MustChangePassword, role change → immediate effect
-- [ ] T026 [P] [US3] Integration test deactivation refusal in `tests/integration/DeactivationRefusalTests.cs` — hold valid JWT, `PATCH isActive=false` → very next Bearer request 401, 0 further successes
-- [ ] T027 [P] [US3] Integration test Admin RBAC in `tests/integration/AdminRbacTests.cs` — Employee GET /users → 403
+- [x] T024 [P] [US3] Contract test `GET|POST /api/users` in `tests/contract/UsersCrudContractTests.cs` — Admin list/create → 200/201 with PasswordHash never serialized, duplicate → 409, Employee → 403
+- [x] T025 [P] [US3] Contract test `PATCH /api/users/{id}` + `POST /reset-password` in `tests/contract/UsersPatchContractTests.cs` — deactivation → next request 401, reset → 204 + MustChangePassword, role change → immediate effect
+- [x] T026 [P] [US3] Integration test deactivation refusal in `tests/integration/DeactivationRefusalTests.cs` — hold valid JWT, `PATCH isActive=false` → very next Bearer request 401, 0 further successes
+- [x] T027 [P] [US3] Integration test Admin RBAC in `tests/integration/AdminRbacTests.cs` — Employee GET /users → 403
 
 ### Implementation for US3
 
-- [ ] T028 [US3] Implement `src/RAGGit.Workstation.Api/Controllers/UsersController.cs` — `GET /users` (Admin), `POST /users` (create with PBKDF2, 409 case-insensitive), `GET /users/{id}`, `PATCH /users/{id}` (role/isActive/displayName), `POST /users/{id}/reset-password` (clear lockout, MustChangePassword) — all Admin-only, never serialize PasswordHash (depends on T004-T007)
-- [ ] T029 [US3] Add `src/RAGGit.Client.Maui/ViewModels/AdminUsersViewModel.cs` — list/create/role/deactivate/reset via `UsersApiClient` (depends on T028)
-- [ ] T030 [US3] Add `src/RAGGit.Client.Maui/Views/Admin/UsersView.xaml` + `.xaml.cs` — minimal `SfDataGrid` + forms, Admin-only visible (depends on T029)
-- [ ] T031 [US3] Add `src/RAGGit.Client.Maui/Services/UsersApiClient.cs` — typed CRUD + reset (depends on T028)
+- [x] T028 [US3] Implement `src/RAGGit.Workstation.Api/Controllers/UsersController.cs` — `GET /users` (Admin), `POST /users` (create with PBKDF2, 409 case-insensitive), `GET /users/{id}`, `PATCH /users/{id}` (role/isActive/displayName), `POST /users/{id}/reset-password` (clear lockout, MustChangePassword) — all Admin-only, never serialize PasswordHash (depends on T004-T007)
+- [x] T029 [US3] Add `src/RAGGit.Client.Maui/ViewModels/AdminUsersViewModel.cs` — list/create/role/deactivate/reset via `UsersApiClient` (depends on T028)
+- [x] T030 [US3] Add `src/RAGGit.Client.Maui/Views/Admin/UsersView.xaml` + `.xaml.cs` — minimal `SfDataGrid` + forms, Admin-only visible (depends on T029)
+- [x] T031 [US3] Add `src/RAGGit.Client.Maui/Services/UsersApiClient.cs` — typed CRUD + reset (depends on T028)
 
 **Checkpoint**: US1+US2+US3 independently functional — Admin can manage people without restart (SC-006).
 
