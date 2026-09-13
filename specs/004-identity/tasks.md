@@ -98,25 +98,25 @@
 
 ### Tests for US4
 
-- [ ] T032 [P] [US4] Unit test `SessionTokenStoreTests.cs` — persist/restore across process kill until expiry, clear on sign-out, never fallback to ApiKey for person actions
-- [ ] T033 [P] [US4] Integration test session lifecycle in `tests/integration/SessionLifecycleTests.cs` — expired token → 401 → re-login prompt; sign-out → anonymous
+- [x] T032 [P] [US4] Unit test `SessionTokenStoreTests.cs` — persist/restore across process kill until expiry, clear on sign-out, never fallback to ApiKey for person actions
+- [x] T033 [P] [US4] Integration test session lifecycle in `tests/integration/SessionLifecycleTests.cs` — expired token → 401 → re-login prompt; sign-out → anonymous
 
 ### Implementation for US4
 
-- [ ] T034 [US4] Add `src/RAGGit.Client.Maui/ViewModels/LoginViewModel.cs` + `Views/LoginView.xaml` — HTTPS login form, actionable cert-trust error, no bypass (depends on T021-T023)
-- [ ] T035 [US4] Wire `LoginView` navigation + `GET /auth/me` role gating in `src/RAGGit.Client.Maui/App.xaml.cs` / `MauiProgram.cs` — use real person role, not hardcoded (depends on T034, T022)
-- [ ] T036 [US4] Implement `POST /api/auth/refresh` in `AuthController.cs` + client opportunistic use (optional, P3; trivial re-issue from still-valid token) (depends on T018)
+- [x] T034 [US4] Add `src/RAGGit.Client.Maui/ViewModels/LoginViewModel.cs` + `Views/LoginView.xaml` — HTTPS login form, actionable cert-trust error, no bypass (depends on T021-T023)
+- [x] T035 [US4] Wire `LoginView` navigation + `GET /auth/me` role gating in `src/RAGGit.Client.Maui/App.xaml.cs` / `MauiProgram.cs` — use real person role, not hardcoded (depends on T034, T022)
+- [x] T036 [US4] Implement `POST /api/auth/refresh` in `AuthController.cs` + client opportunistic use (optional, P3; trivial re-issue from still-valid token) (depends on T018)
 
 **Checkpoint**: All 4 stories independently functional.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T037 Update `README.md` Architecture + `specs/001-offline-mode/quickstart.md` + `docs/operator-cli.md` for 1.3.0 (`/auth/login`, `/users`, HTTPS, Operator CLI)
-- [ ] T038 Run `specs/004-identity/quickstart.md` steps 1-7 validation (operator CLI → HTTPS login → me → upload attribution → admin create/deactivate → lockout → offline proof) and fill `specs/004-identity/verification.md` SC-001..006
-- [ ] T039 Extend WAN-disabled CI leg with identity steps (provision → login → me → cited query, 0 egress beyond LAN/loopback, SC-005) in `.github/workflows/ci.yml`
-- [ ] T040 Security hardening — ensure no hard-coded URLs/keys per `ClientConfigTests`, HTTPS-only enforcement for auth, PBKDF2 fixed-time verify, no PasswordHash serialization
-- [ ] T041 Maintain Archify diagrams — if any topology/flow/state drifted during implementation, update affected `specs/004-identity/docs/*.json` and re-deliver (showcase `?theme=light`, light visual-check) same commit
-- [ ] T042 Cleanup — `dotnet csharpier check .`, `dotnet build`, `dotnet test` (contract 100%, library ≥80%), remove any placeholder `.write-probe.txt`
+- [x] T037 Update `README.md` Architecture + `specs/001-offline-mode/quickstart.md` + `docs/operator-cli.md` for 1.3.0 (`/auth/login`, `/users`, HTTPS, Operator CLI)
+- [x] T038 Run `specs/004-identity/quickstart.md` steps 1-7 validation (operator CLI → HTTPS login → me → upload attribution → admin create/deactivate → lockout → offline proof) and fill `specs/004-identity/verification.md` SC-001..006
+- [x] T039 Extend WAN-disabled CI leg with identity steps (provision → login → me → cited query, 0 egress beyond LAN/loopback, SC-005) in `.github/workflows/ci.yml`
+- [x] T040 Security hardening — ensure no hard-coded URLs/keys per `ClientConfigTests`, HTTPS-only enforcement for auth, PBKDF2 fixed-time verify, no PasswordHash serialization
+- [x] T041 Maintain Archify diagrams — if any topology/flow/state drifted during implementation, update affected `specs/004-identity/docs/*.json` and re-deliver (showcase `?theme=light`, light visual-check) same commit
+- [x] T042 Cleanup — `dotnet csharpier check .`, `dotnet build`, `dotnet test` (contract 100%, library ≥80%), remove any placeholder `.write-probe.txt`
 
 ## Dependencies & Execution Order
 
