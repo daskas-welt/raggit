@@ -44,14 +44,14 @@ jobs:
       - name: WAN-disabled offline integration tests
         run: |
           if unshare -n true 2>/dev/null; then
-            unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests" --no-build --configuration Release
+            unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests" --no-build --configuration Release
           else
-            echo "::warning::unshare not permitted on this runner, running QueryOfflineTests without network isolation"
-            dotnet test --filter "FullyQualifiedName~QueryOfflineTests" --no-build --configuration Release
+            echo "::warning::unshare not permitted on this runner, running offline tests without network isolation"
+            dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests" --no-build --configuration Release
           fi
 
       - name: Remaining integration tests (incl. SC-005 corruption, performance gate, RequiresOllama skips)
-        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests" --no-build --configuration Release
+        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests&FullyQualifiedName!~OfflineIdentityTests" --no-build --configuration Release
 
       - name: Verify no Ollama required (SC-003)
         run: |
