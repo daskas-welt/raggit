@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
+    x:Class="RAGGit.Client.Maui.Views.QueryDetailView"
+    Title="Query detail"
+>
+    <!-- NOTE (T018): CollectionView used instead of SfListView — Syncfusion.Maui.ListView
+         is not referenced and T001 forbids new NuGet packages. Same citations contract
+         (documentId/chunkId/text/ordinal) bound to QueryDetail.Citations. -->
+    <Grid RowDefinitions="Auto,*" Padding="12">
+        <Label
+            Grid.Row="0"
+            Text="Query detail"
+            FontSize="18"
+            FontAttributes="Bold"
+            Margin="0,0,0,8"
+        />
+        <Grid Grid.Row="1">
+            <toolkit:SfShimmer IsActive="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <ScrollView>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding ErrorMessage}" TextColor="Red" />
+                    <Border Padding="10" StrokeShape="RoundRectangle 6">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Prompt" FontAttributes="Bold" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding Detail.Prompt}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Padding="10" StrokeShape="RoundRectangle 6">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Answer" FontAttributes="Bold" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding Detail.Answer}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Label Text="Citations" FontAttributes="Bold" FontSize="12" TextColor="Gray" />
+                    <CollectionView ItemsSource="{Binding Detail.Citations}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10" StrokeShape="RoundRectangle 6" Margin="0,4">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label
+                                            Text="{Binding Text}"
+                                            LineBreakMode="WordWrap"
+                                        />
+                                        <Label FontSize="12" TextColor="Gray">
+                                            <Label.Text>
+                                                <MultiBinding StringFormat="[{0}] {1} / {2}">
+                                                    <Binding Path="Ordinal" />
+                                                    <Binding Path="DocumentId" />
+                                                    <Binding Path="ChunkId" />
+                                                </MultiBinding>
+                                            </Label.Text>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <Label
+                                Text="No citations for this query."
+                                FontSize="12"
+                                TextColor="Gray"
+                                HorizontalOptions="Center"
+                            />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+    </Grid>
+</ContentPage>
