@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RAGGit.Core.Auth;
@@ -29,8 +28,18 @@ public sealed class UsersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
-        var users = await _userStore.ListAsync(cancellationToken);
-        return Ok(users.Select(ToDto));
+        try
+        {
+            var users = await _userStore.ListAsync(cancellationToken);
+            return Ok(users.Select(ToDto));
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
+        }
     }
 
     /// <summary>
@@ -55,6 +64,16 @@ public sealed class UsersController : ControllerBase
         )
         {
             return BadRequest(new { error = "username, displayName, and password are required." });
+        }
+
+        if (request.Username.Trim().Length < 3 || request.Username.Trim().Length > 64)
+        {
+            return BadRequest(new { error = "username must be 3-64 characters." });
+        }
+
+        if (request.Password.Length < 10)
+        {
+            return BadRequest(new { error = "password must be at least 10 characters." });
         }
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
@@ -87,6 +106,13 @@ public sealed class UsersController : ControllerBase
         {
             return Conflict(new { error = $"Username '{request.Username}' already exists." });
         }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
+        }
 
         return Created($"/api/users/{user.Id}", ToDto(user));
     }
@@ -98,13 +124,23 @@ public sealed class UsersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
-        var user = await _userStore.GetByIdAsync(id, cancellationToken);
-        if (user is null)
+        try
         {
-            return NotFound(new { error = "User not found." });
-        }
+            var user = await _userStore.GetByIdAsync(id, cancellationToken);
+            if (user is null)
+            {
+                return NotFound(new { error = "User not found." });
+            }
 
-        return Ok(ToDto(user));
+            return Ok(ToDto(user));
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
+        }
     }
 
     /// <summary>
@@ -123,35 +159,62 @@ public sealed class UsersController : ControllerBase
             return BadRequest(new { error = "Request body is required." });
         }
 
-        var user = await _userStore.GetByIdAsync(id, cancellationToken);
-        if (user is null)
+        if (
+            !request.Role.HasValue
+            && !request.IsActive.HasValue
+            && string.IsNullOrWhiteSpace(request.DisplayName)
+        )
         {
-            return NotFound(new { error = "User not found." });
+            return BadRequest(new { error = "No fields provided to update." });
         }
 
-        if (request.Role.HasValue)
+        if (
+            !string.IsNullOrWhiteSpace(request.DisplayName)
+            && (request.DisplayName.Trim().Length < 1 || request.DisplayName.Trim().Length > 100)
+        )
         {
-            user.Role = request.Role.Value;
+            return BadRequest(new { error = "displayName must be 1-100 characters." });
         }
 
-        if (request.IsActive.HasValue)
+        try
         {
-            user.IsActive = request.IsActive.Value;
-            if (!user.IsActive)
+            var user = await _userStore.GetByIdAsync(id, cancellationToken);
+            if (user is null)
             {
-                // Clear any active lockout so reactivation is clean.
-                user.LockoutUntil = null;
-                user.FailedAccessCount = 0;
+                return NotFound(new { error = "User not found." });
             }
-        }
 
-        if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            if (request.Role.HasValue)
+            {
+                user.Role = request.Role.Value;
+            }
+
+            if (request.IsActive.HasValue)
+            {
+                user.IsActive = request.IsActive.Value;
+                if (!user.IsActive)
+                {
+                    // Clear any active lockout so reactivation is clean.
+                    user.LockoutUntil = null;
+                    user.FailedAccessCount = 0;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            {
+                user.DisplayName = request.DisplayName.Trim();
+            }
+
+            await _userStore.UpdateAsync(user, cancellationToken);
+            return Ok(ToDto(user));
+        }
+        catch (Exception)
         {
-            user.DisplayName = request.DisplayName.Trim();
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
         }
-
-        await _userStore.UpdateAsync(user, cancellationToken);
-        return Ok(ToDto(user));
     }
 
     /// <summary>
@@ -170,20 +233,35 @@ public sealed class UsersController : ControllerBase
             return BadRequest(new { error = "password is required." });
         }
 
-        var user = await _userStore.GetByIdAsync(id, cancellationToken);
-        if (user is null)
+        if (request.Password.Length < 10)
         {
-            return NotFound(new { error = "User not found." });
+            return BadRequest(new { error = "password must be at least 10 characters." });
         }
 
-        user.PasswordHash = PasswordHasher.HashPassword(request.Password);
-        user.MustChangePassword = request.MustChangePassword;
-        user.FailedAccessCount = 0;
-        user.LockoutUntil = null;
-        user.LastPasswordChangedAt = DateTime.UtcNow;
+        try
+        {
+            var user = await _userStore.GetByIdAsync(id, cancellationToken);
+            if (user is null)
+            {
+                return NotFound(new { error = "User not found." });
+            }
 
-        await _userStore.UpdateAsync(user, cancellationToken);
-        return NoContent();
+            user.PasswordHash = PasswordHasher.HashPassword(request.Password);
+            user.MustChangePassword = request.MustChangePassword;
+            user.FailedAccessCount = 0;
+            user.LockoutUntil = null;
+            user.LastPasswordChangedAt = DateTime.UtcNow;
+
+            await _userStore.UpdateAsync(user, cancellationToken);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { error = "identity store unavailable" }
+            );
+        }
     }
 
     private static UserDto ToDto(User user)
