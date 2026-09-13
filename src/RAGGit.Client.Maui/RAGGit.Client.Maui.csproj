@@ -30,6 +30,7 @@
     <!-- MAUI XAML pages are only compiled for the real MAUI TFMs. -->
     <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
         <MauiXaml Include="Views\*.xaml" />
+        <MauiXaml Include="Views\**\*.xaml" />
         <MauiXaml Include="App.xaml" />
         <MauiXaml Include="AppShell.xaml" />
     </ItemGroup>

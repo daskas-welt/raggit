@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -41,6 +42,8 @@ public sealed partial class AdminUsersViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _resetMustChangePassword;
+
+    public IReadOnlyList<UserRole> Roles { get; } = new[] { UserRole.Admin, UserRole.Employee };
 
     public AdminUsersViewModel(UsersApiClient usersApiClient)
     {

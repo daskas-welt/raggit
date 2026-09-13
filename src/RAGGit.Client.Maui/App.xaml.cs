@@ -25,7 +25,7 @@ public partial class App : Application
     protected override Window CreateWindow(IActivationState? activationState)
     {
 #if MAUI
-        var window = new Window(new AppShell());
+        var window = new Window(new AppShell(_services!));
         // Launch-time role discovery (T021): call GET /api/auth/me once, populate ClientSession.IsAdmin
         _ = Task.Run(async () => await DiscoverRoleAsync());
         return window;
