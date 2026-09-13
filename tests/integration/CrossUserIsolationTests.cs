@@ -129,6 +129,62 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         doc.RootElement.GetProperty("citations").EnumerateArray().Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task History_LegacyRows_NeverAppear_ForAnyPerson()
+    {
+        // FR-008/SC-005: legacy API-key queries (UserId admin/employee) stay in
+        // the DB but are excluded from every person's history and detail.
+        var seed = await SeedTwoUsersAsync();
+        var legacyAdminId = Guid.NewGuid();
+        var legacyEmployeeId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = legacyAdminId,
+                    UserId = "admin",
+                    Prompt = "legacy admin prompt",
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = "legacy admin answer",
+                    CitationIds = Array.Empty<Guid>(),
+                    LatencyMs = 1,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+            await db.InsertQueryAsync(
+                new Query
+                {
+                    Id = legacyEmployeeId,
+                    UserId = "employee",
+                    Prompt = "legacy employee prompt",
+                    RetrievedChunkIds = Array.Empty<Guid>(),
+                    Answer = "legacy employee answer",
+                    CitationIds = Array.Empty<Guid>(),
+                    LatencyMs = 1,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
+        foreach (var token in new[] { seed.AdminToken, seed.EmployeeToken })
+        {
+            var client = CreateBearerClient(token);
+            var page = await GetHistoryAsync(client);
+            page.Items.Should().NotContain(i => i.Id == legacyAdminId.ToString());
+            page.Items.Should().NotContain(i => i.Id == legacyEmployeeId.ToString());
+            page.Items.Should().OnlyContain(i => !i.Prompt.StartsWith("legacy "));
+
+            (await client.GetAsync($"/api/queries/{legacyAdminId}"))
+                .StatusCode.Should()
+                .Be(HttpStatusCode.NotFound);
+            (await client.GetAsync($"/api/queries/{legacyEmployeeId}"))
+                .StatusCode.Should()
+                .Be(HttpStatusCode.NotFound);
+        }
+    }
+
     private async Task<string> GetSubFromTokenAsync(string token)
     {
         var client = _factory.CreateClient();
