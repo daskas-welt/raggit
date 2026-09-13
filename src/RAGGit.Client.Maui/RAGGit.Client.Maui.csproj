@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <!-- Required MAUI TFMs per plan.md (T001). Include plain net8.0 for unit-test reference + workload fallback; MAUI TFMs for device targets. -->
-        <TargetFrameworks>net8.0;net8.0-windows10.0.19041.0;net8.0-android;net8.0-ios</TargetFrameworks>
+        <!-- Required MAUI TFMs per plan.md (T001). VS builds Windows + plain net8.0 (for unit-test reference) by default; android/ios are opt-in (DOTNET_BUILD_ANDROID/IOS=true) to avoid missing-workload errors on SDK 8 without full maui-android workload in VS. -->
+        <TargetFrameworks>net8.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(DOTNET_BUILD_ANDROID)' == 'true'">$(TargetFrameworks);net8.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(DOTNET_BUILD_IOS)' == 'true'">$(TargetFrameworks);net8.0-ios</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
