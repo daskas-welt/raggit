@@ -50,6 +50,48 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
     }
 
     [Fact]
+    public async Task Detail_NonOwnerSeesNothing_ZeroLeakAcrossRoles()
+    {
+        // FR-007/FR-012/SC-002: ≥2 users, ≥20 mixed actions; neither history nor
+        // detail leaks a row across persons, regardless of role (Admin own-only).
+        var seed = await SeedTwoUsersAsync();
+        var adminClient = CreateBearerClient(seed.AdminToken);
+        var employeeClient = CreateBearerClient(seed.EmployeeToken);
+
+        var adminPage = await GetHistoryAsync(adminClient);
+        var employeePage = await GetHistoryAsync(employeeClient);
+
+        var allAdminIds = adminPage.Items.Select(i => i.Id).ToList();
+        var allEmployeeIds = employeePage.Items.Select(i => i.Id).ToList();
+
+        // Disjoint id sets: zero cross-user rows on history.
+        allAdminIds.Should().NotIntersectWith(allEmployeeIds);
+
+        // Detail: each person's rows 404 for the other person (never 200, never 403).
+        foreach (var id in allAdminIds.Take(3))
+        {
+            (await employeeClient.GetAsync($"/api/queries/{id}"))
+                .StatusCode.Should()
+                .Be(HttpStatusCode.NotFound);
+        }
+
+        foreach (var id in allEmployeeIds.Take(3))
+        {
+            (await adminClient.GetAsync($"/api/queries/{id}"))
+                .StatusCode.Should()
+                .Be(HttpStatusCode.NotFound);
+        }
+
+        // Detail: own rows still 200 (isolation did not over-block).
+        (await adminClient.GetAsync($"/api/queries/{allAdminIds.First()}"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.OK);
+        (await employeeClient.GetAsync($"/api/queries/{allEmployeeIds.First()}"))
+            .StatusCode.Should()
+            .Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Detail_QueryWithNoRelevantContent_ReturnsEmptyCitations()
     {
         var (_, employeeToken) = await ProvisionAndLoginAsync(
@@ -113,11 +155,14 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         );
 
         // Mixed actions: admin uploads 2 documents (admin-only endpoint).
+        // Nonce the bytes so a second seed in the shared test DB does not hit
+        // the content-hash dedupe path (which returns 200 instead of 201).
+        var nonce = Guid.NewGuid().ToString("N");
         var adminClient = CreateBearerClient(adminToken);
-        (await UploadTextAsync(adminClient, "iso-admin-1.txt", "Admin doc one."))
+        (await UploadTextAsync(adminClient, $"iso-admin-1-{nonce}.txt", $"Admin doc one {nonce}."))
             .StatusCode.Should()
             .Be(HttpStatusCode.Created);
-        (await UploadTextAsync(adminClient, "iso-admin-2.txt", "Admin doc two."))
+        (await UploadTextAsync(adminClient, $"iso-admin-2-{nonce}.txt", $"Admin doc two {nonce}."))
             .StatusCode.Should()
             .Be(HttpStatusCode.Created);
 
