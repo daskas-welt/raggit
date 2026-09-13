@@ -2,7 +2,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T002 Configure `Auth:*` defaults in `appsettings.json`
+
 
 ## Phase 2: Foundational
 
