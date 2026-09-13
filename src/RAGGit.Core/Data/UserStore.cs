@@ -71,6 +71,30 @@ public sealed class UserStore
         return Map(reader);
     }
 
+    public async Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = _db.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            @"
+            SELECT Id, Username, DisplayName, Role, PasswordHash, IsActive,
+                   FailedAccessCount, LockoutUntil, MustChangePassword,
+                   LastSignInAt, LastPasswordChangedAt, CreatedAt
+            FROM Users
+            ORDER BY CreatedAt;";
+
+        var users = new List<User>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            users.Add(Map(reader));
+        }
+
+        return users;
+    }
+
     public async Task CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
