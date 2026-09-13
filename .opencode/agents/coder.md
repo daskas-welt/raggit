@@ -1,7 +1,7 @@
 ---
 description: Implements tasks from plan/tasks.md — writes code, tests, runs verification, one commit per task
 mode: subagent
-model: opencode-go/mimo-v2.5
+model: opencode-go/muse-spark-1.3-contributor
 temperature: 0.2
 permission:
   edit: allow
