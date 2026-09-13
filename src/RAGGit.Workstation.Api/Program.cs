@@ -188,6 +188,22 @@ builder
                         if (user is null || !user.IsActive || user.IsLockedOut)
                         {
                             context.Fail("Account is inactive or locked.");
+                            return;
+                        }
+
+                        // Refresh mutable claims from the DB so role/displayName changes
+                        // take effect on the very next request (FR-005, SC-006).
+                        var identity = context.Principal?.Identities.FirstOrDefault();
+                        if (identity is not null)
+                        {
+                            identity.RemoveClaim(identity.FindFirst(ClaimTypes.Role));
+                            identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
+
+                            identity.RemoveClaim(identity.FindFirst("displayName"));
+                            identity.AddClaim(new Claim("displayName", user.DisplayName));
+
+                            identity.RemoveClaim(identity.FindFirst("username"));
+                            identity.AddClaim(new Claim("username", user.Username));
                         }
                     }
                     catch
