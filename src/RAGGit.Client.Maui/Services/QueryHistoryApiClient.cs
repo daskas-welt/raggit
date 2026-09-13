@@ -9,7 +9,7 @@ using RAGGit.Core.Models;
 namespace RAGGit.Client.Maui.Services;
 
 /// <summary>
-/// Thin client for GET /api/queries/history (005-per-person-history).
+/// Thin client for GET /api/queries/history + GET /api/queries/{id} (005-per-person-history).
 /// Registered with <see cref="BearerDelegatingHandler"/> so the person JWT
 /// from <see cref="ISessionTokenStore"/> scopes the read; never sends keys.
 /// </summary>
@@ -55,6 +55,40 @@ public sealed class QueryHistoryApiClient
                 cancellationToken
             );
             return page ?? new HistoryPage();
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
+        }
+    }
+
+    /// <summary>
+    /// GET api/queries/{id} — full prompt/answer + citations for one owned query.
+    /// Throws on 401 (unauthorized) / 404 (not found or not owned).
+    /// </summary>
+    public async Task<QueryDetail> GetDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/queries/{id:D}", cancellationToken);
+            await EnsureSuccessOrThrowAsync(response, cancellationToken);
+
+            var detail = await response.Content.ReadFromJsonAsync<QueryDetail>(
+                _jsonOptions,
+                cancellationToken
+            );
+            return detail ?? new QueryDetail { Id = id };
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
