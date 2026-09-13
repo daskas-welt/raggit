@@ -9,6 +9,17 @@ namespace RAGGit.Workstation.Api.Controllers;
 [Authorize]
 public sealed class AuthController : ControllerBase
 {
+    /// <summary>
+    /// Placeholder login endpoint. Returns 401 for any credentials when no accounts
+    /// are provisioned; real authentication is implemented in T018.
+    /// </summary>
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public IActionResult Login([FromBody] LoginRequest request)
+    {
+        return Unauthorized(new { error = "unauthorized" });
+    }
+
     [HttpGet("me")]
     public IActionResult Me()
     {
@@ -30,4 +41,10 @@ public sealed class AuthController : ControllerBase
 
         return Ok(new { identityType = "ApiKey", role });
     }
+}
+
+public sealed class LoginRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }
