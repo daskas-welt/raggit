@@ -60,4 +60,60 @@ public sealed class SessionTokenStoreTests
         var act = () => store.SaveAsync(" ", DateTimeOffset.UtcNow.AddHours(1));
         await act.Should().ThrowAsync<ArgumentException>();
     }
+
+    /// <summary>
+    /// T032: a new process (new store instance over the same storage) restores the
+    /// still-valid session without re-typing credentials.
+    /// </summary>
+    [Fact]
+    public async Task SaveAndGet_NewStoreOverSameStorage_RestoresSession()
+    {
+        var storage = new InMemorySecureStorage();
+        var store = new SessionTokenStore(storage);
+        var expires = DateTimeOffset.UtcNow.AddHours(8);
+        await store.SaveAsync("process-kill-token", expires);
+
+        // Simulate process restart: a brand-new store instance reads the same storage.
+        var restartedStore = new SessionTokenStore(storage);
+        var session = await restartedStore.GetAsync();
+
+        session.Should().NotBeNull();
+        session!.Token.Should().Be("process-kill-token");
+        session.ExpiresAt.Should().BeCloseTo(expires, TimeSpan.FromMilliseconds(1));
+    }
+
+    /// <summary>
+    /// T032: expiry is honoured — a token past its expiry is treated as absent and
+    /// removed from storage.
+    /// </summary>
+    [Fact]
+    public async Task Get_TokenPastExpiry_ReturnsNullAndClearsStore()
+    {
+        var storage = new InMemorySecureStorage();
+        var store = new SessionTokenStore(storage);
+        await store.SaveAsync("nearly-expired", DateTimeOffset.UtcNow.AddTicks(1));
+
+        await Task.Delay(10);
+        var session = await store.GetAsync();
+
+        session.Should().BeNull();
+        (await storage.GetAsync("raggit.session.token")).Should().BeNull();
+    }
+
+    /// <summary>
+    /// T032: the session store never fabricates a session from an API key or any
+    /// other fallback when the person token is missing.
+    /// </summary>
+    [Fact]
+    public async Task Get_TokenMissingButOtherKeysPresent_ReturnsNull()
+    {
+        var storage = new InMemorySecureStorage();
+        await storage.SetAsync("raggit.session.expires_at", DateTimeOffset.UtcNow.AddHours(1).ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+        await storage.SetAsync("some-api-key", "fallback-key");
+
+        var store = new SessionTokenStore(storage);
+        var session = await store.GetAsync();
+
+        session.Should().BeNull();
+    }
 }
