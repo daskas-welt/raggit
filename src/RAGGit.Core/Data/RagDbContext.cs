@@ -151,6 +151,30 @@ public sealed class RagDbContext : IAsyncDisposable
                 LatencyMs INTEGER,
                 CreatedAt TEXT NOT NULL
             );";
+
+        yield return @"
+            CREATE TABLE IF NOT EXISTS Users (
+                Id TEXT PRIMARY KEY,
+                Username TEXT NOT NULL COLLATE NOCASE,
+                DisplayName TEXT NOT NULL,
+                Role TEXT NOT NULL CHECK (Role IN ('Admin','Employee')),
+                PasswordHash TEXT NOT NULL,
+                IsActive INTEGER NOT NULL DEFAULT 1,
+                FailedAccessCount INTEGER NOT NULL DEFAULT 0,
+                LockoutUntil TEXT,
+                MustChangePassword INTEGER NOT NULL DEFAULT 0,
+                LastSignInAt TEXT,
+                LastPasswordChangedAt TEXT NOT NULL,
+                CreatedAt TEXT NOT NULL
+            );";
+
+        yield return @"
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Username
+            ON Users (Username);";
+
+        yield return @"
+            CREATE INDEX IF NOT EXISTS IX_Users_Active
+            ON Users (IsActive);";
     }
 
     public ValueTask DisposeAsync()
