@@ -197,6 +197,101 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         page.Offset.Should().Be(99);
     }
 
+    // T013 [US2] Detail contract per contracts/api.yaml GET /api/queries/{id} (FR-004/FR-007).
+
+    [Fact]
+    public async Task Detail_OwnQuery_Returns200_WithFullAnswerAndOrderedCitations()
+    {
+        var (sub, token) = await ProvisionAndLoginAsync(
+            $"hist-detail-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var queryId = Guid.NewGuid();
+        var chunkA = Guid.NewGuid();
+        var chunkB = Guid.NewGuid();
+        var docId = Guid.NewGuid();
+        await SeedChunksAsync(docId, new[] { (chunkB, 1, "second chunk"), (chunkA, 0, "first chunk") });
+        await SeedQueryAsync(
+            queryId,
+            sub,
+            "detail prompt",
+            "detail full answer",
+            new[] { chunkA, chunkB }
+        );
+
+        var client = CreateBearerClient(token);
+        var response = await client.GetAsync($"/api/queries/{queryId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var detail = await ParseDetailAsync(response);
+        detail.Id.Should().Be(queryId.ToString());
+        detail.Prompt.Should().Be("detail prompt");
+        detail.Answer.Should().Be("detail full answer");
+        detail.Citations.Should().HaveCount(2);
+        detail.Citations.Select(c => c.Ordinal).Should().ContainInOrder(0, 1);
+        detail.Citations.Select(c => c.Text).Should().ContainInOrder("first chunk", "second chunk");
+        detail.Citations.Should().OnlyContain(c => c.DocumentId == docId.ToString());
+    }
+
+    [Fact]
+    public async Task Detail_NonOwner_Returns404()
+    {
+        var (ownerSub, _) = await ProvisionAndLoginAsync(
+            $"hist-owner-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var (_, otherToken) = await ProvisionAndLoginAsync(
+            $"hist-other-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var queryId = Guid.NewGuid();
+        await SeedQueryAsync(queryId, ownerSub, "owner prompt", "owner answer", Array.Empty<Guid>());
+
+        var client = CreateBearerClient(otherToken);
+        var response = await client.GetAsync($"/api/queries/{queryId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Detail_NotFound_Returns404()
+    {
+        var (_, token) = await ProvisionAndLoginAsync(
+            $"hist-missing-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+
+        var client = CreateBearerClient(token);
+        var response = await client.GetAsync($"/api/queries/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Detail_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/queries/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Detail_LegacyRow_Returns404_ForPersonCaller()
+    {
+        var (_, token) = await ProvisionAndLoginAsync(
+            $"hist-legacy-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var legacyId = Guid.NewGuid();
+        await SeedQueryAsync(legacyId, "admin", "legacy prompt", "legacy answer", Array.Empty<Guid>());
+
+        var client = CreateBearerClient(token);
+        var response = await client.GetAsync($"/api/queries/{legacyId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private HttpClient CreateBearerClient(string token)
     {
         var client = _factory.CreateClient();
@@ -244,24 +339,96 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         IEnumerable<(DateTime CreatedAt, string Prompt, string Answer)> rows
     )
     {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
         foreach (var row in rows)
         {
-            await db.InsertQueryAsync(
-                new Query
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = sub,
-                    Prompt = row.Prompt,
-                    RetrievedChunkIds = Array.Empty<Guid>(),
-                    Answer = row.Answer,
-                    CitationIds = Array.Empty<Guid>(),
-                    LatencyMs = 7,
-                    CreatedAt = row.CreatedAt,
-                }
-            );
+            await SeedQueryAsync(Guid.NewGuid(), sub, row.Prompt, row.Answer, Array.Empty<Guid>(), row.CreatedAt);
         }
+    }
+
+    private async Task SeedQueryAsync(
+        Guid id,
+        string sub,
+        string prompt,
+        string answer,
+        IReadOnlyList<Guid> citationIds,
+        DateTime? createdAt = null
+    )
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        await db.InsertQueryAsync(
+            new Query
+            {
+                Id = id,
+                UserId = sub,
+                Prompt = prompt,
+                RetrievedChunkIds = Array.Empty<Guid>(),
+                Answer = answer,
+                CitationIds = citationIds,
+                LatencyMs = 7,
+                CreatedAt = createdAt ?? DateTime.UtcNow,
+            }
+        );
+    }
+
+    private async Task SeedChunksAsync(Guid documentId, IEnumerable<(Guid Id, int Ordinal, string Text)> chunks)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        await using var connection = db.CreateConnection();
+        await connection.OpenAsync();
+
+        using (var docCommand = connection.CreateCommand())
+        {
+            docCommand.CommandText =
+                @"INSERT OR IGNORE INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt)
+                  VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdAt);";
+            docCommand.Parameters.AddWithValue("@id", documentId.ToString());
+            docCommand.Parameters.AddWithValue("@filename", "detail-doc.txt");
+            docCommand.Parameters.AddWithValue("@mime", "text/plain");
+            docCommand.Parameters.AddWithValue("@size", 64);
+            docCommand.Parameters.AddWithValue("@hash", $"detail-{documentId:N}");
+            docCommand.Parameters.AddWithValue("@status", "Ready");
+            docCommand.Parameters.AddWithValue("@createdBy", "seed");
+            docCommand.Parameters.AddWithValue("@createdAt", DateTime.UtcNow.ToString("O"));
+            await docCommand.ExecuteNonQueryAsync();
+        }
+
+        foreach (var chunk in chunks)
+        {
+            using var chunkCommand = connection.CreateCommand();
+            chunkCommand.CommandText =
+                @"INSERT OR IGNORE INTO Chunks (Id, DocumentId, Ordinal, Text, TokenCount)
+                  VALUES (@id, @documentId, @ordinal, @text, @tokens);";
+            chunkCommand.Parameters.AddWithValue("@id", chunk.Id.ToString());
+            chunkCommand.Parameters.AddWithValue("@documentId", documentId.ToString());
+            chunkCommand.Parameters.AddWithValue("@ordinal", chunk.Ordinal);
+            chunkCommand.Parameters.AddWithValue("@text", chunk.Text);
+            chunkCommand.Parameters.AddWithValue("@tokens", chunk.Text.Length);
+            await chunkCommand.ExecuteNonQueryAsync();
+        }
+    }
+
+    private static async Task<QueryDetailShape> ParseDetailAsync(HttpResponseMessage response)
+    {
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = doc.RootElement;
+        return new QueryDetailShape
+        {
+            Id = root.GetProperty("id").GetString()!,
+            Prompt = root.GetProperty("prompt").GetString()!,
+            Answer = root.GetProperty("answer").GetString()!,
+            Citations = root.GetProperty("citations")
+                .EnumerateArray()
+                .Select(c => new QueryCitationShape
+                {
+                    DocumentId = c.GetProperty("documentId").GetString()!,
+                    ChunkId = c.GetProperty("chunkId").GetString()!,
+                    Text = c.GetProperty("text").GetString()!,
+                    Ordinal = c.GetProperty("ordinal").GetInt32(),
+                })
+                .ToList(),
+        };
     }
 
     private static async Task<HistoryPageShape> ParsePageAsync(HttpResponseMessage response)
@@ -310,5 +477,27 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         public int CitationCount { get; set; }
 
         public string CreatedAt { get; set; } = string.Empty;
+    }
+
+    private sealed class QueryDetailShape
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Prompt { get; set; } = string.Empty;
+
+        public string Answer { get; set; } = string.Empty;
+
+        public List<QueryCitationShape> Citations { get; set; } = new();
+    }
+
+    private sealed class QueryCitationShape
+    {
+        public string DocumentId { get; set; } = string.Empty;
+
+        public string ChunkId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public int Ordinal { get; set; }
     }
 }
