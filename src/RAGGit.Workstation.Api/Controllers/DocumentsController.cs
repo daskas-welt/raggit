@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -75,7 +76,8 @@ public sealed class DocumentsController : ControllerBase
             return BadRequest(new { error = $"unsupported type: {extension}" });
         }
 
-        var createdBy = User.Identity?.Name ?? "unknown";
+        var createdBy =
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "unknown";
         _logger.LogInformation(
             "Admin uploading {Filename} ({Mime}) as {User}",
             file.FileName,

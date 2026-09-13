@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -65,7 +66,8 @@ public sealed class QueryController : ControllerBase
         }
 
         var topK = Math.Clamp(request.TopK, 1, 5);
-        var userId = User.Identity?.Name ?? "unknown";
+        var userId =
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "unknown";
 
         try
         {
