@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pull="clr-namespace:Syncfusion.Maui.PullToRefresh;assembly=Syncfusion.Maui.PullToRefresh"
+    xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
+    x:Class="RAGGit.Client.Maui.Views.HistoryView"
+    Title="History"
+>
+    <!-- NOTE (T012): CollectionView used instead of SfListView — Syncfusion.Maui.ListView
+         is not referenced and T001 forbids new NuGet packages. Same ItemTemplate/EmptyView/
+         LoadMore contract via RemainingItemsThreshold + SfPullToRefresh (both in-house). -->
+    <Grid RowDefinitions="Auto,*" Padding="12">
+        <Label
+            Grid.Row="0"
+            Text="My query history"
+            FontSize="18"
+            FontAttributes="Bold"
+            Margin="0,0,0,8"
+        />
+        <Grid Grid.Row="1">
+            <toolkit:SfShimmer IsActive="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <pull:SfPullToRefresh
+                x:Name="PullToRefresh"
+                IsRefreshing="{Binding IsBusy}"
+                Refreshing="OnPullRefreshing"
+            >
+                <CollectionView
+                    ItemsSource="{Binding Items}"
+                    RemainingItemsThreshold="2"
+                    RemainingItemsThresholdReached="OnLoadMore"
+                >
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10" StrokeShape="RoundRectangle 6" Margin="0,4">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label
+                                        Text="{Binding PromptPreview}"
+                                        FontAttributes="Bold"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="2"
+                                    />
+                                    <Label
+                                        Text="{Binding AnswerPreview}"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="3"
+                                    />
+                                    <Label FontSize="12" TextColor="Gray">
+                                        <Label.Text>
+                                            <MultiBinding StringFormat="Citations: {0} | {1}ms | {2}">
+                                                <Binding Path="CitationCount" />
+                                                <Binding Path="LatencyMs" />
+                                                <Binding Path="CreatedAt" />
+                                            </MultiBinding>
+                                        </Label.Text>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            Spacing="8"
+                        >
+                            <Label Text="No queries yet." HorizontalOptions="Center" />
+                            <Label
+                                Text="Ask a question to see it here."
+                                FontSize="12"
+                                TextColor="Gray"
+                                HorizontalOptions="Center"
+                            />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <ActivityIndicator
+                            IsRunning="{Binding IsBusy}"
+                            IsVisible="{Binding HasMore}"
+                            HorizontalOptions="Center"
+                            Margin="0,8"
+                        />
+                    </CollectionView.Footer>
+                </CollectionView>
+            </pull:SfPullToRefresh>
+        </Grid>
+    </Grid>
+</ContentPage>

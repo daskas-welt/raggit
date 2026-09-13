@@ -16,6 +16,11 @@
         />
         <ShellContent Title="Ask" ContentTemplate="{DataTemplate views:QueryView}" Route="query" />
         <ShellContent
+            Title="History"
+            ContentTemplate="{DataTemplate views:HistoryView}"
+            Route="history"
+        />
+        <ShellContent
             Title="Upload"
             ContentTemplate="{DataTemplate views:UploadView}"
             Route="upload"
