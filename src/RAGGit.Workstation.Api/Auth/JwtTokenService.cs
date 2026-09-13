@@ -54,6 +54,11 @@ public sealed class JwtTokenService
     }
 
     /// <summary>
+    /// Token lifetime in hours for callers that need <c>expires_in</c> calculations.
+    /// </summary>
+    public int TokenLifetimeHours => _options.TokenLifetimeHours;
+
+    /// <summary>
     /// Issues an 8-hour JWT identifying the person.
     /// </summary>
     public string IssueToken(User user)
@@ -67,8 +72,8 @@ public sealed class JwtTokenService
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new Claim(ClaimTypes.Name, user.DisplayName),
+            new Claim("username", user.Username),
+            new Claim("displayName", user.DisplayName),
         };
 
         var handler = new JwtSecurityTokenHandler();

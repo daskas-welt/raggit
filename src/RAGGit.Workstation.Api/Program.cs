@@ -124,6 +124,11 @@ builder.Services.Configure<JwtTokenServiceOptions>(options =>
     options.TokenLifetimeHours = tokenLifetimeHours;
 });
 builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.Configure<LockoutPolicyOptions>(options =>
+{
+    options.Threshold = lockoutThreshold;
+    options.Minutes = lockoutMinutes;
+});
 
 builder
     .Services.AddAuthentication(ApiKeyAuthOptions.Scheme)
@@ -156,6 +161,13 @@ builder
 
             options.Events = new JwtBearerEvents
             {
+                OnChallenge = context =>
+                {
+                    // Suppress the default JWT challenge write so the default ApiKey handler
+                    // can produce the single 401 JSON body for missing/invalid credentials.
+                    context.HandleResponse();
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = async context =>
                 {
                     var subClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier);
@@ -186,7 +198,13 @@ builder
         }
     );
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .AddAuthenticationSchemes(ApiKeyAuthOptions.Scheme, JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Configuration
 var vectorDbPath = builder.Configuration["VectorDb:Path"] ?? "./data/lancedb";

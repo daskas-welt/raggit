@@ -46,10 +46,9 @@ public sealed class JwtTokenServiceTests
         jwt.Audiences.Should().Contain("raggit-workstation");
         jwt.Subject.Should().Be(user.Id.ToString());
         jwt.Claims.Should().ContainSingle(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+        jwt.Claims.Should().ContainSingle(c => c.Type == "username" && c.Value == "ada");
         jwt.Claims.Should()
-            .ContainSingle(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == "ada");
-        jwt.Claims.Should()
-            .ContainSingle(c => c.Type == ClaimTypes.Name && c.Value == "Ada Lovelace");
+            .ContainSingle(c => c.Type == "displayName" && c.Value == "Ada Lovelace");
         (jwt.ValidTo - DateTime.UtcNow)
             .Should()
             .BeCloseTo(TimeSpan.FromHours(8), TimeSpan.FromMinutes(1));
