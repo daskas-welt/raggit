@@ -57,18 +57,18 @@
 
 ### Tests for US2
 
-- [ ] T015 [P] [US2] Contract test `POST /api/auth/login` in `tests/contract/AuthLoginContractTests.cs` — success 200 `{access_token, token_type, expires_in}`, unknown vs wrong password identical 401, locked → 429 Retry-After, inactive → 401
-- [ ] T016 [P] [US2] Contract test `GET /api/auth/me` additive in `tests/contract/AuthMeAdditiveContractTests.cs` — Local Bearer → `{identityType:"Local", role, displayName, username, sub}`, ApiKey → 1.2.0 shape, unknown fields ignored
-- [ ] T017 [P] [US2] Integration test attribution in `tests/integration/IdentityAttributionTests.cs` — bob Employee login → Bearer upload → `Documents.CreatedBy == bob sub`; `POST /api/query` → `Queries.UserId == bob sub`; Employee upload attempt → 403
+- [x] T015 [P] [US2] Contract test `POST /api/auth/login` in `tests/contract/AuthLoginContractTests.cs` — success 200 `{access_token, token_type, expires_in}`, unknown vs wrong password identical 401, locked → 429 Retry-After, inactive → 401
+- [x] T016 [P] [US2] Contract test `GET /api/auth/me` additive in `tests/contract/AuthMeAdditiveContractTests.cs` — Local Bearer → `{identityType:"Local", role, displayName, username, sub}`, ApiKey → 1.2.0 shape, unknown fields ignored
+- [x] T017 [P] [US2] Integration test attribution in `tests/integration/IdentityAttributionTests.cs` — bob Employee login → Bearer upload → `Documents.CreatedBy == bob sub`; `POST /api/query` → `Queries.UserId == bob sub`; Employee upload attempt → 403
 
 ### Implementation for US2
 
-- [ ] T018 [US2] Implement `src/RAGGit.Workstation.Api/Controllers/AuthController.cs` — `POST /api/auth/login` (HTTPS only, PBKDF2 verify, lockout check, 401/429/503, issue JWT) + `GET /api/auth/me` additive envelope (depends on T005, T007-T009)
-- [ ] T019 [US2] Implement `src/RAGGit.Workstation.Api/Auth/LockoutPolicy.cs` — 5 consecutive fails → 15m LockoutUntil persisted on Users, FixedTimeEquals, reset on success (depends on T007)
-- [ ] T020 [US2] Touch Documents/Queries attribution path — ensure `CreatedBy`/`UserId` write `User.Id` uuid for Local sessions, legacy literals for ApiKey (no column change) (depends on T006, T018)
-- [ ] T021 [US2] Add `src/RAGGit.Client.Maui/Services/SessionTokenStore.cs` — `SecureStorage` `raggit.session.token` + `expires_at` (depends on T008)
-- [ ] T022 [US2] Add `src/RAGGit.Client.Maui/Services/BearerDelegatingHandler.cs` — attach `Authorization: Bearer` when token exists, 401 → clear cache + re-prompt; keep `ApiKeyDelegatingHandler` for bootstrap only, no silent fallback (depends on T021)
-- [ ] T023 [US2] Update `src/RAGGit.Client.Maui/Services/AuthApiClient.cs` — `LoginAsync` + `RefreshAsync` (optional P3) using HTTPS (depends on T021)
+- [x] T018 [US2] Implement `src/RAGGit.Workstation.Api/Controllers/AuthController.cs` — `POST /api/auth/login` (HTTPS only, PBKDF2 verify, lockout check, 401/429/503, issue JWT) + `GET /api/auth/me` additive envelope (depends on T005, T007-T009)
+- [x] T019 [US2] Implement `src/RAGGit.Workstation.Api/Auth/LockoutPolicy.cs` — 5 consecutive fails → 15m LockoutUntil persisted on Users, FixedTimeEquals, reset on success (depends on T007)
+- [x] T020 [US2] Touch Documents/Queries attribution path — ensure `CreatedBy`/`UserId` write `User.Id` uuid for Local sessions, legacy literals for ApiKey (no column change) (depends on T006, T018)
+- [x] T021 [US2] Add `src/RAGGit.Client.Maui/Services/SessionTokenStore.cs` — `SecureStorage` `raggit.session.token` + `expires_at` (depends on T008)
+- [x] T022 [US2] Add `src/RAGGit.Client.Maui/Services/BearerDelegatingHandler.cs` — attach `Authorization: Bearer` when token exists, 401 → clear cache + re-prompt; keep `ApiKeyDelegatingHandler` for bootstrap only, no silent fallback (depends on T021)
+- [x] T023 [US2] Update `src/RAGGit.Client.Maui/Services/AuthApiClient.cs` — `LoginAsync` + `RefreshAsync` (optional P3) using HTTPS (depends on T021)
 
 **Checkpoint**: US2 independently functional — sign-in in <10s on LAN, 100% attribution, no enumeration.
 
