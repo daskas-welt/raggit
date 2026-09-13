@@ -210,7 +210,10 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         var chunkA = Guid.NewGuid();
         var chunkB = Guid.NewGuid();
         var docId = Guid.NewGuid();
-        await SeedChunksAsync(docId, new[] { (chunkB, 1, "second chunk"), (chunkA, 0, "first chunk") });
+        await SeedChunksAsync(
+            docId,
+            new[] { (chunkB, 1, "second chunk"), (chunkA, 0, "first chunk") }
+        );
         await SeedQueryAsync(
             queryId,
             sub,
@@ -245,7 +248,13 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
             UserRole.Employee
         );
         var queryId = Guid.NewGuid();
-        await SeedQueryAsync(queryId, ownerSub, "owner prompt", "owner answer", Array.Empty<Guid>());
+        await SeedQueryAsync(
+            queryId,
+            ownerSub,
+            "owner prompt",
+            "owner answer",
+            Array.Empty<Guid>()
+        );
 
         var client = CreateBearerClient(otherToken);
         var response = await client.GetAsync($"/api/queries/{queryId}");
@@ -284,7 +293,13 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
             UserRole.Employee
         );
         var legacyId = Guid.NewGuid();
-        await SeedQueryAsync(legacyId, "admin", "legacy prompt", "legacy answer", Array.Empty<Guid>());
+        await SeedQueryAsync(
+            legacyId,
+            "admin",
+            "legacy prompt",
+            "legacy answer",
+            Array.Empty<Guid>()
+        );
 
         var client = CreateBearerClient(token);
         var response = await client.GetAsync($"/api/queries/{legacyId}");
@@ -341,7 +356,14 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
     {
         foreach (var row in rows)
         {
-            await SeedQueryAsync(Guid.NewGuid(), sub, row.Prompt, row.Answer, Array.Empty<Guid>(), row.CreatedAt);
+            await SeedQueryAsync(
+                Guid.NewGuid(),
+                sub,
+                row.Prompt,
+                row.Answer,
+                Array.Empty<Guid>(),
+                row.CreatedAt
+            );
         }
     }
 
@@ -371,7 +393,10 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         );
     }
 
-    private async Task SeedChunksAsync(Guid documentId, IEnumerable<(Guid Id, int Ordinal, string Text)> chunks)
+    private async Task SeedChunksAsync(
+        Guid documentId,
+        IEnumerable<(Guid Id, int Ordinal, string Text)> chunks
+    )
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
