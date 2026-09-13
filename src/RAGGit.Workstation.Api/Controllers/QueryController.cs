@@ -53,8 +53,12 @@ public sealed class QueryController : ControllerBase
 
     /// <summary>
     /// GET /api/queries/history — own query history, paginated, sub-scoped (005).
-    /// 401 when no person identity (e.g. legacy API-key caller); 200 with empty
-    /// items when the person has no queries.
+    /// 401 when no person identity (e.g. legacy API-key caller — the ApiKey
+    /// handler mints no NameIdentifier/sub claim, so it cannot bypass);
+    /// 200 with empty items when the person has no queries.
+    /// Isolation (FR-007/FR-008): store filters UserId == sub AND NOT IN
+    /// legacy; deactivation/expiry enforced per-request by JwtBearer +
+    /// OnTokenValidated (004), never bypassed here.
     /// </summary>
     [HttpGet("/api/queries/history")]
     public async Task<IActionResult> History(
@@ -75,7 +79,8 @@ public sealed class QueryController : ControllerBase
 
     /// <summary>
     /// GET /api/queries/{id} — full prompt/answer + citations iff owned (005).
-    /// 401 when no person identity; 404 when not found, not owned, or legacy.
+    /// 401 when no person identity; 404 when not found, not owned, or legacy
+    /// (404 — never 403 — so non-owners cannot enumerate query ids).
     /// The :guid constraint keeps /api/queries/history from matching here.
     /// </summary>
     [HttpGet("/api/queries/{id:guid}")]
