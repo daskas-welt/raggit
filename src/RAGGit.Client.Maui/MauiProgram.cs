@@ -99,6 +99,13 @@ public static class MauiProgram
                     session
                 )
             );
+            builder.Services.AddTransient<ViewModels.HistoryViewModel>(
+                sp => new ViewModels.HistoryViewModel(
+                    new Services.QueryHistoryApiClient(
+                        new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                    )
+                )
+            );
             // Auth + Users client stubs (never called due to invalid config)
             builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(
                 new HttpClient { BaseAddress = new Uri("http://invalid-config") }
@@ -167,6 +174,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ViewModels.LoginViewModel>();
         builder.Services.AddTransient<ViewModels.LibraryViewModel>();
         builder.Services.AddTransient<ViewModels.QueryViewModel>();
+        builder.Services.AddTransient<ViewModels.HistoryViewModel>();
         builder.Services.AddTransient<ViewModels.UploadViewModel>();
         builder.Services.AddTransient<ViewModels.AdminUsersViewModel>();
         builder.Services.AddTransient<Views.LoginView>();
