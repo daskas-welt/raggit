@@ -2,9 +2,9 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "004-Identity — Login → Bearer Use → Admin Management",
+    "title": "004-Identity — Login → Bearer Use → Refresh → Admin Management",
     "quality_profile": "showcase",
-    "viewBox": [820, 900]
+    "viewBox": [820, 1000]
   },
   "participants": [
     { "id": "client", "type": "frontend", "label": "MAUI Client", "sublabel": "Login + Bearer" },
@@ -16,8 +16,8 @@
   ],
   "segments": [
     { "from": 120, "to": 300, "label": "Provision + Login" },
-    { "from": 310, "to": 550, "label": "Bearer Use" },
-    { "from": 570, "to": 790, "label": "Admin Manage" }
+    { "from": 310, "to": 700, "label": "Bearer Use + Refresh" },
+    { "from": 710, "to": 910, "label": "Admin Manage / Expiry" }
   ],
   "messages": [
     { "from": "client", "to": "api", "y": 170, "label": "POST /auth/login HTTPS", "variant": "emphasis" },
@@ -27,17 +27,22 @@
     { "from": "jwt", "to": "api", "y": 290, "label": "issue JWT", "variant": "return" },
     { "from": "api", "to": "client", "y": 335, "label": "200 {token, 8h}", "variant": "return" },
     { "from": "client", "to": "storage", "y": 370, "label": "cache token" },
-    { "from": "client", "to": "api", "y": 400, "label": "GET /auth/me Bearer" },
-    { "from": "api", "to": "jwt", "y": 420, "label": "validate Bearer" },
-    { "from": "jwt", "to": "api", "y": 450, "label": "role + displayName", "variant": "return" },
-    { "from": "api", "to": "client", "y": 480, "label": "200 Local/Admin", "variant": "return" },
-    { "from": "client", "to": "api", "y": 530, "label": "POST /documents Bearer" },
-    { "from": "api", "to": "docs", "y": 545, "label": "CreatedBy = person id" },
-    { "from": "client", "to": "api", "y": 620, "label": "POST /users Bearer (Admin)" },
-    { "from": "api", "to": "users", "y": 660, "label": "create / deactivate" },
-    { "from": "api", "to": "client", "y": 700, "label": "201 / 204" },
-    { "from": "client", "to": "api", "y": 748, "label": "Bearer expired → 401" },
-    { "from": "api", "to": "client", "y": 782, "label": "re-login prompt" }
+    { "from": "client", "to": "api", "y": 410, "label": "GET /auth/me Bearer" },
+    { "from": "api", "to": "jwt", "y": 435, "label": "validate Bearer" },
+    { "from": "jwt", "to": "api", "y": 465, "label": "role + displayName", "variant": "return" },
+    { "from": "api", "to": "client", "y": 495, "label": "200 Local/Admin", "variant": "return" },
+    { "from": "client", "to": "api", "y": 540, "label": "POST /documents Bearer" },
+    { "from": "api", "to": "docs", "y": 560, "label": "CreatedBy = person id" },
+    { "from": "client", "to": "api", "y": 600, "label": "POST /auth/refresh Bearer" },
+    { "from": "api", "to": "jwt", "y": 630, "label": "validate + re-issue" },
+    { "from": "jwt", "to": "api", "y": 660, "label": "new 8h token", "variant": "return" },
+    { "from": "api", "to": "client", "y": 690, "label": "200 new token", "variant": "return" },
+    { "from": "client", "to": "storage", "y": 720, "label": "update cache" },
+    { "from": "client", "to": "api", "y": 760, "label": "POST /users Bearer (Admin)" },
+    { "from": "api", "to": "users", "y": 795, "label": "create / deactivate" },
+    { "from": "api", "to": "client", "y": 825, "label": "201 / 204" },
+    { "from": "client", "to": "api", "y": 870, "label": "Bearer expired → 401" },
+    { "from": "api", "to": "client", "y": 900, "label": "re-login prompt" }
   ],
   "activations": [
     { "participant": "api", "from": 140, "to": 330, "type": "backend" },
@@ -45,14 +50,16 @@
     { "participant": "users", "from": 220, "to": 270, "type": "database" },
     { "participant": "api", "from": 370, "to": 500, "type": "backend" },
     { "participant": "jwt", "from": 410, "to": 460, "type": "security" },
-    { "participant": "api", "from": 510, "to": 570, "type": "backend" },
-    { "participant": "api", "from": 610, "to": 710, "type": "backend" },
-    { "participant": "users", "from": 650, "to": 670, "type": "database" },
-    { "participant": "api", "from": 730, "to": 790, "type": "backend" }
+    { "participant": "api", "from": 510, "to": 565, "type": "backend" },
+    { "participant": "api", "from": 575, "to": 695, "type": "backend" },
+    { "participant": "jwt", "from": 605, "to": 650, "type": "security" },
+    { "participant": "api", "from": 720, "to": 835, "type": "backend" },
+    { "participant": "users", "from": 780, "to": 805, "type": "database" },
+    { "participant": "api", "from": 850, "to": 910, "type": "backend" }
   ],
   "cards": [
     { "dot": "cyan", "title": "Login", "items": ["HTTPS + PBKDF2; JWT 8h cached in SecureStorage", "GET /auth/me is additive; light theme ?theme=light"] },
-    { "dot": "emerald", "title": "Use", "items": ["Bearer on every call; Docs.CreatedBy = stable person id", "No shared-key fallback; offline LAN only"] },
+    { "dot": "emerald", "title": "Use", "items": ["Bearer on every call; Docs.CreatedBy = stable person id", "POST /auth/refresh re-issues 8h token before expiry; offline LAN only"] },
     { "dot": "rose", "title": "Manage", "items": ["Admin /users CRUD; deactivated → next request 401", "Lockout 5/15m; expiry → re-login"] }
   ]
 }
