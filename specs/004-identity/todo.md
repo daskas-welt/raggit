@@ -6,7 +6,6 @@
 
 ## Phase 2: Foundational
 
-- [ ] T009 Add `JwtTokenService.cs`
 
 ## Follow-ups
 

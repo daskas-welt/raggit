@@ -63,6 +63,12 @@ var lockoutMinutes = builder.Configuration.GetValue<int?>("Auth:LockoutMinutes")
 var jwtKey = AuthKeyLoader.LoadOrCreateKey(jwtSigningKeyPath);
 
 builder.Services.AddSingleton<UserStore>();
+builder.Services.Configure<JwtTokenServiceOptions>(options =>
+{
+    options.SigningKey = jwtKey;
+    options.TokenLifetimeHours = tokenLifetimeHours;
+});
+builder.Services.AddSingleton<JwtTokenService>();
 
 builder
     .Services.AddAuthentication(ApiKeyAuthOptions.Scheme)

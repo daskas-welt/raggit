@@ -8,3 +8,4 @@
 - [x] T006 Extend `RagDbContext` with `Users` DDL [DONE: 2026-09-13] [By: coder]
 - [x] T007 Add `UserStore.cs` [DONE: 2026-09-13] [By: coder]
 - [x] T008 Configure `Program.cs` JwtBearer HS256 + OnTokenValidated + HTTPS [DONE: 2026-09-13] [By: coder]
+- [x] T009 Add `JwtTokenService.cs` [DONE: 2026-09-13] [By: coder]
