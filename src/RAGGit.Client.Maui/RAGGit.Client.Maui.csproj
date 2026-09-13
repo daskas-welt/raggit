@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <!-- Required MAUI TFMs per plan.md (T001). Fallback to plain net8.0 outside Visual Studio so the solution builds when the .NET MAUI workload is not installed. -->
-        <TargetFrameworks>net8.0-windows10.0.19041.0;net8.0-ios;net8.0-android</TargetFrameworks>
-        <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'"
-            >net8.0</TargetFrameworks>
+        <!-- Required MAUI TFMs per plan.md (T001). Include plain net8.0 for unit-test reference + workload fallback; MAUI TFMs for device targets. -->
+        <TargetFrameworks>net8.0;net8.0-windows10.0.19041.0;net8.0-android;net8.0-ios</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UseMaui Condition="'$(TargetFramework)' != 'net8.0'">true</UseMaui>
