@@ -9,4 +9,5 @@
 
 ## Follow-ups
 
+- [ ] [Priority: Low] Override `Auth:JwtSigningKeyPath` in `TestApiFactory` to a temp path and inject it into `JwtTokenServiceOptions` so contract tests do not share `data/auth.key`.
 - [ ] [Priority: Low] Final cleanup `dotnet csharpier check .` and full `dotnet test` after T042.
