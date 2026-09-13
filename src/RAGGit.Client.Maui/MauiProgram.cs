@@ -144,6 +144,13 @@ public static class MauiProgram
             .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
 
         builder
+            .Services.AddHttpClient<Services.QueryHistoryApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+            })
+            .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
+
+        builder
             .Services.AddHttpClient<Services.AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
