@@ -6,7 +6,6 @@
 
 ## Phase 2: Foundational
 
-- [ ] T004 Create `User.cs` entity
 - [ ] T005 Implement `PasswordHasher.cs` (PBKDF2)
 - [ ] T006 Extend `RagDbContext` with `Users` DDL
 - [ ] T007 Add `UserStore.cs`
