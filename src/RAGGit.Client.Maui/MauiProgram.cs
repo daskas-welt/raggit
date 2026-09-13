@@ -106,38 +106,43 @@ public static class MauiProgram
             return builder.Build();
         }
 
-        // Valid config — register named HttpClients with BaseAddress + X-Api-Key handler
+        // Valid config — token cache + Bearer handler for per-person actions;
+        // ApiKey handler remains registered for bootstrap-only use.
         builder.Services.AddSingleton(session);
         builder.Services.AddSingleton(new WorkstationConnectionState());
 #if MAUI
         builder.Services.AddSingleton<Services.IFilePicker, Services.MauiFilePicker>();
+        builder.Services.AddSingleton<Services.ISecureStorage, Services.SecureStorageAdapter>();
 #else
         builder.Services.AddSingleton<Services.IFilePicker, Services.DummyFilePicker>();
+        builder.Services.AddSingleton<Services.ISecureStorage, Services.InMemorySecureStorage>();
 #endif
+        builder.Services.AddSingleton<Services.ISessionTokenStore, Services.SessionTokenStore>();
         builder.Services.AddTransient<Services.ApiKeyDelegatingHandler>(
             _ => new Services.ApiKeyDelegatingHandler(session.ApiKey)
         );
+        builder.Services.AddTransient<Services.BearerDelegatingHandler>();
 
         builder
             .Services.AddHttpClient<Services.DocumentsApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
             })
-            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+            .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
 
         builder
             .Services.AddHttpClient<Services.QueryApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
             })
-            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+            .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
 
         builder
             .Services.AddHttpClient<Services.AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
             })
-            .AddHttpMessageHandler<Services.ApiKeyDelegatingHandler>();
+            .AddHttpMessageHandler<Services.BearerDelegatingHandler>();
 
         builder.Services.AddTransient<ViewModels.LibraryViewModel>();
         builder.Services.AddTransient<ViewModels.QueryViewModel>();
