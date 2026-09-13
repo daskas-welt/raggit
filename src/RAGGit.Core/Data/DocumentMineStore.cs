@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Core.Models;
@@ -21,9 +22,9 @@ public sealed class DocumentMineStore
 
     /// <summary>
     /// Lists the caller's own documents (CreatedBy == sub, legacy excluded),
-    /// ordered CreatedAt DESC, Id DESC. Implemented in T025.
+    /// ordered CreatedAt DESC, Id DESC. Offline: SQLite-only, no Ollama/LanceDB/HTTP.
     /// </summary>
-    public Task<DocumentsMinePage> ListAsync(
+    public async Task<DocumentsMinePage> ListAsync(
         string sub,
         int? limit,
         int? offset,
@@ -31,7 +32,58 @@ public sealed class DocumentMineStore
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sub);
-        throw new NotImplementedException("Implemented in T025.");
+
+        // Same pagination envelope as history (data-model.md): clamp, COUNT, page.
+        var clampedLimit = QueryHistoryStore.ClampLimit(limit);
+        var clampedOffset = QueryHistoryStore.ClampOffset(offset);
+
+        // offline: SQLite-only read over the Documents table.
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        int total;
+        using (var countCommand = connection.CreateCommand())
+        {
+            countCommand.CommandText = CountSql;
+            countCommand.Parameters.AddWithValue("@sub", sub);
+            total = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken));
+        }
+
+        var items = new List<DocumentMineItem>();
+        using (var listCommand = connection.CreateCommand())
+        {
+            listCommand.CommandText = ListSql;
+            listCommand.Parameters.AddWithValue("@sub", sub);
+            listCommand.Parameters.AddWithValue("@limit", clampedLimit);
+            listCommand.Parameters.AddWithValue("@offset", clampedOffset);
+
+            await using var reader = await listCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                items.Add(
+                    new DocumentMineItem
+                    {
+                        Id = Guid.Parse(reader.GetString(0)),
+                        Filename = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                        Size = reader.IsDBNull(2) ? 0 : reader.GetInt64(2),
+                        Status = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                        CreatedAt = DateTime.Parse(
+                            reader.GetString(4),
+                            null,
+                            System.Globalization.DateTimeStyles.RoundtripKind
+                        ),
+                    }
+                );
+            }
+        }
+
+        return new DocumentsMinePage
+        {
+            Items = items,
+            Total = total,
+            Limit = clampedLimit,
+            Offset = clampedOffset,
+        };
     }
 
     internal const string ListSql =
