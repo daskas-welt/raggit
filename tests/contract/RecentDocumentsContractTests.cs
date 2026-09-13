@@ -128,6 +128,24 @@ public sealed class RecentDocumentsContractTests : IClassFixture<TestApiFactory>
         page.Offset.Should().Be(99);
     }
 
+    [Fact]
+    public async Task Mine_Body_NeverContainsPasswordHashOrCreatedBy()
+    {
+        // T034: mine projection must never serialize credentials or owner keys.
+        var (sub, token) = await ProvisionAndLoginAsync(
+            $"mine-noleak-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        await SeedDocumentsAsync(sub, new[] { (DateTime.UtcNow, "noleak-doc.txt") });
+
+        var client = CreateBearerClient(token);
+        var body = await (await client.GetAsync("/api/documents/mine")).Content.ReadAsStringAsync();
+
+        body.ToLowerInvariant().Should().NotContain("passwordhash");
+        body.ToLowerInvariant().Should().NotContain("createdby");
+        body.Should().NotContain(sub);
+    }
+
     private HttpClient CreateBearerClient(string token)
     {
         var client = _factory.CreateClient();

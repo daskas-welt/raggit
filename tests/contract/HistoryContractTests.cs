@@ -307,6 +307,35 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task History_And_Detail_Bodies_NeverContainPasswordHashOrUserId()
+    {
+        // T034: history/detail projections must never serialize credentials or
+        // owner keys. The 404-not-403 half is locked by Detail_NonOwner_Returns404;
+        // this locks the no-leak half on the raw bodies.
+        var (sub, token) = await ProvisionAndLoginAsync(
+            $"hist-noleak-{Guid.NewGuid():N}",
+            UserRole.Employee
+        );
+        var queryId = Guid.NewGuid();
+        await SeedQueryAsync(queryId, sub, "leak prompt", "leak answer", Array.Empty<Guid>());
+
+        var client = CreateBearerClient(token);
+        var historyBody = await (
+            await client.GetAsync("/api/queries/history")
+        ).Content.ReadAsStringAsync();
+        var detailBody = await (
+            await client.GetAsync($"/api/queries/{queryId}")
+        ).Content.ReadAsStringAsync();
+
+        historyBody.ToLowerInvariant().Should().NotContain("passwordhash");
+        historyBody.ToLowerInvariant().Should().NotContain("userid");
+        historyBody.Should().NotContain(sub);
+        detailBody.ToLowerInvariant().Should().NotContain("passwordhash");
+        detailBody.ToLowerInvariant().Should().NotContain("userid");
+        detailBody.Should().NotContain(sub);
+    }
+
     private HttpClient CreateBearerClient(string token)
     {
         var client = _factory.CreateClient();
