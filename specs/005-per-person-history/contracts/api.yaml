@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant) — 005-per-person-history delta
+  version: 1.4.0
+  description: >
+    ADDITIVE MINOR 1.3.0 → 1.4.0 for 005-per-person-history (FR-011):
+    adds paginated per-person query history and recent-documents reads
+    scoped to JWT sub, zero cross-user leak, legacy admin/employee excluded,
+    stable pagination, offline LAN-only, no breaking changes.
+    All 1.3.0 paths/schemas/required fields preserved; clients MUST ignore
+    unknown fields. Base servers/security unchanged (ApiKey + Bearer).
+
+servers:
+  - url: https://ai-workstation.local:5001
+    description: LAN HTTPS (credentials/history also HTTPS; no WAN)
+  - url: http://localhost:5001
+    description: Development / in-memory host only
+
+security:
+  - Bearer: []
+  - ApiKey: []
+
+paths:
+  /api/queries/history:
+    get:
+      summary: List own query history (paginated, sub-scoped)
+      description: >
+        Returns only queries where Queries.UserId == JWT sub
+        AND UserId NOT IN ('admin','employee'), ordered
+        CreatedAt DESC, Id DESC (FR-001/FR-010). Accepts
+        limit (default 20, max 100, clamp) and offset (default 0).
+        401 if no/invalid session (FR-006), 0 cross-user rows (FR-007),
+        legacy excluded (FR-008), works WAN-disabled (FR-009), stable
+        pagination (FR-010), admin sees only own (FR-012).
+      operationId: listQueryHistory
+      security:
+        - Bearer: []
+        - ApiKey: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        '200':
+          description: Paginated own history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/queries/{id}:
+    get:
+      summary: Get own query detail with citations
+      description: >
+        Returns full Prompt/Answer + Citations for a single query
+        iff Queries.UserId == JWT sub and not legacy (FR-004).
+        404 if not found or not owned (FR-007), 401 if unauth (FR-006).
+      operationId: getQueryDetail
+      security:
+        - Bearer: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Full query detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryDetail'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/documents/mine:
+    get:
+      summary: List own recent documents (paginated, sub-scoped)
+      description: >
+        Returns only documents where CreatedBy == JWT sub
+        AND CreatedBy NOT IN ('admin','employee'), ordered
+        CreatedAt DESC, Id DESC (FR-005). Same limit/offset/clamp,
+        401/FR-006, zero leak FR-007, legacy excluded FR-008,
+        WAN-disabled FR-009, stable FR-010, admin own only FR-012.
+      operationId: listOwnDocuments
+      security:
+        - Bearer: []
+        - ApiKey: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        '200':
+          description: Paginated own documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentsMinePage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HistoryItem:
+      type: object
+      required: [id, promptPreview, answerPreview, citationCount, latencyMs, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        promptPreview: { type: string, maxLength: 121 }
+        answerPreview: { type: string, maxLength: 121 }
+        citationCount: { type: integer, minimum: 0 }
+        latencyMs: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+    HistoryPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/HistoryItem' } }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0 }
+    QueryDetail:
+      type: object
+      required: [id, prompt, answer, citations, latencyMs, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        prompt: { type: string }
+        answer: { type: string }
+        citations:
+          type: array
+          items:
+            type: object
+            required: [documentId, chunkId, text, ordinal]
+            properties:
+              documentId: { type: string }
+              chunkId: { type: string }
+              text: { type: string }
+              ordinal: { type: integer, minimum: 0 }
+        latencyMs: { type: integer }
+        createdAt: { type: string, format: date-time }
+    DocumentMineItem:
+      type: object
+      required: [id, filename, size, status, createdAt]
+      properties:
+        id: { type: string }
+        filename: { type: string }
+        size: { type: integer, minimum: 0 }
+        status: { type: string, enum: [Pending, Ready, Failed] }
+        createdAt: { type: string, format: date-time }
+    DocumentsMinePage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/DocumentMineItem' } }
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0 }
+  responses:
+    Unauthorized:
+      description: No/invalid session (FR-006)
+      content: { application/json: { schema: { type: object, properties: { error: { type: string } } } } }
+    NotFound:
+      description: Not found or not owned (FR-004/FR-007)
+      content: { application/json: { schema: { type: object, properties: { error: { type: string } } } } }
