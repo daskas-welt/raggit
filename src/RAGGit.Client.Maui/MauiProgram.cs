@@ -113,6 +113,13 @@ public static class MauiProgram
                     )
                 )
             );
+            builder.Services.AddTransient<ViewModels.DocumentsMineViewModel>(
+                sp => new ViewModels.DocumentsMineViewModel(
+                    new Services.DocumentsApiClient(
+                        new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                    )
+                )
+            );
             // Auth + Users client stubs (never called due to invalid config)
             builder.Services.AddTransient<Services.AuthApiClient>(sp => new Services.AuthApiClient(
                 new HttpClient { BaseAddress = new Uri("http://invalid-config") }
@@ -183,6 +190,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ViewModels.QueryViewModel>();
         builder.Services.AddTransient<ViewModels.HistoryViewModel>();
         builder.Services.AddTransient<ViewModels.QueryDetailViewModel>();
+        builder.Services.AddTransient<ViewModels.DocumentsMineViewModel>();
         builder.Services.AddTransient<ViewModels.UploadViewModel>();
         builder.Services.AddTransient<ViewModels.AdminUsersViewModel>();
         builder.Services.AddTransient<Views.LoginView>();

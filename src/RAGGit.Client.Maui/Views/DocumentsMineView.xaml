@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pull="clr-namespace:Syncfusion.Maui.PullToRefresh;assembly=Syncfusion.Maui.PullToRefresh"
+    xmlns:toolkit="http://schemas.syncfusion.com/maui/toolkit"
+    x:Class="RAGGit.Client.Maui.Views.DocumentsMineView"
+    Title="My Docs"
+>
+    <!-- NOTE (T028): CollectionView used instead of SfListView — Syncfusion.Maui.ListView
+         is not referenced and T001 forbids new NuGet packages. Same ItemTemplate/EmptyView/
+         LoadMore contract via RemainingItemsThreshold + SfPullToRefresh (both in-house).
+         Mirrors HistoryView (T012) for the US3 recent-documents projection. -->
+    <Grid RowDefinitions="Auto,*" Padding="12">
+        <Label
+            Grid.Row="0"
+            Text="My recent documents"
+            FontSize="18"
+            FontAttributes="Bold"
+            Margin="0,0,0,8"
+        />
+        <Grid Grid.Row="1">
+            <toolkit:SfShimmer IsActive="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <pull:SfPullToRefresh
+                x:Name="PullToRefresh"
+                IsRefreshing="{Binding IsBusy}"
+                Refreshing="OnPullRefreshing"
+            >
+                <CollectionView
+                    ItemsSource="{Binding Items}"
+                    RemainingItemsThreshold="2"
+                    RemainingItemsThresholdReached="OnLoadMore"
+                >
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10" StrokeShape="RoundRectangle 6" Margin="0,4">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label
+                                        Text="{Binding Filename}"
+                                        FontAttributes="Bold"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="2"
+                                    />
+                                    <Label FontSize="12" TextColor="Gray">
+                                        <Label.Text>
+                                            <MultiBinding StringFormat="{}{0} bytes | {1} | {2}">
+                                                <Binding Path="Size" />
+                                                <Binding Path="Status" />
+                                                <Binding Path="CreatedAt" />
+                                            </MultiBinding>
+                                        </Label.Text>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            Spacing="8"
+                        >
+                            <Label Text="No documents yet." HorizontalOptions="Center" />
+                            <Label
+                                Text="Upload a document to see it here."
+                                FontSize="12"
+                                TextColor="Gray"
+                                HorizontalOptions="Center"
+                            />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <ActivityIndicator
+                            IsRunning="{Binding IsBusy}"
+                            IsVisible="{Binding HasMore}"
+                            HorizontalOptions="Center"
+                            Margin="0,8"
+                        />
+                    </CollectionView.Footer>
+                </CollectionView>
+            </pull:SfPullToRefresh>
+        </Grid>
+    </Grid>
+</ContentPage>

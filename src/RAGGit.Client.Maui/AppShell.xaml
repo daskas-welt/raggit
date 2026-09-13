@@ -21,6 +21,11 @@
             Route="history"
         />
         <ShellContent
+            Title="My Docs"
+            ContentTemplate="{DataTemplate views:DocumentsMineView}"
+            Route="mine"
+        />
+        <ShellContent
             Title="Upload"
             ContentTemplate="{DataTemplate views:UploadView}"
             Route="upload"
