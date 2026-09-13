@@ -2,7 +2,7 @@
 
 > **Proprietary, on-prem, single-tenant RAG for companies.** An AI Workstation hosts the local vector store (`LanceDB` file) and local LLM (`Ollama`/`LLamaSharp`/`ONNX`) and serves a thin `.NET MAUI` client over LAN — no cloud egress at query time.
 
-**Constitution**: `v1.1.0` ratified `2026-09-10` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
+**Constitution**: `v1.2.0` ratified `2026-08-31`, last amended `2026-09-13` — `Single-Tenant On-Prem`, `Workstation-Owned AI`, `.NET Library-First & Client Reuse`, `Offline Invariant (NON-NEGOTIABLE)`, `Citation-Grounded RAG`, `Test-First`, `Simplicity & Proprietary` — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
 
 **Version**: `1.3.0` (API `contracts/api.yaml` MINOR — adds local per-person accounts: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` additive envelope, `/api/users` Admin CRUD, HTTPS-only credentials, PBKDF2 + JWT 8h, lockout 5/15m; `1.2.0` added `xlsx` MIME + cap; `1.1.0` added `GET /api/auth/me` + corrupted-pdf 400). `/health` reports `version:1.3.0`.
 
@@ -53,7 +53,7 @@ Legacy Qdrant:Path warned if disagreeing with VectorDb:Path
 ## Project Structure
 
 ```
-RAGGit.sln (v1.1.0)
+RAGGit.sln (v1.3.0)
 ├── src/
 │   ├── RAGGit.Core/              # Models Document/Chunk/Query, abstractions IVectorStore/IEmbedder/ILlmClient
 │   ├── RAGGit.Ingest/            # Chunker 512/50 → embed (Ollama) → LanceDB upsert (CorruptDocumentException → 400)
