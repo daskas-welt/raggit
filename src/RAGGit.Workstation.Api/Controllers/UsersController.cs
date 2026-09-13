@@ -12,7 +12,7 @@ namespace RAGGit.Workstation.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public sealed class UsersController : ControllerBase
 {
     private readonly UserStore _userStore;
@@ -26,6 +26,7 @@ public sealed class UsersController : ControllerBase
     /// GET /api/users — list person accounts (PasswordHash never serialized).
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
         var users = await _userStore.ListAsync(cancellationToken);
@@ -36,6 +37,7 @@ public sealed class UsersController : ControllerBase
     /// POST /api/users — create a person account with PBKDF2-hashed password.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(
         [FromBody] UserCreateRequest request,
         CancellationToken cancellationToken
@@ -93,6 +95,7 @@ public sealed class UsersController : ControllerBase
     /// GET /api/users/{id} — read a single person account.
     /// </summary>
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var user = await _userStore.GetByIdAsync(id, cancellationToken);
@@ -108,6 +111,7 @@ public sealed class UsersController : ControllerBase
     /// PATCH /api/users/{id} — change role, displayName, or active status.
     /// </summary>
     [HttpPatch("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Patch(
         Guid id,
         [FromBody] UserPatchRequest request,
@@ -154,6 +158,7 @@ public sealed class UsersController : ControllerBase
     /// POST /api/users/{id}/reset-password — set a new password and clear lockout.
     /// </summary>
     [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ResetPassword(
         Guid id,
         [FromBody] ResetPasswordRequest request,

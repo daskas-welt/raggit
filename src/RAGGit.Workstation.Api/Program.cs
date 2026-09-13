@@ -196,14 +196,26 @@ builder
                         var identity = context.Principal?.Identities.FirstOrDefault();
                         if (identity is not null)
                         {
-                            identity.RemoveClaim(identity.FindFirst(ClaimTypes.Role));
-                            identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
+                            var roleClaim = identity.FindFirst(ClaimTypes.Role);
+                            if (roleClaim is not null)
+                            {
+                                identity.RemoveClaim(roleClaim);
+                                identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
+                            }
 
-                            identity.RemoveClaim(identity.FindFirst("displayName"));
-                            identity.AddClaim(new Claim("displayName", user.DisplayName));
+                            var displayNameClaim = identity.FindFirst("displayName");
+                            if (displayNameClaim is not null)
+                            {
+                                identity.RemoveClaim(displayNameClaim);
+                                identity.AddClaim(new Claim("displayName", user.DisplayName));
+                            }
 
-                            identity.RemoveClaim(identity.FindFirst("username"));
-                            identity.AddClaim(new Claim("username", user.Username));
+                            var usernameClaim = identity.FindFirst("username");
+                            if (usernameClaim is not null)
+                            {
+                                identity.RemoveClaim(usernameClaim);
+                                identity.AddClaim(new Claim("username", user.Username));
+                            }
                         }
                     }
                     catch
