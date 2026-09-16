@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <!-- Win10 1809 (17763) floor so the same binary runs on Win10 + Win11. -->
+        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+        <RootNamespace>RAGGit.Client.WinUI</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Platforms>x64;x86;ARM64</Platforms>
+        <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+        <UseWinUI>true</UseWinUI>
+    <UserSecretsId>d29c144e-f44d-4ef3-aca8-c5ee220683f6</UserSecretsId>
+        <!-- Self-contained Debug: embeds the App Runtime locally so the F5 loop
+         works on machines where the store-framework lookup fails; Release
+         MSIX stays framework-dependent (declared dependency, no bootstrap). -->
+        <WindowsAppSDKSelfContained Condition="'$(Configuration)' == 'Debug'"
+            >true</WindowsAppSDKSelfContained>
+        <EnableMsixTooling>true</EnableMsixTooling>
+        <!-- Unpackaged F5 loop in Debug (matches old MAUI WindowsPackageType=None);
+         Release CI passes /p:WindowsPackageType=MSIX for signed sideload. -->
+        <WindowsPackageType>None</WindowsPackageType>
+        <WindowsPackageType Condition="'$(Configuration)' == 'Release'">MSIX</WindowsPackageType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+        <ProjectReference Include="..\RAGGit.Client.Core\RAGGit.Client.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240311000" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+        <PackageReference
+            Include="Microsoft.Extensions.Configuration.UserSecrets"
+            Version="8.0.1"
+        />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+</Project>

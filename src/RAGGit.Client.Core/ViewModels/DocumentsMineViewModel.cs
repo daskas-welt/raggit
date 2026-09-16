@@ -1,0 +1,134 @@
+using System;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using RAGGit.Client.Maui.Services;
+using RAGGit.Core.Models;
+
+namespace RAGGit.Client.Maui.ViewModels;
+
+/// <summary>
+/// ViewModel for the per-person recent-documents view (005-per-person-history US3).
+/// First page on load, LoadMore appends by offset, refresh resets, empty
+/// state when the person uploaded nothing. Mirrors <see cref="HistoryViewModel"/>.
+/// </summary>
+public sealed partial class DocumentsMineViewModel : ObservableObject
+{
+    private readonly DocumentsApiClient _apiClient;
+
+    [ObservableProperty]
+    private ObservableCollection<DocumentMineItem> _items = new();
+
+    [ObservableProperty]
+    private int _total;
+
+    [ObservableProperty]
+    private int _limit = 20;
+
+    [ObservableProperty]
+    private int _offset;
+
+    [ObservableProperty]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    private bool _isEmpty;
+
+    [ObservableProperty]
+    private bool _hasMore;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    public DocumentsMineViewModel(DocumentsApiClient apiClient)
+    {
+        _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+    }
+
+    [RelayCommand]
+    private async Task LoadAsync()
+    {
+        await LoadPageAsync(0, append: false);
+    }
+
+    [RelayCommand]
+    private async Task LoadMoreAsync()
+    {
+        if (!HasMore || IsBusy)
+        {
+            return;
+        }
+
+        await LoadPageAsync(Offset + Limit, append: true);
+    }
+
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        await LoadPageAsync(0, append: false);
+    }
+
+    private async Task LoadPageAsync(int offset, bool append)
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var page = await _apiClient.GetMineAsync(Limit, offset);
+            Limit = page.Limit;
+            Offset = page.Offset;
+            Total = page.Total;
+
+            if (append)
+            {
+                foreach (var item in page.Items)
+                {
+                    Items.Add(item);
+                }
+            }
+            else
+            {
+                Items = new ObservableCollection<DocumentMineItem>(page.Items);
+            }
+
+            IsEmpty = Total == 0;
+            HasMore = Items.Count < Total;
+        }
+        catch (HttpRequestException ex)
+            when (ex.Message.Contains(
+                    "cannot reach AI workstation",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        {
+            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+        }
+        catch (HttpRequestException ex)
+            when (ex.Message.Contains(
+                    "AI workstation unavailable",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+        }
+        catch (TaskCanceledException ex)
+        {
+            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = $"Failed to load documents: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}

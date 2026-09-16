@@ -1,0 +1,48 @@
+<Page
+    x:Class="RAGGit.Client.WinUI.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
+    <Grid Background="{StaticResource Surface}">
+        <StackPanel
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            Spacing="12"
+            Width="320"
+        >
+            <TextBlock
+                Text="RAGGit"
+                FontSize="28"
+                FontWeight="Bold"
+                Foreground="{StaticResource Primary}"
+            />
+            <TextBlock Text="Sign in with your workstation account." TextWrapping="Wrap" />
+            <TextBox
+                x:Name="UsernameBox"
+                Header="Username"
+                Text="{x:Bind ViewModel.Username, Mode=TwoWay}"
+            />
+            <PasswordBox
+                x:Name="PasswordBox"
+                Header="Password"
+                Password="{x:Bind ViewModel.Password, Mode=TwoWay}"
+            />
+            <Button
+                Content="Sign in"
+                Command="{x:Bind ViewModel.LoginCommand}"
+                HorizontalAlignment="Stretch"
+            />
+            <ProgressRing
+                IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                Width="32"
+                Height="32"
+            />
+            <TextBlock
+                Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                Foreground="{StaticResource Error}"
+                TextWrapping="Wrap"
+                Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}"
+            />
+        </StackPanel>
+    </Grid>
+</Page>

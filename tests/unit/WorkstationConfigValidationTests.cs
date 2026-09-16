@@ -15,8 +15,7 @@ public sealed class WorkstationConfigValidationTests
         var result = WorkstationConfigValidator.Validate(
             size,
             size == 384 ? "all-minilm" : "nomic-embed-text",
-            "./data/lancedb",
-            null
+            "./data/lancedb"
         );
         result.IsValid.Should().BeTrue();
         result.Error.Should().BeNull();
@@ -30,12 +29,7 @@ public sealed class WorkstationConfigValidationTests
     public void UnsupportedVectorSize_FailsValidation(int size)
     {
         WorkstationConfigValidator.IsSupportedVectorSize(size).Should().BeFalse();
-        var result = WorkstationConfigValidator.Validate(
-            size,
-            "all-minilm",
-            "./data/lancedb",
-            null
-        );
+        var result = WorkstationConfigValidator.Validate(size, "all-minilm", "./data/lancedb");
         result.IsValid.Should().BeFalse();
         result.Error.Should().Contain("VectorSize");
     }
@@ -46,12 +40,7 @@ public sealed class WorkstationConfigValidationTests
     public void MismatchedEmbedModel_EmitsWarning(string embedModel, int vectorSize)
     {
         WorkstationConfigValidator.IsEmbedModelAligned(embedModel, vectorSize).Should().BeFalse();
-        var result = WorkstationConfigValidator.Validate(
-            vectorSize,
-            embedModel,
-            "./data/lancedb",
-            null
-        );
+        var result = WorkstationConfigValidator.Validate(vectorSize, embedModel, "./data/lancedb");
         result.IsValid.Should().BeTrue(); // mismatch is warning, not failure
         result
             .Warnings.Should()
@@ -66,44 +55,7 @@ public sealed class WorkstationConfigValidationTests
     public void AlignedEmbedModel_NoWarning(string embedModel, int vectorSize)
     {
         WorkstationConfigValidator.IsEmbedModelAligned(embedModel, vectorSize).Should().BeTrue();
-        var result = WorkstationConfigValidator.Validate(
-            vectorSize,
-            embedModel,
-            "./data/lancedb",
-            null
-        );
+        var result = WorkstationConfigValidator.Validate(vectorSize, embedModel, "./data/lancedb");
         result.Warnings.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void LegacyQdrantPath_Disagreeing_EmitsWarningNotFailure()
-    {
-        var result = WorkstationConfigValidator.Validate(
-            384,
-            "all-minilm",
-            "./data/lancedb",
-            "./data/qdrant"
-        );
-        result.IsValid.Should().BeTrue();
-        result.Warnings.Should().Contain(w => w.Contains("Qdrant") || w.Contains("VectorDb"));
-    }
-
-    [Fact]
-    public void LegacyQdrantPath_SameAsVectorDb_NoWarning()
-    {
-        var result = WorkstationConfigValidator.Validate(
-            384,
-            "all-minilm",
-            "./data/lancedb",
-            "./data/lancedb"
-        );
-        result.Warnings.Should().NotContain(w => w.Contains("Qdrant"));
-    }
-
-    [Fact]
-    public void LegacyQdrantPath_Null_NoWarning()
-    {
-        var result = WorkstationConfigValidator.Validate(384, "all-minilm", "./data/lancedb", null);
-        result.Warnings.Should().NotContain(w => w.Contains("Qdrant"));
     }
 }

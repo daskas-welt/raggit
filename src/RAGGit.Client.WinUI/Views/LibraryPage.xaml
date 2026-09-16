@@ -1,0 +1,244 @@
+<Page
+    x:Class="RAGGit.Client.WinUI.Views.LibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:components="using:RAGGit.Client.WinUI.Components"
+    xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    Background="{StaticResource SurfaceVariant}"
+>
+    <Page.Resources>
+        <converters:DocumentMimeLabelConverter x:Key="MimeLabel" />
+        <converters:SizeMbConverter x:Key="SizeMb" />
+        <converters:CreatorLabelConverter x:Key="CreatorLabel" />
+        <converters:ShortDateConverter x:Key="ShortDate" />
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+    </Page.Resources>
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
+        <!-- Header -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                Text="Document Library"
+                FontSize="22"
+                FontWeight="Bold"
+                Foreground="{StaticResource OnSurface}"
+                VerticalAlignment="Center"
+            />
+            <StackPanel
+                Grid.Column="1"
+                Orientation="Horizontal"
+                Spacing="8"
+                VerticalAlignment="Center"
+            >
+                <Button
+                    Content="Refresh"
+                    Command="{Binding LoadDocumentsCommand}"
+                    Height="36"
+                    FontSize="13"
+                    VerticalAlignment="Center"
+                />
+                <Button
+                    x:Name="UploadButton"
+                    Content="Upload"
+                    Click="OnUploadClicked"
+                    Height="36"
+                    FontSize="13"
+                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                    VerticalAlignment="Center"
+                />
+            </StackPanel>
+        </Grid>
+
+        <!-- Document list -->
+        <Grid Grid.Row="1">
+            <ProgressRing
+                IsActive="{Binding IsBusy}"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                Foreground="{StaticResource Primary}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Width="40"
+                Height="40"
+            />
+            <ListView x:Name="DocumentsList" ItemsSource="{Binding PageItems}" SelectionMode="None">
+                <ListView.Header>
+                    <Grid ColumnDefinitions="*,70,90,120,130,150,44,44" Padding="16,10">
+                        <TextBlock
+                            Grid.Column="0"
+                            Text="Filename"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                        <TextBlock
+                            Grid.Column="1"
+                            Text="Type"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                        <TextBlock
+                            Grid.Column="2"
+                            Text="Size"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                        <TextBlock
+                            Grid.Column="3"
+                            Text="Status"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                        <TextBlock
+                            Grid.Column="4"
+                            Text="Creator"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                        <TextBlock
+                            Grid.Column="5"
+                            Text="Created"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource OnSurfaceVariant}"
+                            VerticalAlignment="Center"
+                        />
+                    </Grid>
+                </ListView.Header>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,70,90,120,130,150,44,44" Padding="16,10">
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="{Binding Filename}"
+                                FontSize="14"
+                                Foreground="{StaticResource OnSurface}"
+                                TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="{Binding Converter={StaticResource MimeLabel}}"
+                                FontSize="13"
+                                Foreground="{StaticResource OnSurfaceVariant}"
+                                VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                                Grid.Column="2"
+                                Text="{Binding Converter={StaticResource SizeMb}}"
+                                FontSize="13"
+                                Foreground="{StaticResource OnSurfaceVariant}"
+                                VerticalAlignment="Center"
+                            />
+                            <components:StatusChip
+                                Grid.Column="3"
+                                Status="{Binding Status}"
+                                VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                                Grid.Column="4"
+                                Text="{Binding Converter={StaticResource CreatorLabel}}"
+                                FontSize="13"
+                                Foreground="{StaticResource OnSurfaceVariant}"
+                                TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Center"
+                            />
+                            <TextBlock
+                                Grid.Column="5"
+                                Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                FontSize="13"
+                                Foreground="{StaticResource OnSurfaceVariant}"
+                                VerticalAlignment="Center"
+                            />
+                            <Button
+                                Grid.Column="6"
+                                Content="⤓"
+                                FontSize="16"
+                                Background="Transparent"
+                                Width="36"
+                                Height="32"
+                                Padding="0"
+                                CornerRadius="6"
+                                Click="OnDownloadClicked"
+                                VerticalAlignment="Center"
+                            />
+                            <Button
+                                Grid.Column="7"
+                                Content="🗑"
+                                FontSize="16"
+                                Background="Transparent"
+                                Width="36"
+                                Height="32"
+                                Padding="0"
+                                CornerRadius="6"
+                                Click="OnDeleteClicked"
+                                Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
+                                VerticalAlignment="Center"
+                            />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <!-- Empty state (ListView has no EmptyView) -->
+            <StackPanel
+                Spacing="8"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
+            >
+                <TextBlock
+                    Text="No documents yet"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    HorizontalAlignment="Center"
+                />
+                <TextBlock
+                    Text="Upload a document to see it here."
+                    FontSize="13"
+                    Foreground="{StaticResource OnSurfaceVariant}"
+                    HorizontalAlignment="Center"
+                />
+            </StackPanel>
+        </Grid>
+
+        <!-- Pagination footer -->
+        <components:PaginationFooterControl
+            Grid.Row="2"
+            PageSizeOptions="{Binding PageSizeOptions}"
+            SelectedPageSize="{Binding PageSize, Mode=TwoWay}"
+            StatusText="{Binding StatusText}"
+            Sequence="{Binding VisibleSequence}"
+            GoToCommand="{Binding GoToPageCommand}"
+            FirstCommand="{Binding FirstPageCommand}"
+            PreviousCommand="{Binding PreviousPageCommand}"
+            NextCommand="{Binding NextPageCommand}"
+            LastCommand="{Binding LastPageCommand}"
+            CanGoPrevious="{Binding HasPrevious}"
+            CanGoNext="{Binding HasNext}"
+        />
+
+        <!-- Footer -->
+        <TextBlock
+            Grid.Row="3"
+            Text="{Binding ErrorMessage}"
+            Foreground="{StaticResource Error}"
+            FontSize="13"
+            VerticalAlignment="Center"
+            TextTrimming="CharacterEllipsis"
+            MaxLines="2"
+        />
+    </Grid>
+</Page>

@@ -1,0 +1,41 @@
+<Window
+    x:Class="RAGGit.Client.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    Title="RAGGit"
+>
+    <Grid>
+        <controls:NavigationView
+            x:Name="Nav"
+            PaneDisplayMode="Left"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            SelectionChanged="Nav_SelectionChanged"
+        >
+            <controls:NavigationView.MenuItems>
+                <controls:NavigationViewItem x:Name="LibraryItem" Content="Library" Tag="library" />
+                <controls:NavigationViewItem x:Name="AskItem" Content="Ask" Tag="query" />
+                <controls:NavigationViewItem x:Name="HistoryItem" Content="History" Tag="history" />
+                <controls:NavigationViewItem x:Name="MyDocsItem" Content="My Docs" Tag="mine" />
+                <controls:NavigationViewItem x:Name="AdminItem" Content="Admin" Tag="admin" />
+            </controls:NavigationView.MenuItems>
+            <Frame x:Name="ContentFrame" x:FieldModifier="public" />
+        </controls:NavigationView>
+        <Grid
+            x:Name="ConfigErrorOverlay"
+            Visibility="Collapsed"
+            Background="{StaticResource Surface}"
+        >
+            <StackPanel
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Spacing="8"
+                MaxWidth="480"
+            >
+                <TextBlock Text="Configuration error" FontSize="22" FontWeight="Bold" />
+                <TextBlock x:Name="ConfigErrorText" TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

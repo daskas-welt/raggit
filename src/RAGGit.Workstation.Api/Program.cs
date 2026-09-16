@@ -246,23 +246,12 @@ Log.Information("Ollama timeout configured: {TimeoutMs}ms", ollamaTimeoutMs);
 var connectionString =
     builder.Configuration.GetConnectionString("RagDb") ?? "Data Source=./data/rag.db";
 
-// Backward compatibility: fall back to legacy Qdrant:Path if VectorDb:Path is missing.
-if (
-    !builder.Configuration.GetSection("VectorDb:Path").Exists()
-    && !string.IsNullOrEmpty(builder.Configuration["Qdrant:Path"])
-)
-{
-    vectorDbPath = builder.Configuration["Qdrant:Path"]!;
-}
-
 // Validation per T005 / FR-001
 {
-    var qdrantPath = builder.Configuration["Qdrant:Path"];
     var validation = RAGGit.Workstation.Api.Config.WorkstationConfigValidator.Validate(
         vectorDbVectorSize,
         embedModel,
-        vectorDbPath,
-        qdrantPath
+        vectorDbPath
     );
     if (!validation.IsValid)
     {
@@ -278,6 +267,13 @@ if (
 builder.Services.AddSingleton(new RagDbContext(connectionString));
 builder.Services.AddSingleton<QueryHistoryStore>();
 builder.Services.AddSingleton<DocumentMineStore>();
+var contentDir = Path.Combine(
+    Path.GetDirectoryName(connectionString.Replace("Data Source=", "")) ?? "./data",
+    "documents"
+);
+builder.Services.AddSingleton<RAGGit.Core.Abstractions.IDocumentContentStore>(
+    new RAGGit.Ingest.FileDocumentContentStore(contentDir)
+);
 
 // AI services
 builder.Services.AddSingleton<IVectorStore>(
@@ -301,9 +297,12 @@ else
     );
 }
 
-builder.Services.AddSingleton<ILlmClient>(
-    new OllamaLlmClient(ollamaUrl, chatModel, ollamaTimeoutMs)
-);
+builder.Services.AddSingleton<ILlmClient>(sp => new OllamaLlmClient(
+    ollamaUrl,
+    chatModel,
+    ollamaTimeoutMs,
+    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RAGGit.Retrieval.Ai.OllamaLlmClient>>()
+));
 builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
@@ -323,7 +322,17 @@ builder
         );
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc(
+        "v1",
+        new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title = "RAGGit.Workstation.Api",
+            Version = "v1",
+        }
+    );
+});
 
 // RFC7807 problem details for consistent error shapes.
 builder.Services.AddProblemDetails(options =>

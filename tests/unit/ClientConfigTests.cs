@@ -92,7 +92,7 @@ public sealed class ClientConfigTests
     }
 
     [Fact]
-    public void NoHardcodedUrlOrKeyLiterals_InClientMauiSource()
+    public void NoHardcodedUrlOrKeyLiterals_InClientWinUISource()
     {
         var root = Path.Combine(
             AppContext.BaseDirectory,
@@ -102,7 +102,7 @@ public sealed class ClientConfigTests
             "..",
             "..",
             "src",
-            "RAGGit.Client.Maui"
+            "RAGGit.Client.WinUI"
         );
         // Normalize for test run location (bin/Debug/net8.0)
         if (!Directory.Exists(root))
@@ -115,7 +115,7 @@ public sealed class ClientConfigTests
                     "..",
                     "..",
                     "src",
-                    "RAGGit.Client.Maui"
+                    "RAGGit.Client.WinUI"
                 )
             );
 

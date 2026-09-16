@@ -32,7 +32,6 @@ public sealed class HealthController : ControllerBase
     /// <summary>
     /// GET /health — returns vectorDb/llm status, API version, and recent
     /// query latency p95 for SC-002 monitoring.
-    /// The legacy <c>qdrant</c> key is kept for backward compatibility.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
@@ -45,7 +44,6 @@ public sealed class HealthController : ControllerBase
             new
             {
                 vectorDb = vectorDbHealthy ? "ok" : "down",
-                qdrant = vectorDbHealthy ? "ok" : "down",
                 llm = llmHealthy ? "ok" : "down",
                 p95LatencyMs = p95Latency,
                 version = GetApiVersion(),

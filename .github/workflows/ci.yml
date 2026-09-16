@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history']
+    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history', '010-winui-client']
   pull_request:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history']
+    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history', '010-winui-client']
 
 jobs:
   build-and-test:
@@ -25,11 +25,15 @@ jobs:
       - name: Check formatting (CSharpier)
         run: dotnet csharpier check .
 
+      # The WinUI 3 client (net8.0-windows + XAML compiler) cannot build on
+      # Linux, so this job builds the RAGGit.Server.slnf filter (workstation,
+      # libraries, Core behavior, all tests). The windows-client job below
+      # builds the full solution including RAGGit.Client.WinUI.
       - name: Restore
-        run: dotnet restore RAGGit.sln
+        run: dotnet restore RAGGit.Server.slnf
 
       - name: Build
-        run: dotnet build RAGGit.sln --no-restore --configuration Release
+        run: dotnet build RAGGit.Server.slnf --no-restore --configuration Release
 
       - name: Unit tests
         run: dotnet test --filter "FullyQualifiedName~Tests.Unit" --no-build --configuration Release
@@ -60,3 +64,33 @@ jobs:
         run: |
           echo "Plain dotnet test must be green without Ollama (fakes only, RequiresOllama skipped)"
           dotnet test --no-build --configuration Release --filter "RequiresOllama!=true" | tail -20
+
+  # WinUI 3 desktop client: builds only on Windows (Windows App SDK + XAML
+  # compiler). Builds the full solution plus an unsigned Release MSIX
+  # artifact. Signing is an operator step (internal-CA cert) per README.
+  windows-client:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore RAGGit.sln
+
+      - name: Build full solution
+        run: dotnet build RAGGit.sln --no-restore --configuration Release
+
+      - name: Build unsigned MSIX (packaging gate)
+        run: dotnet publish src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj --no-build --configuration Release -p:Platform=x64 -p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true
+
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAGGit.Client.WinUI-msix
+          path: src/RAGGit.Client.WinUI/bin/x64/Release/**/AppPackages/**/*.msix

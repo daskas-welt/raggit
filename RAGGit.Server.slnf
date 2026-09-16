@@ -1,0 +1,15 @@
+{
+  "solution": {
+    "path": "RAGGit.sln",
+    "projects": [
+      "src\\RAGGit.Client.Core\\RAGGit.Client.Core.csproj",
+      "src\\RAGGit.Core\\RAGGit.Core.csproj",
+      "src\\RAGGit.Ingest\\RAGGit.Ingest.csproj",
+      "src\\RAGGit.Retrieval\\RAGGit.Retrieval.csproj",
+      "src\\RAGGit.Workstation.Api\\RAGGit.Workstation.Api.csproj",
+      "tests\\contract\\RAGGit.Tests.Contract.csproj",
+      "tests\\integration\\RAGGit.Tests.Integration.csproj",
+      "tests\\unit\\RAGGit.Tests.Unit.csproj"
+    ]
+  }
+}

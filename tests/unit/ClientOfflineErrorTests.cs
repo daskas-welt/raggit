@@ -149,7 +149,7 @@ public sealed class ClientOfflineErrorTests
             "..",
             "..",
             "src",
-            "RAGGit.Client.Maui"
+            "RAGGit.Client.WinUI"
         );
         if (!System.IO.Directory.Exists(clientSourceRoot))
             clientSourceRoot = System.IO.Path.GetFullPath(
@@ -161,7 +161,7 @@ public sealed class ClientOfflineErrorTests
                     "..",
                     "..",
                     "src",
-                    "RAGGit.Client.Maui"
+                    "RAGGit.Client.WinUI"
                 )
             );
 
@@ -209,6 +209,9 @@ public sealed class ClientOfflineErrorTests
                 .Select(p =>
                     p.ParameterType == typeof(ClientSession) ? (object)session
                     : p.ParameterType == typeof(DocumentsApiClient) ? api
+                    : p.ParameterType == typeof(RAGGit.Client.Maui.Services.ILibraryPreferences)
+                        ? (object?)null
+                    : p.ParameterType == typeof(ILauncherService) ? new InMemoryLauncherService()
                     : throw new InvalidOperationException($"Unexpected param {p.ParameterType}")
                 )
                 .ToArray();

@@ -1,9 +1,10 @@
 <!-- Sync Impact Report
-Version change: 1.0.0 → 1.1.0
-Modified principles: III .NET Library-First & Client Reuse (was Desktop Reuse), VII. Simplicity & Proprietary Stewardship (signing), VI. Test-First gate wording
-Added sections: none
+Version change: 1.2.0 → 1.3.0
+Modified principles: III .NET Library-First & Client Reuse (MAUI → WinUI 3), VII Simplicity & Proprietary Stewardship (project list + MSIX sideload), Technology & Deployment Constraints (client stack + storage)
+Added sections: Amendment 1.2.0 → 1.3.0 (MINOR) with rationale + migration plan
 Removed sections: none
-Follow-up TODOs: resolved MAUI clarification 2026-09-10. Future TODO: define concrete hardware baseline (RAM/disk) after first benchmark; confirm workstation OS (Win/Linux) per deploy.
+Follow-up TODOs: workstation OS (Win/Linux) per deploy still open; hardware baseline after first benchmark still open.
+Prior: 1.0.0 → 1.1.0 modified III (was Desktop Reuse), VII (signing), VI wording; resolved MAUI clarification 2026-09-10.
 -->
 # RAGGit Constitution
 
@@ -19,7 +20,7 @@ The AI Workstation owns all heavy AI: Ollama (embed `nomic-embed-text`/`all-Mini
 
 ### III. .NET Library-First & Client Reuse
 
-Every feature MUST start as a .NET library under `src/` (`RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`) that is self-contained, independently testable, and documented with a clear purpose. Libraries expose functionality via both a .NET API and a CLI where applicable (text in/out, JSON + human-readable). Clients MUST reuse libraries: .NET MAUI for Windows 11 + iOS/Android (single codebase, `net8.0-windows10.0.19041.0` / `net8.0-ios` / `net8.0-android`) sharing ViewModel/services, OR WPF for Windows-only fallback. No duplicated RAG logic.
+Every feature MUST start as a .NET library under `src/` (`RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`) that is self-contained, independently testable, and documented with a clear purpose. Libraries expose functionality via both a .NET API and a CLI where applicable (text in/out, JSON + human-readable). Clients MUST reuse libraries: WinUI 3 for Windows 10 1809+ / 11 (Windows App SDK, `net8.0-windows10.0.17763.0`, single-project MSIX) sharing ViewModel/services via `RAGGit.Client.Core`, OR WPF for Windows-only fallback. No duplicated RAG logic.
 
 ### IV. Offline Invariant (NON-NEGOTIABLE)
 
@@ -35,11 +36,11 @@ TDD is mandatory: tests written → reviewed → fail → then implement. Red-Gr
 
 ### VII. Simplicity & Proprietary Stewardship
 
-Start simple, keep a single project (`src/` + `RAGGit.Client.Maui/` + `RAGGit.Workstation.Api/` + `tests/`) until a 4th project is justified in the plan's Complexity Tracking table. Proprietary: artifacts are signed (MSIX for Windows 11 desktop, private enterprise distribution for mobile: iOS enterprise/Ad-Hoc, Android sideload) and distributed privately per company; model weights stay on customer-owned workstations, not redistributed publicly. Use `MAJOR.MINOR.PATCH` versioning; breaking API changes require a MAJOR bump and migration notes.
+Start simple, keep a single project (`src/` + `RAGGit.Client.WinUI/` + `RAGGit.Workstation.Api/` + `tests/`) until a 4th project is justified in the plan's Complexity Tracking table. Proprietary: artifacts are signed (MSIX sideload for Windows 10 1809+ / 11 desktop) and distributed privately per company; model weights stay on customer-owned workstations, not redistributed publicly. Use `MAJOR.MINOR.PATCH` versioning; breaking API changes require a MAJOR bump and migration notes.
 
 ## Technology & Deployment Constraints
 
-**Stack**: C# .NET 8 (Workstation ASP.NET Core API + Client .NET MAUI Windows 11 + iOS/Android, thin HttpClient), `Qdrant.Client` with `path=` local file (or `Sqlite-vec`/`LanceDB` if Qdrant unsuitable) + `SQLite` for doc metadata, `Ollama` (`OllamaSharp` or `HttpClient` to `localhost:11434`) or `LLamaSharp` (`LLamaWeights.LoadFromFile` + `LLamaEmbedder.GetEmbeddings` for GGUF), `ONNX Runtime` with `bge-micro-v2` as alternative embedder, `Semantic Kernel` for RAG orchestration where it reduces code (OnnxSimpleRAG pattern). **Hardware baseline**: Workstation 16GB RAM + NVIDIA GPU recommended, 10GB disk for models+DB; Desktop 4GB RAM thin. **Network**: LAN/VPN only; workstations have no WAN at query time. **Storage**: `QdrantClient(path="./data/qdrant")` persists to disk on workstation; MAUI client is stateless (cache only).
+**Stack**: C# .NET 8 (Workstation ASP.NET Core API + Client WinUI 3 Windows 10 1809+ / 11, thin HttpClient), `Qdrant.Client` with `path=` local file (or `Sqlite-vec`/`LanceDB` if Qdrant unsuitable) + `SQLite` for doc metadata, `Ollama` (`OllamaSharp` or `HttpClient` to `localhost:11434`) or `LLamaSharp` (`LLamaWeights.LoadFromFile` + `LLamaEmbedder.GetEmbeddings` for GGUF), `ONNX Runtime` with `bge-micro-v2` as alternative embedder, `Semantic Kernel` for RAG orchestration where it reduces code (OnnxSimpleRAG pattern). **Hardware baseline**: Workstation 16GB RAM + NVIDIA GPU recommended, 10GB disk for models+DB; Desktop 4GB RAM thin. **Network**: LAN/VPN only; workstations have no WAN at query time. **Storage**: `QdrantClient(path="./data/qdrant")` persists to disk on workstation; WinUI client is stateless (Credential-Locker token cache only).
 
 ## Development Workflow & Quality Gates
 
@@ -49,7 +50,13 @@ Code review requires 1 approval and verifies constitution compliance, especially
 
 This constitution supersedes all other practices. Amendments require: (1) documentation in this file with rationale, (2) approval by project owner, (3) a migration plan for affected specs/plans/tasks, and (4) a semantic version bump: MAJOR for incompatible principle removal/redefinition, MINOR for new principle/expanded guidance, PATCH for wording/clarification. All PRs and reviews MUST verify compliance. Use `.specify/memory/constitution.md` as the runtime source of truth for `/speckit.specify`, `/speckit.plan`, and `/speckit.tasks`. Historical values are preserved when re-scaffolding via `resolve-template.ps1`.
 
-**Version**: 1.2.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-09-13
+**Version**: 1.3.0 | **Ratified**: 2026-08-31 | **Last Amended**: 2026-09-16
+
+### Amendment 1.2.0 → 1.3.0 (MINOR)
+
+- **Modified principle**: III. .NET Library-First & Client Reuse — client technology changed from ".NET MAUI for Windows 11 + iOS/Android (or WPF fallback)" to "WinUI 3 for Windows 10 1809+ / 11 (or WPF fallback)". VII project list and distribution updated (`RAGGit.Client.Maui/` → `RAGGit.Client.WinUI/`; signed MSIX sideload replaces MAUI/mobile distribution).
+- **Rationale**: `010-winui-client` replaces the MAUI shell outright with a Windows-only WinUI 3 client reusing the shared `RAGGit.Client.Core` behavior layer; Android/iOS targets are dropped by owner decision.
+- **Migration plan**: Historical specs `001`–`009` are unaffected (they describe behavior, not shell technology). `010-winui-client` and onward use the amended wording. No API or data-model change.
 
 ### Amendment 1.1.0 → 1.2.0 (MINOR)
 
