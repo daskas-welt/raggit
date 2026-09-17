@@ -1,0 +1,71 @@
+# Running the RAGGit Workstation (for operators)
+
+The workstation is the one powerful company machine that does all the AI
+work. Employee PCs are thin clients — if the workstation stops, the whole
+company stops getting answers. This page covers running it day to day.
+
+## What runs on the box
+
+| Piece | What it is | Typical location |
+|---|---|---|
+| `RAGGit.Workstation.Api` | The web service employees' apps talk to (HTTPS port 5001) | Installed service or `dotnet run` |
+| `ollama serve` | The local AI (embeddings + chat), port 11434 | System service |
+| `./data` | The library: vector index + metadata database | Never deleted casually |
+| `./models` | Downloaded AI weights (one-time download) | Never redistributed |
+
+Employee PCs need none of this — only the desktop app and the network.
+
+## Daily operation
+
+1. **Start Ollama first**: `ollama serve` (or leave it as a service — preferred).
+   Confirm the models are present: `ollama list` (see `EmbedModel` /
+   `ChatModel` in `appsettings.json`).
+2. **Warm the model**: ask one throwaway question (or `ollama run
+   <chat-model>`). A cold model can take minutes to load — the first real
+   user query must not be the one that discovers this.
+3. **Start the API** (HTTPS, LAN interface):
+   `dotnet run --project src/RAGGit.Workstation.Api --urls https://0.0.0.0:5001`
+4. **Verify**: `GET https://<host>:5001/health` →
+   `200 {vectorDb: ok, llm: ok}`. Then sign in via the desktop app once.
+
+## Configuration
+
+All in `src/RAGGit.Workstation.Api/appsettings.json` (secrets via user
+secrets or environment, never in the file):
+
+- `VectorDb: { Path, VectorSize }` — size must match the embedding model
+  (384 for `all-minilm`, 768 for `nomic-embed-text`); after a swap, delete
+  `./data/lancedb` and re-ingest.
+- `Ollama: { Url, EmbedModel, ChatModel, TimeoutMs }` — chat timeout
+  defaults to 120s; on slow CPU-only boxes a cold or heavy generation can
+  exceed it (the API logs `Query timed out`, the user gets an error, nothing
+  hangs). Warm models and matched hardware are the fix — raising the
+  timeout only masks slowness.
+- People and API keys: [Operator guide](./operator-cli.md).
+
+## Going and staying offline
+
+After the one-time model download, the workstation needs no internet:
+disable WAN, keep LAN, and re-run the health check plus one query —
+both must succeed. CI enforces this automatically on every change.
+
+## Backups and disk
+
+- Back up `./data` (library + accounts) on a schedule; exclude nothing
+  inside it.
+- `./models` can be re-downloaded — back it up only if bandwidth is scarce.
+- If disk fills up, queries fail: keep 10GB+ free (models + growth).
+
+## Troubleshooting
+
+- **Query times out, health was ok**: model cold or box overloaded — warm
+  it, check CPU/RAM, consider a smaller chat model or GPU. See notes above.
+- **`503 model unavailable offline`**: Ollama stopped or unreachable —
+  restart `ollama serve`, check `Ollama:Url`.
+- **Employees get "cannot reach AI workstation"**: LAN/VPN or firewall,
+  not RAGGit — verify port 5001 from their subnet.
+- **Wrong-vector-size errors at startup**: embedding model and
+  `VectorSize` disagree — align them, wipe `./data/lancedb`, re-ingest.
+
+Related: [Publishing](publish.md) · [Operator CLI](operator-cli.md) ·
+[Performance](performance.md) · employee side: [Installing the app](install.md).
