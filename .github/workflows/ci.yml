@@ -84,10 +84,14 @@ jobs:
         run: dotnet restore RAGGit.sln
 
       - name: Build full solution
-        run: dotnet build RAGGit.sln --no-restore --configuration Release
+        run: dotnet build RAGGit.sln --no-restore --configuration Release -p:Platform=x64
 
+      # Packaging props live on the BUILD (not publish --no-build): the Appx
+      # targets only emit the final AppPackages/*.msix during build. Verified
+      # locally: this exact command produces
+      # bin/x64/Release/**/AppPackages/**/*.msix for the upload step below.
       - name: Build unsigned MSIX (packaging gate)
-        run: dotnet publish src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj --no-build --configuration Release -p:Platform=x64 -p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true
+        run: dotnet build src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj --no-restore --configuration Release -p:Platform=x64 -p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
