@@ -8,13 +8,35 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
-            <SolidColorBrush x:Key="Primary" Color="#6750A4" />
-            <SolidColorBrush x:Key="Surface" Color="#FFFBFE" />
-            <SolidColorBrush x:Key="SurfaceVariant" Color="#E7E0EC" />
-            <SolidColorBrush x:Key="OnSurface" Color="#1C1B1F" />
-            <SolidColorBrush x:Key="OnSurfaceVariant" Color="#49454F" />
-            <SolidColorBrush x:Key="Outline" Color="#79747E" />
-            <SolidColorBrush x:Key="Error" Color="#B3261E" />
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="Primary" Color="#6750A4" />
+                    <SolidColorBrush x:Key="Surface" Color="#FFFBFE" />
+                    <SolidColorBrush x:Key="SurfaceVariant" Color="#E7E0EC" />
+                    <SolidColorBrush x:Key="OnSurface" Color="#1C1B1F" />
+                    <SolidColorBrush x:Key="OnSurfaceVariant" Color="#49454F" />
+                    <SolidColorBrush x:Key="Outline" Color="#79747E" />
+                    <SolidColorBrush x:Key="Error" Color="#B3261E" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="Primary" Color="#D0BCFF" />
+                    <SolidColorBrush x:Key="Surface" Color="#141218" />
+                    <SolidColorBrush x:Key="SurfaceVariant" Color="#49454F" />
+                    <SolidColorBrush x:Key="OnSurface" Color="#E6E0E9" />
+                    <SolidColorBrush x:Key="OnSurfaceVariant" Color="#CAC4D0" />
+                    <SolidColorBrush x:Key="Outline" Color="#938F99" />
+                    <SolidColorBrush x:Key="Error" Color="#F2B8B5" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="Primary" ResourceKey="SystemColorHotlightColorBrush" />
+                    <StaticResource x:Key="Surface" ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="SurfaceVariant" ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="OnSurface" ResourceKey="SystemColorWindowTextColorBrush" />
+                    <StaticResource x:Key="OnSurfaceVariant" ResourceKey="SystemColorWindowTextColorBrush" />
+                    <StaticResource x:Key="Outline" ResourceKey="SystemColorWindowTextColorBrush" />
+                    <StaticResource x:Key="Error" ResourceKey="SystemColorWindowTextColorBrush" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
