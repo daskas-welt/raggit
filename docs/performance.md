@@ -42,7 +42,7 @@ Run on the reference workstation with WAN disabled:
 ```powershell
 # SC-001
 Measure-Command { dotnet run --project src/RAGGit.Workstation.Api }
-# Upload a 50-page PDF via the MAUI client or curl and time until status=Ready.
+# Upload a 50-page PDF via the WinUI client or curl and time until status=Ready.
 
 # SC-002
 for ($i = 0; $i -lt 50; $i++) {

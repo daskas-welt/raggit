@@ -6,14 +6,13 @@
 
 - .NET 8 SDK (`dotnet --version` ≥8.0), Git LFS for ONNX models (optional)
 - AI Workstation: 16GB RAM + 10GB free disk, LAN to clients, WAN optional (must work WAN-off per SC-002)
-- Client: Windows 11 (MAUI desktop) + iOS/Android (MAUI mobile, same codebase), 4GB RAM thin, LAN/VPN to workstation
+- Client: Windows 10 1809+ / 11 (WinUI 3 desktop, Windows App SDK 1.5), 4GB RAM thin, LAN/VPN to workstation
 
 ## 1. Clone & Build
 
 ```powershell
 git clone <repo> raggit; cd raggit
-dotnet workload install maui   # one-time MAUI workload prerequisite
-dotnet build RAGGit.sln
+dotnet build RAGGit.sln   # no extra workload: WinUI 3 client builds on Windows with the .NET 8 SDK alone
 ```
 
 ## 2. AI Workstation — One-Time Model Cache (LAN Only, No Cloud at Query Time)
@@ -68,24 +67,20 @@ dotnet run --project src/RAGGit.Workstation.Api --urls https://0.0.0.0:5001
 # Per-person auth: POST /api/auth/login (HTTPS) → {access_token, token_type:"Bearer", expires_in:28800}
 ```
 
-## 5. Run Client (Thin, No Models — .NET MAUI, v1.3.0)
+## 5. Run Client (Thin, No Models — WinUI 3, v1.3.0)
 
 ```powershell
-# Windows 11 desktop (MAUI workload installed in step 1)
-dotnet run --project src/RAGGit.Client.Maui -f net8.0-windows10.0.19041.0
-# Fallback net8.0 CI (no workload, views excluded, logic testable):
-dotnet run --project src/RAGGit.Client.Maui -f net8.0
-# Client reads src/RAGGit.Client.Maui/appsettings.json (Workstation:Url).
-# If a cached session exists it restores it; otherwise LoginView prompts for username/password over HTTPS.
+# Windows 10 1809+ / 11 desktop (unpackaged Debug F5 loop)
+dotnet run --project src/RAGGit.Client.WinUI -p:Platform=x64
+# Client reads src/RAGGit.Client.WinUI/appsettings.json (Workstation:Url).
+# If a cached session exists it restores it; otherwise LoginPage prompts for username/password over HTTPS.
 # Role is discovered via GET /api/auth/me at launch (FR-003/FR-004/FR-008).
 
 
-# Publish per target TFM (signed per Constitution VII: MSIX for Windows, private enterprise distribution for mobile)
-dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-windows10.0.19041.0   # Windows 11 → MSIX
-dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-android                # Android → sideload / private MDM
-dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-ios                    # iOS → Ad-Hoc/enterprise (Mac build host required for signing)
+# Publish Release (signed MSIX sideload per Constitution VII)
+dotnet publish src/RAGGit.Client.WinUI -c Release -p:Platform=x64 -p:WindowsPackageType=MSIX   # Windows 10 1809+ / 11 → MSIX
 
-# Mobile devices reach the workstation over site VPN or the same LAN subnet — no cloud relay (Constitution IV)
+# Remote Windows desktops reach the workstation over site VPN or the same LAN subnet — no cloud relay (Constitution IV)
 ```
 
 Client flows: **Admin**: `Library → Upload (PDF/docx/txt/md <100MB)` → status `Indexing→Ready`; **Employee**: `Query → "what is refund policy?"` → `{answer, citations[]}`.

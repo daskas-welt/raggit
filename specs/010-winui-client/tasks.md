@@ -68,7 +68,7 @@
 - [x] T015 [P] [US2] Create `src/RAGGit.Client.WinUI/Views/QueryPage.xaml(.cs)` + chat control (bind `Messages`/`QueryText`/`AskCommand`/`Citations`/`StatusMessage`; replace MAUI `MultiBinding` citation subtitle with `IValueConverter` or preformatted property)
 - [x] T016 [P] [US2] Create `src/RAGGit.Client.WinUI/Views/HistoryPage.xaml(.cs)` + `QueryDetailPage.xaml(.cs)` (bound to `HistoryViewModel`/`QueryDetailViewModel`)
 - [x] T017 [P] [US2] Create `src/RAGGit.Client.WinUI/Views/DocumentsMinePage.xaml(.cs)` (bound to `DocumentsMineViewModel`)
-- [ ] T018 [P] [US2] Create `src/RAGGit.Client.WinUI/Views/UploadSheet.xaml(.cs)` as `ContentDialog`/side panel reusing Core `UploadViewModel` with cancel (per 008-upload-sheet: no dedicated route/flyout item)
+- [x] T018 [P] [US2] Create `src/RAGGit.Client.WinUI/Views/UploadDialog.xaml(.cs)` (alias for UploadSheet) as `ContentDialog` reusing Core `UploadViewModel` with cancel (per 008-upload-sheet: no dedicated route/flyout item)
 - [x] T019 [US2] Create `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml(.cs)` (bound to `AdminUsersViewModel`) and enforce admin gating in `src/RAGGit.Client.WinUI/MainWindow.xaml.cs` (`Nav_SelectionChanged` + `RefreshAdminVisibility`)
 - [x] T020 [US2] Port themes/converters to `src/RAGGit.Client.WinUI/` (Light/Dark `ResourceDictionary` via `ThemeDictionaries`, citation/type/size/creator converters replacing `Converters/DocumentDisplayConverters.cs`)
 
@@ -110,7 +110,7 @@
 **Purpose**: Debt paydown and final consistency
 
 - [ ] T028 [P] Optional namespace rename `RAGGit.Client.Maui.*` → `RAGGit.Client.Core.*`/`RAGGit.Client.*` across `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WinUI/`, `tests/unit/` (only if churn is affordable; behavior-neutral)
-- [ ] T029 [P] Update `specs/010-winui-client/` with `checklists/requirements.md` validation record and refresh `docs/` screenshots/diagrams from MAUI to WinUI
+- [x] T029 [P] Update `specs/010-winui-client/` with `checklists/requirements.md` validation record and refresh `docs/` screenshots/diagrams from MAUI to WinUI (done 2026-09-17: checklist created; `publish.md` rewritten to WinUI MSIX; `architecture.md`/`operator-cli.md`/`performance.md`/`001-quickstart.md` updated; no client screenshots exist in `docs/` — only 004-identity arch diagrams; `raggit-architecture.json/html` are Archify-generated, regen via Archify)
 - [ ] T030 Run full validation: `dotnet build` + `dotnet test` + `csharpier` + quickstart offline-invariant flow against the WinUI client
 
 ---
