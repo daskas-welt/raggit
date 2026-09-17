@@ -17,12 +17,16 @@ show their sources.
 
 ## How it works
 
-1. **One AI workstation** (a company computer) stores your documents and runs
-   the AI. No internet needed once it is set up.
-2. **Employee desktops** run a simple Windows app that talks to the
-   workstation over your office network or VPN.
-3. **Admins upload documents** (PDF, Word, Excel, text...). The system reads
-   and indexes them automatically.
+1. **One powerful AI workstation** — a separate, capable machine on your
+   company network (good CPU, 16GB+ RAM, a GPU helps, 10GB free disk) —
+   stores your documents and runs the AI. No internet needed once it is set
+   up. This machine does all the heavy work, so nothing else needs to be
+   powerful.
+2. **Ordinary Windows PCs** run a simple desktop app that talks to the
+   workstation over your office network or VPN. Any modest office PC works —
+   no AI hardware needed on desks.
+3. **Admins upload documents** (PDF, Word, Excel, text...) from their PC.
+   The workstation reads and indexes them automatically.
 4. **Employees ask questions** in everyday language and get answers with
    citations they can click through to verify.
 
