@@ -9,7 +9,7 @@
         <Platforms>x64;x86;ARM64</Platforms>
         <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
         <UseWinUI>true</UseWinUI>
-    <UserSecretsId>d29c144e-f44d-4ef3-aca8-c5ee220683f6</UserSecretsId>
+        <UserSecretsId>d29c144e-f44d-4ef3-aca8-c5ee220683f6</UserSecretsId>
         <!-- Self-contained Debug: embeds the App Runtime locally so the F5 loop
          works on machines where the store-framework lookup fails; Release
          MSIX stays framework-dependent (declared dependency, no bootstrap). -->
