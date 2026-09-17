@@ -99,7 +99,7 @@
 - [x] T024 [US4] Add Release MSIX packaging in `src/RAGGit.Client.WinUI/` (`Package.appxmanifest`, dev test certificate, CI Release job passing `/p:WindowsPackageType=MSIX`)
 - [x] T025 [US4] Amend constitution `.specify/memory/constitution.md` v1.2.0 → v1.3.0 MINOR (III: MAUI → WinUI 3; VII: project list `RAGGit.Client.Maui/` → `RAGGit.Client.WinUI/`) and update `README.md` (arch diagram, quickstart run/package commands, drop `dotnet workload install maui`) plus CI/scripts
 - [x] T026 [US4] Validate clean-checkout `dotnet build RAGGit.sln` (no MAUI workload) + `dotnet test` full suites + `dotnet csharpier check .`
-- [ ] T027 [US4] Smoke-test Release MSIX sideload on Win10 1809 and Win11 (install with no extra runtime step, sign-in → Library → Ask → History)
+- [ ] T027 [US4] Smoke-test Release MSIX sideload on Win10 1809 and Win11 (install with no extra runtime step, sign-in → Library → Ask → History) — DEFERRED 2026-09-17: no VMs available; procedure explained, runs on demand
 
 **Checkpoint**: All four stories functional; SC-003/SC-005 satisfied
 
