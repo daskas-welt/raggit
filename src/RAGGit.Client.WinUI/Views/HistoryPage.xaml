@@ -9,9 +9,17 @@
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
     </Page.Resources>
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
-        <!-- Header -->
-        <Grid Grid.Row="0">
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
+        <!-- Header card -->
+        <Border
+            Grid.Row="0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="16,12"
+        >
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -33,17 +41,10 @@
                 VerticalAlignment="Center"
             />
         </Grid>
-
-        <!-- Status -->
-        <TextBlock
-            Grid.Row="1"
-            Text="{Binding StatusMessage}"
-            FontSize="13"
-            Foreground="{ThemeResource OnSurfaceVariant}"
-        />
+        </Border>
 
         <!-- History List -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
@@ -58,12 +59,19 @@
                 SelectionMode="None"
                 IsItemClickEnabled="True"
                 ItemClick="OnItemClicked"
+                Background="Transparent"
             >
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Border
-                            Background="{ThemeResource Surface}"
-                            BorderBrush="{ThemeResource Outline}"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="12"
@@ -98,17 +106,27 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <!-- Empty state -->
-            <StackPanel
-                Spacing="8"
+            <!-- Empty state card -->
+            <Border
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="24"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
+            >
+            <StackPanel
+                Spacing="12"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
             >
                 <TextBlock
                     Text="No queries yet"
                     FontSize="18"
                     FontWeight="SemiBold"
+                    Foreground="{ThemeResource OnSurface}"
                     HorizontalAlignment="Center"
                 />
                 <TextBlock
@@ -118,11 +136,12 @@
                     HorizontalAlignment="Center"
                 />
             </StackPanel>
+            </Border>
         </Grid>
 
         <!-- Load more (explicit button replaces RemainingItemsThreshold) -->
         <Button
-            Grid.Row="3"
+            Grid.Row="2"
             Content="Load more"
             Command="{Binding LoadMoreCommand}"
             Visibility="{Binding HasMore, Converter={StaticResource BoolVisibility}}"
@@ -131,7 +150,7 @@
 
         <!-- Footer -->
         <TextBlock
-            Grid.Row="4"
+            Grid.Row="3"
             Text="{Binding ErrorMessage}"
             Foreground="{ThemeResource Error}"
             FontSize="13"
