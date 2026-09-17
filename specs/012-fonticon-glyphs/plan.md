@@ -18,7 +18,7 @@ Replace the last text glyphs in the WinUI client (Admin Active ✓/✗, Locked �
 
 **Storage**: N/A.
 
-**Testing**: Existing `tests/unit` + `tests/contract` + `tests/integration` green with zero assertion changes; new unit coverage asserting converter codepoint outputs (Constitution VI — see gates). Manual: Admin list in Light/Dark/Contrast + screen-reader walkthrough.
+**Testing**: Existing `tests/unit` + `tests/contract` + `tests/integration` green with zero assertion changes (direct converter asserts BLOCKED by WinUI TFM boundary — XAML-compiler + grep + visual gates substitute). Manual: Admin list in Light/Dark/Contrast + screen-reader walkthrough.
 
 **Target Platform**: Windows 10 1809 (17763) + Windows 11 — codepoints MUST exist in Segoe MDL2 Assets (E711/E72E/E73E verified in the shared PUA range).
 
@@ -26,7 +26,7 @@ Replace the last text glyphs in the WinUI client (Admin Active ✓/✗, Locked �
 
 **Performance Goals**: N/A (static icons, zero runtime cost).
 
-**Constraints**: 1809 floor (MDL2-compatible codepoints only); Core/tests read-only except additive converter-output unit tests; unlocked cell stays empty.
+**Constraints**: 1809 floor (MDL2-compatible codepoints only); Core/tests read-only; unlocked cell stays empty.
 
 **Scale/Scope**: 2 converters in `src/RAGGit.Client.WinUI/Converters/ViewConverters.cs`, 2 usage sites in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml`, 1 unit-test addition.
 
@@ -39,7 +39,7 @@ Replace the last text glyphs in the WinUI client (Admin Active ✓/✗, Locked �
 | **III. .NET Library-First & Client Reuse** | ✅ PASS | Formatting logic stays in converters; XAML binds as before. |
 | **IV. Offline Invariant** | ✅ PASS | No runtime egress; system font only. |
 | **V. Citation-Grounded RAG** | ✅ PASS | Untouched. |
-| **VI. Test-First** | ✅ PASS | Existing suites green as gate + new unit asserts on converter codepoint outputs (converter change is logic, however thin — tested first). |
+| **VI. Test-First** | ✅ PASS | Existing suites green as gate + XAML-compiler/grep/visual substitute gates (direct asserts blocked by TFM boundary — research.md Decision 4). |
 | **VII. Simplicity & Proprietary Stewardship** | ✅ PASS | No new projects/packages (toolkit route already rejected in 011 research). |
 
 *Gate: PASS, no amendment. Proceed.*
@@ -56,10 +56,10 @@ src/RAGGit.Client.WinUI/
 ├── Converters/ViewConverters.cs   # WRITABLE this feature: ActiveGlyph/LockedGlyph emit codepoints
 └── Views/AdminUsersPage.xaml      # WRITABLE: FontIcon usages + accessible names
 src/RAGGit.Client.Core/           # READ-ONLY
-tests/unit/                       # ADDITIVE ONLY: converter codepoint asserts
+tests/                            # READ-ONLY (no converter asserts possible across TFM boundary)
 ```
 
-**Structure Decision**: Minimal two-file change + additive tests. This feature explicitly lifts the 011 read-only rule for the two glyph converters only.
+**Structure Decision**: Minimal two-file change. This feature explicitly lifts the 011 read-only rule for the two glyph converters only.
 
 ## Complexity Tracking
 
@@ -73,6 +73,6 @@ tests/unit/                       # ADDITIVE ONLY: converter codepoint asserts
 |-----------|--------|----------------------|
 | I / II / IV / V / VII | ✅ PASS | Unchanged from pre-design check. |
 | III | ✅ PASS | Converter contracts (bool→string) preserved; only emitted values change. |
-| VI | ✅ PASS | research.md records codepoint verification; quickstart.md defines converter-assert + visual validation. |
+| VI | ✅ PASS | research.md records codepoint verification; quickstart.md defines grep + visual validation (unit asserts blocked — Decision 4). |
 
 *Design gate: PASS. Ready for tasks.*

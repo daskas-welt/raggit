@@ -4,13 +4,14 @@
 
 - .NET 8 SDK (`global.json` pins `8.0.425`); Windows 10 1809+ / 11 for visual checks.
 
-## 1. Converter asserts (fast gate)
+## 1. Converter contract gate (fast gate — unit asserts BLOCKED by WinUI TFM boundary, see tasks.md)
 
 ```powershell
-dotnet test tests/unit/RAGGit.Tests.Unit.csproj --filter "FullyQualifiedName~Glyph"
+Select-String -Path "src/RAGGit.Client.WinUI/Converters/ViewConverters.cs" -Pattern '\\uE73E|\\uE711|\\uE72E'
+dotnet build src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj -p:Platform=x64
 ```
 
-Expect: `ActiveGlyphConverter` true→``, false→``; `LockedGlyphConverter` true→``, false→`""`. (Codepoints: U+E73E CheckMark, U+E711 Cancel, U+E72E Lock.)
+Expect: `ActiveGlyphConverter` emits ``/``; `LockedGlyphConverter` emits ``/`""`. (Codepoints: U+E73E CheckMark, U+E711 Cancel, U+E72E Lock.) Build green.
 
 ## 2. Full regression gate
 

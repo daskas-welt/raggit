@@ -27,5 +27,5 @@
 
 ## Decision 4 — Tests
 
-- Decision: additive unit asserts on `ActiveGlyphConverter`/`LockedGlyphConverter` outputs (exact codepoint strings + empty-string case); full suites green with zero assertion changes otherwise.
-- Rationale: Constitution VI — the converter edit is logic (however thin), so it gets tested first.
+- Decision: direct unit asserts BLOCKED — `tests/unit` is plain `net8.0` and the converters sit behind the WinUI `net8.0-windows10.0.17763.0` TFM boundary (`Microsoft.UI.Xaml` types unloadable; referencing the WinExe would force retargeting the shared test project — rejected per VII). Substitute: XAML-compiler verification + output grep contract check (quickstart §1) + 3-theme visual validation.
+- Rationale: Constitution VI intent (no unverified logic) preserved at proportionate cost; test-infra surgery for a string swap rejected.
