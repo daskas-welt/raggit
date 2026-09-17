@@ -10,15 +10,23 @@
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
     </Page.Resources>
-    <Grid RowDefinitions="Auto,*,Auto" Padding="24" RowSpacing="8">
-        <!-- Header -->
-        <TextBlock
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
+        <!-- Header card -->
+        <Border
             Grid.Row="0"
-            Text="Ask the Library"
-            FontSize="22"
-            FontWeight="Bold"
-            Foreground="{ThemeResource OnSurface}"
-        />
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+        >
+            <TextBlock
+                Text="Ask the Library"
+                FontSize="22"
+                FontWeight="Bold"
+                Foreground="{ThemeResource OnSurface}"
+            />
+        </Border>
 
         <!-- Chat -->
         <components:ChatControl
@@ -29,49 +37,56 @@
             SendCommand="{Binding AskCommand}"
         />
 
-        <!-- Citations Footer -->
-        <Grid
+        <!-- Citations Footer card -->
+        <Border
             Grid.Row="2"
             Visibility="{Binding HasCitations, Converter={StaticResource BoolVisibility}}"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
         >
-            <ProgressRing
-                IsActive="{Binding IsBusy}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{ThemeResource Primary}"
-                HorizontalAlignment="Center"
-            />
-            <ListView ItemsSource="{Binding Citations}" MaxHeight="140" SelectionMode="None">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Border
-                            Background="{ThemeResource Surface}"
-                            BorderBrush="{ThemeResource Outline}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10"
-                            Margin="0,4"
-                        >
-                            <StackPanel Spacing="4">
-                                <TextBlock
-                                    Text="{Binding Text}"
-                                    TextWrapping="Wrap"
-                                    FontSize="13"
-                                />
-                                <TextBlock
-                                    FontSize="11"
-                                    Foreground="{ThemeResource OnSurfaceVariant}"
-                                    Text="{Binding Converter={StaticResource CitationSubtitle}}"
-                                />
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
+            <Grid>
+                <ProgressRing
+                    IsActive="{Binding IsBusy}"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                    Foreground="{ThemeResource Primary}"
+                    HorizontalAlignment="Center"
+                />
+                <ListView ItemsSource="{Binding Citations}" MaxHeight="140" SelectionMode="None">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                Background="{ThemeResource Surface}"
+                                BorderBrush="{ThemeResource Outline}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,4"
+                            >
+                                <StackPanel Spacing="4">
+                                    <TextBlock
+                                        Text="{Binding Text}"
+                                        TextWrapping="Wrap"
+                                        FontSize="13"
+                                    />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource OnSurfaceVariant}"
+                                        Text="{Binding Converter={StaticResource CitationSubtitle}}"
+                                    />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
 
         <!-- Status -->
         <InfoBar
-            Grid.Row="2"
+            Grid.Row="3"
             Severity="Informational"
             IsOpen="{Binding HasStatusMessage, Mode=OneWay}"
             Message="{Binding StatusMessage, Mode=OneWay}"
