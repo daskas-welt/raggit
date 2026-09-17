@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RAGGit auto-update installer file.
+  OPERATOR: before publishing to the internal share —
+  1. Replace ALL https://apps.example.local/raggit/ URLs with the real
+     internal location (HTTPS folder or LAN path served over HTTPS).
+  2. Set Version below AND in Package.appxmanifest to the release version.
+  3. Publisher MUST match the release signing certificate subject
+     (dev: CN=RAGGit Dev; prod: internal-CA subject) AND the manifest.
+  Copy this file next to the signed .msix. Employees double-click it once;
+  the app then updates itself from this location.
+-->
+<AppInstaller
+    xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
+    Version="1.4.0.0"
+    Uri="https://apps.example.local/raggit/RAGGit.appinstaller">
+    <MainPackage
+        Name="DaskasWelt.RAGGit"
+        Publisher="CN=RAGGit Dev"
+        Version="1.4.0.0"
+        ProcessorArchitecture="x64"
+        Uri="https://apps.example.local/raggit/RAGGit.Client.WinUI_1.4.0.0_x64.msix" />
+    <UpdateSettings>
+        <OnLaunch HoursBetweenUpdateChecks="0" />
+        <AutomaticBackgroundTask />
+    </UpdateSettings>
+</AppInstaller>

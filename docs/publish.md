@@ -62,6 +62,21 @@ test certificate is fine for sideload testing) before private enterprise
 distribution. The MSIX installs with double-click on clean Win10 1809+ and
 Win11 machines — no extra runtime install step.
 
+### Release the desktop client to employees
+
+1. Get the unsigned package from the CI `RAGGit.Client.WinUI-msix` artifact
+   (or build it with the command above plus
+   `-p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true`).
+2. Sign it: `signtool sign /fd SHA256 /f <company-cert>.pfx /p <password>
+   RAGGit.Client.WinUI_*_x64.msix`. The cert subject MUST match the
+   `Publisher` in `Package.appxmanifest` (and in `RAGGit.appinstaller`).
+3. In `src/RAGGit.Client.WinUI/RAGGit.appinstaller`: replace the example
+   URLs with the real internal HTTPS location, and bump `Version`
+   (appinstaller + manifest + package must all agree).
+4. Copy the signed `.msix` and the edited `.appinstaller` to that internal
+   location. Employees install once via the `.appinstaller` link
+   ([employee guide](./install.md)); updates then arrive automatically.
+
 ## LAN Discovery
 
 Clients locate the workstation through one of the following mechanisms:
