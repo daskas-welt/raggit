@@ -92,8 +92,10 @@ public sealed class OllamaTimeoutTests
         sw.Stop();
         _output.WriteLine($"800ms timeout elapsed {sw.ElapsedMilliseconds}ms");
         // Must be ~800ms, not 100s default — proves HttpClient.Timeout wired, not hanging.
+        // Upper bound is generous on purpose: shared CI runners add seconds of
+        // scheduling noise on top of the timeout; 10s still proves "not 100s".
         Assert.True(
-            sw.Elapsed < TimeSpan.FromSeconds(2),
+            sw.Elapsed < TimeSpan.FromSeconds(10),
             $"Timeout not wired: elapsed {sw.ElapsedMilliseconds}ms for {timeoutMs}ms timeout"
         );
         Assert.True(
