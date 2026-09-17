@@ -55,7 +55,7 @@
 
 **Independent Test**: Screen-reader walk of Admin list announces toggle name + state and "Locked"; empty cells silent
 
-- [ ] T005 [US2] Verify unlocked empty-cell rendering and accessible names/tooltips in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml` against `specs/012-fonticon-glyphs/contracts/icon-glyphs.md` (static markup check, no new bindings)
+- [ ] T005 [US2] Verify unlocked empty-cell rendering and accessible names/tooltips in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml` against `specs/012-fonticon-glyphs/contracts/icon-glyphs.md` (static markup check, no new bindings) plus live screen-reader walkthrough per `specs/012-fonticon-glyphs/quickstart.md` §3
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
