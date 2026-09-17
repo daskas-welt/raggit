@@ -7,11 +7,11 @@
 ## 1. Converter contract gate (fast gate — unit asserts BLOCKED by WinUI TFM boundary, see tasks.md)
 
 ```powershell
-Select-String -Path 'src/RAGGit.Client.WinUI/Converters/ViewConverters.cs' -Pattern 'value is true \? "\\uE73E"|value is true \? "\\uE72E"'
+Select-String -Path 'src/RAGGit.Client.WinUI/Converters/ViewConverters.cs' -Pattern 'value is true\s+\?\s+"\\uE73E"\s+:\s+"\\uE711"|value is true\s+\?\s+"\\uE72E"\s*:\s*""'
 dotnet build src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj -p:Platform=x64
 ```
 
-Expect: both true-branches emit the CheckMark/Lock codepoints (mapping-aware match on the full ternary arms, not mere presence); `LockedGlyphConverter` false-arm is `""`. (Codepoints: U+E73E CheckMark, U+E711 Cancel, U+E72E Lock.) Build green. Limitation: grep cannot execute the ternary — the 3-theme visual in §3 is the behavioral proof.
+Expect: both full ternary arms match (CheckMark/Cancel and Lock/empty, whitespace-robust); a false-arm typo fails the gate. (Codepoints: U+E73E CheckMark, U+E711 Cancel, U+E72E Lock.) Build green. Limitation: grep cannot execute the ternary — the 3-theme visual in §3 is the behavioral proof.
 
 ## 2. Full regression gate
 
