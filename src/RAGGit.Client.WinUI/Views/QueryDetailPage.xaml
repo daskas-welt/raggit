@@ -10,30 +10,39 @@
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
     </Page.Resources>
-    <Grid RowDefinitions="Auto,Auto,*" Padding="24" RowSpacing="12">
-        <!-- Header -->
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock
-                Grid.Column="0"
-                Text="Query Detail"
-                FontSize="22"
-                FontWeight="Bold"
-                Foreground="{ThemeResource OnSurface}"
-                VerticalAlignment="Center"
-            />
-            <Button
-                Grid.Column="1"
-                Content="Back"
-                Click="OnBackClicked"
-                Height="36"
-                FontSize="13"
-                VerticalAlignment="Center"
-            />
-        </Grid>
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="24" RowSpacing="12">
+        <!-- Header card -->
+        <Border
+            Grid.Row="0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="16,12"
+        >
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Query Detail"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurface}"
+                    VerticalAlignment="Center"
+                />
+                <Button
+                    Grid.Column="1"
+                    Content="Back"
+                    Click="OnBackClicked"
+                    Height="36"
+                    FontSize="13"
+                    VerticalAlignment="Center"
+                />
+            </Grid>
+        </Border>
 
         <!-- Error -->
         <TextBlock
@@ -44,74 +53,86 @@
             TextWrapping="Wrap"
         />
 
-        <!-- Content -->
-        <Grid Grid.Row="2">
-            <ProgressRing
-                IsActive="{Binding IsBusy}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{ThemeResource Primary}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Width="40"
-                Height="40"
-            />
-            <ScrollViewer>
-                <StackPanel Spacing="12">
-                    <!-- Prompt -->
-                    <Border
-                        Background="{ThemeResource Surface}"
-                        BorderBrush="{ThemeResource Outline}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12"
-                    >
-                        <StackPanel Spacing="6">
-                            <TextBlock
-                                Text="Prompt"
-                                FontSize="12"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <TextBlock
-                                Text="{Binding Detail.Prompt}"
-                                FontSize="14"
-                                TextWrapping="Wrap"
-                            />
-                        </StackPanel>
-                    </Border>
+        <!-- Prompt card -->
+        <Border
+            Grid.Row="2"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+        >
+            <StackPanel Spacing="6">
+                <TextBlock
+                    Text="Prompt"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
+                />
+                <TextBlock
+                    Text="{Binding Detail.Prompt}"
+                    FontSize="14"
+                    TextWrapping="Wrap"
+                />
+            </StackPanel>
+        </Border>
 
-                    <!-- Answer -->
-                    <Border
-                        Background="{ThemeResource Surface}"
-                        BorderBrush="{ThemeResource Outline}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12"
-                    >
-                        <StackPanel Spacing="6">
-                            <TextBlock
-                                Text="Answer"
-                                FontSize="12"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <TextBlock
-                                Text="{Binding Detail.Answer}"
-                                FontSize="14"
-                                TextWrapping="Wrap"
-                            />
-                        </StackPanel>
-                    </Border>
+        <!-- Answer card -->
+        <Border
+            Grid.Row="3"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+        >
+            <StackPanel Spacing="6">
+                <TextBlock
+                    Text="Answer"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
+                />
+                <TextBlock
+                    Text="{Binding Detail.Answer}"
+                    FontSize="14"
+                    TextWrapping="Wrap"
+                />
+            </StackPanel>
+        </Border>
 
-                    <!-- Citations -->
-                    <TextBlock
-                        Text="Citations"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Foreground="{ThemeResource OnSurfaceVariant}"
-                        Margin="0,4,0,0"
-                    />
-                    <ListView ItemsSource="{Binding Detail.Citations}" SelectionMode="None">
+        <!-- Citations card -->
+        <Border
+            Grid.Row="4"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+        >
+            <Grid RowDefinitions="Auto,*" RowSpacing="12">
+                <TextBlock
+                    Grid.Row="0"
+                    Text="Citations"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
+                />
+                <Grid Grid.Row="1">
+                    <ListView
+                        ItemsSource="{Binding Detail.Citations}"
+                        SelectionMode="None"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ScrollViewer.VerticalScrollMode="Enabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    >
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border
@@ -143,10 +164,24 @@
                         FontSize="13"
                         Foreground="{ThemeResource OnSurfaceVariant}"
                         HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
                         Visibility="{Binding Detail.Citations, Converter={StaticResource EmptyListVisibility}}"
                     />
-                </StackPanel>
-            </ScrollViewer>
-        </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Loading overlay -->
+        <ProgressRing
+            Grid.Row="2"
+            Grid.RowSpan="3"
+            IsActive="{Binding IsBusy}"
+            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+            Foreground="{ThemeResource Primary}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Width="40"
+            Height="40"
+        />
     </Grid>
 </Page>
