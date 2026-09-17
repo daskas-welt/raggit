@@ -63,6 +63,7 @@ dotnet run --project src/RAGGit.Workstation.Api --urls https://localhost:5001
 
 Full step-by-step (accounts, desktop app, offline check, MSIX install):
 [Quickstart](specs/001-offline-mode/quickstart.md) ·
+[Workstation runbook](docs/workstation.md) ·
 [Publishing guide](docs/publish.md) ·
 [Operator guide](docs/operator-cli.md)
 
