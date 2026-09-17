@@ -28,7 +28,7 @@ Replace the last text glyphs in the WinUI client (Admin Active ✓/✗, Locked �
 
 **Constraints**: 1809 floor (MDL2-compatible codepoints only); Core/tests read-only; unlocked cell stays empty.
 
-**Scale/Scope**: 2 converters in `src/RAGGit.Client.WinUI/Converters/ViewConverters.cs`, 2 usage sites in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml`, 1 unit-test addition.
+**Scale/Scope**: 2 converters in `src/RAGGit.Client.WinUI/Converters/ViewConverters.cs`, 2 usage sites in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml`, 0 test changes.
 
 ## Constitution Check
 
