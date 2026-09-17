@@ -41,8 +41,8 @@
 
             <!-- Users list -->
             <Border
-                Background="{ThemeResource Surface}"
-                BorderBrush="{ThemeResource Outline}"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="0"
@@ -164,62 +164,43 @@
             />
 
             <!-- Create Person -->
-            <Border
-                Background="{ThemeResource Surface}"
-                BorderBrush="{ThemeResource Outline}"
+            <Expander
+                Header="Create Person"
+                IsExpanded="True"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="16"
             >
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Create Person" FontSize="18" FontWeight="SemiBold" />
-                    <Grid
-                        ColumnDefinitions="*,*"
-                        RowDefinitions="Auto,Auto"
-                        ColumnSpacing="8"
-                        RowSpacing="12"
-                    >
-                        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="0">
-                            <TextBlock
-                                Text="Username"
-                                FontSize="12"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <TextBox Text="{Binding NewUsername, Mode=TwoWay}" FontSize="14" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="0">
-                            <TextBlock
-                                Text="Display Name"
-                                FontSize="12"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <TextBox Text="{Binding NewDisplayName, Mode=TwoWay}" FontSize="14" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="0" Spacing="0">
-                            <TextBlock
-                                Text="Role"
-                                FontSize="12"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <ComboBox
-                                ItemsSource="{Binding Roles}"
-                                SelectedItem="{Binding NewRole, Mode=TwoWay}"
-                                FontSize="14"
-                                HorizontalAlignment="Stretch"
-                            />
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="0">
-                            <TextBlock
-                                Text="Password"
-                                FontSize="12"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <PasswordBox
-                                Password="{Binding NewPassword, Mode=TwoWay}"
-                                FontSize="14"
-                            />
-                        </StackPanel>
-                    </Grid>
+                    <TextBox
+                        Header="Username"
+                        Description="Unique login name."
+                        Text="{Binding NewUsername, Mode=TwoWay}"
+                        FontSize="14"
+                    />
+                    <TextBox
+                        Header="Display Name"
+                        Description="Shown in the users list."
+                        Text="{Binding NewDisplayName, Mode=TwoWay}"
+                        FontSize="14"
+                    />
+                    <ComboBox
+                        Header="Role"
+                        Description="Admin or Employee."
+                        ItemsSource="{Binding Roles}"
+                        SelectedItem="{Binding NewRole, Mode=TwoWay}"
+                        FontSize="14"
+                        HorizontalAlignment="Stretch"
+                    />
+                    <PasswordBox
+                        Header="Password"
+                        Description="Initial password for the new account."
+                        Password="{Binding NewPassword, Mode=TwoWay}"
+                        FontSize="14"
+                    />
                     <Button
                         Content="Create"
                         Command="{Binding CreateUserCommand}"
@@ -227,48 +208,30 @@
                         HorizontalAlignment="Stretch"
                     />
                 </StackPanel>
-            </Border>
+            </Expander>
 
             <!-- Reset Password (operates on selected user) -->
-            <Border
-                Background="{ThemeResource Surface}"
-                BorderBrush="{ThemeResource Outline}"
+            <Expander
+                Header="Reset Password"
+                IsExpanded="True"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="16"
             >
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Reset Password" FontSize="18" FontWeight="SemiBold" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                        <StackPanel Grid.Column="0" Spacing="0">
-                            <TextBlock
-                                Text="New Password"
-                                FontSize="12"
-                                Foreground="{ThemeResource OnSurfaceVariant}"
-                            />
-                            <PasswordBox
-                                Password="{Binding ResetPassword, Mode=TwoWay}"
-                                FontSize="14"
-                            />
-                        </StackPanel>
-                        <StackPanel
-                            Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="6"
-                            VerticalAlignment="Bottom"
-                            Padding="0,0,0,10"
-                        >
-                            <CheckBox
-                                IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
-                                VerticalAlignment="Center"
-                            />
-                            <TextBlock
-                                Text="Must change"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                            />
-                        </StackPanel>
-                    </Grid>
+                    <PasswordBox
+                        Header="New Password"
+                        Description="The selected user signs in with this next."
+                        Password="{Binding ResetPassword, Mode=TwoWay}"
+                        FontSize="14"
+                    />
+                    <CheckBox
+                        Content="Must change"
+                        IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
+                    />
                     <Button
                         Content="Reset Password"
                         Click="OnResetPasswordClicked"
@@ -276,7 +239,7 @@
                         HorizontalAlignment="Stretch"
                     />
                 </StackPanel>
-            </Border>
+            </Expander>
 
             <!-- Error -->
             <TextBlock

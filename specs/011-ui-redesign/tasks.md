@@ -100,8 +100,8 @@
 
 **Independent Test**: Full admin form operable by keyboard + screen reader; login errors surface while typing in all themes
 
-- [ ] T017 [US5] Rebuild form on `SettingsCard`/`SettingsExpander` with `Header` labels in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml`
-- [ ] T018 [US5] Fix `UpdateSourceTrigger` and `HasError` visibility binding plus Mica/native spacing in `src/RAGGit.Client.WinUI/Views/LoginPage.xaml`
+- [x] T017 [US5] Rebuild form on inbox `Expander` + `Header`-labelled editors in `src/RAGGit.Client.WinUI/Views/AdminUsersPage.xaml` (toolkit `SettingsCard` rejected: 22621-only assets vs 17763 floor — see `research.md`)
+- [x] T018 [US5] Fix `UpdateSourceTrigger` and `HasError` visibility binding plus Mica/native spacing in `src/RAGGit.Client.WinUI/Views/LoginPage.xaml`
 
 **Checkpoint**: All user stories should now be independently functional
 
