@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using RAGGit.Core.Models;
@@ -45,7 +45,7 @@ public sealed class MineMetaConverter : IValueConverter
 public sealed class ActiveGlyphConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) =>
-        value is true ? "✓" : "✗";
+        value is true ? "\uE73E" : "\uE711";
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();
@@ -54,7 +54,7 @@ public sealed class ActiveGlyphConverter : IValueConverter
 public sealed class LockedGlyphConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) =>
-        value is true ? "🔒" : "—";
+        value is true ? "\uE72E" : "";
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();
