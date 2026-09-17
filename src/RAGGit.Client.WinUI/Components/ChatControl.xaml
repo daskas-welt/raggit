@@ -18,16 +18,21 @@
             ItemsSource="{Binding Messages, ElementName=Root}"
             SelectionMode="None"
         >
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="0,4">
+                    <Grid HorizontalAlignment="Stretch" Padding="0,4">
                         <!-- User message (right-aligned) -->
                         <Border
                             HorizontalAlignment="Right"
                             MaxWidth="400"
                             Background="{ThemeResource Primary}"
                             CornerRadius="16,16,4,16"
-                            Padding="14,10"
+                            Padding="12,8"
                             Visibility="{Binding IsUser, Converter={StaticResource BoolVisibility}}"
                         >
                             <TextBlock
@@ -45,7 +50,7 @@
                             BorderBrush="{ThemeResource Outline}"
                             BorderThickness="1"
                             CornerRadius="16,16,16,4"
-                            Padding="14,10"
+                            Padding="12,8"
                             Visibility="{Binding IsUser, Converter={StaticResource InvertedBoolVisibility}}"
                         >
                             <TextBlock
