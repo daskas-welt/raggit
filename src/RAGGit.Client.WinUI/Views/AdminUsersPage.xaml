@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
-    Background="{StaticResource SurfaceVariant}"
+    Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
         <converters:ActiveGlyphConverter x:Key="ActiveGlyph" />
@@ -26,7 +26,7 @@
                     Text="People Management"
                     FontSize="22"
                     FontWeight="Bold"
-                    Foreground="{StaticResource OnSurface}"
+                    Foreground="{ThemeResource OnSurface}"
                     VerticalAlignment="Center"
                 />
                 <Button
@@ -41,8 +41,8 @@
 
             <!-- Users list -->
             <Border
-                Background="{StaticResource Surface}"
-                BorderBrush="{StaticResource Outline}"
+                Background="{ThemeResource Surface}"
+                BorderBrush="{ThemeResource Outline}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="0"
@@ -54,7 +54,7 @@
                             Text="User"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -62,7 +62,7 @@
                             Text="Role (tap to change)"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -70,7 +70,7 @@
                             Text="Active"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                         />
@@ -79,12 +79,12 @@
                             Text="Locked"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                         />
                     </Grid>
-                    <Rectangle Height="1" Fill="{StaticResource Outline}" />
+                    <Rectangle Height="1" Fill="{ThemeResource Outline}" />
                     <ListView
                         x:Name="UsersList"
                         ItemsSource="{Binding Users}"
@@ -103,13 +103,13 @@
                                             Text="{Binding Username}"
                                             FontWeight="Bold"
                                             FontSize="14"
-                                            Foreground="{StaticResource OnSurface}"
+                                            Foreground="{ThemeResource OnSurface}"
                                             TextTrimming="CharacterEllipsis"
                                         />
                                         <TextBlock
                                             Text="{Binding DisplayName}"
                                             FontSize="12"
-                                            Foreground="{StaticResource OnSurfaceVariant}"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
                                             TextTrimming="CharacterEllipsis"
                                         />
                                     </StackPanel>
@@ -128,7 +128,7 @@
                                         Command="{Binding DataContext.ToggleActiveCommand, ElementName=UsersList}"
                                         CommandParameter="{Binding}"
                                         Background="Transparent"
-                                        Foreground="{StaticResource Primary}"
+                                        Foreground="{ThemeResource Primary}"
                                         FontSize="16"
                                         FontWeight="Bold"
                                         Width="40"
@@ -151,7 +151,7 @@
                     <TextBlock
                         Text="No users found."
                         FontSize="14"
-                        Foreground="{StaticResource OnSurfaceVariant}"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
                         HorizontalAlignment="Center"
                         Padding="40"
                         Visibility="{Binding Users, Converter={StaticResource EmptyUsersVisibility}}"
@@ -161,14 +161,14 @@
             <TextBlock
                 Text="{Binding SelectedUser, Converter={StaticResource SelectedUserLabel}}"
                 FontSize="12"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
                 Visibility="{Binding SelectedUser, Converter={StaticResource NullVisibility}}"
             />
 
             <!-- Create Person -->
             <Border
-                Background="{StaticResource Surface}"
-                BorderBrush="{StaticResource Outline}"
+                Background="{ThemeResource Surface}"
+                BorderBrush="{ThemeResource Outline}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="16"
@@ -185,7 +185,7 @@
                             <TextBlock
                                 Text="Username"
                                 FontSize="12"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                             />
                             <TextBox Text="{Binding NewUsername, Mode=TwoWay}" FontSize="14" />
                         </StackPanel>
@@ -193,7 +193,7 @@
                             <TextBlock
                                 Text="Display Name"
                                 FontSize="12"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                             />
                             <TextBox Text="{Binding NewDisplayName, Mode=TwoWay}" FontSize="14" />
                         </StackPanel>
@@ -201,7 +201,7 @@
                             <TextBlock
                                 Text="Role"
                                 FontSize="12"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                             />
                             <ComboBox
                                 ItemsSource="{Binding Roles}"
@@ -214,7 +214,7 @@
                             <TextBlock
                                 Text="Password"
                                 FontSize="12"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                             />
                             <PasswordBox
                                 Password="{Binding NewPassword, Mode=TwoWay}"
@@ -233,8 +233,8 @@
 
             <!-- Reset Password (operates on selected user) -->
             <Border
-                Background="{StaticResource Surface}"
-                BorderBrush="{StaticResource Outline}"
+                Background="{ThemeResource Surface}"
+                BorderBrush="{ThemeResource Outline}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="16"
@@ -246,7 +246,7 @@
                             <TextBlock
                                 Text="New Password"
                                 FontSize="12"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                             />
                             <PasswordBox
                                 Password="{Binding ResetPassword, Mode=TwoWay}"
@@ -284,7 +284,7 @@
             <!-- Error -->
             <TextBlock
                 Text="{Binding ErrorMessage}"
-                Foreground="{StaticResource Error}"
+                Foreground="{ThemeResource Error}"
                 FontSize="13"
                 TextWrapping="Wrap"
             />
@@ -293,7 +293,7 @@
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{StaticResource Primary}"
+                Foreground="{ThemeResource Primary}"
                 HorizontalAlignment="Center"
                 Width="32"
                 Height="32"

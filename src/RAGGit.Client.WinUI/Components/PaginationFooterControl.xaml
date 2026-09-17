@@ -11,8 +11,8 @@
                 Content="{Binding Page}"
                 Command="{Binding GoToCommand, ElementName=Root}"
                 CommandParameter="{Binding Page}"
-                Background="{StaticResource Primary}"
-                Foreground="White"
+                Background="{ThemeResource Primary}"
+                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                 FontSize="13"
                 Padding="8,4"
                 MinWidth="44"
@@ -27,7 +27,7 @@
                 Command="{Binding GoToCommand, ElementName=Root}"
                 CommandParameter="{Binding Page}"
                 Background="Transparent"
-                Foreground="{StaticResource OnSurface}"
+                Foreground="{ThemeResource OnSurface}"
                 FontSize="13"
                 Padding="8,4"
                 MinWidth="44"
@@ -40,7 +40,7 @@
             <TextBlock
                 Text="…"
                 FontSize="13"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
                 Padding="8,4"
                 VerticalAlignment="Center"
             />
@@ -63,7 +63,7 @@
             <TextBlock
                 Text="Rows per page"
                 FontSize="12"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
                 VerticalAlignment="Center"
             />
             <ComboBox
@@ -78,7 +78,7 @@
             Grid.Column="1"
             Text="{Binding StatusText, ElementName=Root}"
             FontSize="12"
-            Foreground="{StaticResource OnSurfaceVariant}"
+            Foreground="{ThemeResource OnSurfaceVariant}"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
         />

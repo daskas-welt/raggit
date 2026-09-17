@@ -25,14 +25,14 @@
                         <Border
                             HorizontalAlignment="Right"
                             MaxWidth="400"
-                            Background="{StaticResource Primary}"
+                            Background="{ThemeResource Primary}"
                             CornerRadius="16,16,4,16"
                             Padding="14,10"
                             Visibility="{Binding IsUser, Converter={StaticResource BoolVisibility}}"
                         >
                             <TextBlock
                                 Text="{Binding Text}"
-                                Foreground="White"
+                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                                 FontSize="14"
                                 TextWrapping="Wrap"
                             />
@@ -41,8 +41,8 @@
                         <Border
                             HorizontalAlignment="Left"
                             MaxWidth="500"
-                            Background="{StaticResource Surface}"
-                            BorderBrush="{StaticResource Outline}"
+                            Background="{ThemeResource Surface}"
+                            BorderBrush="{ThemeResource Outline}"
                             BorderThickness="1"
                             CornerRadius="16,16,16,4"
                             Padding="14,10"
@@ -50,7 +50,7 @@
                         >
                             <TextBlock
                                 Text="{Binding Text}"
-                                Foreground="{StaticResource OnSurface}"
+                                Foreground="{ThemeResource OnSurface}"
                                 FontSize="14"
                                 TextWrapping="Wrap"
                             />
@@ -71,13 +71,13 @@
             <TextBlock
                 Text="Ask a question to get started"
                 FontSize="16"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
                 HorizontalAlignment="Center"
             />
             <TextBlock
                 Text="Your conversation will appear here."
                 FontSize="13"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
                 HorizontalAlignment="Center"
             />
         </StackPanel>
@@ -85,8 +85,8 @@
         <!-- Input bar (fixed at bottom) -->
         <Border
             Grid.Row="1"
-            Background="{StaticResource Surface}"
-            BorderBrush="{StaticResource Outline}"
+            Background="{ThemeResource Surface}"
+            BorderBrush="{ThemeResource Outline}"
             BorderThickness="1"
             CornerRadius="24"
             Padding="8"
@@ -107,8 +107,8 @@
                     Content="→"
                     AutomationProperties.Name="Send question"
                     Command="{Binding SendCommand, ElementName=Root}"
-                    Background="{StaticResource Primary}"
-                    Foreground="White"
+                    Background="{ThemeResource Primary}"
+                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                     CornerRadius="20"
                     Width="40"
                     Height="40"

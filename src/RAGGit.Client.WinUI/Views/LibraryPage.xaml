@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
-    Background="{StaticResource SurfaceVariant}"
+    Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
         <converters:DocumentMimeLabelConverter x:Key="MimeLabel" />
@@ -26,7 +26,7 @@
                 Text="Document Library"
                 FontSize="22"
                 FontWeight="Bold"
-                Foreground="{StaticResource OnSurface}"
+                Foreground="{ThemeResource OnSurface}"
                 VerticalAlignment="Center"
             />
             <StackPanel
@@ -59,7 +59,7 @@
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{StaticResource Primary}"
+                Foreground="{ThemeResource Primary}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Width="40"
@@ -73,7 +73,7 @@
                             Text="Filename"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -81,7 +81,7 @@
                             Text="Type"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -89,7 +89,7 @@
                             Text="Size"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -97,7 +97,7 @@
                             Text="Status"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -105,7 +105,7 @@
                             Text="Creator"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                         <TextBlock
@@ -113,7 +113,7 @@
                             Text="Created"
                             FontSize="12"
                             FontWeight="Bold"
-                            Foreground="{StaticResource OnSurfaceVariant}"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
                             VerticalAlignment="Center"
                         />
                     </Grid>
@@ -125,7 +125,7 @@
                                 Grid.Column="0"
                                 Text="{Binding Filename}"
                                 FontSize="14"
-                                Foreground="{StaticResource OnSurface}"
+                                Foreground="{ThemeResource OnSurface}"
                                 TextTrimming="CharacterEllipsis"
                                 VerticalAlignment="Center"
                             />
@@ -133,14 +133,14 @@
                                 Grid.Column="1"
                                 Text="{Binding Converter={StaticResource MimeLabel}}"
                                 FontSize="13"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <TextBlock
                                 Grid.Column="2"
                                 Text="{Binding Converter={StaticResource SizeMb}}"
                                 FontSize="13"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <components:StatusChip
@@ -152,7 +152,7 @@
                                 Grid.Column="4"
                                 Text="{Binding Converter={StaticResource CreatorLabel}}"
                                 FontSize="13"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 TextTrimming="CharacterEllipsis"
                                 VerticalAlignment="Center"
                             />
@@ -160,7 +160,7 @@
                                 Grid.Column="5"
                                 Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
                                 FontSize="13"
-                                Foreground="{StaticResource OnSurfaceVariant}"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <Button
@@ -208,7 +208,7 @@
                 <TextBlock
                     Text="Upload a document to see it here."
                     FontSize="13"
-                    Foreground="{StaticResource OnSurfaceVariant}"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
                     HorizontalAlignment="Center"
                 />
             </StackPanel>
@@ -234,7 +234,7 @@
         <TextBlock
             Grid.Row="3"
             Text="{Binding ErrorMessage}"
-            Foreground="{StaticResource Error}"
+            Foreground="{ThemeResource Error}"
             FontSize="13"
             VerticalAlignment="Center"
             TextTrimming="CharacterEllipsis"

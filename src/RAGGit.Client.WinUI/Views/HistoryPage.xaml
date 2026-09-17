@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
-    Background="{StaticResource SurfaceVariant}"
+    Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
@@ -21,7 +21,7 @@
                 Text="Query History"
                 FontSize="22"
                 FontWeight="Bold"
-                Foreground="{StaticResource OnSurface}"
+                Foreground="{ThemeResource OnSurface}"
                 VerticalAlignment="Center"
             />
             <Button
@@ -39,7 +39,7 @@
             Grid.Row="1"
             Text="{Binding StatusMessage}"
             FontSize="13"
-            Foreground="{StaticResource OnSurfaceVariant}"
+            Foreground="{ThemeResource OnSurfaceVariant}"
         />
 
         <!-- History List -->
@@ -47,7 +47,7 @@
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{StaticResource Primary}"
+                Foreground="{ThemeResource Primary}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Width="40"
@@ -62,8 +62,8 @@
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Border
-                            Background="{StaticResource Surface}"
-                            BorderBrush="{StaticResource Outline}"
+                            Background="{ThemeResource Surface}"
+                            BorderBrush="{ThemeResource Outline}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="12"
@@ -82,14 +82,14 @@
                                     Grid.Row="1"
                                     Text="{Binding AnswerPreview}"
                                     FontSize="13"
-                                    Foreground="{StaticResource OnSurfaceVariant}"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
                                     TextTrimming="CharacterEllipsis"
                                     MaxLines="3"
                                 />
                                 <TextBlock
                                     Grid.Row="2"
                                     FontSize="11"
-                                    Foreground="{StaticResource OnSurfaceVariant}"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
                                     Margin="0,4,0,0"
                                     Text="{Binding Converter={StaticResource HistoryMeta}}"
                                 />
@@ -114,7 +114,7 @@
                 <TextBlock
                     Text="Ask a question to see it here."
                     FontSize="13"
-                    Foreground="{StaticResource OnSurfaceVariant}"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
                     HorizontalAlignment="Center"
                 />
             </StackPanel>
@@ -133,7 +133,7 @@
         <TextBlock
             Grid.Row="4"
             Text="{Binding ErrorMessage}"
-            Foreground="{StaticResource Error}"
+            Foreground="{ThemeResource Error}"
             FontSize="13"
             TextTrimming="CharacterEllipsis"
         />

@@ -13,10 +13,10 @@
     <StackPanel Spacing="20" MinWidth="360">
         <!-- Drop Zone -->
         <Border
-            BorderBrush="{StaticResource Outline}"
+            BorderBrush="{ThemeResource Outline}"
             BorderThickness="2"
             CornerRadius="12"
-            Background="{StaticResource SurfaceVariant}"
+            Background="{ThemeResource SurfaceVariant}"
             Padding="32"
             Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
         >
@@ -26,13 +26,13 @@
                     FontSize="16"
                     FontWeight="Bold"
                     HorizontalAlignment="Center"
-                    Foreground="{StaticResource OnSurface}"
+                    Foreground="{ThemeResource OnSurface}"
                 />
                 <TextBlock
                     Text="PDF, DOCX, TXT, XLSX supported"
                     FontSize="12"
                     HorizontalAlignment="Center"
-                    Foreground="{StaticResource OnSurfaceVariant}"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
                 />
                 <Button
                     Content="Select file"
@@ -50,7 +50,7 @@
             <TextBlock
                 Text="Selected file"
                 FontSize="12"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
             />
             <TextBox Text="{Binding SelectedFileName}" IsReadOnly="True" FontSize="14" />
         </StackPanel>
@@ -80,14 +80,14 @@
             <ProgressBar
                 Value="{Binding UploadProgress, Mode=OneWay}"
                 Maximum="1"
-                Foreground="{StaticResource Primary}"
+                Foreground="{ThemeResource Primary}"
                 Height="8"
             />
             <TextBlock
                 Text="{Binding UploadProgress, Mode=OneWay}"
                 FontSize="12"
                 HorizontalAlignment="Center"
-                Foreground="{StaticResource OnSurfaceVariant}"
+                Foreground="{ThemeResource OnSurfaceVariant}"
             />
         </StackPanel>
 
@@ -103,7 +103,7 @@
         <ProgressRing
             IsActive="{Binding IsBusy}"
             Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-            Foreground="{StaticResource Primary}"
+            Foreground="{ThemeResource Primary}"
             HorizontalAlignment="Center"
             Width="32"
             Height="32"

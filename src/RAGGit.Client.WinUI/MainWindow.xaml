@@ -25,7 +25,7 @@
         <Grid
             x:Name="ConfigErrorOverlay"
             Visibility="Collapsed"
-            Background="{StaticResource Surface}"
+            Background="{ThemeResource Surface}"
         >
             <StackPanel
                 VerticalAlignment="Center"

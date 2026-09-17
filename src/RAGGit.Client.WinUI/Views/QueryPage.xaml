@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
-    Background="{StaticResource SurfaceVariant}"
+    Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
@@ -17,7 +17,7 @@
             Text="Ask the Library"
             FontSize="22"
             FontWeight="Bold"
-            Foreground="{StaticResource OnSurface}"
+            Foreground="{ThemeResource OnSurface}"
         />
 
         <!-- Chat -->
@@ -37,15 +37,15 @@
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{StaticResource Primary}"
+                Foreground="{ThemeResource Primary}"
                 HorizontalAlignment="Center"
             />
             <ListView ItemsSource="{Binding Citations}" MaxHeight="140" SelectionMode="None">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Border
-                            Background="{StaticResource Surface}"
-                            BorderBrush="{StaticResource Outline}"
+                            Background="{ThemeResource Surface}"
+                            BorderBrush="{ThemeResource Outline}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Padding="10"
@@ -59,7 +59,7 @@
                                 />
                                 <TextBlock
                                     FontSize="11"
-                                    Foreground="{StaticResource OnSurfaceVariant}"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
                                     Text="{Binding Converter={StaticResource CitationSubtitle}}"
                                 />
                             </StackPanel>
@@ -73,7 +73,7 @@
         <TextBlock
             Grid.Row="2"
             Text="{Binding StatusMessage}"
-            Foreground="{StaticResource Error}"
+            Foreground="{ThemeResource Error}"
             FontSize="13"
             TextWrapping="Wrap"
             Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolVisibility}}"
@@ -84,7 +84,7 @@
             Grid.Row="1"
             IsActive="{Binding IsBusy}"
             Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-            Foreground="{StaticResource Primary}"
+            Foreground="{ThemeResource Primary}"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Width="40"
