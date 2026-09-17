@@ -9,7 +9,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using RAGGit.Client.Maui;
 using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
 using RAGGit.Client.WinUI.Services;
 using RAGGit.Client.WinUI.Views;
 using Windows.Graphics;
@@ -138,7 +137,6 @@ public sealed partial class MainWindow : Window
         var session = App.Services.GetService<ClientSession>();
         var isAdmin = string.Equals(session?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
         AdminItem.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
-        UploadItem.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Nav_SelectionChanged(
@@ -168,36 +166,9 @@ public sealed partial class MainWindow : Window
             case "mine":
                 ContentFrame.Navigate(typeof(DocumentsMinePage));
                 break;
-            case "upload" when isAdmin:
-                _ = OpenUploadDialogAsync();
-                break;
             case "admin" when isAdmin:
                 ContentFrame.Navigate(typeof(AdminUsersPage));
                 break;
         }
     }
-
-    private async Task OpenUploadDialogAsync()
-    {
-        // T003 ruling: Upload lives in nav but opens the dialog over the
-        // current page (no dedicated route). Restore the selection to the
-        // current page so the pane keeps reflecting where the user is.
-        var uploadViewModel = App.Services.GetService<UploadViewModel>();
-        if (uploadViewModel is not null)
-        {
-            uploadViewModel.RefreshRole();
-            var dialog = new UploadDialog(uploadViewModel) { XamlRoot = ContentFrame.XamlRoot };
-            await dialog.ShowAsync();
-        }
-
-        Nav.SelectedItem = NavItemForPage(ContentFrame.CurrentSourcePageType);
-    }
-
-    private NavigationViewItem? NavItemForPage(Type? pageType) =>
-        pageType == typeof(QueryPage) ? AskItem
-        : pageType == typeof(HistoryPage) ? HistoryItem
-        : pageType == typeof(DocumentsMinePage) ? MyDocsItem
-        : pageType == typeof(AdminUsersPage) ? AdminItem
-        : pageType == typeof(LoginPage) ? null
-        : LibraryItem;
 }

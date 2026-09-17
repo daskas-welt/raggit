@@ -39,12 +39,6 @@
                     Icon="Page"
                 />
                 <controls:NavigationViewItem
-                    x:Name="UploadItem"
-                    Content="Upload"
-                    Tag="upload"
-                    Icon="Upload"
-                />
-                <controls:NavigationViewItem
                     x:Name="AdminItem"
                     Content="Admin"
                     Tag="admin"
