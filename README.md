@@ -39,6 +39,16 @@ show their sources.
 - **No vendor lock-in on your data.** Documents and the library live in
   standard files on your own machines.
 
+## Getting the app
+
+- **Employees**: install from the company intranet page (link from IT),
+  then sign in — full walkthrough: [Installing the RAGGit App](docs/install.md).
+  The app updates itself; releases are signed with the company certificate
+  and served internally (never downloaded from GitHub).
+- **Operators**: release steps (sign → publish to intranet → version care):
+  [Publishing guide](docs/publish.md). Note the manifest `Publisher` must
+  match the release signing certificate.
+
 ## Trying it (developers)
 
 You need .NET 8 and, for the AI part, [Ollama](https://ollama.com)
