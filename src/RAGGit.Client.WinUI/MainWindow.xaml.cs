@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using RAGGit.Client.Maui;
 using RAGGit.Client.Maui.Services;
 using RAGGit.Client.Maui.ViewModels;
@@ -35,6 +36,11 @@ public sealed partial class MainWindow : Window
         var scale = GetDpiForWindow(hwnd) / 96.0;
         AppWindow.Resize(new SizeInt32((int)(1200 * scale), (int)(800 * scale)));
 
+        // Native Windows 11 chrome: Mica backdrop (graceful solid fallback
+        // on Windows 10) with content drawn into the title bar area.
+        // Pages keep opaque backgrounds for now; they opt into layer fills
+        // in their US2–US5 reskins so Mica shows through.
+        SystemBackdrop = new MicaBackdrop();
         ExtendsContentIntoTitleBar = true;
     }
 
