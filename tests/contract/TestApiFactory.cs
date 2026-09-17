@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Data;
+using RAGGit.Ingest;
 using RAGGit.Workstation.Api.Auth;
 
 namespace RAGGit.Tests.Contract;
@@ -22,6 +23,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
     public string EmployeeKey { get; } = "employee-contract-test";
 
     private readonly string _dbPath;
+    private readonly string _contentDir;
 
     public TestApiFactory()
     {
@@ -32,6 +34,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
         );
         Directory.CreateDirectory(baseDir);
         _dbPath = Path.Combine(baseDir, "rag.db");
+        _contentDir = Path.Combine(baseDir, "documents");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -48,6 +51,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
             );
 
             services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
+            services.AddSingleton<IDocumentContentStore>(new FileDocumentContentStore(_contentDir));
             services.AddSingleton<IVectorStore>(new FakeVectorStore());
             services.AddSingleton<IEmbedder>(new FakeEmbedder());
             services.AddSingleton<ILlmClient>(new FakeLlmClient());

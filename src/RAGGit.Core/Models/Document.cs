@@ -59,6 +59,13 @@ public sealed class Document
     [Required(ErrorMessage = "CreatedBy is required.")]
     public string CreatedBy { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Uploader display name captured at upload time. Null for legacy rows —
+    /// readers fall back to <see cref="CreatedBy"/>. Display only, never used
+    /// for auth or isolation.
+    /// </summary>
+    public string? CreatedByName { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>

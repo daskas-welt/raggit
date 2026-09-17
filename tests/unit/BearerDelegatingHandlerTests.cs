@@ -99,6 +99,47 @@ public sealed class BearerDelegatingHandlerTests
         await client.GetAsync("https://workstation.local/api/documents");
     }
 
+    [Fact]
+    public async Task SendAsync_ServerReturns401_NotifiesSessionExpirySink()
+    {
+        var store = new SessionTokenStore(new InMemorySecureStorage());
+        await store.SaveAsync("expired-token", DateTimeOffset.UtcNow.AddHours(8));
+        var sink = new RecordingSessionExpirySink();
+
+        var inner = new TestMessageHandler(_ => new HttpResponseMessage(
+            HttpStatusCode.Unauthorized
+        ));
+        var handler = new BearerDelegatingHandler(store, sink) { InnerHandler = inner };
+        using var client = new HttpClient(handler);
+
+        await client.GetAsync("https://workstation.local/api/documents");
+
+        sink.Calls.Should().Be(1);
+        (await store.GetAsync()).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SendAsync_Success_DoesNotNotifySessionExpirySink()
+    {
+        var store = new SessionTokenStore(new InMemorySecureStorage());
+        var sink = new RecordingSessionExpirySink();
+
+        var inner = new TestMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var handler = new BearerDelegatingHandler(store, sink) { InnerHandler = inner };
+        using var client = new HttpClient(handler);
+
+        await client.GetAsync("https://workstation.local/api/documents");
+
+        sink.Calls.Should().Be(0);
+    }
+
+    private sealed class RecordingSessionExpirySink : ISessionExpirySink
+    {
+        public int Calls { get; private set; }
+
+        public void OnSessionExpired() => Calls++;
+    }
+
     private sealed class TestMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;

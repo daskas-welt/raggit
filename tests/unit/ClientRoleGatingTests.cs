@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using FluentAssertions;
@@ -95,6 +96,20 @@ public sealed class ClientRoleGatingTests
         vm.IsAdmin.Should().BeFalse();
     }
 
+    [Fact]
+    public void ClientSession_RoleChange_NotifiesIsAdmin()
+    {
+        var session = new ClientSession { Role = "Employee" };
+        var changed = new List<string?>();
+        session.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        session.Role = "Admin";
+
+        changed.Should().Contain(nameof(ClientSession.Role));
+        changed.Should().Contain(nameof(ClientSession.IsAdmin));
+        session.IsAdmin.Should().BeTrue();
+    }
+
     private static LibraryViewModel CreateLibraryViewModel(
         DocumentsApiClient api,
         ClientSession session
@@ -112,6 +127,9 @@ public sealed class ClientRoleGatingTests
                 .Select(p =>
                     p.ParameterType == typeof(ClientSession) ? (object)session
                     : p.ParameterType == typeof(DocumentsApiClient) ? api
+                    : p.ParameterType == typeof(RAGGit.Client.Maui.Services.ILibraryPreferences)
+                        ? (object?)null
+                    : p.ParameterType == typeof(ILauncherService) ? new InMemoryLauncherService()
                     : throw new InvalidOperationException($"Unexpected param {p.ParameterType}")
                 )
                 .ToArray();

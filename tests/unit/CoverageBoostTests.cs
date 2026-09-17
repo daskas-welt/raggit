@@ -72,7 +72,8 @@ public sealed class CoverageBoostTests
             store,
             db,
             NullLogger<IngestService>.Instance,
-            Options.Create(
+            contentStore: new FileDocumentContentStore(Path.Combine(tmp, "originals")),
+            options: Options.Create(
                 new IngestOptions
                 {
                     ChunkSize = 50,
@@ -118,7 +119,13 @@ public sealed class CoverageBoostTests
         await db.EnsureCreatedAsync();
         var store = new FakeVectorStoreForCov();
         var embedder = new FakeEmbedderForCov();
-        var svc = new IngestService(embedder, store, db, NullLogger<IngestService>.Instance);
+        var svc = new IngestService(
+            embedder,
+            store,
+            db,
+            NullLogger<IngestService>.Instance,
+            contentStore: new FileDocumentContentStore(Path.Combine(tmp, "originals"))
+        );
 
         // Docx with PK header but invalid zip -> OpenXml throws -> CorruptDocumentException via Chunker
         var badDocx = new byte[] { 0x50, 0x4B, 0x03, 0x04, 0xFF, 0xFF, 0x00, 0x00, 0x01, 0x02 };

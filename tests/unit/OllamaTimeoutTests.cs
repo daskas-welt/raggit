@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Ingest.Ai;
 using RAGGit.Retrieval.Ai;
@@ -59,6 +60,22 @@ public sealed class OllamaTimeoutTests
         Assert.True(
             sw.Elapsed < TimeSpan.FromSeconds(3),
             $"Llm fail-fast exceeded {timeoutMs}ms window: {sw.ElapsedMilliseconds}ms"
+        );
+    }
+
+    [Fact]
+    public async Task OllamaLlmClient_HealthProbe_CallerCancelled_ReturnsFalseFast()
+    {
+        var llm = new OllamaLlmClient("http://127.0.0.1:59997", "phi3:mini", 1500);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var sw = Stopwatch.StartNew();
+        var healthy = await llm.IsHealthyAsync(cts.Token);
+        sw.Stop();
+        Assert.False(healthy);
+        Assert.True(
+            sw.Elapsed < TimeSpan.FromSeconds(3),
+            $"Caller-cancelled probe should fail fast: {sw.ElapsedMilliseconds}ms"
         );
     }
 

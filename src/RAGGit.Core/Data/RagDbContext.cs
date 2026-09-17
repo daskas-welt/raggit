@@ -98,6 +98,8 @@ public sealed class RagDbContext : IAsyncDisposable
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
+        await MigrateDocumentsCreatedByNameAsync(connection, transaction, cancellationToken);
+
         using var seedCommand = connection.CreateCommand();
         seedCommand.Transaction = (SqliteTransaction)transaction;
         seedCommand.CommandText =
@@ -108,6 +110,36 @@ public sealed class RagDbContext : IAsyncDisposable
         await seedCommand.ExecuteNonQueryAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds <c>Documents.CreatedByName</c> to databases created before 009.
+    /// SQLite has no ADD COLUMN IF NOT EXISTS on all supported versions, so
+    /// probe first and alter only when absent. Fresh databases already carry
+    /// the column via <see cref="GetSchemaCommands"/>.
+    /// </summary>
+    private static async Task MigrateDocumentsCreatedByNameAsync(
+        SqliteConnection connection,
+        System.Data.Common.DbTransaction transaction,
+        CancellationToken cancellationToken
+    )
+    {
+        using var pragmaCommand = connection.CreateCommand();
+        pragmaCommand.Transaction = (SqliteTransaction)transaction;
+        pragmaCommand.CommandText = "SELECT name FROM pragma_table_info('Documents');";
+        await using var reader = await pragmaCommand.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            if (reader.GetString(0) == "CreatedByName")
+            {
+                return;
+            }
+        }
+
+        using var alterCommand = connection.CreateCommand();
+        alterCommand.Transaction = (SqliteTransaction)transaction;
+        alterCommand.CommandText = "ALTER TABLE Documents ADD COLUMN CreatedByName TEXT;";
+        await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static IEnumerable<string> GetSchemaCommands()
@@ -128,6 +160,7 @@ public sealed class RagDbContext : IAsyncDisposable
                 Hash TEXT UNIQUE NOT NULL,
                 Status TEXT NOT NULL,
                 CreatedBy TEXT NOT NULL,
+                CreatedByName TEXT,
                 CreatedAt TEXT NOT NULL
             );";
 

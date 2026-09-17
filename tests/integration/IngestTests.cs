@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
+using RAGGit.Ingest;
 using RAGGit.Ingest.Vector;
 using RAGGit.Workstation.Api.Auth;
 using Xunit;
@@ -175,6 +176,7 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
     private readonly string _dbPath;
     private readonly string _lanceDbPath;
+    private readonly string _contentDir;
 
     public IntegrationTestFactory()
     {
@@ -186,12 +188,17 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
         Directory.CreateDirectory(baseDir);
         _dbPath = Path.Combine(baseDir, "rag.db");
         _lanceDbPath = Path.Combine(baseDir, "lancedb");
+        _contentDir = Path.Combine(baseDir, "documents");
     }
 
     internal IntegrationTestFactory(string dbPath, string lanceDbPath)
     {
         _dbPath = dbPath;
         _lanceDbPath = lanceDbPath;
+        _contentDir = Path.Combine(
+            Path.GetDirectoryName(dbPath) ?? Path.GetTempPath(),
+            "documents"
+        );
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -208,6 +215,7 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
             );
 
             services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
+            services.AddSingleton<IDocumentContentStore>(new FileDocumentContentStore(_contentDir));
             services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lanceDbPath, 384));
             services.AddSingleton<IEmbedder>(new FakeEmbedder());
             services.AddSingleton<ILlmClient>(new FakeLlmClient());

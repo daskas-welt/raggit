@@ -18,7 +18,7 @@ using RAGGit.Retrieval;
 namespace RAGGit.Workstation.Api.Controllers;
 
 /// <summary>
-/// Employee query endpoint per contracts/api.yaml.
+/// Employee + Admin query endpoint per contracts/api.yaml.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -105,7 +105,7 @@ public sealed class QueryController : ControllerBase
     /// POST /api/query — grounded answer with citations or "no relevant content found".
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Employee")]
+    [Authorize(Roles = "Employee,Admin")]
     public async Task<IActionResult> Post(
         [FromBody] QueryRequest request,
         CancellationToken cancellationToken

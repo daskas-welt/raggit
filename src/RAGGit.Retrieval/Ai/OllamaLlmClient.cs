@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OllamaSharp;
 using OllamaSharp.Models.Chat;
 using RAGGit.Core.Abstractions;
@@ -16,8 +17,18 @@ public sealed class OllamaLlmClient : ILlmClient
     private readonly OllamaApiClient _client;
     private readonly string _modelName;
     private readonly int _timeoutMs;
+    private readonly ILogger<OllamaLlmClient>? _logger;
 
-    public OllamaLlmClient(string baseUrl, string modelName, int timeoutMs = 5000)
+    // Health-probe budget: ListLocalModelsAsync is cheap once Ollama is warm,
+    // but the first call on a cold/slow box can take several seconds.
+    private const int HealthProbeTimeoutSeconds = 10;
+
+    public OllamaLlmClient(
+        string baseUrl,
+        string modelName,
+        int timeoutMs = 5000,
+        ILogger<OllamaLlmClient>? logger = null
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
@@ -26,6 +37,7 @@ public sealed class OllamaLlmClient : ILlmClient
 
         _modelName = modelName;
         _timeoutMs = timeoutMs;
+        _logger = logger;
         var httpClient = new System.Net.Http.HttpClient
         {
             BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
@@ -73,12 +85,28 @@ public sealed class OllamaLlmClient : ILlmClient
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromSeconds(2));
+            cts.CancelAfter(TimeSpan.FromSeconds(HealthProbeTimeoutSeconds));
             _ = await _client.ListLocalModelsAsync(cts.Token);
             return true;
         }
-        catch
+        catch (Exception ex)
+            when (ex is OperationCanceledException && cancellationToken.IsCancellationRequested)
         {
+            _logger?.LogDebug("Ollama health probe aborted by caller (model {Model})", _modelName);
+            return false;
+        }
+        catch (Exception ex) when (ex is OperationCanceledException)
+        {
+            _logger?.LogWarning(
+                "Ollama health probe timed out after {TimeoutSeconds}s (model {Model})",
+                HealthProbeTimeoutSeconds,
+                _modelName
+            );
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Ollama health probe failed (model {Model})", _modelName);
             return false;
         }
     }

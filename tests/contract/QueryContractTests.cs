@@ -10,6 +10,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 using Xunit;
 
@@ -102,6 +103,60 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
 
         json.GetProperty("answer").GetString().Should().Be("no relevant content found");
         json.GetProperty("citations").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Post_QueryAsAdmin_Returns200_AttributedToAdmin()
+    {
+        // Regression test: admins must be allowed to query (Roles = "Employee,Admin").
+        var documentId = Guid.NewGuid();
+        var chunkId = Guid.NewGuid();
+        var vectorStore = GetVectorStore();
+        vectorStore.Seed(
+            new[]
+            {
+                new VectorRecord(
+                    chunkId,
+                    new float[384],
+                    new Dictionary<string, object?>
+                    {
+                        ["documentId"] = documentId.ToString(),
+                        ["text"] = "Customers may return items within 30 days for a full refund.",
+                        ["ordinal"] = 0,
+                    }
+                ),
+            }
+        );
+
+        var llm = GetLlmClient();
+        llm.Healthy = true;
+        llm.ResponseText = $"Customers can return items within 30 days. [{chunkId}]";
+
+        using var adminClient = _factory.CreateClient();
+        adminClient.DefaultRequestHeaders.Add("X-Api-Key", _factory.AdminKey);
+
+        var response = await adminClient.PostAsJsonAsync(
+            "/api/query",
+            new { query = "refund policy" },
+            _jsonOptions
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
+
+        json.GetProperty("answer").GetString().Should().NotBeNullOrWhiteSpace();
+        json.GetProperty("citations").GetArrayLength().Should().BeGreaterThan(0);
+
+        // API-key callers carry no JWT sub, so attribution falls back to the
+        // key identity ("admin"). Verify the audit row directly: the 005
+        // history view intentionally excludes legacy admin/employee rows.
+        var db = _factory.Services.GetRequiredService<RagDbContext>();
+        await using var connection = db.CreateConnection();
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT UserId FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
+        var userId = (string?)await command.ExecuteScalarAsync();
+        userId.Should().Be("admin");
     }
 
     private FakeVectorStore GetVectorStore() =>

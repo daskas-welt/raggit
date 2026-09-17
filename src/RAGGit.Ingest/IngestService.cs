@@ -26,12 +26,14 @@ public sealed class IngestService
     private readonly ILogger<IngestService> _logger;
     private readonly IngestOptions _options;
     private readonly IMemoryCache? _chunkCache;
+    private readonly IDocumentContentStore _contentStore;
 
     public IngestService(
         IEmbedder embedder,
         IVectorStore vectorStore,
         RagDbContext db,
         ILogger<IngestService> logger,
+        IDocumentContentStore contentStore,
         IOptions<IngestOptions>? options = null,
         IMemoryCache? chunkCache = null
     )
@@ -42,6 +44,7 @@ public sealed class IngestService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new IngestOptions();
         _chunkCache = chunkCache;
+        _contentStore = contentStore ?? throw new ArgumentNullException(nameof(contentStore));
     }
 
     /// <summary>
@@ -54,6 +57,7 @@ public sealed class IngestService
         DocumentMimeType mime,
         long size,
         string createdBy,
+        string? createdByName = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -96,6 +100,7 @@ public sealed class IngestService
             Hash = hash,
             Status = DocumentStatus.Indexing,
             CreatedBy = createdBy,
+            CreatedByName = createdByName,
         };
 
         await InsertDocumentAsync(document, cancellationToken);
@@ -104,6 +109,15 @@ public sealed class IngestService
             document.Id,
             filename
         );
+
+        // Persist the original bytes for later download (009). Rewind first:
+        // hashing/preview may have consumed the stream. Failed-ingest rows keep
+        // their bytes (downloadable); rollback paths below delete them again.
+        if (content.CanSeek)
+        {
+            content.Position = 0;
+        }
+        await _contentStore.SaveAsync(document.Id, content, cancellationToken);
 
         try
         {
@@ -170,6 +184,7 @@ public sealed class IngestService
             }
             catch { }
 
+            await DeleteStoredOriginalBestEffortAsync(document.Id, cancellationToken);
             throw;
         }
         catch (SpreadsheetCellCapExceededException)
@@ -185,6 +200,8 @@ public sealed class IngestService
                 await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken);
             }
             catch { }
+
+            await DeleteStoredOriginalBestEffortAsync(document.Id, cancellationToken);
             throw;
         }
         catch (NoExtractableContentException)
@@ -200,6 +217,8 @@ public sealed class IngestService
                 await _vectorStore.DeleteAsync(document.Id.ToString(), cancellationToken);
             }
             catch { }
+
+            await DeleteStoredOriginalBestEffortAsync(document.Id, cancellationToken);
             throw;
         }
         catch (Exception exception)
@@ -208,6 +227,36 @@ public sealed class IngestService
             await UpdateDocumentStatusAsync(document.Id, DocumentStatus.Failed, cancellationToken);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Finds a document by id, or null when absent. Used by the download
+    /// endpoint to resolve filename/MIME before serving stored bytes.
+    /// </summary>
+    public async Task<Document?> FindDocumentByIdAsync(
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await using var connection = _db.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            @"
+            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
+            FROM Documents
+            WHERE Id = @id
+            LIMIT 1;";
+        command.Parameters.AddWithValue("@id", documentId.ToString());
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return MapDocument(reader);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -223,7 +272,7 @@ public sealed class IngestService
         using var command = connection.CreateCommand();
         command.CommandText =
             @"
-            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt
+            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
             FROM Documents
             ORDER BY CreatedAt DESC;";
 
@@ -285,8 +334,35 @@ public sealed class IngestService
         }
 
         await _vectorStore.DeleteAsync(documentId.ToString(), cancellationToken);
-        _logger.LogInformation("Deleted document {DocumentId} and purged its vectors", documentId);
+        await DeleteStoredOriginalBestEffortAsync(documentId, cancellationToken);
+        _logger.LogInformation(
+            "Deleted document {DocumentId} and purged its vectors and stored original",
+            documentId
+        );
         return true;
+    }
+
+    /// <summary>
+    /// Best-effort stored-original removal (rollback and delete paths must never
+    /// fail because of orphan-byte cleanup).
+    /// </summary>
+    private async Task DeleteStoredOriginalBestEffortAsync(
+        Guid documentId,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            await _contentStore.DeleteAsync(documentId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Stored-original cleanup failed for document {DocumentId}",
+                documentId
+            );
+        }
     }
 
     /// <summary>
@@ -305,7 +381,7 @@ public sealed class IngestService
         using var command = connection.CreateCommand();
         command.CommandText =
             @"
-            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt
+            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
             FROM Documents
             WHERE Hash = @hash
             LIMIT 1;";
@@ -328,8 +404,8 @@ public sealed class IngestService
         using var command = connection.CreateCommand();
         command.CommandText =
             @"
-            INSERT INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedAt)
-            VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdAt);";
+            INSERT INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt)
+            VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdByName, @createdAt);";
 
         command.Parameters.AddWithValue("@id", document.Id.ToString());
         command.Parameters.AddWithValue("@filename", document.Filename);
@@ -338,6 +414,10 @@ public sealed class IngestService
         command.Parameters.AddWithValue("@hash", document.Hash);
         command.Parameters.AddWithValue("@status", document.Status.ToString());
         command.Parameters.AddWithValue("@createdBy", document.CreatedBy);
+        command.Parameters.AddWithValue(
+            "@createdByName",
+            document.CreatedByName is null ? DBNull.Value : document.CreatedByName
+        );
         command.Parameters.AddWithValue("@createdAt", document.CreatedAt.ToString("O"));
 
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -537,7 +617,8 @@ public sealed class IngestService
             Hash = reader.GetString(4),
             Status = status,
             CreatedBy = reader.GetString(6),
-            CreatedAt = DateTime.Parse(reader.GetString(7)),
+            CreatedByName = reader.IsDBNull(7) ? null : reader.GetString(7),
+            CreatedAt = DateTime.Parse(reader.GetString(8)),
         };
     }
 }

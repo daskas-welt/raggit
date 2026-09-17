@@ -26,18 +26,21 @@ public sealed class DocumentsController : ControllerBase
     private readonly IngestService _ingestService;
     private readonly IVirusScanner _virusScanner;
     private readonly DocumentMineStore _mineStore;
+    private readonly IDocumentContentStore _contentStore;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IngestService ingestService,
         IVirusScanner virusScanner,
         DocumentMineStore mineStore,
+        IDocumentContentStore contentStore,
         ILogger<DocumentsController> logger
     )
     {
         _ingestService = ingestService ?? throw new ArgumentNullException(nameof(ingestService));
         _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
         _mineStore = mineStore ?? throw new ArgumentNullException(nameof(mineStore));
+        _contentStore = contentStore ?? throw new ArgumentNullException(nameof(contentStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -82,6 +85,10 @@ public sealed class DocumentsController : ControllerBase
 
         var createdBy =
             User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "unknown";
+        var createdByName =
+            User.FindFirst("displayName")?.Value
+            ?? User.FindFirst("username")?.Value
+            ?? User.Identity?.Name;
         _logger.LogInformation(
             "Admin uploading {Filename} ({Mime}) as {User}",
             file.FileName,
@@ -118,6 +125,7 @@ public sealed class DocumentsController : ControllerBase
                 mime,
                 file.Length,
                 createdBy,
+                createdByName,
                 cancellationToken
             );
 
@@ -153,6 +161,34 @@ public sealed class DocumentsController : ControllerBase
                 : "corrupted document";
             return BadRequest(new { error = msg });
         }
+    }
+
+    /// <summary>
+    /// GET /api/documents/{id}/content — original file bytes (009).
+    /// Any authenticated caller (same bar as the list endpoints); legacy rows
+    /// without stored bytes get 404, never an empty 200 or anonymous bytes.
+    /// </summary>
+    [HttpGet("{id:guid}/content")]
+    public async Task<IActionResult> GetContent(Guid id, CancellationToken cancellationToken)
+    {
+        var document = await _ingestService.FindDocumentByIdAsync(id, cancellationToken);
+        if (document is null)
+        {
+            return NotFound(new { error = "Document not found." });
+        }
+
+        var stream = await _contentStore.OpenReadAsync(id, cancellationToken);
+        if (stream is null)
+        {
+            return NotFound(new { error = "original unavailable" });
+        }
+
+        Response.Headers.ContentDisposition = new System.Net.Mime.ContentDisposition
+        {
+            Inline = true,
+            FileName = document.Filename,
+        }.ToString();
+        return File(stream, document.Mime.GetContentType());
     }
 
     /// <summary>
