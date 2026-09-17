@@ -37,11 +37,10 @@
                 Width="32"
                 Height="32"
             />
-            <TextBlock
-                Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
-                Foreground="{ThemeResource Error}"
-                TextWrapping="Wrap"
-                Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}"
+            <InfoBar
+                Severity="Error"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
             />
         </StackPanel>
     </Grid>

@@ -116,8 +116,7 @@
                                     <Button
                                         Grid.Column="1"
                                         Content="{Binding Role}"
-                                        Command="{Binding DataContext.ChangeRoleCommand, ElementName=UsersList}"
-                                        CommandParameter="{Binding}"
+                                        Click="OnChangeRoleClicked"
                                         Height="32"
                                         FontSize="12"
                                         VerticalAlignment="Center"
@@ -125,8 +124,7 @@
                                     <Button
                                         Grid.Column="2"
                                         Content="{Binding IsActive, Converter={StaticResource ActiveGlyph}}"
-                                        Command="{Binding DataContext.ToggleActiveCommand, ElementName=UsersList}"
-                                        CommandParameter="{Binding}"
+                                        Click="OnToggleActiveClicked"
                                         Background="Transparent"
                                         Foreground="{ThemeResource Primary}"
                                         FontSize="16"
@@ -273,8 +271,7 @@
                     </Grid>
                     <Button
                         Content="Reset Password"
-                        Command="{Binding ResetPasswordCommand}"
-                        CommandParameter="{Binding SelectedUser}"
+                        Click="OnResetPasswordClicked"
                         Height="40"
                         HorizontalAlignment="Stretch"
                     />

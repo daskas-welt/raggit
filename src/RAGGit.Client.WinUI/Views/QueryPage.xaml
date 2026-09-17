@@ -69,14 +69,12 @@
             </ListView>
         </Grid>
 
-        <!-- Error -->
-        <TextBlock
+        <!-- Status -->
+        <InfoBar
             Grid.Row="2"
-            Text="{Binding StatusMessage}"
-            Foreground="{ThemeResource Error}"
-            FontSize="13"
-            TextWrapping="Wrap"
-            Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolVisibility}}"
+            Severity="Informational"
+            IsOpen="{Binding HasStatusMessage, Mode=OneWay}"
+            Message="{Binding StatusMessage, Mode=OneWay}"
         />
 
         <!-- Loading overlay -->
