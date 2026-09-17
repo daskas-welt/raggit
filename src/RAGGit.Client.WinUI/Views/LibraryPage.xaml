@@ -15,8 +15,16 @@
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
     </Page.Resources>
     <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
-        <!-- Header -->
-        <Grid Grid.Row="0">
+        <!-- Header card -->
+        <Border
+            Grid.Row="0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="16,12"
+        >
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -32,7 +40,7 @@
             <StackPanel
                 Grid.Column="1"
                 Orientation="Horizontal"
-                Spacing="8"
+                Spacing="12"
                 VerticalAlignment="Center"
             >
                 <Button
@@ -53,9 +61,17 @@
                 />
             </StackPanel>
         </Grid>
+        </Border>
 
-        <!-- Document list -->
-        <Grid Grid.Row="1">
+        <!-- Document list card -->
+        <Border
+            Grid.Row="1"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+        >
+        <Grid>
             <ProgressRing
                 IsActive="{Binding IsBusy}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
@@ -65,9 +81,30 @@
                 Width="40"
                 Height="40"
             />
-            <ListView x:Name="DocumentsList" ItemsSource="{Binding PageItems}" SelectionMode="None">
+            <ListView
+                x:Name="DocumentsList"
+                ItemsSource="{Binding PageItems}"
+                SelectionMode="None"
+                Background="Transparent"
+                BorderThickness="0"
+                ScrollViewer.HorizontalScrollMode="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollMode="Enabled"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+            >
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.Header>
-                    <Grid ColumnDefinitions="*,70,90,120,130,150,44,44" Padding="16,10">
+                    <Grid
+                        ColumnDefinitions="*,70,90,120,130,150,44,44"
+                        ColumnSpacing="12"
+                        MinWidth="880"
+                        Padding="16,12"
+                    >
                         <TextBlock
                             Grid.Column="0"
                             Text="Filename"
@@ -120,7 +157,12 @@
                 </ListView.Header>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="*,70,90,120,130,150,44,44" Padding="16,10">
+                        <Grid
+                            ColumnDefinitions="*,70,90,120,130,150,44,44"
+                            ColumnSpacing="12"
+                            MinWidth="880"
+                            Padding="16,12"
+                        >
                             <TextBlock
                                 Grid.Column="0"
                                 Text="{Binding Filename}"
@@ -196,17 +238,27 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <!-- Empty state (ListView has no EmptyView) -->
-            <StackPanel
-                Spacing="8"
+            <!-- Empty state card (ListView has no EmptyView) -->
+            <Border
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Background="{ThemeResource Surface}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="24"
                 Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
+            >
+            <StackPanel
+                Spacing="12"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
             >
                 <TextBlock
                     Text="No documents yet"
                     FontSize="18"
                     FontWeight="SemiBold"
+                    Foreground="{ThemeResource OnSurface}"
                     HorizontalAlignment="Center"
                 />
                 <TextBlock
@@ -216,7 +268,9 @@
                     HorizontalAlignment="Center"
                 />
             </StackPanel>
+            </Border>
         </Grid>
+        </Border>
 
         <!-- Pagination footer -->
         <components:PaginationFooterControl
