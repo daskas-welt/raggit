@@ -1,17 +1,24 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RAGGit.Client.Maui;
 using RAGGit.Client.Maui.Services;
 using RAGGit.Client.WinUI.Services;
 using RAGGit.Client.WinUI.Views;
+using Windows.Graphics;
 
 namespace RAGGit.Client.WinUI;
 
 public sealed partial class MainWindow : Window
 {
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
+
     public MainWindow()
     {
         InitializeComponent();
@@ -20,6 +27,12 @@ public sealed partial class MainWindow : Window
         // Capture HWND for FileOpenPicker interop.
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         WinUIFilePicker.OwnerHwnd = hwnd;
+
+        // WinUI 3 has no SizeToContent: size explicitly (DIPs via rubric —
+        // multi-pane nav + content shell ≈ 1200x800, rounded to 20).
+        // AppWindow.Resize takes physical pixels, so scale by monitor DPI.
+        var scale = GetDpiForWindow(hwnd) / 96.0;
+        AppWindow.Resize(new SizeInt32((int)(1200 * scale), (int)(800 * scale)));
 
         ExtendsContentIntoTitleBar = true;
     }
