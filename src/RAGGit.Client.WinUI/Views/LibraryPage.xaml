@@ -165,8 +165,8 @@
                             />
                             <Button
                                 Grid.Column="6"
-                                Content="⤓"
-                                FontSize="16"
+                                AutomationProperties.Name="Download document"
+                                ToolTipService.ToolTip="Download document"
                                 Background="Transparent"
                                 Width="36"
                                 Height="32"
@@ -174,11 +174,13 @@
                                 CornerRadius="6"
                                 Click="OnDownloadClicked"
                                 VerticalAlignment="Center"
-                            />
+                            >
+                                <SymbolIcon Symbol="Download" />
+                            </Button>
                             <Button
                                 Grid.Column="7"
-                                Content="🗑"
-                                FontSize="16"
+                                AutomationProperties.Name="Delete document"
+                                ToolTipService.ToolTip="Delete document"
                                 Background="Transparent"
                                 Width="36"
                                 Height="32"
@@ -187,7 +189,9 @@
                                 Click="OnDeleteClicked"
                                 Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
                                 VerticalAlignment="Center"
-                            />
+                            >
+                                <SymbolIcon Symbol="Delete" />
+                            </Button>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>

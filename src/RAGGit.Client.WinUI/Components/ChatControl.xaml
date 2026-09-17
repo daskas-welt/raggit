@@ -104,18 +104,19 @@
                 />
                 <Button
                     Grid.Column="1"
-                    Content="→"
                     AutomationProperties.Name="Send question"
+                    ToolTipService.ToolTip="Send question"
                     Command="{Binding SendCommand, ElementName=Root}"
                     Background="{ThemeResource Primary}"
                     Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                     CornerRadius="20"
                     Width="40"
                     Height="40"
-                    FontSize="18"
                     Padding="0"
                     VerticalAlignment="Center"
-                />
+                >
+                    <SymbolIcon Symbol="Send" />
+                </Button>
             </Grid>
         </Border>
     </Grid>
