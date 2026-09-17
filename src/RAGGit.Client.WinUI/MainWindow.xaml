@@ -14,12 +14,42 @@
             SelectionChanged="Nav_SelectionChanged"
         >
             <controls:NavigationView.MenuItems>
-                <controls:NavigationViewItem x:Name="LibraryItem" Content="Library" Tag="library" Icon="Folder" />
-                <controls:NavigationViewItem x:Name="AskItem" Content="Ask" Tag="query" Icon="Message" />
-                <controls:NavigationViewItem x:Name="HistoryItem" Content="History" Tag="history" Icon="Clock" />
-                <controls:NavigationViewItem x:Name="MyDocsItem" Content="My Docs" Tag="mine" Icon="Page" />
-                <controls:NavigationViewItem x:Name="UploadItem" Content="Upload" Tag="upload" Icon="Upload" />
-                <controls:NavigationViewItem x:Name="AdminItem" Content="Admin" Tag="admin" Icon="People" />
+                <controls:NavigationViewItem
+                    x:Name="LibraryItem"
+                    Content="Library"
+                    Tag="library"
+                    Icon="Folder"
+                />
+                <controls:NavigationViewItem
+                    x:Name="AskItem"
+                    Content="Ask"
+                    Tag="query"
+                    Icon="Message"
+                />
+                <controls:NavigationViewItem
+                    x:Name="HistoryItem"
+                    Content="History"
+                    Tag="history"
+                    Icon="Clock"
+                />
+                <controls:NavigationViewItem
+                    x:Name="MyDocsItem"
+                    Content="My Docs"
+                    Tag="mine"
+                    Icon="Page"
+                />
+                <controls:NavigationViewItem
+                    x:Name="UploadItem"
+                    Content="Upload"
+                    Tag="upload"
+                    Icon="Upload"
+                />
+                <controls:NavigationViewItem
+                    x:Name="AdminItem"
+                    Content="Admin"
+                    Tag="admin"
+                    Icon="People"
+                />
             </controls:NavigationView.MenuItems>
             <Frame x:Name="ContentFrame" x:FieldModifier="public" />
         </controls:NavigationView>

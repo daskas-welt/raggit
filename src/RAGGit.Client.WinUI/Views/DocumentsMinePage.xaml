@@ -20,28 +20,28 @@
             CornerRadius="8"
             Padding="16,12"
         >
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock
-                Grid.Column="0"
-                Text="My Documents"
-                FontSize="22"
-                FontWeight="Bold"
-                Foreground="{ThemeResource OnSurface}"
-                VerticalAlignment="Center"
-            />
-            <Button
-                Grid.Column="1"
-                Content="Refresh"
-                Command="{Binding RefreshCommand}"
-                Height="36"
-                FontSize="13"
-                VerticalAlignment="Center"
-            />
-        </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Text="My Documents"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurface}"
+                    VerticalAlignment="Center"
+                />
+                <Button
+                    Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    Height="36"
+                    FontSize="13"
+                    VerticalAlignment="Center"
+                />
+            </Grid>
         </Border>
 
         <!-- Document List -->
@@ -55,11 +55,7 @@
                 Width="40"
                 Height="40"
             />
-            <ListView
-                ItemsSource="{Binding Items}"
-                SelectionMode="None"
-                Background="Transparent"
-            >
+            <ListView ItemsSource="{Binding Items}" SelectionMode="None" Background="Transparent">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -113,25 +109,21 @@
                 Padding="24"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
             >
-            <StackPanel
-                Spacing="12"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-            >
-                <TextBlock
-                    Text="No documents yet"
-                    FontSize="18"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource OnSurface}"
-                    HorizontalAlignment="Center"
-                />
-                <TextBlock
-                    Text="Upload a document to see it here."
-                    FontSize="13"
-                    Foreground="{ThemeResource OnSurfaceVariant}"
-                    HorizontalAlignment="Center"
-                />
-            </StackPanel>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock
+                        Text="No documents yet"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                        HorizontalAlignment="Center"
+                    />
+                    <TextBlock
+                        Text="Upload a document to see it here."
+                        FontSize="13"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        HorizontalAlignment="Center"
+                    />
+                </StackPanel>
             </Border>
         </Grid>
 

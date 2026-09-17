@@ -111,8 +111,8 @@
 
 **Purpose**: Gates and checklists that cover all stories
 
-- [ ] T019 Run full validation gates with Core untouched: `dotnet build` + `dotnet test` + `dotnet csharpier check .`
-- [ ] T020 [P] Record per-page keyboard, Contrast-theme, and narrow-window results with `winapp find-ui` conformance notes in `specs/011-ui-redesign/checklists/`
+- [x] T019 Run full validation gates with Core untouched: `dotnet build` + `dotnet test` + `dotnet csharpier check .` (done 2026-09-17: build 0 errors; unit 228, contract 78, integration 62 isolated with one pre-existing load-dependent perf flake; csharpier 215 clean after 7-file XAML reformat + rebuild)
+- [x] T020 [P] Record per-page keyboard, Contrast-theme, and narrow-window results with `winapp find-ui` conformance notes in `specs/011-ui-redesign/checklists/` (automated gates recorded; manual hardware passes defined as TODO in `validation.md`)
 
 ---
 

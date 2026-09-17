@@ -30,9 +30,18 @@
                 <ResourceDictionary x:Key="HighContrast">
                     <StaticResource x:Key="Primary" ResourceKey="SystemColorHotlightColorBrush" />
                     <StaticResource x:Key="Surface" ResourceKey="SystemColorWindowColorBrush" />
-                    <StaticResource x:Key="SurfaceVariant" ResourceKey="SystemColorWindowColorBrush" />
-                    <StaticResource x:Key="OnSurface" ResourceKey="SystemColorWindowTextColorBrush" />
-                    <StaticResource x:Key="OnSurfaceVariant" ResourceKey="SystemColorWindowTextColorBrush" />
+                    <StaticResource
+                        x:Key="SurfaceVariant"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="OnSurface"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="OnSurfaceVariant"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
                     <StaticResource x:Key="Outline" ResourceKey="SystemColorWindowTextColorBrush" />
                     <StaticResource x:Key="Error" ResourceKey="SystemColorWindowTextColorBrush" />
                 </ResourceDictionary>

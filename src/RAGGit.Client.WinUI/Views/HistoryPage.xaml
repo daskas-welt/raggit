@@ -19,28 +19,28 @@
             CornerRadius="8"
             Padding="16,12"
         >
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock
-                Grid.Column="0"
-                Text="Query History"
-                FontSize="22"
-                FontWeight="Bold"
-                Foreground="{ThemeResource OnSurface}"
-                VerticalAlignment="Center"
-            />
-            <Button
-                Grid.Column="1"
-                Content="Refresh"
-                Command="{Binding RefreshCommand}"
-                Height="36"
-                FontSize="13"
-                VerticalAlignment="Center"
-            />
-        </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Query History"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurface}"
+                    VerticalAlignment="Center"
+                />
+                <Button
+                    Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    Height="36"
+                    FontSize="13"
+                    VerticalAlignment="Center"
+                />
+            </Grid>
         </Border>
 
         <!-- History List -->
@@ -117,25 +117,21 @@
                 Padding="24"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
             >
-            <StackPanel
-                Spacing="12"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-            >
-                <TextBlock
-                    Text="No queries yet"
-                    FontSize="18"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource OnSurface}"
-                    HorizontalAlignment="Center"
-                />
-                <TextBlock
-                    Text="Ask a question to see it here."
-                    FontSize="13"
-                    Foreground="{ThemeResource OnSurfaceVariant}"
-                    HorizontalAlignment="Center"
-                />
-            </StackPanel>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock
+                        Text="No queries yet"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                        HorizontalAlignment="Center"
+                    />
+                    <TextBlock
+                        Text="Ask a question to see it here."
+                        FontSize="13"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        HorizontalAlignment="Center"
+                    />
+                </StackPanel>
             </Border>
         </Grid>
 

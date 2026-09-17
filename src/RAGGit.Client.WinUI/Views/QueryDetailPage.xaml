@@ -69,11 +69,7 @@
                     FontWeight="Bold"
                     Foreground="{ThemeResource OnSurfaceVariant}"
                 />
-                <TextBlock
-                    Text="{Binding Detail.Prompt}"
-                    FontSize="14"
-                    TextWrapping="Wrap"
-                />
+                <TextBlock Text="{Binding Detail.Prompt}" FontSize="14" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
 
@@ -93,11 +89,7 @@
                     FontWeight="Bold"
                     Foreground="{ThemeResource OnSurfaceVariant}"
                 />
-                <TextBlock
-                    Text="{Binding Detail.Answer}"
-                    FontSize="14"
-                    TextWrapping="Wrap"
-                />
+                <TextBlock Text="{Binding Detail.Answer}" FontSize="14" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
 

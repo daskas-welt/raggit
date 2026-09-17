@@ -24,43 +24,43 @@
             CornerRadius="8"
             Padding="16,12"
         >
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock
-                Grid.Column="0"
-                Text="Document Library"
-                FontSize="22"
-                FontWeight="Bold"
-                Foreground="{ThemeResource OnSurface}"
-                VerticalAlignment="Center"
-            />
-            <StackPanel
-                Grid.Column="1"
-                Orientation="Horizontal"
-                Spacing="12"
-                VerticalAlignment="Center"
-            >
-                <Button
-                    Content="Refresh"
-                    Command="{Binding LoadDocumentsCommand}"
-                    Height="36"
-                    FontSize="13"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Document Library"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource OnSurface}"
                     VerticalAlignment="Center"
                 />
-                <Button
-                    x:Name="UploadButton"
-                    Content="Upload"
-                    Click="OnUploadClicked"
-                    Height="36"
-                    FontSize="13"
-                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="12"
                     VerticalAlignment="Center"
-                />
-            </StackPanel>
-        </Grid>
+                >
+                    <Button
+                        Content="Refresh"
+                        Command="{Binding LoadDocumentsCommand}"
+                        Height="36"
+                        FontSize="13"
+                        VerticalAlignment="Center"
+                    />
+                    <Button
+                        x:Name="UploadButton"
+                        Content="Upload"
+                        Click="OnUploadClicked"
+                        Height="36"
+                        FontSize="13"
+                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                        VerticalAlignment="Center"
+                    />
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Document list card -->
@@ -71,92 +71,34 @@
             BorderThickness="1"
             CornerRadius="8"
         >
-        <Grid>
-            <ProgressRing
-                IsActive="{Binding IsBusy}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{ThemeResource Primary}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Width="40"
-                Height="40"
-            />
-            <ListView
-                x:Name="DocumentsList"
-                ItemsSource="{Binding PageItems}"
-                SelectionMode="None"
-                Background="Transparent"
-                BorderThickness="0"
-                ScrollViewer.HorizontalScrollMode="Auto"
-                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                ScrollViewer.VerticalScrollMode="Enabled"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
-            >
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.Header>
-                    <Grid
-                        ColumnDefinitions="*,70,90,120,130,150,44,44"
-                        ColumnSpacing="12"
-                        MinWidth="880"
-                        Padding="16,12"
-                    >
-                        <TextBlock
-                            Grid.Column="0"
-                            Text="Filename"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="1"
-                            Text="Type"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="2"
-                            Text="Size"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="3"
-                            Text="Status"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="4"
-                            Text="Creator"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="5"
-                            Text="Created"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                    </Grid>
-                </ListView.Header>
-                <ListView.ItemTemplate>
-                    <DataTemplate>
+            <Grid>
+                <ProgressRing
+                    IsActive="{Binding IsBusy}"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                    Foreground="{ThemeResource Primary}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="40"
+                    Height="40"
+                />
+                <ListView
+                    x:Name="DocumentsList"
+                    ItemsSource="{Binding PageItems}"
+                    SelectionMode="None"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    ScrollViewer.HorizontalScrollMode="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollMode="Enabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                >
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.Header>
                         <Grid
                             ColumnDefinitions="*,70,90,120,130,150,44,44"
                             ColumnSpacing="12"
@@ -165,111 +107,169 @@
                         >
                             <TextBlock
                                 Grid.Column="0"
-                                Text="{Binding Filename}"
-                                FontSize="14"
-                                Foreground="{ThemeResource OnSurface}"
-                                TextTrimming="CharacterEllipsis"
+                                Text="Filename"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <TextBlock
                                 Grid.Column="1"
-                                Text="{Binding Converter={StaticResource MimeLabel}}"
-                                FontSize="13"
+                                Text="Type"
+                                FontSize="12"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <TextBlock
                                 Grid.Column="2"
-                                Text="{Binding Converter={StaticResource SizeMb}}"
-                                FontSize="13"
+                                Text="Size"
+                                FontSize="12"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
-                            <components:StatusChip
+                            <TextBlock
                                 Grid.Column="3"
-                                Status="{Binding Status}"
+                                Text="Status"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
                             <TextBlock
                                 Grid.Column="4"
-                                Text="{Binding Converter={StaticResource CreatorLabel}}"
-                                FontSize="13"
+                                Text="Creator"
+                                FontSize="12"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource OnSurfaceVariant}"
-                                TextTrimming="CharacterEllipsis"
                                 VerticalAlignment="Center"
                             />
                             <TextBlock
                                 Grid.Column="5"
-                                Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
-                                FontSize="13"
+                                Text="Created"
+                                FontSize="12"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource OnSurfaceVariant}"
                                 VerticalAlignment="Center"
                             />
-                            <Button
-                                Grid.Column="6"
-                                AutomationProperties.Name="Download document"
-                                ToolTipService.ToolTip="Download document"
-                                Background="Transparent"
-                                Width="36"
-                                Height="32"
-                                Padding="0"
-                                CornerRadius="6"
-                                Click="OnDownloadClicked"
-                                VerticalAlignment="Center"
-                            >
-                                <SymbolIcon Symbol="Download" />
-                            </Button>
-                            <Button
-                                Grid.Column="7"
-                                AutomationProperties.Name="Delete document"
-                                ToolTipService.ToolTip="Delete document"
-                                Background="Transparent"
-                                Width="36"
-                                Height="32"
-                                Padding="0"
-                                CornerRadius="6"
-                                Click="OnDeleteClicked"
-                                Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
-                                VerticalAlignment="Center"
-                            >
-                                <SymbolIcon Symbol="Delete" />
-                            </Button>
                         </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-            <!-- Empty state card (ListView has no EmptyView) -->
-            <Border
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="{ThemeResource Surface}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="24"
-                Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
-            >
-            <StackPanel
-                Spacing="12"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-            >
-                <TextBlock
-                    Text="No documents yet"
-                    FontSize="18"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource OnSurface}"
+                    </ListView.Header>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid
+                                ColumnDefinitions="*,70,90,120,130,150,44,44"
+                                ColumnSpacing="12"
+                                MinWidth="880"
+                                Padding="16,12"
+                            >
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Text="{Binding Filename}"
+                                    FontSize="14"
+                                    Foreground="{ThemeResource OnSurface}"
+                                    TextTrimming="CharacterEllipsis"
+                                    VerticalAlignment="Center"
+                                />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Text="{Binding Converter={StaticResource MimeLabel}}"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
+                                    VerticalAlignment="Center"
+                                />
+                                <TextBlock
+                                    Grid.Column="2"
+                                    Text="{Binding Converter={StaticResource SizeMb}}"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
+                                    VerticalAlignment="Center"
+                                />
+                                <components:StatusChip
+                                    Grid.Column="3"
+                                    Status="{Binding Status}"
+                                    VerticalAlignment="Center"
+                                />
+                                <TextBlock
+                                    Grid.Column="4"
+                                    Text="{Binding Converter={StaticResource CreatorLabel}}"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
+                                    TextTrimming="CharacterEllipsis"
+                                    VerticalAlignment="Center"
+                                />
+                                <TextBlock
+                                    Grid.Column="5"
+                                    Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
+                                    VerticalAlignment="Center"
+                                />
+                                <Button
+                                    Grid.Column="6"
+                                    AutomationProperties.Name="Download document"
+                                    ToolTipService.ToolTip="Download document"
+                                    Background="Transparent"
+                                    Width="36"
+                                    Height="32"
+                                    Padding="0"
+                                    CornerRadius="6"
+                                    Click="OnDownloadClicked"
+                                    VerticalAlignment="Center"
+                                >
+                                    <SymbolIcon Symbol="Download" />
+                                </Button>
+                                <Button
+                                    Grid.Column="7"
+                                    AutomationProperties.Name="Delete document"
+                                    ToolTipService.ToolTip="Delete document"
+                                    Background="Transparent"
+                                    Width="36"
+                                    Height="32"
+                                    Padding="0"
+                                    CornerRadius="6"
+                                    Click="OnDeleteClicked"
+                                    Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
+                                    VerticalAlignment="Center"
+                                >
+                                    <SymbolIcon Symbol="Delete" />
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <!-- Empty state card (ListView has no EmptyView) -->
+                <Border
                     HorizontalAlignment="Center"
-                />
-                <TextBlock
-                    Text="Upload a document to see it here."
-                    FontSize="13"
-                    Foreground="{ThemeResource OnSurfaceVariant}"
-                    HorizontalAlignment="Center"
-                />
-            </StackPanel>
-            </Border>
-        </Grid>
+                    VerticalAlignment="Center"
+                    Background="{ThemeResource Surface}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="24"
+                    Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
+                >
+                    <StackPanel
+                        Spacing="12"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                    >
+                        <TextBlock
+                            Text="No documents yet"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                            HorizontalAlignment="Center"
+                        />
+                        <TextBlock
+                            Text="Upload a document to see it here."
+                            FontSize="13"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            HorizontalAlignment="Center"
+                        />
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
 
         <!-- Pagination footer -->
