@@ -22,13 +22,16 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# Data and models (workstation-local, never committed)
-/data/
-/data/lancedb/
+# Data and models (workstation-local, never committed).
+# NOTE: bare /data/ only matches the repo root — runtime data also lives
+# under src/<project>/data/, so both forms (plus key material) are listed.
+**/data/
 *.db
-/models/*.gguf
-/models/*.onnx
 /models/
+*.gguf
+*.onnx
+*.key
+*.pem
 
 # Test results
 TestResults/
