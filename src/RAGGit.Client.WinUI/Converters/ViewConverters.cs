@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
+using RAGGit.Client.Maui.Services;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Client.WinUI.Converters;
@@ -71,10 +72,11 @@ public sealed class NullToVisibilityConverter : IValueConverter
 
 public sealed class SelectedUserLabelConverter : IValueConverter
 {
+    // NOTE: UserAccountDto still lives in the legacy RAGGit.Client.Maui.Services
+    // namespace (Client.Core project). Full rename to RAGGit.Client.Core.Services
+    // is tracked separately; this using avoids hard-coding the Maui name in XAML code-behind.
     public object Convert(object value, Type targetType, object parameter, string language) =>
-        value is RAGGit.Client.Maui.Services.UserAccountDto user
-            ? $"Selected: {user.Username}"
-            : string.Empty;
+        value is UserAccountDto user ? $"Selected: {user.Username}" : string.Empty;
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();

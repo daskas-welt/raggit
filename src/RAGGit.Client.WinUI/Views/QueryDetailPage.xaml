@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:models="using:RAGGit.Core.Models"
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
@@ -69,7 +70,11 @@
                     FontWeight="Bold"
                     Foreground="{ThemeResource OnSurfaceVariant}"
                 />
-                <TextBlock Text="{Binding Detail.Prompt}" FontSize="14" TextWrapping="Wrap" />
+                <TextBlock
+                    Text="{Binding Detail.Prompt, FallbackValue=''}"
+                    FontSize="14"
+                    TextWrapping="Wrap"
+                />
             </StackPanel>
         </Border>
 
@@ -89,7 +94,11 @@
                     FontWeight="Bold"
                     Foreground="{ThemeResource OnSurfaceVariant}"
                 />
-                <TextBlock Text="{Binding Detail.Answer}" FontSize="14" TextWrapping="Wrap" />
+                <TextBlock
+                    Text="{Binding Detail.Answer, FallbackValue=''}"
+                    FontSize="14"
+                    TextWrapping="Wrap"
+                />
             </StackPanel>
         </Border>
 
@@ -126,7 +135,7 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="models:HistoryCitation">
                                 <Border
                                     Background="{ThemeResource Surface}"
                                     BorderBrush="{ThemeResource Outline}"

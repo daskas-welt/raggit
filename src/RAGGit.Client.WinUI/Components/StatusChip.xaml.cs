@@ -30,14 +30,14 @@ public sealed partial class StatusChip : UserControl
         nameof(DotBrush),
         typeof(Brush),
         typeof(StatusChip),
-        new PropertyMetadata(new SolidColorBrush(Colors.Gray))
+        new PropertyMetadata(null)
     );
 
     public static readonly DependencyProperty TextBrushProperty = DependencyProperty.Register(
         nameof(TextBrush),
         typeof(Brush),
         typeof(StatusChip),
-        new PropertyMetadata(new SolidColorBrush(Colors.Gray))
+        new PropertyMetadata(null)
     );
 
     public string Text
@@ -67,6 +67,8 @@ public sealed partial class StatusChip : UserControl
     public StatusChip()
     {
         InitializeComponent();
+        ActualThemeChanged += (_, _) => RefreshBrushes();
+        RefreshBrushes();
     }
 
     private static void OnStatusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -76,21 +78,58 @@ public sealed partial class StatusChip : UserControl
             return;
         }
 
-        var status = e.NewValue?.ToString();
-        var color = DocumentStatusPresentation.ToneFor(status) switch
+        // Auto-label follows Status unless the caller set an explicit Text.
+        // A Text matching the previous auto-label (e.g. ListView container
+        // recycle with a new row's Status) is treated as auto and updated;
+        // a custom Text that never matched an auto-label is preserved.
+        var oldLabel = DocumentStatusPresentation.LabelFor(e.OldValue?.ToString());
+        if (string.IsNullOrEmpty(chip.Text) || chip.Text == oldLabel)
         {
-            StatusTone.Positive => Colors.Green,
-            StatusTone.InProgress => Colors.Orange,
-            StatusTone.Error => Colors.Red,
-            _ => Colors.Gray,
+            chip.Text = DocumentStatusPresentation.LabelFor(e.NewValue?.ToString());
+        }
+
+        chip.RefreshBrushes();
+    }
+
+    private void RefreshBrushes()
+    {
+        var tone = DocumentStatusPresentation.ToneFor(Status?.ToString());
+        var key = tone switch
+        {
+            StatusTone.Positive => "StatusPositiveBrush",
+            StatusTone.InProgress => "StatusInProgressBrush",
+            StatusTone.Error => "StatusErrorBrush",
+            _ => "StatusNeutralBrush",
         };
 
-        chip.DotBrush = new SolidColorBrush(color);
-        chip.TextBrush = new SolidColorBrush(color);
-
-        if (string.IsNullOrEmpty(chip.Text))
+        // Theme-aware: resolves from App.xaml ThemeDictionaries for the current
+        // theme (Light/Dark/HighContrast) instead of hardcoded Colors.
+        if (
+            Application.Current?.Resources.TryGetValue(key, out var brush) == true
+            && brush is Brush themed
+        )
         {
-            chip.Text = DocumentStatusPresentation.LabelFor(status);
+            DotBrush = themed;
+            TextBrush = themed;
+            return;
         }
+
+        // Lookup-failure fallback (design-time, unit tests, missing key):
+        // prefer the neutral theme brush, else a visible hardcoded gray so the
+        // chip never ends up with a null/invisible dot or a stale color.
+        if (
+            Application.Current?.Resources.TryGetValue("StatusNeutralBrush", out var neutral)
+                == true
+            && neutral is Brush neutralBrush
+        )
+        {
+            DotBrush = neutralBrush;
+            TextBrush = neutralBrush;
+            return;
+        }
+
+        var gray = new SolidColorBrush(Colors.Gray);
+        DotBrush = gray;
+        TextBrush = gray;
     }
 }

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:models="using:RAGGit.Core.Models"
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
@@ -40,6 +41,7 @@
                     Height="36"
                     FontSize="13"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="RefreshButton"
                 />
             </Grid>
         </Border>
@@ -63,7 +65,7 @@
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:DocumentMineItem">
                         <Border
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -134,6 +136,7 @@
             Command="{Binding LoadMoreCommand}"
             Visibility="{Binding HasMore, Converter={StaticResource BoolVisibility}}"
             HorizontalAlignment="Center"
+            AutomationProperties.AutomationId="LoadMoreButton"
         />
 
         <!-- Footer -->

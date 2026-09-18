@@ -38,6 +38,7 @@
                     Content="Select file"
                     Command="{Binding PickFileCommand}"
                     HorizontalAlignment="Center"
+                    AutomationProperties.AutomationId="SelectFileButton"
                 />
             </StackPanel>
         </Border>
@@ -62,6 +63,7 @@
             IsEnabled="{Binding IsUploadEnabled}"
             HorizontalAlignment="Stretch"
             Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+            AutomationProperties.AutomationId="UploadButton"
         />
 
         <!-- Cancel (replaces the MAUI sheet's implicit dismiss-during-upload) -->
@@ -70,6 +72,7 @@
             Command="{Binding CancelUploadCommand}"
             HorizontalAlignment="Stretch"
             Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+            AutomationProperties.AutomationId="CancelUploadButton"
         />
 
         <!-- Progress -->

@@ -17,6 +17,10 @@
                     <SolidColorBrush x:Key="OnSurfaceVariant" Color="#49454F" />
                     <SolidColorBrush x:Key="Outline" Color="#79747E" />
                     <SolidColorBrush x:Key="Error" Color="#B3261E" />
+                    <SolidColorBrush x:Key="StatusPositiveBrush" Color="#107C10" />
+                    <SolidColorBrush x:Key="StatusInProgressBrush" Color="#CA5010" />
+                    <SolidColorBrush x:Key="StatusErrorBrush" Color="#B3261E" />
+                    <SolidColorBrush x:Key="StatusNeutralBrush" Color="#605E5C" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="Primary" Color="#D0BCFF" />
@@ -26,6 +30,10 @@
                     <SolidColorBrush x:Key="OnSurfaceVariant" Color="#CAC4D0" />
                     <SolidColorBrush x:Key="Outline" Color="#938F99" />
                     <SolidColorBrush x:Key="Error" Color="#F2B8B5" />
+                    <SolidColorBrush x:Key="StatusPositiveBrush" Color="#6CCB5F" />
+                    <SolidColorBrush x:Key="StatusInProgressBrush" Color="#F9911A" />
+                    <SolidColorBrush x:Key="StatusErrorBrush" Color="#F2B8B5" />
+                    <SolidColorBrush x:Key="StatusNeutralBrush" Color="#ADABAB" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <StaticResource x:Key="Primary" ResourceKey="SystemColorHotlightColorBrush" />
@@ -44,6 +52,22 @@
                     />
                     <StaticResource x:Key="Outline" ResourceKey="SystemColorWindowTextColorBrush" />
                     <StaticResource x:Key="Error" ResourceKey="SystemColorWindowTextColorBrush" />
+                    <StaticResource
+                        x:Key="StatusPositiveBrush"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="StatusInProgressBrush"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="StatusErrorBrush"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="StatusNeutralBrush"
+                        ResourceKey="SystemColorGrayTextColorBrush"
+                    />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

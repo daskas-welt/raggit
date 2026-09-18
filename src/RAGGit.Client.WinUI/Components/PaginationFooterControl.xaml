@@ -85,6 +85,7 @@
                     FontSize="13"
                     MinHeight="44"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="PageSizeCombo"
                 />
             </StackPanel>
             <TextBlock
@@ -113,6 +114,9 @@
                     MinHeight="44"
                     CornerRadius="6"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="FirstPageButton"
+                    AutomationProperties.Name="First page"
+                    ToolTipService.ToolTip="First page"
                 />
                 <Button
                     Content="‹"
@@ -125,6 +129,9 @@
                     MinHeight="44"
                     CornerRadius="6"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="PreviousPageButton"
+                    AutomationProperties.Name="Previous page"
+                    ToolTipService.ToolTip="Previous page"
                 />
                 <ItemsControl
                     ItemsSource="{Binding Sequence, ElementName=Root}"
@@ -148,6 +155,9 @@
                     MinHeight="44"
                     CornerRadius="6"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="NextPageButton"
+                    AutomationProperties.Name="Next page"
+                    ToolTipService.ToolTip="Next page"
                 />
                 <Button
                     Content="»"
@@ -160,6 +170,9 @@
                     MinHeight="44"
                     CornerRadius="6"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="LastPageButton"
+                    AutomationProperties.Name="Last page"
+                    ToolTipService.ToolTip="Last page"
                 />
             </StackPanel>
         </Grid>

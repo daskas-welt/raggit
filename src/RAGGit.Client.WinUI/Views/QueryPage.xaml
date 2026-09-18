@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:models="using:RAGGit.Core.Models"
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
@@ -54,9 +55,14 @@
                     Foreground="{ThemeResource Primary}"
                     HorizontalAlignment="Center"
                 />
-                <ListView ItemsSource="{Binding Citations}" MaxHeight="140" SelectionMode="None">
+                <ListView
+                    ItemsSource="{Binding Citations}"
+                    MaxHeight="140"
+                    SelectionMode="None"
+                    AutomationProperties.AutomationId="CitationsList"
+                >
                     <ListView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="models:Citation">
                             <Border
                                 Background="{ThemeResource Surface}"
                                 BorderBrush="{ThemeResource Outline}"

@@ -21,16 +21,19 @@
                 x:Name="UsernameBox"
                 Header="Username"
                 Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                AutomationProperties.AutomationId="UsernameBox"
             />
             <PasswordBox
                 x:Name="PasswordBox"
                 Header="Password"
                 Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                AutomationProperties.AutomationId="PasswordBox"
             />
             <Button
                 Content="Sign in"
                 Command="{x:Bind ViewModel.LoginCommand}"
                 HorizontalAlignment="Stretch"
+                AutomationProperties.AutomationId="SignInButton"
             />
             <ProgressRing
                 IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"

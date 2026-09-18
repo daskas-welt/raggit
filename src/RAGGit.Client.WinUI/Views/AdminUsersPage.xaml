@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:services="using:RAGGit.Client.Maui.Services"
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
@@ -36,6 +37,7 @@
                     Height="36"
                     FontSize="13"
                     VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="RefreshUsersButton"
                 />
             </Grid>
 
@@ -92,7 +94,7 @@
                         SelectionMode="Single"
                     >
                         <ListView.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="services:UserAccountDto">
                                 <Grid ColumnDefinitions="*,110,70,70" Padding="16,10">
                                     <StackPanel
                                         Grid.Column="0"
@@ -120,6 +122,8 @@
                                         Height="32"
                                         FontSize="12"
                                         VerticalAlignment="Center"
+                                        AutomationProperties.Name="Change user role"
+                                        ToolTipService.ToolTip="Change user role"
                                     />
                                     <Button
                                         Grid.Column="2"
@@ -188,12 +192,14 @@
                         Description="Unique login name."
                         Text="{Binding NewUsername, Mode=TwoWay}"
                         FontSize="14"
+                        AutomationProperties.AutomationId="NewUsernameBox"
                     />
                     <TextBox
                         Header="Display Name"
                         Description="Shown in the users list."
                         Text="{Binding NewDisplayName, Mode=TwoWay}"
                         FontSize="14"
+                        AutomationProperties.AutomationId="NewDisplayNameBox"
                     />
                     <ComboBox
                         Header="Role"
@@ -202,18 +208,21 @@
                         SelectedItem="{Binding NewRole, Mode=TwoWay}"
                         FontSize="14"
                         HorizontalAlignment="Stretch"
+                        AutomationProperties.AutomationId="NewRoleCombo"
                     />
                     <PasswordBox
                         Header="Password"
                         Description="Initial password for the new account."
                         Password="{Binding NewPassword, Mode=TwoWay}"
                         FontSize="14"
+                        AutomationProperties.AutomationId="NewPasswordBox"
                     />
                     <Button
                         Content="Create"
                         Command="{Binding CreateUserCommand}"
                         Height="40"
                         HorizontalAlignment="Stretch"
+                        AutomationProperties.AutomationId="CreateUserButton"
                     />
                 </StackPanel>
             </Expander>
@@ -235,16 +244,19 @@
                         Description="The selected user signs in with this next."
                         Password="{Binding ResetPassword, Mode=TwoWay}"
                         FontSize="14"
+                        AutomationProperties.AutomationId="ResetPasswordBox"
                     />
                     <CheckBox
                         Content="Must change"
                         IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
+                        AutomationProperties.AutomationId="ResetMustChangeCheck"
                     />
                     <Button
                         Content="Reset Password"
                         Click="OnResetPasswordClicked"
                         Height="40"
                         HorizontalAlignment="Stretch"
+                        AutomationProperties.AutomationId="ResetPasswordButton"
                     />
                 </StackPanel>
             </Expander>

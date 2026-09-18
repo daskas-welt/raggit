@@ -19,30 +19,35 @@
                     Content="Library"
                     Tag="library"
                     Icon="Folder"
+                    AutomationProperties.AutomationId="NavLibrary"
                 />
                 <controls:NavigationViewItem
                     x:Name="AskItem"
                     Content="Ask"
                     Tag="query"
                     Icon="Message"
+                    AutomationProperties.AutomationId="NavAsk"
                 />
                 <controls:NavigationViewItem
                     x:Name="HistoryItem"
                     Content="History"
                     Tag="history"
                     Icon="Clock"
+                    AutomationProperties.AutomationId="NavHistory"
                 />
                 <controls:NavigationViewItem
                     x:Name="MyDocsItem"
                     Content="My Docs"
                     Tag="mine"
                     Icon="Page"
+                    AutomationProperties.AutomationId="NavMyDocs"
                 />
                 <controls:NavigationViewItem
                     x:Name="AdminItem"
                     Content="Admin"
                     Tag="admin"
                     Icon="People"
+                    AutomationProperties.AutomationId="NavAdmin"
                 />
             </controls:NavigationView.MenuItems>
             <Frame x:Name="ContentFrame" x:FieldModifier="public" />

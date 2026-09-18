@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:models="using:RAGGit.Core.Models"
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
@@ -49,6 +50,7 @@
                         Height="36"
                         FontSize="13"
                         VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="RefreshButton"
                     />
                     <Button
                         x:Name="UploadButton"
@@ -58,6 +60,7 @@
                         FontSize="13"
                         Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                         VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="UploadButton"
                     />
                 </StackPanel>
             </Grid>
@@ -156,7 +159,7 @@
                         </Grid>
                     </ListView.Header>
                     <ListView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="models:Document">
                             <Grid
                                 ColumnDefinitions="*,70,90,120,130,150,44,44"
                                 ColumnSpacing="12"
