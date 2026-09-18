@@ -84,7 +84,7 @@ public sealed class XlsxDeepValidationTests
     {
         await using var fs = OpenFixture("sample-3sheet.xlsx");
         var bytes = new byte[fs.Length];
-        await fs.ReadAsync(bytes);
+        await fs.ReadExactlyAsync(bytes);
         using var nonSeekable = new NonSeekableStream(new MemoryStream(bytes));
         var result = await DocumentFormatValidator.ValidateAndRewindAsync(
             nonSeekable,

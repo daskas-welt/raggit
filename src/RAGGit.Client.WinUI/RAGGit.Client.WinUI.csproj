@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <!-- Win10 1809 (17763) floor so the same binary runs on Win10 + Win11. -->
-        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
         <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
         <RootNamespace>RAGGit.Client.WinUI</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -30,13 +30,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240311000" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
         <PackageReference
             Include="Microsoft.Extensions.Configuration.UserSecrets"
-            Version="8.0.1"
+            Version="10.0.12"
         />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
     </ItemGroup>
 
     <ItemGroup>

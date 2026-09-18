@@ -2,6 +2,8 @@
 bin/
 obj/
 out/
+# Single-project MSIX output (WindowsAppSDK 2.x emits to project-root AppPackages/)
+AppPackages/
 
 # Visual Studio / VS Code
 .vs/
