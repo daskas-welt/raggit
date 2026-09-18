@@ -48,7 +48,9 @@ public sealed partial class LibraryPage : Page
         var dialog = new UploadDialog(uploadViewModel) { XamlRoot = XamlRoot };
         await dialog.ShowAsync();
 
-        // The dialog only uploads: reload so the new row appears.
+        // The dialog only uploads: reload so new rows appear. On partial
+        // success this picks up exactly the documents that succeeded
+        // (015-file-upload-ui FR-013); failures never created server rows.
         if (!ViewModel.IsBusy)
         {
             await ViewModel.LoadDocumentsCommand.ExecuteAsync(null);

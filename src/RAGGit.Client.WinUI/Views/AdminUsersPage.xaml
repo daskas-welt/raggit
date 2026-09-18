@@ -7,21 +7,37 @@
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
-        <converters:ActiveGlyphConverter x:Key="ActiveGlyph" />
-        <converters:LockedGlyphConverter x:Key="LockedGlyph" />
-        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
-        <converters:SelectedUserLabelConverter x:Key="SelectedUserLabel" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InverseBoolConverter x:Key="InverseBool" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyUsersVisibility" />
+        <converters:SelectedUserLabelConverter x:Key="SelectedUserLabel" />
+        <converters:RoleActionLabelConverter x:Key="RoleActionLabel" />
+        <converters:ActiveVerbConverter x:Key="ActiveVerb" />
+        <converters:ActiveToggleLabelConverter x:Key="ActiveToggleLabel" />
+        <converters:LockedLabelConverter x:Key="LockedLabel" />
+        <converters:LockStatusLabelConverter x:Key="LockStatusLabel" />
+        <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </Page.Resources>
-    <ScrollViewer>
-        <StackPanel Padding="24" Spacing="16">
-            <!-- Header -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+    <!-- 016-admin-redesign: full-width layout with page padding (no dead
+         margins on wide windows). The users ListView owns the only
+         collection scroll and is never nested in a ScrollViewer (keeps
+         virtualization, no nested-scroll traps). Only the form cards
+         scroll, on their own, when short. -->
+    <Grid
+        Padding="24"
+        RowSpacing="12"
+        RowDefinitions="Auto,Auto,*,Auto"
+    >
+        <!-- Header -->
+        <Border
+            Grid.Row="0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="16,12"
+        >
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                 <TextBlock
                     Grid.Column="0"
                     Text="People Management"
@@ -32,70 +48,113 @@
                 />
                 <Button
                     Grid.Column="1"
-                    Content="Refresh"
                     Command="{Binding LoadUsersCommand}"
-                    Height="36"
-                    FontSize="13"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                    MinHeight="44"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="RefreshUsersButton"
-                />
+                >
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Refresh" />
+                        <TextBlock
+                            Text="Refresh"
+                            FontSize="13"
+                            VerticalAlignment="Center"
+                        />
+                    </StackPanel>
+                </Button>
             </Grid>
+        </Border>
 
-            <!-- Users list -->
-            <Border
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="0"
-            >
-                <StackPanel Spacing="0">
-                    <Grid ColumnDefinitions="*,110,70,70" Padding="16,10">
-                        <TextBlock
-                            Grid.Column="0"
-                            Text="User"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="1"
-                            Text="Role (tap to change)"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="2"
-                            Text="Active"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                        />
-                        <TextBlock
-                            Grid.Column="3"
-                            Text="Locked"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="{ThemeResource OnSurfaceVariant}"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                        />
-                    </Grid>
-                    <Rectangle Height="1" Fill="{ThemeResource Outline}" />
+        <!-- Dedicated status surface: every outcome lands here and is announced. -->
+        <InfoBar
+            Grid.Row="1"
+            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
+            IsOpen="{Binding HasStatus}"
+            Message="{Binding StatusMessage}"
+            IsClosable="False"
+            AutomationProperties.LiveSetting="Polite"
+            AutomationProperties.AutomationId="AdminStatusBar"
+        />
+
+        <!-- Users list: fills remaining space, scrolls/virtualizes internally. -->
+        <Border
+            Grid.Row="2"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+        >
+            <Grid RowDefinitions="Auto,Auto,*">
+                <Grid
+                    Grid.Row="0"
+                    ColumnDefinitions="*,110,120,100"
+                    ColumnSpacing="8"
+                    Padding="16,10"
+                >
+                    <TextBlock
+                        Grid.Column="0"
+                        Text="User"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        VerticalAlignment="Center"
+                    />
+                    <TextBlock
+                        Grid.Column="1"
+                        Text="Role"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        VerticalAlignment="Center"
+                    />
+                    <TextBlock
+                        Grid.Column="2"
+                        Text="Active"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        VerticalAlignment="Center"
+                    />
+                    <TextBlock
+                        Grid.Column="3"
+                        Text="Lock status"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        VerticalAlignment="Center"
+                    />
+                </Grid>
+                <Rectangle
+                    Grid.Row="1"
+                    Height="1"
+                    Fill="{ThemeResource Outline}"
+                />
+                <Grid Grid.Row="2">
                     <ListView
                         x:Name="UsersList"
                         ItemsSource="{Binding Users}"
                         SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
                         SelectionMode="Single"
+                        MinHeight="240"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        AutomationProperties.AutomationId="UsersList"
+                        AutomationProperties.Name="Users"
                     >
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="services:UserAccountDto">
-                                <Grid ColumnDefinitions="*,110,70,70" Padding="16,10">
+                                <Grid
+                                    ColumnDefinitions="*,110,120,100"
+                                    ColumnSpacing="8"
+                                    Padding="16,8"
+                                >
                                     <StackPanel
                                         Grid.Column="0"
                                         Spacing="0"
@@ -119,165 +178,235 @@
                                         Grid.Column="1"
                                         Content="{Binding Role}"
                                         Click="OnChangeRoleClicked"
-                                        Height="32"
-                                        FontSize="12"
+                                        MinWidth="96"
+                                        MinHeight="44"
+                                        FontSize="13"
                                         VerticalAlignment="Center"
-                                        AutomationProperties.Name="Change user role"
-                                        ToolTipService.ToolTip="Change user role"
+                                        HorizontalAlignment="Left"
+                                        AutomationProperties.Name="{Binding Converter={StaticResource RoleActionLabel}}"
+                                        ToolTipService.ToolTip="{Binding Converter={StaticResource RoleActionLabel}}"
                                     />
                                     <Button
                                         Grid.Column="2"
+                                        Content="{Binding IsActive, Converter={StaticResource ActiveVerb}}"
                                         Click="OnToggleActiveClicked"
-                                        AutomationProperties.Name="Toggle user active state"
-                                        ToolTipService.ToolTip="Toggle user active state"
-                                        Background="Transparent"
-                                        Foreground="{ThemeResource Primary}"
-                                        FontSize="16"
-                                        FontWeight="Bold"
-                                        Width="40"
-                                        Height="32"
-                                        Padding="0"
-                                        HorizontalAlignment="Center"
+                                        MinWidth="110"
+                                        MinHeight="44"
+                                        FontSize="13"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Left"
+                                        AutomationProperties.Name="{Binding Converter={StaticResource ActiveToggleLabel}}"
+                                        ToolTipService.ToolTip="{Binding Converter={StaticResource ActiveToggleLabel}}"
+                                    />
+                                    <StackPanel
+                                        Grid.Column="3"
+                                        Orientation="Horizontal"
+                                        Spacing="6"
                                         VerticalAlignment="Center"
                                     >
                                         <FontIcon
-                                            Glyph="{Binding IsActive, Converter={StaticResource ActiveGlyph}}"
+                                            Glyph="&#xE72E;"
                                             FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                            FontSize="14"
+                                            Visibility="{Binding LockedOut, Converter={StaticResource BoolVisibility}}"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
+                                            VerticalAlignment="Center"
                                         />
-                                    </Button>
-                                    <FontIcon
-                                        Grid.Column="3"
-                                        Glyph="{Binding LockedOut, Converter={StaticResource LockedGlyph}}"
-                                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                        AutomationProperties.Name="Locked"
-                                        FontSize="14"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                    />
+                                        <TextBlock
+                                            Text="{Binding LockedOut, Converter={StaticResource LockedLabel}}"
+                                            FontSize="13"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.Name="{Binding Converter={StaticResource LockStatusLabel}}"
+                                        />
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                    <TextBlock
-                        Text="No users found."
-                        FontSize="14"
-                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    <ProgressRing
+                        IsActive="{Binding IsBusy}"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                        Foreground="{ThemeResource Primary}"
                         HorizontalAlignment="Center"
-                        Padding="40"
-                        Visibility="{Binding Users, Converter={StaticResource EmptyUsersVisibility}}"
-                    />
-                </StackPanel>
-            </Border>
-            <TextBlock
-                Text="{Binding SelectedUser, Converter={StaticResource SelectedUserLabel}}"
-                FontSize="12"
-                Foreground="{ThemeResource OnSurfaceVariant}"
-                Visibility="{Binding SelectedUser, Converter={StaticResource NullVisibility}}"
-            />
-
-            <!-- Create Person -->
-            <Expander
-                Header="Create Person"
-                IsExpanded="True"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-            >
-                <StackPanel Spacing="12">
-                    <TextBox
-                        Header="Username"
-                        Description="Unique login name."
-                        Text="{Binding NewUsername, Mode=TwoWay}"
-                        FontSize="14"
-                        AutomationProperties.AutomationId="NewUsernameBox"
-                    />
-                    <TextBox
-                        Header="Display Name"
-                        Description="Shown in the users list."
-                        Text="{Binding NewDisplayName, Mode=TwoWay}"
-                        FontSize="14"
-                        AutomationProperties.AutomationId="NewDisplayNameBox"
-                    />
-                    <ComboBox
-                        Header="Role"
-                        Description="Admin or Employee."
-                        ItemsSource="{Binding Roles}"
-                        SelectedItem="{Binding NewRole, Mode=TwoWay}"
-                        FontSize="14"
-                        HorizontalAlignment="Stretch"
-                        AutomationProperties.AutomationId="NewRoleCombo"
-                    />
-                    <PasswordBox
-                        Header="Password"
-                        Description="Initial password for the new account."
-                        Password="{Binding NewPassword, Mode=TwoWay}"
-                        FontSize="14"
-                        AutomationProperties.AutomationId="NewPasswordBox"
-                    />
-                    <Button
-                        Content="Create"
-                        Command="{Binding CreateUserCommand}"
+                        VerticalAlignment="Center"
+                        Width="40"
                         Height="40"
-                        HorizontalAlignment="Stretch"
-                        AutomationProperties.AutomationId="CreateUserButton"
+                        AutomationProperties.Name="Loading users"
                     />
-                </StackPanel>
-            </Expander>
+                    <Border
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource Surface}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="24"
+                        Visibility="{Binding ShowEmptyUsers, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock
+                                Text="No users found"
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource OnSurface}"
+                                HorizontalAlignment="Center"
+                            />
+                            <TextBlock
+                                Text="People you create will appear here."
+                                FontSize="13"
+                                Foreground="{ThemeResource OnSurfaceVariant}"
+                                HorizontalAlignment="Center"
+                            />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
 
-            <!-- Reset Password (operates on selected user) -->
-            <Expander
-                Header="Reset Password"
-                IsExpanded="True"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
+        <!-- Forms: side by side on wide windows, stacked on narrow ones. -->
+        <ScrollViewer
+            Grid.Row="3"
+            MaxHeight="380"
+            HorizontalScrollMode="Disabled"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollMode="Auto"
+            VerticalScrollBarVisibility="Auto"
+        >
+            <Grid
+                x:Name="FormsGrid"
+                RowDefinitions="Auto,Auto"
+                ColumnDefinitions="*,*"
+                ColumnSpacing="12"
+                RowSpacing="12"
             >
-                <StackPanel Spacing="12">
-                    <PasswordBox
-                        Header="New Password"
-                        Description="The selected user signs in with this next."
-                        Password="{Binding ResetPassword, Mode=TwoWay}"
-                        FontSize="14"
-                        AutomationProperties.AutomationId="ResetPasswordBox"
-                    />
-                    <CheckBox
-                        Content="Must change"
-                        IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
-                        AutomationProperties.AutomationId="ResetMustChangeCheck"
-                    />
-                    <Button
-                        Content="Reset Password"
-                        Click="OnResetPasswordClicked"
-                        Height="40"
-                        HorizontalAlignment="Stretch"
-                        AutomationProperties.AutomationId="ResetPasswordButton"
-                    />
-                </StackPanel>
-            </Expander>
+                <Border
+                    x:Name="CreateCard"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                >
+                    <StackPanel Spacing="12">
+                        <TextBlock
+                            Text="Create Person"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                        />
+                        <TextBox
+                            Header="Username"
+                            Description="Unique login name."
+                            Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            FontSize="14"
+                            AutomationProperties.AutomationId="NewUsernameBox"
+                        />
+                        <TextBox
+                            Header="Display Name"
+                            Description="Shown in the users list."
+                            Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            FontSize="14"
+                            AutomationProperties.AutomationId="NewDisplayNameBox"
+                        />
+                        <ComboBox
+                            Header="Role"
+                            Description="Admin or Employee."
+                            ItemsSource="{Binding Roles}"
+                            SelectedItem="{Binding NewRole, Mode=TwoWay}"
+                            FontSize="14"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.AutomationId="NewRoleCombo"
+                        />
+                        <PasswordBox
+                            Header="Password"
+                            Description="Initial password for the new account."
+                            Password="{Binding NewPassword, Mode=TwoWay}"
+                            FontSize="14"
+                            AutomationProperties.AutomationId="NewPasswordBox"
+                        />
+                        <Button
+                            Content="Create"
+                            Command="{Binding CreateUserCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                            MinHeight="44"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.AutomationId="CreateUserButton"
+                        />
+                    </StackPanel>
+                </Border>
 
-            <!-- Error -->
-            <TextBlock
-                Text="{Binding ErrorMessage}"
-                Foreground="{ThemeResource Error}"
-                FontSize="13"
-                TextWrapping="Wrap"
-            />
+                <Border
+                    x:Name="ResetCard"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                >
+                    <StackPanel Spacing="12">
+                        <TextBlock
+                            Text="Reset Password"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                        />
+                        <TextBlock
+                            Text="{Binding SelectedUser, Converter={StaticResource SelectedUserLabel}}"
+                            FontSize="12"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            TextWrapping="Wrap"
+                        />
+                        <PasswordBox
+                            Header="New Password"
+                            Description="The selected user signs in with this next."
+                            Password="{Binding ResetPassword, Mode=TwoWay}"
+                            FontSize="14"
+                            AutomationProperties.AutomationId="ResetPasswordBox"
+                        />
+                        <CheckBox
+                            Content="Must change"
+                            IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
+                            MinHeight="44"
+                            VerticalContentAlignment="Center"
+                            AutomationProperties.AutomationId="ResetMustChangeCheck"
+                        />
+                        <Button
+                            Content="Reset Password"
+                            Click="OnResetPasswordClicked"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                            MinHeight="44"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.AutomationId="ResetPasswordButton"
+                        />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
 
-            <!-- Loading -->
-            <ProgressRing
-                IsActive="{Binding IsBusy}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                Foreground="{ThemeResource Primary}"
-                HorizontalAlignment="Center"
-                Width="32"
-                Height="32"
-            />
-        </StackPanel>
-    </ScrollViewer>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="720" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="Narrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CreateCard.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="ResetCard.(Grid.Row)" Value="1" />
+                        <Setter Target="ResetCard.(Grid.Column)" Value="0" />
+                        <Setter Target="ResetCard.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </Grid>
 </Page>

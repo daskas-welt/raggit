@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,6 +25,53 @@ public sealed partial class AdminUsersViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _errorMessage;
+
+    /// <summary>
+    /// Dedicated status surface for the Admin page (016-admin-redesign):
+    /// every outcome — success, failure with reason and next step — is
+    /// mirrored here. Severity is a UI-framework-free string
+    /// (Informational, Success, Warning, Error); the WinUI layer maps it
+    /// to InfoBarSeverity, same pattern as UploadViewModel. ErrorMessage
+    /// is kept as the compatibility surface and always matches Status
+    /// whenever Severity is Error or Warning.
+    /// </summary>
+    [ObservableProperty]
+    private string? _statusMessage;
+
+    [ObservableProperty]
+    private string _statusSeverity = "Informational";
+
+    public bool HasStatus => !string.IsNullOrWhiteSpace(StatusMessage);
+
+    partial void OnStatusMessageChanged(string? value) => OnPropertyChanged(nameof(HasStatus));
+
+    /// <summary>
+    /// Empty-state visibility: shown only when idle and the list is empty,
+    /// so "No users found" never competes with the loading spinner during
+    /// refresh.
+    /// </summary>
+    public bool ShowEmptyUsers => !IsBusy && Users.Count == 0;
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyUsers));
+
+    partial void OnUsersChanged(ObservableCollection<UserAccountDto> value)
+    {
+        if (_subscribedUsers is not null)
+        {
+            _subscribedUsers.CollectionChanged -= OnUsersCollectionChanged;
+        }
+        _subscribedUsers = value;
+        if (value is not null)
+        {
+            value.CollectionChanged += OnUsersCollectionChanged;
+        }
+        OnPropertyChanged(nameof(ShowEmptyUsers));
+    }
+
+    private ObservableCollection<UserAccountDto>? _subscribedUsers;
+
+    private void OnUsersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        OnPropertyChanged(nameof(ShowEmptyUsers));
 
     [ObservableProperty]
     private UserAccountDto? _selectedUser;
@@ -51,34 +99,39 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     public AdminUsersViewModel(UsersApiClient usersApiClient)
     {
         _usersApiClient = usersApiClient ?? throw new ArgumentNullException(nameof(usersApiClient));
+        // The field initializer does not run the generated OnUsersChanged
+        // hook, so subscribe to the initial collection here.
+        _subscribedUsers = Users;
+        Users.CollectionChanged += OnUsersCollectionChanged;
     }
 
     [RelayCommand]
     private async Task LoadUsersAsync()
     {
         IsBusy = true;
-        ErrorMessage = null;
+        ClearStatus();
 
         try
         {
             var users = await _usersApiClient.GetUsersAsync();
             Users = new ObservableCollection<UserAccountDto>(users);
+            SetSuccess(Users.Count == 1 ? "Loaded 1 user." : $"Loaded {Users.Count} users.");
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
-            ErrorMessage = ex.Message;
+            SetError(ex.Message);
         }
         catch (HttpRequestException ex)
         {
-            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            SetError(ClientErrorText.CannotReach(ex.Message));
         }
         catch (TaskCanceledException ex)
         {
-            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            SetError(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to load users: {ex.Message}";
+            SetError($"Failed to load users: {ex.Message}");
         }
         finally
         {
@@ -89,18 +142,26 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [RelayCommand]
     private async Task CreateUserAsync()
     {
-        if (
-            string.IsNullOrWhiteSpace(NewUsername)
-            || string.IsNullOrWhiteSpace(NewDisplayName)
-            || string.IsNullOrWhiteSpace(NewPassword)
-        )
+        if (string.IsNullOrWhiteSpace(NewUsername))
         {
-            ErrorMessage = "Username, display name, and password are required.";
+            SetWarning("Username is required. Enter a unique login name.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewDisplayName))
+        {
+            SetWarning("Display name is required. Enter the name shown in the users list.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewPassword))
+        {
+            SetWarning("Initial password is required. Enter a password for the new account.");
             return;
         }
 
         IsBusy = true;
-        ErrorMessage = null;
+        ClearStatus();
 
         try
         {
@@ -119,22 +180,23 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             NewDisplayName = string.Empty;
             NewPassword = string.Empty;
             NewRole = UserRole.Employee;
+            SetSuccess($"Created user '{created.Username}'.");
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
-            ErrorMessage = ex.Message;
+            SetError(ex.Message);
         }
         catch (HttpRequestException ex)
         {
-            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            SetError(ClientErrorText.CannotReach(ex.Message));
         }
         catch (TaskCanceledException ex)
         {
-            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            SetError(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to create user: {ex.Message}";
+            SetError($"Failed to create user: {ex.Message}");
         }
         finally
         {
@@ -148,7 +210,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(user);
 
         IsBusy = true;
-        ErrorMessage = null;
+        ClearStatus();
 
         try
         {
@@ -158,22 +220,23 @@ public sealed partial class AdminUsersViewModel : ObservableObject
                 new UpdateUserRequest { Role = newRole }
             );
             UpdateUserInCollection(updated);
+            SetSuccess($"Changed '{updated.Username}' from {user.Role} to {newRole}.");
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
-            ErrorMessage = ex.Message;
+            SetError(ex.Message);
         }
         catch (HttpRequestException ex)
         {
-            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            SetError(ClientErrorText.CannotReach(ex.Message));
         }
         catch (TaskCanceledException ex)
         {
-            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            SetError(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to change role: {ex.Message}";
+            SetError($"Failed to change role: {ex.Message}");
         }
         finally
         {
@@ -187,7 +250,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(user);
 
         IsBusy = true;
-        ErrorMessage = null;
+        ClearStatus();
 
         try
         {
@@ -196,22 +259,27 @@ public sealed partial class AdminUsersViewModel : ObservableObject
                 new UpdateUserRequest { IsActive = !user.IsActive }
             );
             UpdateUserInCollection(updated);
+            SetSuccess(
+                updated.IsActive
+                    ? $"Activated '{updated.Username}'."
+                    : $"Deactivated '{updated.Username}'."
+            );
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
-            ErrorMessage = ex.Message;
+            SetError(ex.Message);
         }
         catch (HttpRequestException ex)
         {
-            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            SetError(ClientErrorText.CannotReach(ex.Message));
         }
         catch (TaskCanceledException ex)
         {
-            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            SetError(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to update active status: {ex.Message}";
+            SetError($"Failed to update active status: {ex.Message}");
         }
         finally
         {
@@ -224,18 +292,18 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     {
         if (user is null)
         {
-            ErrorMessage = "Select a user first.";
+            SetWarning("Select a user first. Choose a user in the list, then reset.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(ResetPassword))
         {
-            ErrorMessage = "Enter a new password to reset.";
+            SetWarning("Enter a new password to reset.");
             return;
         }
 
         IsBusy = true;
-        ErrorMessage = null;
+        ClearStatus();
 
         try
         {
@@ -251,22 +319,29 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             ResetPassword = string.Empty;
             ResetMustChangePassword = false;
             await LoadUsersAsync();
+
+            // LoadUsersAsync owns the status surface for the refresh; only
+            // claim the reset outcome when the refresh itself succeeded.
+            if (ErrorMessage is null)
+            {
+                SetSuccess($"Password reset for '{user.Username}'.");
+            }
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
         {
-            ErrorMessage = ex.Message;
+            SetError(ex.Message);
         }
         catch (HttpRequestException ex)
         {
-            ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            SetError(ClientErrorText.CannotReach(ex.Message));
         }
         catch (TaskCanceledException ex)
         {
-            ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            SetError(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to reset password: {ex.Message}";
+            SetError($"Failed to reset password: {ex.Message}");
         }
         finally
         {
@@ -282,6 +357,34 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             var index = Users.IndexOf(existing);
             Users[index] = updated;
         }
+    }
+
+    private void ClearStatus()
+    {
+        ErrorMessage = null;
+        StatusMessage = null;
+        StatusSeverity = "Informational";
+    }
+
+    private void SetSuccess(string message)
+    {
+        ErrorMessage = null;
+        StatusMessage = message;
+        StatusSeverity = "Success";
+    }
+
+    private void SetWarning(string message)
+    {
+        ErrorMessage = message;
+        StatusMessage = message;
+        StatusSeverity = "Warning";
+    }
+
+    private void SetError(string message)
+    {
+        ErrorMessage = message;
+        StatusMessage = message;
+        StatusSeverity = "Error";
     }
 
     private static bool IsMappedError(HttpRequestException ex) =>

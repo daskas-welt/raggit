@@ -1,5 +1,6 @@
 using System;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using RAGGit.Client.Core.Models;
 using RAGGit.Core.Models;
@@ -78,6 +79,27 @@ public sealed class InvertedBoolToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) =>
         value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// Maps the UploadViewModel StatusSeverity string (Informational, Success,
+/// Warning, Error — Core stays UI-framework free) to InfoBarSeverity.
+/// </summary>
+public sealed class StatusSeverityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language) =>
+        value is string severity
+            ? severity switch
+            {
+                "Success" => InfoBarSeverity.Success,
+                "Warning" => InfoBarSeverity.Warning,
+                "Error" => InfoBarSeverity.Error,
+                _ => InfoBarSeverity.Informational,
+            }
+            : InfoBarSeverity.Informational;
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();
