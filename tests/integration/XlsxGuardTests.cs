@@ -252,7 +252,7 @@ public sealed class XlsxGuardTests
         queryClient.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         var queryJson = JsonSerializer.Serialize(new { query = "hidden-token-xyz" });
         var qResp = await queryClient.PostAsync(
-            "/api/query",
+            "/api/queries",
             new StringContent(queryJson, Encoding.UTF8, "application/json")
         );
         qResp.StatusCode.Should().Be(HttpStatusCode.OK);

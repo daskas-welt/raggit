@@ -14,7 +14,7 @@ namespace RAGGit.Workstation.Api.Controllers;
 /// Anonymous health endpoint per contracts/api.yaml.
 /// </summary>
 [ApiController]
-[Route("[controller]")]
+[Route("health")]
 [AllowAnonymous]
 public sealed class HealthController : ControllerBase
 {

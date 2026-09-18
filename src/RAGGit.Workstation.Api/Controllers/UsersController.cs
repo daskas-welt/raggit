@@ -10,7 +10,7 @@ namespace RAGGit.Workstation.Api.Controllers;
 /// Admin-only people management endpoints per FR-005.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users")]
 [Authorize]
 public sealed class UsersController : ControllerBase
 {

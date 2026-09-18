@@ -95,7 +95,7 @@ public sealed class EdgeCaseTests
         llm.Healthy = false;
 
         var response = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "offline content" },
             JsonOptions
         );
@@ -124,7 +124,7 @@ public sealed class EdgeCaseTests
         Directory.Move(vectorStore.StoragePath, Path.Combine(blockedPath, "lancedb"));
 
         var response = await client.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "anything" },
             JsonOptions
         );
@@ -163,7 +163,7 @@ public sealed class EdgeCaseTests
             var employeeClient = factory1.CreateClient();
             employeeClient.DefaultRequestHeaders.Add("X-Api-Key", factory1.EmployeeKey);
             var queryResponse = await employeeClient.PostAsJsonAsync(
-                "/api/query",
+                "/api/queries",
                 new { query = "Persisted content" },
                 JsonOptions
             );
@@ -186,7 +186,7 @@ public sealed class EdgeCaseTests
             var employeeClient = factory2.CreateClient();
             employeeClient.DefaultRequestHeaders.Add("X-Api-Key", factory2.EmployeeKey);
             var queryResponse = await employeeClient.PostAsJsonAsync(
-                "/api/query",
+                "/api/queries",
                 new { query = "Persisted content" },
                 JsonOptions
             );

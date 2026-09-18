@@ -33,7 +33,7 @@ public sealed class Citation
 }
 
 /// <summary>
-/// Response body for <c>POST /api/query</c>.
+/// Response body for <c>POST /api/queries</c>.
 /// </summary>
 public sealed class QueryResponse
 {

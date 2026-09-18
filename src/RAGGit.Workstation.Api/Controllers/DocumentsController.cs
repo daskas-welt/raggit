@@ -19,7 +19,7 @@ namespace RAGGit.Workstation.Api.Controllers;
 /// Admin document upload and library listing endpoints per contracts/api.yaml.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/documents")]
 [Authorize]
 public sealed class DocumentsController : ControllerBase
 {
@@ -198,7 +198,7 @@ public sealed class DocumentsController : ControllerBase
     /// CreatedBy == sub AND NOT IN legacy; deactivation/expiry enforced
     /// per-request by JwtBearer + OnTokenValidated (004), never bypassed here.
     /// </summary>
-    [HttpGet("/api/documents/mine")]
+    [HttpGet("mine")]
     public async Task<IActionResult> Mine(
         [FromQuery] int? limit,
         [FromQuery] int? offset,

@@ -18,7 +18,7 @@ namespace RAGGit.Tests.Integration;
 /// <summary>
 /// Eval harness for SC-003 (retrieval precision) and SC-004 (citation coverage /
 /// zero hallucination). Seeds LanceDB with synthetic chunked documents across
-/// known categories, then runs 50 Q/A pairs through <c>POST /api/query</c>.
+/// known categories, then runs 50 Q/A pairs through <c>POST /api/queries</c>.
 /// Uses deterministic fakes so no WAN/Ollama is required.
 /// </summary>
 public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
@@ -63,7 +63,7 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             llm.ResponseText = $"Answer for {question.ExpectedCategory}.";
 
             var response = await _client.PostAsJsonAsync(
-                "/api/query",
+                "/api/queries",
                 new { query = question.Query, topK = TopK },
                 _jsonOptions
             );

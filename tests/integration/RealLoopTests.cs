@@ -189,11 +189,11 @@ public sealed class RealLoopTests : IDisposable
         client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         var queryPayload = new { query = "refund policy", topK = 5 };
         var swQuery = Stopwatch.StartNew();
-        var queryResp = await client.PostAsJsonAsync("/api/query", queryPayload);
+        var queryResp = await client.PostAsJsonAsync("/api/queries", queryPayload);
         swQuery.Stop();
         var queryBody = await queryResp.Content.ReadAsStringAsync();
         _output.WriteLine(
-            $"POST /api/query {(int)queryResp.StatusCode} in {swQuery.ElapsedMilliseconds}ms body={queryBody}"
+            $"POST /api/queries {(int)queryResp.StatusCode} in {swQuery.ElapsedMilliseconds}ms body={queryBody}"
         );
         Assert.Equal(HttpStatusCode.OK, queryResp.StatusCode);
         var queryJson = JsonDocument.Parse(queryBody);

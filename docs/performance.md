@@ -46,7 +46,7 @@ Measure-Command { dotnet run --project src/RAGGit.Workstation.Api }
 
 # SC-002
 for ($i = 0; $i -lt 50; $i++) {
-    curl -X POST http://ai-workstation.local:5001/api/query `
+    curl -X POST http://ai-workstation.local:5001/api/queries `
          -H "X-Api-Key: <employee-key>" `
          -H "Content-Type: application/json" `
          -d '{"query":"refund policy"}'

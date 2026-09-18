@@ -10,7 +10,7 @@ using RAGGit.Workstation.Api.Auth;
 namespace RAGGit.Workstation.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 [Authorize]
 public sealed class AuthController : ControllerBase
 {

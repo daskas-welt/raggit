@@ -65,7 +65,7 @@ public sealed class XlsxQueryCitationTests
         var queryClient = factory.CreateClient();
         queryClient.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         var queryResp = await queryClient.PostAsync(
-            "/api/query",
+            "/api/queries",
             new StringContent(queryJson, Encoding.UTF8, "application/json")
         );
         queryResp.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -111,7 +111,7 @@ public sealed class XlsxQueryCitationTests
         var queryClient = factory.CreateClient();
         queryClient.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         var queryResp = await queryClient.PostAsync(
-            "/api/query",
+            "/api/queries",
             new StringContent(queryJson, Encoding.UTF8, "application/json")
         );
         queryResp.StatusCode.Should().Be(HttpStatusCode.OK);

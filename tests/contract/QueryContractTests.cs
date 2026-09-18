@@ -17,7 +17,7 @@ using Xunit;
 namespace RAGGit.Tests.Contract;
 
 /// <summary>
-/// Contract tests for <c>POST /api/query</c> per contracts/api.yaml.
+/// Contract tests for <c>POST /api/queries</c> per contracts/api.yaml.
 /// Runs against the full Workstation.Api via <see cref="WebApplicationFactory{Program}"/>
 /// with deterministic fakes so the tests do not require Ollama/LanceDB.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         llm.ResponseText = $"Customers can return items within 30 days. [{chunkId}]";
 
         var response = await _client.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy" },
             _jsonOptions
         );
@@ -93,7 +93,7 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         GetVectorStore().Clear();
 
         var response = await _client.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "xyz nonsense query" },
             _jsonOptions
         );
@@ -136,7 +136,7 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
         adminClient.DefaultRequestHeaders.Add("X-Api-Key", _factory.AdminKey);
 
         var response = await adminClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy" },
             _jsonOptions
         );

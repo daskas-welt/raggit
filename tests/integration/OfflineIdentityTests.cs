@@ -90,7 +90,7 @@ public sealed class OfflineIdentityTests
         llm.ResponseText = "Refunds are accepted within 30 days.";
 
         var query = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy" },
             _jsonOptions
         );

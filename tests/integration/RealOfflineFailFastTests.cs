@@ -20,7 +20,7 @@ namespace RAGGit.Tests.Integration;
 
 /// <summary>
 /// T013 opt-in offline fail-fast: Ollama:Url unreachable (simulates Ollama stopped / WAN-off model missing)
-/// → POST /api/query returns 503 model unavailable offline / AI workstation unavailable within Ollama:TimeoutMs,
+/// → POST /api/queries returns 503 model unavailable offline / AI workstation unavailable within Ollama:TimeoutMs,
 /// never hangs, never attempts remote pull (FR-007, US-1 S4, Constitution IV).
 /// </summary>
 [Trait("RequiresOllama", "true")]
@@ -99,13 +99,13 @@ public sealed class RealOfflineFailFastTests : IDisposable
 
         var sw = Stopwatch.StartNew();
         var resp = await client.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy", topK = 5 }
         );
         sw.Stop();
         var body = await resp.Content.ReadAsStringAsync();
         _output.WriteLine(
-            $"POST /api/query unreachable → {(int)resp.StatusCode} in {sw.ElapsedMilliseconds}ms body={body}"
+            $"POST /api/queries unreachable → {(int)resp.StatusCode} in {sw.ElapsedMilliseconds}ms body={body}"
         );
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, resp.StatusCode);

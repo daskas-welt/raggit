@@ -225,13 +225,13 @@ public sealed class IngestPerformanceTests : IDisposable
         client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
         var qSw = Stopwatch.StartNew();
         var qResp = await client.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy", topK = 5 }
         );
         qSw.Stop();
         var qBody = await qResp.Content.ReadAsStringAsync();
         _output.WriteLine(
-            $"POST /api/query {(int)qResp.StatusCode} in {qSw.ElapsedMilliseconds}ms body={qBody}"
+            $"POST /api/queries {(int)qResp.StatusCode} in {qSw.ElapsedMilliseconds}ms body={qBody}"
         );
         Assert.True(
             qSw.Elapsed < TimeSpan.FromSeconds(2),

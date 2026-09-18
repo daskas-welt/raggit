@@ -53,7 +53,7 @@ public sealed class DeleteIntegrationTests
         await AssertLanceDBPurgedAsync(factory, document.Id);
 
         var queryResponse = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = uniqueTerm },
             JsonOptions
         );

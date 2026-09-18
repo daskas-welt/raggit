@@ -20,7 +20,7 @@ using Xunit;
 namespace RAGGit.Tests.Integration;
 
 /// <summary>
-/// Offline/LAN-only integration tests for <c>POST /api/query</c>.
+/// Offline/LAN-only integration tests for <c>POST /api/queries</c>.
 /// Uses the real Workstation.Api with a temp LanceDB vector store and
 /// deterministic fakes for Ollama embed/chat so no WAN egress is required.
 /// Each test creates its own factory to keep test data isolated.
@@ -50,7 +50,7 @@ public sealed class QueryOfflineTests
         {
             var sw = Stopwatch.StartNew();
             var response = await employeeClient.PostAsJsonAsync(
-                "/api/query",
+                "/api/queries",
                 new { query = "refund policy" },
                 _jsonOptions
             );
@@ -79,7 +79,7 @@ public sealed class QueryOfflineTests
         var employeeClient = CreateEmployeeClient(factory);
 
         var response = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "xyz irrelevant" },
             _jsonOptions
         );
@@ -102,7 +102,7 @@ public sealed class QueryOfflineTests
         llm.ThrowOnChat = true;
 
         var response = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "refund policy" },
             _jsonOptions
         );

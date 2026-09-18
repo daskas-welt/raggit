@@ -75,7 +75,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /api/query:
+  /api/queries:
     post:
       summary: Query library with citations (LAN-only, no cloud egress)
       security: [{ ApiKey: [] }]

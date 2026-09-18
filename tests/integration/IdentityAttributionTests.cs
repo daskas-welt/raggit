@@ -65,7 +65,7 @@ public sealed class IdentityAttributionTests : IClassFixture<IntegrationTestFact
         );
 
         var queryResponse = await employeeClient.PostAsJsonAsync(
-            "/api/query",
+            "/api/queries",
             new { query = "what is in the document?", topK = 5 }
         );
         queryResponse.StatusCode.Should().Be(HttpStatusCode.OK);

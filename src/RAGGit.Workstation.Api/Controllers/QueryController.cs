@@ -21,7 +21,7 @@ namespace RAGGit.Workstation.Api.Controllers;
 /// Employee + Admin query endpoint per contracts/api.yaml.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/queries")]
 [Authorize]
 public sealed class QueryController : ControllerBase
 {
@@ -60,7 +60,7 @@ public sealed class QueryController : ControllerBase
     /// legacy; deactivation/expiry enforced per-request by JwtBearer +
     /// OnTokenValidated (004), never bypassed here.
     /// </summary>
-    [HttpGet("/api/queries/history")]
+    [HttpGet("history")]
     public async Task<IActionResult> History(
         [FromQuery] int? limit,
         [FromQuery] int? offset,
@@ -83,7 +83,7 @@ public sealed class QueryController : ControllerBase
     /// (404 — never 403 — so non-owners cannot enumerate query ids).
     /// The :guid constraint keeps /api/queries/history from matching here.
     /// </summary>
-    [HttpGet("/api/queries/{id:guid}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> Detail(Guid id, CancellationToken cancellationToken)
     {
         var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
@@ -102,7 +102,7 @@ public sealed class QueryController : ControllerBase
     }
 
     /// <summary>
-    /// POST /api/query — grounded answer with citations or "no relevant content found".
+    /// POST /api/queries — grounded answer with citations or "no relevant content found".
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Employee,Admin")]

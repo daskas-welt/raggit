@@ -26,7 +26,7 @@ public sealed class QueryApiClient
     }
 
     /// <summary>
-    /// POST /api/query
+    /// POST /api/queries
     /// </summary>
     public async Task<QueryResponse> QueryAsync(
         string query,
@@ -41,7 +41,7 @@ public sealed class QueryApiClient
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                "api/query",
+                "api/queries",
                 request,
                 _jsonOptions,
                 cancellationToken
