@@ -25,7 +25,7 @@ jobs:
       - name: Check formatting (CSharpier)
         run: dotnet csharpier check .
 
-      # The WinUI 3 client (net8.0-windows + XAML compiler) cannot build on
+      # The WinUI 3 client (net10.0-windows + XAML compiler) cannot build on
       # Linux, so this job builds the RAGGit.Server.slnf filter (workstation,
       # libraries, Core behavior, all tests). The windows-client job below
       # builds the full solution including RAGGit.Client.WinUI.
@@ -89,7 +89,8 @@ jobs:
       # Packaging props live on the BUILD (not publish --no-build): the Appx
       # targets only emit the final AppPackages/*.msix during build. Verified
       # locally: this exact command produces
-      # bin/x64/Release/**/AppPackages/**/*.msix for the upload step below.
+      # src/RAGGit.Client.WinUI/AppPackages/**/*.msix for the upload step below
+      # (WindowsAppSDK 2.x project-root layout).
       - name: Build unsigned MSIX (packaging gate)
         run: dotnet build src/RAGGit.Client.WinUI/RAGGit.Client.WinUI.csproj --no-restore --configuration Release -p:Platform=x64 -p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true
 
