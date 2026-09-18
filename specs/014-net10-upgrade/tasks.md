@@ -86,9 +86,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T025 [P] [US3] Update Linux job setup-dotnet 8.0.x → 10.0.x in .github/workflows/ci.yml
-- [ ] T026 [P] [US3] Update Windows job setup-dotnet 8.0.x → 10.0.x in .github/workflows/ci.yml
-- [ ] T027 [US3] Push branch and verify both CI jobs green with MSIX artifact upload (depends on T025, T026)
+- [x] T025 [P] [US3] Update Linux job setup-dotnet 8.0.x → 10.0.x in .github/workflows/ci.yml
+- [x] T026 [P] [US3] Update Windows job setup-dotnet 8.0.x → 10.0.x in .github/workflows/ci.yml — plus required fixes: MSIX upload path → project-root AppPackages/ (2.x layout), stale bin-path comment corrected
+- [ ] T027 [US3] Push branch and verify both CI jobs green with MSIX artifact upload (depends on T025, T026) — PUSHED as 014-net10-upgrade (3 commits); CI-green verification is an OPERATOR STEP (no gh CLI/token on this box): watch Actions tab for Linux + Windows jobs + MSIX artifact
 
 **Checkpoint**: All user stories independently functional and CI-enforced
 
@@ -98,10 +98,10 @@
 
 **Purpose**: Consistency proof and follow-ups spanning all stories
 
-- [ ] T028 Grep all `*.csproj` for stale `8.0.x` PackageReferences and align to the R-04/R-05 policy per specs/014-net10-upgrade/research.md
-- [ ] T029 Run SC-004 consistency audit over pins, projects, Dockerfile, and ci.yml per specs/014-net10-upgrade/data-model.md
-- [ ] T030 [P] Run quickstart.md validation steps 1–6 end-to-end per specs/014-net10-upgrade/quickstart.md
-- [ ] T031 File constitution-amendment follow-up as a tracked issue (old-runtime wording → .NET 10) per specs/014-net10-upgrade/spec.md
+- [x] T028 Grep all `*.csproj` for stale `8.0.x` PackageReferences and align to the R-04/R-05 policy per specs/014-net10-upgrade/research.md — FOUND 5 explicit net8.0 TFMs overriding Directory.Build.props (fixed → inherit) + runtime-coupled 8.0.x packages (JwtBearer, Data.Sqlite, Caching.Memory, Options → 10.0.12); Serilog/MVVM kept per policy; full Server.slnf + RAGGit.sln re-validated green after
+- [x] T029 Run SC-004 consistency audit over pins, projects, Dockerfile, and ci.yml per specs/014-net10-upgrade/data-model.md — all 7 surfaces on new runtime, zero stale pins
+- [x] T030 [P] Run quickstart.md validation steps 1–6 end-to-end per specs/014-net10-upgrade/quickstart.md — steps 1–4 + 6 done; step 5 (docker) blocked: no daemon on box
+- [ ] T031 File constitution-amendment follow-up as a tracked issue (old-runtime wording → .NET 10) per specs/014-net10-upgrade/spec.md — DRAFT written (specs/014-net10-upgrade/followups/); filing is an OPERATOR STEP (no gh/token): paste into new issue, delete draft. Also notes NU1903 + docker/smoke deferrals
 
 ---
 
