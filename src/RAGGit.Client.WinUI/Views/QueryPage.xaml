@@ -8,7 +8,6 @@
     Background="{ThemeResource SurfaceVariant}"
 >
     <Page.Resources>
-        <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
     </Page.Resources>
     <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="24" RowSpacing="12">
@@ -38,56 +37,46 @@
             SendCommand="{Binding AskCommand}"
         />
 
-        <!-- Citations Footer card -->
+        <!-- Did-you-mean suggestion chips -->
         <Border
             Grid.Row="2"
-            Visibility="{Binding HasCitations, Converter={StaticResource BoolVisibility}}"
+            Visibility="{Binding HasSuggestedPersons, Converter={StaticResource BoolVisibility}}"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"
             Padding="12"
         >
-            <Grid>
-                <ProgressRing
-                    IsActive="{Binding IsBusy}"
-                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                    Foreground="{ThemeResource Primary}"
-                    HorizontalAlignment="Center"
+            <StackPanel Spacing="8">
+                <TextBlock
+                    Text="Μήπως εννοούσατε; / Did you mean?"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource OnSurface}"
                 />
-                <ListView
-                    ItemsSource="{Binding Citations}"
-                    MaxHeight="140"
-                    SelectionMode="None"
-                    AutomationProperties.AutomationId="CitationsList"
+                <ItemsControl
+                    x:Name="SuggestionChips"
+                    ItemsSource="{Binding SuggestedPersons}"
+                    AutomationProperties.AutomationId="SuggestionChips"
                 >
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="models:Citation">
-                            <Border
-                                Background="{ThemeResource Surface}"
-                                BorderBrush="{ThemeResource Outline}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="10"
-                                Margin="0,4"
-                            >
-                                <StackPanel Spacing="4">
-                                    <TextBlock
-                                        Text="{Binding Text}"
-                                        TextWrapping="Wrap"
-                                        FontSize="13"
-                                    />
-                                    <TextBlock
-                                        FontSize="11"
-                                        Foreground="{ThemeResource OnSurfaceVariant}"
-                                        Text="{Binding Converter={StaticResource CitationSubtitle}}"
-                                    />
-                                </StackPanel>
-                            </Border>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:PersonSuggestion">
+                            <Button
+                                Content="{Binding Name}"
+                                Command="{Binding ElementName=SuggestionChips, Path=DataContext.UseSuggestedPersonCommand}"
+                                CommandParameter="{Binding}"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                AutomationProperties.AutomationId="SuggestionChipButton"
+                            />
                         </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </Border>
 
         <!-- Status -->

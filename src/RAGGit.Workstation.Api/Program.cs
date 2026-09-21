@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
@@ -44,7 +45,7 @@ if (args.Length > 0 && string.Equals(args[0], "user", StringComparison.OrdinalIg
 
     await using var cliDb = new RagDbContext(cliConnectionString);
     await cliDb.EnsureCreatedAsync();
-    var cliStore = new UserStore(cliDb);
+    IUserRepository cliStore = new SqliteUserRepository(cliDb);
     var cli = new OperatorCli();
     var cliArgs = FilterOperatorArgs(args);
     var exitCode = await cli.RunAsync(cliArgs, cliStore);
@@ -117,7 +118,7 @@ var lockoutMinutes = builder.Configuration.GetValue<int?>("Auth:LockoutMinutes")
 
 var jwtKey = AuthKeyLoader.LoadOrCreateKey(jwtSigningKeyPath);
 
-builder.Services.AddSingleton<UserStore>();
+builder.Services.AddSingleton<IUserRepository, SqliteUserRepository>();
 builder.Services.Configure<JwtTokenServiceOptions>(options =>
 {
     options.SigningKey = jwtKey;
@@ -178,7 +179,8 @@ builder
                         return;
                     }
 
-                    var store = context.HttpContext.RequestServices.GetRequiredService<UserStore>();
+                    var store =
+                        context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
                     try
                     {
                         var user = await store.GetByIdAsync(
@@ -263,10 +265,12 @@ var connectionString =
     }
 }
 
-// Data
+// Data: RagDbContext is the Unit of Work / connection factory + schema bootstrap
+// only. All aggregate persistence goes through the repositories below (one
+// repository per aggregate root per the MS persistence-layer design).
 builder.Services.AddSingleton(new RagDbContext(connectionString));
-builder.Services.AddSingleton<QueryHistoryStore>();
-builder.Services.AddSingleton<DocumentMineStore>();
+builder.Services.AddSingleton<IQueryRepository, SqliteQueryRepository>();
+builder.Services.AddSingleton<IDocumentRepository, SqliteDocumentRepository>();
 var contentDir = Path.Combine(
     Path.GetDirectoryName(connectionString.Replace("Data Source=", "")) ?? "./data",
     "documents"
@@ -304,6 +308,8 @@ builder.Services.AddSingleton<ILlmClient>(sp => new OllamaLlmClient(
     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RAGGit.Retrieval.Ai.OllamaLlmClient>>()
 ));
 builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
+builder.Services.Configure<RetrievalOptions>(builder.Configuration.GetSection("Retrieval"));
+builder.Services.Configure<GenerationOptions>(builder.Configuration.GetSection("Generation"));
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();

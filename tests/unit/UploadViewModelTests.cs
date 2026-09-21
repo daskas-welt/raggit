@@ -127,6 +127,59 @@ public sealed class UploadViewModelTests
     }
 
     [Fact]
+    public async Task CancelUpload_TeardownRace_MarksCancelledNotFailed()
+    {
+        // The dialog-close race: cancel fires, then the HTTP stack aborts
+        // the TLS connection surfacing ObjectDisposedException on SslStream
+        // instead of OperationCanceledException.
+        var vm = CreateViewModel(new SslAbortOnCancelHandler(), new FakeFilePicker(PickedPdf()));
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        var uploadTask = vm.UploadCommand.ExecuteAsync(null);
+        for (var i = 0; i < 50 && !vm.IsUploading; i++)
+        {
+            await Task.Delay(20);
+        }
+        vm.IsUploading.Should().BeTrue();
+
+        vm.CancelUploadCommand.Execute(null);
+        await uploadTask;
+
+        vm.Queue.Should().ContainSingle();
+        vm.Queue[0].State.Should().Be(UploadViewModel.UploadItemState.Cancelled);
+        vm.Queue[0].ErrorMessage.Should().Be("Upload cancelled.");
+        vm.StatusMessage.Should().Be("Upload cancelled.");
+        vm.UploadTask.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Upload_SslStreamDisposedWithoutCancel_MarksFailedWithoutCrash()
+    {
+        var vm = CreateViewModel(
+            new ThrowingHandler(new ObjectDisposedException("System.Net.Security.SslStream")),
+            new FakeFilePicker(PickedPdf())
+        );
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        var act = () => vm.UploadCommand.ExecuteAsync(null);
+
+        await act.Should().NotThrowAsync();
+        vm.Queue[0].State.Should().Be(UploadViewModel.UploadItemState.Failed);
+    }
+
+    [Fact]
+    public async Task Upload_Completes_ClearsUploadTask()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new FakeFilePicker(PickedPdf()));
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        await vm.UploadCommand.ExecuteAsync(null);
+
+        vm.UploadTask.Should().BeNull();
+        vm.Queue[0].State.Should().Be(UploadViewModel.UploadItemState.Succeeded);
+    }
+
+    [Fact]
     public async Task PickFile_AppendsToQueue_WithNameAndSize()
     {
         var vm = CreateViewModel(_ => DocumentsResponse(), new FakeFilePicker(PickedPdf()));
@@ -177,6 +230,127 @@ public sealed class UploadViewModelTests
         vm.RejectionMessage.Should().Contain("evil.exe");
         vm.UploadCommand.CanExecute(null).Should().BeFalse();
         vm.HasFiles.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(
+        "report.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )]
+    [InlineData("paper.pdf", "application/pdf")]
+    [InlineData("notes.txt", "text/plain")]
+    [InlineData("data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    public async Task AllowList_AcceptsEachSupportedType(string fileName, string contentType)
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new FakeFilePicker(Picked(fileName, contentType))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().ContainSingle();
+        vm.Queue[0].FileName.Should().Be(fileName);
+        vm.HasRejection.Should().BeFalse();
+        vm.UploadCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("REPORT.DOCX")]
+    [InlineData("scan.Pdf")]
+    [InlineData("NOTES.TXT")]
+    [InlineData("DATA.XlSx")]
+    public async Task AllowList_AcceptsUppercaseExtensions(string fileName)
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new FakeFilePicker(Picked(fileName)));
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().ContainSingle();
+        vm.HasRejection.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AllowList_RejectsMarkdownForNewUploads()
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new FakeFilePicker(Picked("notes.md", "text/markdown"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().BeEmpty();
+        vm.HasRejection.Should().BeTrue();
+        vm.RejectionMessage.Should().Contain("notes.md");
+        vm.RejectionMessage.Should().Contain("isn't supported");
+        vm.UploadCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("legacy.doc")]
+    [InlineData("slides.pptx")]
+    [InlineData("photo.png")]
+    [InlineData("archive.zip")]
+    public async Task AllowList_RejectsUnsupportedTypes(string fileName)
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new FakeFilePicker(Picked(fileName, "application/octet-stream"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().BeEmpty();
+        vm.HasRejection.Should().BeTrue();
+        vm.RejectionMessage.Should().Contain(fileName);
+        vm.UploadCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AllowList_MixedBatch_QueuesOnlySupported()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new DummyFilePicker());
+
+        await vm.AddPickedFilesAsync(
+            new[]
+            {
+                Picked("ok.pdf"),
+                Picked("notes.md", "text/markdown"),
+                Picked(
+                    "data.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ),
+                Picked("evil.exe", "application/x-msdownload"),
+            }
+        );
+
+        vm.Queue.Select(i => i.FileName).Should().Equal("ok.pdf", "data.xlsx");
+        vm.RejectionMessage.Should().Contain("notes.md");
+        vm.RejectionMessage.Should().Contain("evil.exe");
+        vm.UploadCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AllowList_RejectionMessage_ListsSupportedTypes()
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new FakeFilePicker(Picked("notes.md", "text/markdown"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.RejectionMessage.Should().Contain("PDF, DOCX, XLSX, TXT");
+        vm.RejectionMessage.Should().NotContain("MD");
+    }
+
+    [Fact]
+    public void SupportedTypesText_ListsExactlyFourTypes()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new DummyFilePicker());
+
+        vm.SupportedTypesText.Should().Be("PDF, DOCX, XLSX, TXT supported · up to 100 MB.");
     }
 
     [Fact]
@@ -326,6 +500,14 @@ public sealed class UploadViewModelTests
         return new UploadViewModel(api, picker);
     }
 
+    private static UploadViewModel CreateViewModel(HttpMessageHandler handler, IFilePicker picker)
+    {
+        var api = new DocumentsApiClient(
+            new HttpClient(handler) { BaseAddress = new Uri("https://w.local/") }
+        );
+        return new UploadViewModel(api, picker);
+    }
+
     private static PickedFile PickedPdf() =>
         new("paper.pdf", new MemoryStream(new byte[] { 1, 2, 3 }), "application/pdf");
 
@@ -452,6 +634,44 @@ public sealed class UploadViewModelTests
         }
     }
 
+    /// <summary>
+    /// Simulates the dialog-close TLS teardown race: the caller cancels,
+    /// then the HTTP stack aborts the connection surfacing
+    /// ObjectDisposedException on SslStream instead of
+    /// OperationCanceledException.
+    /// </summary>
+    private sealed class SslAbortOnCancelHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            try
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw new ObjectDisposedException("System.Net.Security.SslStream");
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    private sealed class ThrowingHandler : HttpMessageHandler
+    {
+        private readonly Exception _exception;
+
+        public ThrowingHandler(Exception exception) => _exception = exception;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        ) => Task.FromException<HttpResponseMessage>(_exception);
+    }
+
     [Fact]
     public async Task Upload_AfterFullSuccess_DoesNotReupload()
     {
@@ -525,6 +745,214 @@ public sealed class UploadViewModelTests
 
         // Nothing retryable remains once everything succeeded.
         vm.UploadCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PickFile_MultiSelect_QueuesAllInOnePass()
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new ListFilePicker(Picked("a.pdf"), Picked("b.pdf"), Picked("c.pdf"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().HaveCount(3);
+        vm.Queue.Select(i => i.FileName).Should().Equal("a.pdf", "b.pdf", "c.pdf");
+        // Option A: the queue header carries count/size/progress; the
+        // InfoBar stays silent until there is an outcome.
+        vm.StatusMessage.Should().BeNull();
+        vm.QueueHeaderText.Should().Be("3 files · 9 bytes · 0 of 3 done");
+        vm.UploadCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task QueueHeaderText_SingleFile_ShowsCountSizeAndProgress()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new ListFilePicker(Picked("a.pdf")));
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.QueueHeaderText.Should().Be("1 file · 3 bytes · 0 of 1 done");
+        vm.TotalSizeBytes.Should().Be(3);
+    }
+
+    [Fact]
+    public void PrimaryButton_IdleShowsUpload_UploadingShowsCancel()
+    {
+        var vm = CreateViewModel(new FakeFilePicker(PickedPdf()));
+
+        vm.PrimaryButtonText.Should().Be("Upload");
+        vm.PrimaryButtonCommand.Should().BeSameAs(vm.UploadCommand);
+    }
+
+    [Fact]
+    public async Task QueueItem_RemoveAutomationId_IsUniquePerFile()
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new ListFilePicker(Picked("a.pdf"), Picked("b.pdf"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        var ids = vm.Queue.Select(i => i.RemoveAutomationId).ToList();
+        ids.Should().HaveCount(2);
+        ids.Should().OnlyHaveUniqueItems();
+        ids[0].Should().StartWith("RemoveFileButton_");
+    }
+
+    [Fact]
+    public async Task AddPickedFiles_RejectsEmptyFilesAndDisablesSubmit()
+    {
+        var vm = CreateViewModel(new DummyFilePicker());
+
+        await vm.AddPickedFilesAsync(new[] { Picked("empty.pdf", size: 0) });
+
+        vm.Queue.Should().BeEmpty();
+        vm.CanSubmit.Should().BeFalse();
+        vm.RejectionMessage.Should().Contain("empty");
+    }
+
+    [Fact]
+    public async Task QueueItem_IsUploading_TracksState()
+    {
+        var vm = CreateViewModel(new FakeFilePicker(PickedPdf()));
+        await vm.PickFileCommand.ExecuteAsync(null);
+        var item = vm.Queue.Should().ContainSingle().Subject;
+
+        item.IsUploading.Should().BeFalse();
+        item.State = UploadViewModel.UploadItemState.Uploading;
+        item.IsUploading.Should().BeTrue();
+        item.State = UploadViewModel.UploadItemState.Succeeded;
+        item.IsUploading.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task QueueItem_ShowsIndexingAfterBytesReachServer()
+    {
+        var vm = CreateViewModel(new FakeFilePicker(PickedPdf()));
+        await vm.PickFileCommand.ExecuteAsync(null);
+        var item = vm.Queue.Should().ContainSingle().Subject;
+
+        item.State = UploadViewModel.UploadItemState.Uploading;
+        item.Progress = 1;
+
+        item.IsUploading.Should().BeTrue();
+        item.IsIndexing.Should().BeTrue();
+        item.StateLabel.Should().Be("Indexing...");
+    }
+
+    [Fact]
+    public async Task ClosingStopsUploadHint_OnlyShowsWhileUploading()
+    {
+        var vm = CreateViewModel(new FakeFilePicker(PickedPdf()));
+
+        vm.ClosingStopsUploadHint.Should().BeEmpty();
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+        var uploadTask = vm.UploadCommand.ExecuteAsync(null);
+        for (var i = 0; i < 50 && !vm.IsUploading; i++)
+        {
+            await Task.Delay(20);
+        }
+
+        vm.ClosingStopsUploadHint.Should().Be("Closing this dialog stops the current upload.");
+        vm.CancelUploadCommand.Execute(null);
+        await uploadTask;
+        vm.ClosingStopsUploadHint.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task PickFile_MixedValidInvalid_QueuesValidNamesRejected()
+    {
+        var vm = CreateViewModel(
+            _ => DocumentsResponse(),
+            new ListFilePicker(Picked("good.pdf"), Picked("bad.exe", "application/x-msdownload"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        vm.Queue.Should().ContainSingle();
+        vm.Queue[0].FileName.Should().Be("good.pdf");
+        vm.RejectionMessage.Should().Contain("bad.exe");
+        vm.UploadCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PickFile_WhileUploading_BlockedAndNooped()
+    {
+        var vm = CreateViewModel(new ListFilePicker(Picked("a.pdf")));
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        var uploadTask = vm.UploadCommand.ExecuteAsync(null);
+        for (var i = 0; i < 50 && !vm.IsUploading; i++)
+        {
+            await Task.Delay(20);
+        }
+        vm.IsUploading.Should().BeTrue();
+
+        vm.PickFileCommand.CanExecute(null).Should().BeFalse();
+        vm.IsDropEnabled.Should().BeFalse();
+        vm.DropHintText.Should().Contain("after this run");
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+        vm.Queue.Should().ContainSingle();
+
+        vm.CancelUploadCommand.Execute(null);
+        await uploadTask;
+
+        vm.IsUploading.Should().BeFalse();
+        vm.IsDropEnabled.Should().BeTrue();
+        vm.PickFileCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AddPickedFiles_DropMixed_QueuesValidReportsInvalid()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new DummyFilePicker());
+
+        await vm.AddPickedFilesAsync(new[] { Picked("ok.pdf"), Picked("nope.exe") });
+        vm.ReportRejectedNames(new[] { "archive", "  " });
+
+        vm.Queue.Should().ContainSingle();
+        vm.Queue[0].FileName.Should().Be("ok.pdf");
+        vm.RejectionMessage.Should().Contain("nope.exe");
+        vm.RejectionMessage.Should().Contain("archive");
+    }
+
+    [Fact]
+    public async Task AddPickedFiles_Empty_LeavesQueueUnchanged()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(), new DummyFilePicker());
+
+        await vm.AddPickedFilesAsync(Array.Empty<PickedFile>());
+
+        vm.Queue.Should().BeEmpty();
+        vm.RejectionMessage.Should().BeNull();
+        vm.UploadCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PickMultiple_DefaultImpl_DelegatesToSinglePick()
+    {
+        var single = await ((IFilePicker)new FakeFilePicker(PickedPdf())).PickMultipleAsync();
+        single.Should().ContainSingle();
+
+        var none = await ((IFilePicker)new DummyFilePicker()).PickMultipleAsync();
+        none.Should().BeEmpty();
+    }
+
+    private sealed class ListFilePicker : IFilePicker
+    {
+        private readonly IReadOnlyList<PickedFile?> _files;
+
+        public ListFilePicker(params PickedFile?[] files) => _files = files;
+
+        public Task<PickedFile?> PickAsync() => Task.FromResult(_files.FirstOrDefault());
+
+        public Task<IReadOnlyList<PickedFile>> PickMultipleAsync() =>
+            Task.FromResult<IReadOnlyList<PickedFile>>(_files.Where(f => f is not null).ToList()!);
     }
 
     private sealed class SequencedHandler : HttpMessageHandler

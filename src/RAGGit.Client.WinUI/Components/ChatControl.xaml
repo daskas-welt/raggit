@@ -4,12 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
     xmlns:coreModels="using:RAGGit.Client.Core.Models"
+    xmlns:models="using:RAGGit.Core.Models"
     x:Name="Root"
 >
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyMessagesVisibility" />
+        <converters:CitationOrdinalConverter x:Key="CitationOrdinal" />
+        <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
+        <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
     </UserControl.Resources>
     <Grid RowDefinitions="*,Auto" RowSpacing="8">
         <!-- Messages -->
@@ -36,12 +40,25 @@
                             Padding="12,8"
                             Visibility="{Binding IsUser, Converter={StaticResource BoolVisibility}}"
                         >
-                            <TextBlock
-                                Text="{Binding Text}"
-                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                FontSize="14"
-                                TextWrapping="Wrap"
-                            />
+                            <StackPanel Spacing="8">
+                                <TextBlock
+                                    Text="{Binding Text}"
+                                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    FontSize="14"
+                                    TextWrapping="Wrap"
+                                    IsTextSelectionEnabled="True"
+                                />
+                                <Button
+                                    Content="Copy"
+                                    FontSize="11"
+                                    Padding="6,2"
+                                    HorizontalAlignment="Right"
+                                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    ToolTipService.ToolTip="Copy message"
+                                    AutomationProperties.AutomationId="CopyMessageButton"
+                                    Click="CopyMessageButton_Click"
+                                />
+                            </StackPanel>
                         </Border>
                         <!-- Assistant message (left-aligned) -->
                         <Border
@@ -54,12 +71,109 @@
                             Padding="12,8"
                             Visibility="{Binding IsUser, Converter={StaticResource InvertedBoolVisibility}}"
                         >
-                            <TextBlock
-                                Text="{Binding Text}"
-                                Foreground="{ThemeResource OnSurface}"
-                                FontSize="14"
-                                TextWrapping="Wrap"
-                            />
+                            <StackPanel Spacing="4">
+                                <TextBlock
+                                    Text="{Binding Text}"
+                                    Foreground="{ThemeResource OnSurface}"
+                                    FontSize="14"
+                                    TextWrapping="Wrap"
+                                    IsTextSelectionEnabled="True"
+                                />
+                                <StackPanel
+                                    Visibility="{x:Bind HasCitations, Converter={StaticResource BoolVisibility}, Mode=OneTime}"
+                                    Spacing="8"
+                                    AutomationProperties.AutomationId="{x:Bind SourcesAutomationId, Mode=OneTime}"
+                                >
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock x:Uid="CitationSourcesLabel" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="{x:Bind Citations.Count, Mode=OneTime}"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
+                                        />
+                                    </Grid>
+                                    <ListView
+                                        ItemsSource="{x:Bind Citations, Mode=OneTime}"
+                                        SelectionMode="None"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        AutomationProperties.AutomationId="{x:Bind MessageCitationsAutomationId, Mode=OneTime}"
+                                    >
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter
+                                                    Property="HorizontalContentAlignment"
+                                                    Value="Stretch"
+                                                />
+                                                <Setter Property="Padding" Value="0" />
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="models:Citation">
+                                                <Border
+                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="8"
+                                                    Margin="0,2"
+                                                >
+                                                    <Grid
+                                                        ColumnDefinitions="Auto,*"
+                                                        ColumnSpacing="8"
+                                                    >
+                                                        <Border
+                                                            Background="{ThemeResource AccentButtonBackground}"
+                                                            CornerRadius="6"
+                                                            Padding="6,3"
+                                                            VerticalAlignment="Top"
+                                                        >
+                                                            <TextBlock
+                                                                Text="{x:Bind Ordinal, Converter={StaticResource CitationOrdinal}, Mode=OneTime}"
+                                                                FontSize="12"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                            />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="4">
+                                                            <TextBlock
+                                                                Text="{x:Bind Converter={StaticResource CitationDocumentName}, Mode=OneTime}"
+                                                                FontSize="12"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource OnSurface}"
+                                                                TextTrimming="CharacterEllipsis"
+                                                            />
+                                                            <TextBlock
+                                                                Text="{x:Bind Text, Mode=OneTime}"
+                                                                FontSize="13"
+                                                                Foreground="{ThemeResource OnSurface}"
+                                                                TextWrapping="Wrap"
+                                                                IsTextSelectionEnabled="True"
+                                                            />
+                                                            <TextBlock
+                                                                Text="{x:Bind Converter={StaticResource CitationSubtitle}, Mode=OneTime}"
+                                                                FontSize="11"
+                                                                Foreground="{ThemeResource OnSurfaceVariant}"
+                                                                IsTextSelectionEnabled="True"
+                                                                TextTrimming="CharacterEllipsis"
+                                                            />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                                <Button
+                                    Content="Copy"
+                                    FontSize="11"
+                                    Padding="6,2"
+                                    HorizontalAlignment="Right"
+                                    ToolTipService.ToolTip="Copy message"
+                                    AutomationProperties.AutomationId="CopyMessageButton"
+                                    Click="CopyMessageButton_Click"
+                                />
+                            </StackPanel>
                         </Border>
                     </Grid>
                 </DataTemplate>

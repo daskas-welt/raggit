@@ -73,6 +73,7 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
                 if (SetProperty(ref _progress, value))
                 {
                     OnPropertyChanged(nameof(StateLabel));
+                    OnPropertyChanged(nameof(IsIndexing));
                 }
             }
         }
@@ -86,6 +87,7 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
                 {
                     OnPropertyChanged(nameof(StateLabel));
                     OnPropertyChanged(nameof(HasError));
+                    OnPropertyChanged(nameof(IsUploading));
                 }
             }
         }
@@ -104,10 +106,33 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
 
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
+        /// <summary>
+        /// True while this file is actively uploading. The row progress bar
+        /// binds to this so queued/succeeded/failed rows render no track.
+        /// </summary>
+        public bool IsUploading => State == UploadItemState.Uploading;
+
+        /// <summary>
+        /// The file bytes have reached the API, but the API has not returned
+        /// yet. The workstation is still extracting, embedding, and writing
+        /// the document to the RAG store, so the UI must show indeterminate
+        /// indexing rather than a misleading completed progress bar.
+        /// </summary>
+        public bool IsIndexing => IsUploading && Progress >= 1;
+
+        /// <summary>
+        /// Stable unique AutomationId for the row remove button. FileName is
+        /// immutable so no change notification is needed.
+        /// </summary>
+        public string RemoveAutomationId => $"RemoveFileButton_{ItemId:N}";
+
+        public Guid ItemId { get; } = Guid.NewGuid();
+
         public string StateLabel =>
             State switch
             {
                 UploadItemState.Queued => "Queued",
+                UploadItemState.Uploading when IsIndexing => "Indexing...",
                 UploadItemState.Uploading => $"Uploading {Progress:P0}",
                 UploadItemState.Succeeded => "Uploaded",
                 UploadItemState.Failed => "Failed",
@@ -134,27 +159,36 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
         }
     }
 
-    private static readonly string[] AllowedExtensions =
-    {
-        ".pdf",
-        ".docx",
-        ".xlsx",
-        ".txt",
-        ".md",
-    };
+    /// <summary>
+    /// Intake allow-list (018-allowed-upload-types). Single source of truth
+    /// lives in <see cref="DocumentValidation.AllowedExtensions"/> so client
+    /// and workstation gates can never drift.
+    /// </summary>
+    private static System.Collections.Generic.IReadOnlySet<string> AllowedExtensions =>
+        DocumentValidation.AllowedExtensions;
 
     private static long MaxFileSizeBytes => DocumentValidation.MaxFileSizeBytes;
 
     /// <summary>
     /// Hint shown before selection; kept next to the pick action.
     /// </summary>
-    public string SupportedTypesText => "PDF, DOCX, XLSX, TXT, MD supported · up to 100 MB.";
+    public string SupportedTypesText =>
+        $"{DocumentValidation.SupportedTypesLabel} supported · up to 100 MB.";
 
     private readonly DocumentsApiClient _apiClient;
     private readonly Services.IFilePicker _filePicker;
     private readonly ClientSession? _session;
 
     private CancellationTokenSource? _uploadCts;
+
+    /// <summary>
+    /// The in-flight upload run, if any. The hosting dialog awaits this
+    /// during close (via a <c>ContentDialogClosingEventArgs</c> deferral)
+    /// after cancelling, so queued streams are only disposed once the HTTP
+    /// stack has finished aborting the TLS connection. Disposing them
+    /// earlier surfaces as ObjectDisposedException on SslStream.
+    /// </summary>
+    public Task? UploadTask { get; private set; }
 
     public ObservableCollection<UploadQueueItem> Queue { get; } = new();
 
@@ -201,6 +235,31 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isAllSucceeded;
 
+    /// <summary>
+    /// True while an accepted drag hovers the drop target (017).
+    /// View-only affordance; drives the highlight visual state.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDragOver;
+
+    /// <summary>
+    /// Drop target (and pick action) locked while uploading per the
+    /// Session 2026-09-18 clarification: extra files wait for the next
+    /// dialog open.
+    /// </summary>
+    public bool IsDropEnabled => !IsUploading;
+
+    public string DropHintText =>
+        IsUploading
+            ? "Uploading — add more files after this run finishes."
+            : "Drag files here or use Add files.";
+
+    /// <summary>
+    /// Clarifies that dismissing the dialog also stops the active upload.
+    /// </summary>
+    public string ClosingStopsUploadHint =>
+        IsUploading ? "Closing this dialog stops the current upload." : string.Empty;
+
     public bool HasStatus => !string.IsNullOrWhiteSpace(StatusMessage);
 
     public bool IsStatusError =>
@@ -209,6 +268,12 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
     public bool HasRejection => !string.IsNullOrWhiteSpace(RejectionMessage);
 
     public bool HasFiles => Queue.Count > 0;
+
+    public bool CanSubmit =>
+        IsUploading
+        || Queue.Any(i =>
+            i.State is UploadItemState.Queued or UploadItemState.Failed or UploadItemState.Cancelled
+        );
 
     public int TotalCount => Queue.Count;
 
@@ -222,12 +287,56 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
 
     public string CompletedCountText => $"{CompletedCount} of {TotalCount} done";
 
+    /// <summary>
+    /// Single queue header (Option A redesign): count, total size, and
+    /// overall progress. This replaces the separate "N files ready" status
+    /// message so the InfoBar only carries outcomes and errors.
+    /// </summary>
+    public string QueueHeaderText
+    {
+        get
+        {
+            var files = TotalCount == 1 ? "1 file" : $"{TotalCount} files";
+            return $"{files} · {FormatSize(TotalSizeBytes)} · {CompletedCountText}";
+        }
+    }
+
+    public long TotalSizeBytes
+    {
+        get
+        {
+            long total = 0;
+            foreach (var item in Queue)
+            {
+                total += item.SizeBytes ?? 0;
+            }
+
+            return total;
+        }
+    }
+
+    /// <summary>
+    /// ContentDialog primary-button slot (Option A redesign): Upload when
+    /// idle, Cancel while uploading.
+    /// </summary>
+    public string PrimaryButtonText => IsUploading ? "Cancel" : "Upload";
+
+    public System.Windows.Input.ICommand PrimaryButtonCommand =>
+        IsUploading ? CancelUploadCommand : UploadCommand;
+
     partial void OnIsUploadingChanged(bool value)
     {
         IsBusy = value;
         IsUploadEnabled = !value;
+        OnPropertyChanged(nameof(IsDropEnabled));
+        OnPropertyChanged(nameof(DropHintText));
+        OnPropertyChanged(nameof(ClosingStopsUploadHint));
+        OnPropertyChanged(nameof(PrimaryButtonText));
+        OnPropertyChanged(nameof(PrimaryButtonCommand));
+        OnPropertyChanged(nameof(CanSubmit));
         UploadCommand.NotifyCanExecuteChanged();
         RemoveFileCommand.NotifyCanExecuteChanged();
+        PickFileCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnSelectedFileNameChanged(string? value)
@@ -317,73 +426,164 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
     private void RefreshQueueDerived()
     {
         OnPropertyChanged(nameof(HasFiles));
+        OnPropertyChanged(nameof(CanSubmit));
         OnPropertyChanged(nameof(TotalCount));
         OnPropertyChanged(nameof(SuccessCount));
         OnPropertyChanged(nameof(FailureCount));
         OnPropertyChanged(nameof(CancelledCount));
         OnPropertyChanged(nameof(CompletedCount));
         OnPropertyChanged(nameof(CompletedCountText));
+        OnPropertyChanged(nameof(QueueHeaderText));
+        OnPropertyChanged(nameof(TotalSizeBytes));
         UploadCommand.NotifyCanExecuteChanged();
         RemoveFileCommand.NotifyCanExecuteChanged();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanPick))]
     private async Task PickFileAsync()
     {
+        if (IsUploading)
+        {
+            return;
+        }
+
         try
         {
-            var picked = await _filePicker.PickAsync();
-            if (picked is null)
-            {
-                return;
-            }
-
-            var fileName = picked.FileName?.Trim();
-            if (string.IsNullOrWhiteSpace(fileName))
-            {
-                picked.Stream.Dispose();
-                RejectionMessage = "That file has no name. Choose a named document to upload.";
-                return;
-            }
-
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
-            {
-                picked.Stream.Dispose();
-                RejectionMessage =
-                    $"'{fileName}' isn't supported. Choose PDF, DOCX, XLSX, TXT, or MD files.";
-                return;
-            }
-
-            long? sizeBytes = picked.Stream.CanSeek ? picked.Stream.Length : null;
-            if (sizeBytes > MaxFileSizeBytes)
-            {
-                picked.Stream.Dispose();
-                RejectionMessage =
-                    $"'{fileName}' is too large ({FormatSize(sizeBytes)}). Files must be 100 MB or smaller.";
-                return;
-            }
-
-            var contentType = string.IsNullOrWhiteSpace(picked.ContentType)
-                ? ContentTypeFor(extension)
-                : picked.ContentType;
-
-            RejectionMessage = null;
-            Queue.Add(new UploadQueueItem(fileName, picked.Stream, contentType, sizeBytes));
-            SelectedFileName = fileName;
-            UploadProgress = 0;
-            IsAllSucceeded = false;
-            StatusMessage =
-                Queue.Count == 1
-                    ? "1 file ready. Press Upload to start."
-                    : $"{Queue.Count} files ready. Press Upload to start.";
-            StatusSeverity = "Informational";
+            var picked = await _filePicker.PickMultipleAsync();
+            await AddPickedFilesAsync(picked);
         }
         catch (Exception exception)
         {
             StatusMessage = $"Could not open file picker: {exception.Message}";
             StatusSeverity = "Error";
         }
+    }
+
+    private bool CanPick => !IsUploading;
+
+    /// <summary>
+    /// Shared intake seam for picker passes and drop passes (017): validates
+    /// every file identically, queues the valid ones, and reports each
+    /// rejected file by name. Never throws for per-file validation failures.
+    /// </summary>
+    public Task AddPickedFilesAsync(
+        IEnumerable<PickedFile> files,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(files);
+
+        var rejections = new List<string>();
+        var added = 0;
+        foreach (var picked in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (picked is null)
+            {
+                continue;
+            }
+
+            var fileName = picked.FileName?.Trim();
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                picked.Stream.Dispose();
+                rejections.Add("A file has no name. Choose a named document to upload.");
+                continue;
+            }
+
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                picked.Stream.Dispose();
+                rejections.Add(
+                    $"'{fileName}' isn't supported. Choose {DocumentValidation.SupportedTypesLabel} files."
+                );
+                continue;
+            }
+
+            long? sizeBytes = picked.Stream.CanSeek ? picked.Stream.Length : null;
+            if (sizeBytes is 0 || sizeBytes > MaxFileSizeBytes)
+            {
+                picked.Stream.Dispose();
+                rejections.Add(
+                    sizeBytes is 0
+                        ? $"'{fileName}' is empty. Choose a file with content."
+                        : $"'{fileName}' is too large ({FormatSize(sizeBytes)}). Files must be 100 MB or smaller."
+                );
+                continue;
+            }
+
+            var contentType = string.IsNullOrWhiteSpace(picked.ContentType)
+                ? ContentTypeFor(extension)
+                : picked.ContentType;
+
+            Queue.Add(new UploadQueueItem(fileName, picked.Stream, contentType, sizeBytes));
+            SelectedFileName = fileName;
+            UploadProgress = 0;
+            IsAllSucceeded = false;
+            added++;
+        }
+
+        if (added > 0)
+        {
+            // The queue header carries count/size/progress; the InfoBar is
+            // reserved for outcomes and errors.
+            StatusMessage = null;
+            StatusSeverity = "Informational";
+        }
+
+        if (rejections.Count > 0)
+        {
+            RejectionMessage = string.Join(" ", rejections);
+        }
+        else if (added > 0)
+        {
+            RejectionMessage = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Reports drop entries that are not real files (folders, shortcuts,
+    /// virtual items) without attempting resolution (clarified 2026-09-18).
+    /// Merges into the pick-time rejection surface.
+    /// </summary>
+    public void ReportRejectedNames(IEnumerable<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+
+        var messages = names
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n =>
+                $"'{n.Trim()}' isn't a file that can be uploaded. Drop individual supported files instead."
+            )
+            .ToList();
+        if (messages.Count > 0)
+        {
+            MergeRejection(string.Join(" ", messages));
+        }
+    }
+
+    /// <summary>
+    /// Reports a drop-handling failure (e.g. unreadable dropped content).
+    /// Merges into the pick-time rejection surface.
+    /// </summary>
+    public void ReportDropError(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        MergeRejection(message.Trim());
+    }
+
+    private void MergeRejection(string message)
+    {
+        RejectionMessage = string.IsNullOrWhiteSpace(RejectionMessage)
+            ? message
+            : RejectionMessage + " " + message;
     }
 
     [RelayCommand(CanExecute = nameof(CanRemove))]
@@ -418,10 +618,7 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
         else
         {
             SelectedFileName = Queue[^1].FileName;
-            StatusMessage =
-                Queue.Count == 1
-                    ? "1 file ready. Press Upload to start."
-                    : $"{Queue.Count} files ready. Press Upload to start.";
+            StatusMessage = null;
             StatusSeverity = "Informational";
         }
     }
@@ -431,6 +628,23 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
 
     [RelayCommand(CanExecute = nameof(CanUpload))]
     private async Task UploadAsync()
+    {
+        var run = UploadAsyncCore();
+        UploadTask = run;
+        try
+        {
+            await run;
+        }
+        finally
+        {
+            if (ReferenceEquals(UploadTask, run))
+            {
+                UploadTask = null;
+            }
+        }
+    }
+
+    private async Task UploadAsyncCore()
     {
         var pending = Queue.Where(i => i.State == UploadItemState.Queued).ToList();
         if (pending.Count == 0)
@@ -467,7 +681,7 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
 
         IsUploading = true;
         IsAllSucceeded = false;
-        StatusMessage = "Uploading...";
+        StatusMessage = null;
         StatusSeverity = "Informational";
 
         _uploadCts?.Dispose();
@@ -512,6 +726,16 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
                 }
                 catch (OperationCanceledException) when (cts.IsCancellationRequested)
                 {
+                    current.ErrorMessage = "Upload cancelled.";
+                    current.State = UploadItemState.Cancelled;
+                    break;
+                }
+                catch (ObjectDisposedException) when (cts.IsCancellationRequested)
+                {
+                    // Teardown race: the host disposed queued streams (or the
+                    // HTTP stack aborted the TLS connection) after cancel was
+                    // requested but before the request finished unwinding.
+                    // This is a cancel, not a failure.
                     current.ErrorMessage = "Upload cancelled.";
                     current.State = UploadItemState.Cancelled;
                     break;
@@ -640,7 +864,6 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
             ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             ".txt" => "text/plain",
-            ".md" => "text/markdown",
             _ => "application/octet-stream",
         };
 

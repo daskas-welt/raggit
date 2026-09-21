@@ -2,8 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
-using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 using RAGGit.Workstation.Api.Auth;
 
@@ -14,13 +14,13 @@ namespace RAGGit.Workstation.Api.Controllers;
 [Authorize]
 public sealed class AuthController : ControllerBase
 {
-    private readonly UserStore _userStore;
+    private readonly IUserRepository _userStore;
     private readonly JwtTokenService _tokenService;
     private readonly LockoutPolicy _lockoutPolicy;
     private readonly IHostEnvironment _environment;
 
     public AuthController(
-        UserStore userStore,
+        IUserRepository userStore,
         JwtTokenService tokenService,
         LockoutPolicy lockoutPolicy,
         IHostEnvironment environment

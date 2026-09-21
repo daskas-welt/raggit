@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -17,14 +18,14 @@ public sealed class OperatorCliTests : IAsyncLifetime
 {
     private readonly string _dbPath;
     private readonly RagDbContext _db;
-    private readonly UserStore _store;
+    private readonly IUserRepository _store;
     private readonly OperatorCli _cli;
 
     public OperatorCliTests()
     {
         _dbPath = Path.Combine(Path.GetTempPath(), $"raggit-t010-{Guid.NewGuid()}.db");
         _db = new RagDbContext($"Data Source={_dbPath}");
-        _store = new UserStore(_db);
+        _store = new SqliteUserRepository(_db);
         _cli = new OperatorCli();
     }
 

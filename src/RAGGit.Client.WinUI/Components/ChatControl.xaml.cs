@@ -3,6 +3,8 @@ using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using RAGGit.Client.Core.Models;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace RAGGit.Client.WinUI.Components;
 
@@ -115,6 +117,19 @@ public sealed partial class ChatControl : UserControl
         {
             SendCommand.Execute(null);
             e.Handled = true;
+        }
+    }
+
+    private void CopyMessageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (
+            (sender as FrameworkElement)?.DataContext is ChatMessage message
+            && !string.IsNullOrEmpty(message.Text)
+        )
+        {
+            var package = new DataPackage();
+            package.SetText(message.Text);
+            Clipboard.SetContent(package);
         }
     }
 }

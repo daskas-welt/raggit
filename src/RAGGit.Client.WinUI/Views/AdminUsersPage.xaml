@@ -23,11 +23,7 @@
          collection scroll and is never nested in a ScrollViewer (keeps
          virtualization, no nested-scroll traps). Only the form cards
          scroll, on their own, when short. -->
-    <Grid
-        Padding="24"
-        RowSpacing="12"
-        RowDefinitions="Auto,Auto,*,Auto"
-    >
+    <Grid Padding="24" RowSpacing="12" RowDefinitions="Auto,Auto,*,Auto">
         <!-- Header -->
         <Border
             Grid.Row="0"
@@ -56,11 +52,7 @@
                 >
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Refresh" />
-                        <TextBlock
-                            Text="Refresh"
-                            FontSize="13"
-                            VerticalAlignment="Center"
-                        />
+                        <TextBlock Text="Refresh" FontSize="13" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -125,11 +117,7 @@
                         VerticalAlignment="Center"
                     />
                 </Grid>
-                <Rectangle
-                    Grid.Row="1"
-                    Height="1"
-                    Fill="{ThemeResource Outline}"
-                />
+                <Rectangle Grid.Row="1" Height="1" Fill="{ThemeResource Outline}" />
                 <Grid Grid.Row="2">
                     <ListView
                         x:Name="UsersList"

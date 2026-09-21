@@ -4,39 +4,100 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
     Title="Upload Documents"
+    PrimaryButtonText="{Binding PrimaryButtonText, Mode=OneWay}"
+    IsPrimaryButtonEnabled="{Binding CanSubmit, Mode=OneWay}"
+    PrimaryButtonClick="OnPrimaryButtonClick"
     CloseButtonText="Close"
-    DefaultButton="Close"
+    DefaultButton="Primary"
 >
     <ContentDialog.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
-        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </ContentDialog.Resources>
-    <!-- Click-to-select only (015-file-upload-ui): no drag-and-drop target.
-         The queue ListView virtualizes on its own; never wrap it in a
-         scrolling container. Spacing follows the 4px scale (4/8/12). -->
+    <!-- Option A layout: one intake card (drop zone with the browse action
+          inside it) feeding one queue card whose content swaps between a
+          placeholder and the list. The dialog primary button is Upload (or
+          Cancel while uploading); the InfoBar carries outcomes/errors only.
+          The queue ListView virtualizes on its own; never wrap it in a
+          scrolling container. Spacing follows the 4px scale (4/8/12). -->
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="12" MinWidth="400">
-        <!-- Pick row: single entry action + supported-types hint -->
-        <StackPanel Grid.Row="0" Spacing="4">
-            <Button
-                x:Name="AddFilesButton"
-                Command="{Binding PickFileCommand}"
-                MinHeight="44"
-                HorizontalAlignment="Stretch"
-                AutomationProperties.AutomationId="AddFilesButton"
-            >
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <SymbolIcon Symbol="Add" />
-                    <TextBlock Text="Add files" FontSize="14" VerticalAlignment="Center" />
+        <!-- Intake: drop zone + browse action + supported-types hint in one
+              card. Drops are declined with a hint while uploading per the
+              queue-lock rule (see code-behind). Keyboard users get the
+              equivalent Browse files button inside the zone. -->
+        <Border
+            Grid.Row="0"
+            x:Name="DropArea"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="16,12"
+            AllowDrop="True"
+            DragOver="DropArea_DragOver"
+            DragLeave="DropArea_DragLeave"
+            Drop="DropArea_Drop"
+            AutomationProperties.AutomationId="UploadDropArea"
+            AutomationProperties.Name="Drop files here"
+        >
+            <Grid>
+                <StackPanel Spacing="8" HorizontalAlignment="Center">
+                    <SymbolIcon
+                        Symbol="Upload"
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                    <TextBlock
+                        Text="Add documents"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                        HorizontalAlignment="Center"
+                    />
+                    <TextBlock
+                        Text="Drop files here or browse from your device"
+                        FontSize="13"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        TextWrapping="Wrap"
+                        TextAlignment="Center"
+                        HorizontalAlignment="Center"
+                    />
+                    <Button
+                        x:Name="AddFilesButton"
+                        Command="{Binding PickFileCommand}"
+                        HorizontalAlignment="Center"
+                        AutomationProperties.AutomationId="AddFilesButton"
+                    >
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Add" />
+                            <TextBlock
+                                Text="Browse files"
+                                FontSize="14"
+                                VerticalAlignment="Center"
+                            />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock
+                        Text="{Binding SupportedTypesText, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        TextWrapping="Wrap"
+                        TextAlignment="Center"
+                        HorizontalAlignment="Center"
+                    />
                 </StackPanel>
-            </Button>
-            <TextBlock
-                Text="{Binding SupportedTypesText, Mode=OneWay}"
-                FontSize="12"
-                Foreground="{ThemeResource OnSurfaceVariant}"
-                TextWrapping="Wrap"
-            />
-        </StackPanel>
+                <!-- Drag-over highlight: accent outline over the idle area -->
+                <Border
+                    BorderBrush="{ThemeResource AccentButtonBackground}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Margin="-16,-12"
+                    IsHitTestVisible="False"
+                    Visibility="{Binding IsDragOver, Converter={StaticResource BoolVisibility}}"
+                />
+            </Grid>
+        </Border>
 
         <!-- Pick-time rejection: immediate plain-language message -->
         <InfoBar
@@ -48,22 +109,31 @@
             AutomationProperties.LiveSetting="Polite"
         />
 
-        <!-- Multi-file queue -->
-        <StackPanel Grid.Row="2" Spacing="4">
-            <TextBlock
-                Text="{Binding CompletedCountText, Mode=OneWay}"
-                FontSize="12"
-                Foreground="{ThemeResource OnSurfaceVariant}"
-                Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
-            />
-            <Border
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="4"
-                Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
-            >
+        <!-- Single queue card: header + placeholder/list swap -->
+        <Border
+            Grid.Row="2"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+        >
+            <StackPanel Spacing="8">
+                <Grid Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}">
+                    <TextBlock
+                        Text="Upload queue"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                    />
+                    <TextBlock
+                        Text="{Binding QueueHeaderText, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                    />
+                </Grid>
                 <ListView
                     x:Name="QueueList"
                     ItemsSource="{Binding Queue}"
@@ -71,6 +141,7 @@
                     SelectionMode="None"
                     Background="Transparent"
                     BorderThickness="0"
+                    Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
                     AutomationProperties.AutomationId="UploadQueueList"
                     AutomationProperties.Name="Files to upload"
                 >
@@ -82,7 +153,14 @@
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Padding="12,8">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="8,10">
+                                <SymbolIcon
+                                    Grid.Column="0"
+                                    Symbol="Document"
+                                    Foreground="{ThemeResource OnSurfaceVariant}"
+                                    VerticalAlignment="Top"
+                                    Margin="2,2,2,0"
+                                />
                                 <StackPanel Spacing="4">
                                     <TextBlock
                                         Text="{Binding FileName}"
@@ -100,6 +178,8 @@
                                         Maximum="1"
                                         Height="4"
                                         Foreground="{ThemeResource Primary}"
+                                        Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+                                        IsIndeterminate="{Binding IsIndexing, Mode=OneWay}"
                                         AutomationProperties.Name="Upload progress"
                                     />
                                     <TextBlock
@@ -116,17 +196,17 @@
                                     />
                                 </StackPanel>
                                 <Button
-                                    Grid.Column="1"
+                                    Grid.Column="2"
                                     Command="{Binding DataContext.RemoveFileCommand, ElementName=QueueList}"
                                     CommandParameter="{Binding}"
-                                    Width="44"
-                                    Height="44"
+                                    Width="32"
+                                    Height="32"
                                     Padding="0"
                                     CornerRadius="6"
                                     Background="Transparent"
                                     VerticalAlignment="Center"
                                     ToolTipService.ToolTip="Remove file"
-                                    AutomationProperties.AutomationId="{Binding FileName, Mode=OneWay}"
+                                    AutomationProperties.AutomationId="{Binding RemoveAutomationId, Mode=OneWay}"
                                     AutomationProperties.Name="Remove file"
                                 >
                                     <SymbolIcon Symbol="Delete" />
@@ -135,64 +215,56 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
-            </Border>
-            <Border
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16,12"
-                Visibility="{Binding Queue, Converter={StaticResource EmptyListVisibility}}"
-            >
-                <TextBlock
-                    Text="No files yet. Choose Add files to build the queue."
-                    FontSize="13"
-                    Foreground="{ThemeResource OnSurfaceVariant}"
-                    TextWrapping="Wrap"
+                <StackPanel
+                    Spacing="4"
                     HorizontalAlignment="Center"
-                    TextAlignment="Center"
-                />
-            </Border>
-        </StackPanel>
-
-        <!-- Start + cancel actions -->
-        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <Button
-                Grid.Column="0"
-                x:Name="UploadStartButton"
-                Command="{Binding UploadCommand}"
-                MinHeight="44"
-                HorizontalAlignment="Stretch"
-                AutomationProperties.AutomationId="UploadStartButton"
-            >
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <SymbolIcon Symbol="Upload" />
-                    <TextBlock Text="Upload" FontSize="14" VerticalAlignment="Center" />
+                    Visibility="{Binding HasFiles, Converter={StaticResource InvertedBoolVisibility}}"
+                >
+                    <SymbolIcon
+                        Symbol="Document"
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                    <TextBlock
+                        Text="No files yet"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                        HorizontalAlignment="Center"
+                    />
+                    <TextBlock
+                        Text="Drop files above or choose Browse files to build the queue."
+                        FontSize="13"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                        TextWrapping="Wrap"
+                        TextAlignment="Center"
+                        HorizontalAlignment="Center"
+                    />
                 </StackPanel>
-            </Button>
-            <Button
-                Grid.Column="1"
-                Command="{Binding CancelUploadCommand}"
-                MinHeight="44"
-                MinWidth="44"
-                Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-                ToolTipService.ToolTip="Cancel upload"
-                AutomationProperties.AutomationId="CancelUploadButton"
-                AutomationProperties.Name="Cancel upload"
-            >
-                <SymbolIcon Symbol="Cancel" />
-            </Button>
-        </Grid>
+            </StackPanel>
+        </Border>
 
         <!-- Summary outcome: full success auto-closes (see code-behind);
-             any failure/cancel stays open with per-file outcomes above. -->
+              any failure/cancel stays open with per-file outcomes above. -->
         <InfoBar
-            Grid.Row="4"
+            Grid.Row="3"
             Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
             IsOpen="{Binding HasStatus, Mode=OneWay}"
             Message="{Binding StatusMessage, Mode=OneWay}"
             IsClosable="False"
             AutomationProperties.LiveSetting="Polite"
+        />
+
+        <TextBlock
+            Grid.Row="4"
+            Text="{Binding ClosingStopsUploadHint, Mode=OneWay}"
+            Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+            FontSize="12"
+            Foreground="{ThemeResource OnSurfaceVariant}"
+            TextWrapping="Wrap"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Margin="0,0,0,4"
         />
     </Grid>
 </ContentDialog>

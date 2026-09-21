@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
-using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Workstation.Api.Controllers;
@@ -14,9 +14,9 @@ namespace RAGGit.Workstation.Api.Controllers;
 [Authorize]
 public sealed class UsersController : ControllerBase
 {
-    private readonly UserStore _userStore;
+    private readonly IUserRepository _userStore;
 
-    public UsersController(UserStore userStore)
+    public UsersController(IUserRepository userStore)
     {
         _userStore = userStore ?? throw new ArgumentNullException(nameof(userStore));
     }

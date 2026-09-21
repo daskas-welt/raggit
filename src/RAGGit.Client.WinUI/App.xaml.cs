@@ -178,7 +178,7 @@ public sealed partial class App : Application
             .AddHttpClient<QueryApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
-                client.Timeout = TimeSpan.FromSeconds(150);
+                client.Timeout = TimeSpan.FromMinutes(10);
             })
             .AddHttpMessageHandler<BearerDelegatingHandler>();
         services

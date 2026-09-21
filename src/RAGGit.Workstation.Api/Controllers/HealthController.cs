@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RAGGit.Core.Abstractions;
-using RAGGit.Core.Data;
+using RAGGit.Core.Abstractions.Repositories;
 
 namespace RAGGit.Workstation.Api.Controllers;
 
@@ -20,13 +20,17 @@ public sealed class HealthController : ControllerBase
 {
     private readonly IVectorStore _vectorStore;
     private readonly ILlmClient _llmClient;
-    private readonly RagDbContext _dbContext;
+    private readonly IQueryRepository _queries;
 
-    public HealthController(IVectorStore vectorStore, ILlmClient llmClient, RagDbContext dbContext)
+    public HealthController(
+        IVectorStore vectorStore,
+        ILlmClient llmClient,
+        IQueryRepository queries
+    )
     {
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
         _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _queries = queries ?? throw new ArgumentNullException(nameof(queries));
     }
 
     /// <summary>
@@ -55,7 +59,7 @@ public sealed class HealthController : ControllerBase
     {
         try
         {
-            var latencies = await _dbContext.GetRecentLatenciesAsync(cancellationToken);
+            var latencies = await _queries.GetRecentLatenciesAsync(cancellationToken);
             if (latencies.Count == 0)
             {
                 return 0;

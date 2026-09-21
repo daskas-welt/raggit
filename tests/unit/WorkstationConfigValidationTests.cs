@@ -9,12 +9,18 @@ public sealed class WorkstationConfigValidationTests
     [Theory]
     [InlineData(384)]
     [InlineData(768)]
+    [InlineData(1024)]
     public void SupportedVectorSizes_AreValid(int size)
     {
         WorkstationConfigValidator.IsSupportedVectorSize(size).Should().BeTrue();
         var result = WorkstationConfigValidator.Validate(
             size,
-            size == 384 ? "all-minilm" : "nomic-embed-text",
+            size switch
+            {
+                384 => "all-minilm",
+                768 => "nomic-embed-text",
+                _ => "bge-m3",
+            },
             "./data/lancedb"
         );
         result.IsValid.Should().BeTrue();
@@ -25,7 +31,6 @@ public sealed class WorkstationConfigValidationTests
     [InlineData(0)]
     [InlineData(128)]
     [InlineData(512)]
-    [InlineData(1024)]
     public void UnsupportedVectorSize_FailsValidation(int size)
     {
         WorkstationConfigValidator.IsSupportedVectorSize(size).Should().BeFalse();
@@ -52,6 +57,8 @@ public sealed class WorkstationConfigValidationTests
     [Theory]
     [InlineData("all-minilm", 384)]
     [InlineData("nomic-embed-text", 768)]
+    [InlineData("bge-m3", 1024)]
+    [InlineData("snowflake-arctic-embed2", 1024)]
     public void AlignedEmbedModel_NoWarning(string embedModel, int vectorSize)
     {
         WorkstationConfigValidator.IsEmbedModelAligned(embedModel, vectorSize).Should().BeTrue();

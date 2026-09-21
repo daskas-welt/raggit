@@ -32,6 +32,8 @@ public sealed class QueryViewModelTests
         viewModel.Messages[0].Text.Should().Be("what is offline rag?");
         viewModel.Messages[1].IsUser.Should().BeFalse();
         viewModel.Messages[1].Text.Should().Be("grounded answer");
+        viewModel.Messages[1].Citations.Should().HaveCount(2);
+        viewModel.Messages[1].HasCitations.Should().BeTrue();
         viewModel.Citations.Should().HaveCount(2);
         viewModel.HasCitations.Should().BeTrue();
     }
@@ -71,6 +73,146 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
+    public async Task Ask_WithSuggestedPersons_PopulatesChips()
+    {
+        var viewModel = CreateViewModel(
+            answer: "no relevant content found",
+            citationCount: 0,
+            suggestedPersons: new[] { "Δημοπούλου Πηνελόπη του Σωτηρίου" }
+        );
+        viewModel.QueryText = "συνολικό χρόνο προϋπηρεσίας της δημοπούλου αρετής";
+
+        await viewModel.AskCommand.ExecuteAsync(null);
+
+        viewModel.SuggestedPersons.Should().HaveCount(1);
+        viewModel.SuggestedPersons[0].Name.Should().Contain("Πηνελόπη");
+        viewModel.HasSuggestedPersons.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UseSuggestedPerson_SwapsTrailingName_AndRequeries()
+    {
+#pragma warning disable xUnit1031 // Test stub reads the request body synchronously.
+        var requests = new List<string>();
+        var handler = new StubHandler(request =>
+        {
+            var body = request.Content!.ReadAsStringAsync().Result;
+            requests.Add(body);
+            var payload =
+                requests.Count == 1
+                    ? JsonSerializer.Serialize(
+                        new
+                        {
+                            answer = "no relevant content found Μήπως εννοούσατε: Δημοπούλου Πηνελόπη του Σωτηρίου; Παρακαλώ επιβεβαιώστε.",
+                            citations = Array.Empty<object>(),
+                            retrievedChunkIds = Array.Empty<Guid>(),
+                            latencyMs = 7,
+                            suggestedPersons = new[]
+                            {
+                                new
+                                {
+                                    name = "Δημοπούλου Πηνελόπη του Σωτηρίου",
+                                    documentId = (Guid?)null,
+                                },
+                            },
+                        }
+                    )
+                    : JsonSerializer.Serialize(
+                        new
+                        {
+                            answer = "3 έτη 2 μήνες 15 ημέρες",
+                            citations = new[]
+                            {
+                                new
+                                {
+                                    documentId = Guid.NewGuid(),
+                                    chunkId = Guid.NewGuid(),
+                                    text = "quote",
+                                    ordinal = 0,
+                                },
+                            },
+                            retrievedChunkIds = Array.Empty<Guid>(),
+                            latencyMs = 7,
+                            suggestedPersons = Array.Empty<object>(),
+                        }
+                    );
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(payload),
+            };
+        });
+        var viewModel = new QueryViewModel(
+            new QueryApiClient(
+                new HttpClient(handler) { BaseAddress = new Uri("https://w.local/") }
+            )
+        );
+        viewModel.QueryText =
+            "συνολικό χρόνο προϋπηρεσίας εντός δημοσίου τομέα της δημοπούλου αρετής";
+
+        await viewModel.AskCommand.ExecuteAsync(null);
+        viewModel.HasSuggestedPersons.Should().BeTrue();
+
+        await viewModel.UseSuggestedPersonCommand.ExecuteAsync(viewModel.SuggestedPersons[0]);
+#pragma warning restore xUnit1031
+
+        requests.Should().HaveCount(2);
+        var followUp = JsonDocument.Parse(requests[1]).RootElement.GetProperty("query").GetString();
+        followUp.Should().Contain("Δημοπούλου Πηνελόπη");
+        followUp.Should().NotContain("αρετής");
+        viewModel.Messages.Should().HaveCount(4);
+        viewModel.HasSuggestedPersons.Should().BeFalse("follow-up answer carries citations");
+    }
+
+    [Fact]
+    public void BuildFollowUpQuestion_NoHistory_FallsBackToTemplate()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+
+        var greek = viewModel.BuildFollowUpQuestion("Δημοπούλου Πηνελόπη");
+        greek.Should().Contain("Δημοπούλου Πηνελόπη");
+
+        var english = viewModel.BuildFollowUpQuestion("Maria Schmidt");
+        english.Should().Contain("Maria Schmidt");
+    }
+
+    [Fact]
+    public async Task Reask_WhileBusy_DoesNothing()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+        viewModel.IsBusy = true;
+
+        await viewModel.ReaskAsync("another question");
+
+        viewModel.Messages.Should().BeEmpty();
+        viewModel.UseSuggestedPersonCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Reask_RunsGivenPrompt_AsFreshQuestion()
+    {
+        var viewModel = CreateViewModel(answer: "grounded answer", citationCount: 1);
+
+        await viewModel.ReaskAsync("  original history prompt  ");
+
+        viewModel.Messages.Should().HaveCount(2);
+        viewModel.Messages[0].IsUser.Should().BeTrue();
+        viewModel.Messages[0].Text.Should().Be("original history prompt");
+        viewModel.Messages[1].Text.Should().Be("grounded answer");
+        viewModel.QueryText.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Reask_EmptyPrompt_SurfacesStatusWithoutAsking()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+
+        await viewModel.ReaskAsync("   ");
+
+        viewModel.Messages.Should().BeEmpty();
+        viewModel.StatusMessage.Should().Be("Please enter a question.");
+    }
+
+    [Fact]
     public async Task Ask_OfflineModelUnavailable_SurfacesStatus()
     {
         var handler = new StubHandler(_ => new HttpResponseMessage(
@@ -91,7 +233,11 @@ public sealed class QueryViewModelTests
         viewModel.StatusMessage.Should().Be("model unavailable offline");
     }
 
-    private static QueryViewModel CreateViewModel(string answer, int citationCount)
+    private static QueryViewModel CreateViewModel(
+        string answer,
+        int citationCount,
+        string[]? suggestedPersons = null
+    )
     {
         var citations = Enumerable
             .Range(0, citationCount)
@@ -101,7 +247,11 @@ public sealed class QueryViewModelTests
                 chunkId = Guid.NewGuid(),
                 text = $"quote {i}",
                 ordinal = i,
+                documentName = $"document-{i}.pdf",
             })
+            .ToArray();
+        var suggestions = (suggestedPersons ?? Array.Empty<string>())
+            .Select(name => new { name, documentId = (Guid?)null })
             .ToArray();
 
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
@@ -114,6 +264,7 @@ public sealed class QueryViewModelTests
                         citations,
                         retrievedChunkIds = Array.Empty<Guid>(),
                         latencyMs = 7,
+                        suggestedPersons = suggestions,
                     }
                 )
             ),

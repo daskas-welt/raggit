@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -38,6 +39,12 @@ public sealed partial class QueryViewModel : ObservableObject
     private bool _hasCitations;
 
     [ObservableProperty]
+    private ObservableCollection<PersonSuggestion> _suggestedPersons = new();
+
+    [ObservableProperty]
+    private bool _hasSuggestedPersons;
+
+    [ObservableProperty]
     private string? _statusMessage;
 
     // ChatView binding — unified conversation (user + assistant messages).
@@ -60,7 +67,17 @@ public sealed partial class QueryViewModel : ObservableObject
 
     partial void OnQueryTextChanged(string value) => AskCommand.NotifyCanExecuteChanged();
 
-    partial void OnIsAskEnabledChanged(bool value) => AskCommand.NotifyCanExecuteChanged();
+    partial void OnIsAskEnabledChanged(bool value)
+    {
+        AskCommand.NotifyCanExecuteChanged();
+        UseSuggestedPersonCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        AskCommand.NotifyCanExecuteChanged();
+        UseSuggestedPersonCommand.NotifyCanExecuteChanged();
+    }
 
     public QueryViewModel(QueryApiClient apiClient)
     {
@@ -77,6 +94,81 @@ public sealed partial class QueryViewModel : ObservableObject
             return;
         }
 
+        await AskQuestionAsync(question);
+    }
+
+    /// <summary>
+    /// Re-queries using a did-you-mean person chip. Preserves the original
+    /// intent by swapping the trailing name in the last user question with
+    /// the suggested name; falls back to a person-details template.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanUseSuggestion))]
+    private async Task UseSuggestedPersonAsync(PersonSuggestion? suggestion)
+    {
+        if (suggestion is null || string.IsNullOrWhiteSpace(suggestion.Name))
+        {
+            return;
+        }
+
+        var followUp = BuildFollowUpQuestion(suggestion.Name);
+        QueryText = followUp;
+        AskCommand.NotifyCanExecuteChanged();
+        await AskQuestionAsync(followUp);
+    }
+
+    private bool CanUseSuggestion(PersonSuggestion? suggestion) =>
+        IsAskEnabled
+        && !IsBusy
+        && suggestion is not null
+        && !string.IsNullOrWhiteSpace(suggestion.Name);
+
+    public string BuildFollowUpQuestion(string suggestedName)
+    {
+        var lastUser = Messages.LastOrDefault(m => m.IsUser)?.Text?.Trim();
+        if (!string.IsNullOrWhiteSpace(lastUser))
+        {
+            // Swap the trailing name after της/του/τον/την/για with the suggestion.
+            var swapped = System.Text.RegularExpressions.Regex.Replace(
+                lastUser,
+                @"(της|του|τον|την|για)\s+[\p{L}\s]+$",
+                m => $"{m.Groups[1].Value} {suggestedName}",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+            if (!string.Equals(swapped, lastUser, StringComparison.Ordinal))
+            {
+                return swapped;
+            }
+
+            return $"{lastUser} ({suggestedName})";
+        }
+
+        return ContainsGreek(suggestedName)
+            ? $"Δώσε το συνολικό χρόνο προϋπηρεσίας εντός δημοσίου τομέα για: {suggestedName}"
+            : $"Give details for: {suggestedName}";
+    }
+
+    private static bool ContainsGreek(string value)
+    {
+        foreach (var c in value)
+        {
+            if (c is >= '\u0370' and <= '\u03FF' or >= '\u1F00' and <= '\u1FFF')
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private async Task AskQuestionAsync(string question)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        QueryText = string.Empty;
+
         IsBusy = true;
         IsAskEnabled = false;
         IsResultVisible = false;
@@ -84,6 +176,8 @@ public sealed partial class QueryViewModel : ObservableObject
         Answer = string.Empty;
         Citations = new ObservableCollection<Citation>();
         HasCitations = false;
+        SuggestedPersons = new ObservableCollection<PersonSuggestion>();
+        HasSuggestedPersons = false;
 
         // Push user message to chat, then clear the input.
         Messages.Add(new ChatMessage { Text = question, IsUser = true });
@@ -95,9 +189,20 @@ public sealed partial class QueryViewModel : ObservableObject
             Answer = response.Answer;
             Citations = new ObservableCollection<Citation>(response.Citations);
             HasCitations = response.Citations.Count > 0;
+            SuggestedPersons = new ObservableCollection<PersonSuggestion>(
+                response.SuggestedPersons ?? new List<PersonSuggestion>()
+            );
+            HasSuggestedPersons = SuggestedPersons.Count > 0;
             IsResultVisible = true;
             // Push assistant message to chat
-            Messages.Add(new ChatMessage { Text = response.Answer, IsUser = false });
+            Messages.Add(
+                new ChatMessage
+                {
+                    Text = response.Answer,
+                    IsUser = false,
+                    Citations = response.Citations,
+                }
+            );
 
             if (response.Citations.Count == 0)
             {
@@ -160,6 +265,29 @@ public sealed partial class QueryViewModel : ObservableObject
     private async Task RetryAsync()
     {
         await AskAsync();
+    }
+
+    /// <summary>
+    /// Re-runs a prompt from query history (or any caller). Sets the input
+    /// to <paramref name="prompt"/> and asks it as a fresh question.
+    /// </summary>
+    public async Task ReaskAsync(string? prompt)
+    {
+        if (!IsAskEnabled || IsBusy)
+        {
+            return;
+        }
+
+        var question = prompt?.Trim();
+        if (string.IsNullOrWhiteSpace(question))
+        {
+            StatusMessage = "Please enter a question.";
+            return;
+        }
+
+        QueryText = question;
+        AskCommand.NotifyCanExecuteChanged();
+        await AskQuestionAsync(question);
     }
 
     private bool CanAsk => IsAskEnabled && !string.IsNullOrWhiteSpace(QueryText);

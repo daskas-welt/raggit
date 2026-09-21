@@ -10,7 +10,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 namespace RAGGit.Tests.Unit;
 
 /// <summary>
-/// Fluent in-memory workbook builder for unit tests. Uses DocumentFormat.OpenXml 3.1.0
+/// Fluent in-memory workbook builder for unit tests. Uses DocumentFormat.OpenXml
 /// already referenced — no new NuGet. Returns a MemoryStream positioned at 0.
 /// Covers: Hidden/VeryHidden, SharedString vs InlineString, date 1900/1904,
 /// merged cells, sparse/wide rows, exact cap boundaries, blank-row sheets.

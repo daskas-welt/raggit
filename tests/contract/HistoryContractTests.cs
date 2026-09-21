@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -152,8 +153,8 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
         var longAnswer = new string('a', 200);
         using (var scope = _factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-            await db.InsertQueryAsync(
+            var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+            await queries.AddAsync(
                 new Query
                 {
                     Id = Guid.NewGuid(),
@@ -349,7 +350,7 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {
@@ -406,8 +407,8 @@ public sealed class HistoryContractTests : IClassFixture<TestApiFactory>
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-        await db.InsertQueryAsync(
+        var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+        await queries.AddAsync(
             new Query
             {
                 Id = id,

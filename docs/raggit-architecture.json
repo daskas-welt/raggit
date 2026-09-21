@@ -28,7 +28,7 @@
   "components": [
     { "id": "admin", "type": "external", "label": "Admin", "sublabel": "MAUI Windows 11", "pos": [40, 90], "size": [120, 56] },
     { "id": "employee", "type": "external", "label": "Employee", "sublabel": "MAUI + Mobile", "pos": [40, 270], "size": [120, 56] },
-    { "id": "maui-client", "type": "frontend", "label": "RAGGit.Client.Maui", "sublabel": "net8.0 Win/iOS/Android", "tag": "SfDataGrid + SfAIAssistView", "pos": [260, 180], "size": [160, 72] },
+    { "id": "maui-client", "type": "frontend", "label": "RAGGit.Client.Maui", "sublabel": "net8.0 Win/iOS/Android", "tag": "CollectionView grid + ChatView", "pos": [260, 180], "size": [160, 72] },
     { "id": "workstation-api", "type": "backend", "label": "Workstation API", "sublabel": "ASP.NET Core 8 :5001", "pos": [520, 180], "size": [150, 72] },
     { "id": "auth", "type": "security", "label": "API Key Auth", "sublabel": "Admin / Employee", "pos": [520, 50], "size": [150, 56], "tag": "X-Api-Key" },
     { "id": "ingest", "type": "backend", "label": "RAGGit.Ingest", "sublabel": "Chunker 512/50 + Embed", "pos": [780, 300], "size": [150, 68] },
@@ -54,7 +54,7 @@
     { "id": "retrieval-to-ollama", "from": "retrieval", "to": "ollama", "label": "embed + LLM", "fromSide": "top", "toSide": "left", "via": [[855, 80], [1250, 80], [1250, 464], [1000, 464]] }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Client Thin", "items": ["MAUI net8.0 Win/iOS/Android, SfDataGrid (Library 5k) + SfAIAssistView (Query citations + typing)", "HttpClient only, CommunityToolkit.Mvvm, Syncfusion offline license", "No local models - workstation owns AI (II)"] },
+    { "dot": "cyan", "title": "Client Thin", "items": ["MAUI net8.0 Win/iOS/Android, CollectionView grid (Library 5k) + ChatView (Query citations + typing)", "HttpClient only, CommunityToolkit.Mvvm + CommunityToolkit.Maui, no vendor license", "No local models - workstation owns AI (II)"] },
     { "dot": "emerald", "title": "Workstation Owns AI", "items": ["ASP.NET Core 8, Core plain net8.0 IVectorStore/IEmbedder/ILlmClient, Ingest + Retrieval", "LanceDB ./data/lancedb HNSW m=16 + SQLite rag.db, 10k/24h cache + ETag 30s", "Ollama :11434 nomic-embed / llama3.2:3b or ONNX bge-micro-v2 cached"] },
     { "dot": "rose", "title": "Invariants", "items": ["LAN/VPN only, WAN disabled CI gate T044 QueryOfflineTests (IV)", "Singleton Library, RBAC X-Api-Key, citations or no relevant content found (V)", "200 x 50+ q/day, SemaphoreSlim herd guard, p95 <7s"] }
   ]

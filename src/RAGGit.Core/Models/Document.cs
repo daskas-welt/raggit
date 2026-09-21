@@ -38,7 +38,7 @@ public sealed class Document
     [Required(ErrorMessage = "MIME type is required.")]
     [EnumDataType(
         typeof(DocumentMimeType),
-        ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, xlsx, txt, md."
+        ErrorMessage = "Unsupported MIME type. Allowed: pdf, docx, xlsx, txt."
     )]
     public DocumentMimeType Mime { get; set; }
 
@@ -100,4 +100,22 @@ public static class DocumentValidation
 {
     public const long MaxFileSizeBytes = 100L * 1024 * 1024;
     public const int MaxSpreadsheetCells = 100_000;
+
+    /// <summary>
+    /// Extensions accepted for new uploads (018-allowed-upload-types).
+    /// Single source of truth shared by the client queue gate and the
+    /// workstation intake gate. Case-insensitive; entries include the dot.
+    /// `Md` remains a valid stored <see cref="DocumentMimeType"/> for
+    /// pre-existing rows but is no longer accepted for new uploads.
+    /// </summary>
+    public static readonly System.Collections.Generic.IReadOnlySet<string> AllowedExtensions =
+        new System.Collections.Generic.HashSet<string>(
+            new[] { ".pdf", ".docx", ".xlsx", ".txt" },
+            System.StringComparer.OrdinalIgnoreCase
+        );
+
+    /// <summary>
+    /// Human-readable allow-list label for dialogs and messages.
+    /// </summary>
+    public const string SupportedTypesLabel = "PDF, DOCX, XLSX, TXT";
 }

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -156,7 +157,7 @@ public sealed class OfflineHistoryTests : IClassFixture<IntegrationTestFactory>
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {
@@ -188,10 +189,10 @@ public sealed class OfflineHistoryTests : IClassFixture<IntegrationTestFactory>
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
         foreach (var row in rows)
         {
-            await db.InsertQueryAsync(
+            await queries.AddAsync(
                 new Query
                 {
                     Id = Guid.NewGuid(),

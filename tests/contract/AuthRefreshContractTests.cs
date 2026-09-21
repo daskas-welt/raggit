@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -87,7 +88,7 @@ public sealed class AuthRefreshContractTests : IClassFixture<TestApiFactory>
 
         using (var scope = _factory.Services.CreateScope())
         {
-            var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+            var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
             user.IsActive = false;
             await store.UpdateAsync(user);
         }
@@ -107,7 +108,7 @@ public sealed class AuthRefreshContractTests : IClassFixture<TestApiFactory>
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {

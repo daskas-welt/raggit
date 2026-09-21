@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,6 +12,18 @@ namespace RAGGit.Client.Maui.Services;
 public interface IFilePicker
 {
     Task<PickedFile?> PickAsync();
+
+    /// <summary>
+    /// Picks multiple files in a single pass (017-multi-file-upload).
+    /// Default implementation degrades to one <see cref="PickAsync"/> call so
+    /// existing fakes keep working; platform pickers override with the native
+    /// multi-select API. Returns an empty list (never null) on cancel.
+    /// </summary>
+    async Task<IReadOnlyList<PickedFile>> PickMultipleAsync()
+    {
+        var single = await PickAsync().ConfigureAwait(false);
+        return single is null ? Array.Empty<PickedFile>() : new[] { single };
+    }
 }
 
 /// <summary>
@@ -35,4 +49,7 @@ public sealed class PickedFile
 public sealed class DummyFilePicker : IFilePicker
 {
     public Task<PickedFile?> PickAsync() => Task.FromResult<PickedFile?>(null);
+
+    public Task<IReadOnlyList<PickedFile>> PickMultipleAsync() =>
+        Task.FromResult<IReadOnlyList<PickedFile>>(Array.Empty<PickedFile>());
 }

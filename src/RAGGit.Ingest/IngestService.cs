@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 
@@ -16,13 +16,15 @@ namespace RAGGit.Ingest;
 
 /// <summary>
 /// Orchestrates document ingestion: hash dedupe, text extraction, chunking,
-/// embedding, vector-store upsert, and SQLite metadata persistence.
+/// embedding, vector-store upsert, and SQLite metadata persistence (via
+/// <see cref="IDocumentRepository"/> — the single channel for the Document
+/// aggregate per the MS persistence-layer design).
 /// </summary>
 public sealed class IngestService
 {
     private readonly IEmbedder _embedder;
     private readonly IVectorStore _vectorStore;
-    private readonly RagDbContext _db;
+    private readonly IDocumentRepository _documents;
     private readonly ILogger<IngestService> _logger;
     private readonly IngestOptions _options;
     private readonly IMemoryCache? _chunkCache;
@@ -31,7 +33,7 @@ public sealed class IngestService
     public IngestService(
         IEmbedder embedder,
         IVectorStore vectorStore,
-        RagDbContext db,
+        IDocumentRepository documents,
         ILogger<IngestService> logger,
         IDocumentContentStore contentStore,
         IOptions<IngestOptions>? options = null,
@@ -40,7 +42,7 @@ public sealed class IngestService
     {
         _embedder = embedder ?? throw new ArgumentNullException(nameof(embedder));
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
-        _db = db ?? throw new ArgumentNullException(nameof(db));
+        _documents = documents ?? throw new ArgumentNullException(nameof(documents));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new IngestOptions();
         _chunkCache = chunkCache;
@@ -233,58 +235,17 @@ public sealed class IngestService
     /// Finds a document by id, or null when absent. Used by the download
     /// endpoint to resolve filename/MIME before serving stored bytes.
     /// </summary>
-    public async Task<Document?> FindDocumentByIdAsync(
+    public Task<Document?> FindDocumentByIdAsync(
         Guid documentId,
         CancellationToken cancellationToken = default
-    )
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        using var command = connection.CreateCommand();
-        command.CommandText =
-            @"
-            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
-            FROM Documents
-            WHERE Id = @id
-            LIMIT 1;";
-        command.Parameters.AddWithValue("@id", documentId.ToString());
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            return MapDocument(reader);
-        }
-
-        return null;
-    }
+    ) => _documents.FindByIdAsync(documentId, cancellationToken);
 
     /// <summary>
     /// Lists all documents in the singleton library, newest first.
     /// </summary>
-    public async Task<IReadOnlyList<Document>> ListDocumentsAsync(
+    public Task<IReadOnlyList<Document>> ListDocumentsAsync(
         CancellationToken cancellationToken = default
-    )
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        using var command = connection.CreateCommand();
-        command.CommandText =
-            @"
-            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
-            FROM Documents
-            ORDER BY CreatedAt DESC;";
-
-        var documents = new List<Document>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            documents.Add(MapDocument(reader));
-        }
-
-        return documents;
-    }
+    ) => _documents.ListAsync(cancellationToken);
 
     /// <summary>
     /// Deletes a document and its chunks from SQLite and purges its vectors
@@ -296,41 +257,10 @@ public sealed class IngestService
         CancellationToken cancellationToken = default
     )
     {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        try
+        var deleted = await _documents.DeleteAsync(documentId, cancellationToken);
+        if (!deleted)
         {
-            using var existsCommand = connection.CreateCommand();
-            existsCommand.Transaction = (SqliteTransaction)transaction;
-            existsCommand.CommandText = "SELECT COUNT(*) FROM Documents WHERE Id = @id;";
-            existsCommand.Parameters.AddWithValue("@id", documentId.ToString());
-            var count = Convert.ToInt64(await existsCommand.ExecuteScalarAsync(cancellationToken));
-            if (count == 0)
-            {
-                await transaction.CommitAsync(cancellationToken);
-                return false;
-            }
-
-            using var deleteChunksCommand = connection.CreateCommand();
-            deleteChunksCommand.Transaction = (SqliteTransaction)transaction;
-            deleteChunksCommand.CommandText = "DELETE FROM Chunks WHERE DocumentId = @id;";
-            deleteChunksCommand.Parameters.AddWithValue("@id", documentId.ToString());
-            await deleteChunksCommand.ExecuteNonQueryAsync(cancellationToken);
-
-            using var deleteDocumentCommand = connection.CreateCommand();
-            deleteDocumentCommand.Transaction = (SqliteTransaction)transaction;
-            deleteDocumentCommand.CommandText = "DELETE FROM Documents WHERE Id = @id;";
-            deleteDocumentCommand.Parameters.AddWithValue("@id", documentId.ToString());
-            await deleteDocumentCommand.ExecuteNonQueryAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
+            return false;
         }
 
         await _vectorStore.DeleteAsync(documentId.ToString(), cancellationToken);
@@ -368,144 +298,27 @@ public sealed class IngestService
     /// <summary>
     /// Finds a document by its SHA-256 hash.
     /// </summary>
-    public async Task<Document?> FindByHashAsync(
+    public Task<Document?> FindByHashAsync(
         string hash,
         CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(hash);
+    ) => _documents.FindByHashAsync(hash, cancellationToken);
 
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
+    private Task InsertDocumentAsync(Document document, CancellationToken cancellationToken) =>
+        _documents.AddAsync(document, cancellationToken);
 
-        using var command = connection.CreateCommand();
-        command.CommandText =
-            @"
-            SELECT Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt
-            FROM Documents
-            WHERE Hash = @hash
-            LIMIT 1;";
-        command.Parameters.AddWithValue("@hash", hash);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            return MapDocument(reader);
-        }
-
-        return null;
-    }
-
-    private async Task InsertDocumentAsync(Document document, CancellationToken cancellationToken)
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        using var command = connection.CreateCommand();
-        command.CommandText =
-            @"
-            INSERT INTO Documents (Id, Filename, Mime, Size, Hash, Status, CreatedBy, CreatedByName, CreatedAt)
-            VALUES (@id, @filename, @mime, @size, @hash, @status, @createdBy, @createdByName, @createdAt);";
-
-        command.Parameters.AddWithValue("@id", document.Id.ToString());
-        command.Parameters.AddWithValue("@filename", document.Filename);
-        command.Parameters.AddWithValue("@mime", document.Mime.GetContentType());
-        command.Parameters.AddWithValue("@size", document.Size);
-        command.Parameters.AddWithValue("@hash", document.Hash);
-        command.Parameters.AddWithValue("@status", document.Status.ToString());
-        command.Parameters.AddWithValue("@createdBy", document.CreatedBy);
-        command.Parameters.AddWithValue(
-            "@createdByName",
-            document.CreatedByName is null ? DBNull.Value : document.CreatedByName
-        );
-        command.Parameters.AddWithValue("@createdAt", document.CreatedAt.ToString("O"));
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    private async Task InsertChunksAsync(
+    private Task InsertChunksAsync(
         IEnumerable<Chunk> chunks,
         CancellationToken cancellationToken
-    )
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
+    ) => _documents.AddChunksAsync(chunks, cancellationToken);
 
-        using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            foreach (var chunk in chunks)
-            {
-                using var command = connection.CreateCommand();
-                command.Transaction = (SqliteTransaction)transaction;
-                command.CommandText =
-                    @"
-                    INSERT INTO Chunks (Id, DocumentId, Ordinal, Text, TokenCount)
-                    VALUES (@id, @documentId, @ordinal, @text, @tokenCount);";
-
-                command.Parameters.AddWithValue("@id", chunk.Id.ToString());
-                command.Parameters.AddWithValue("@documentId", chunk.DocumentId.ToString());
-                command.Parameters.AddWithValue("@ordinal", chunk.Ordinal);
-                command.Parameters.AddWithValue("@text", chunk.Text);
-                command.Parameters.AddWithValue("@tokenCount", chunk.TokenCount);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-    }
-
-    private async Task UpdateDocumentStatusAsync(
+    private Task UpdateDocumentStatusAsync(
         Guid documentId,
         DocumentStatus status,
         CancellationToken cancellationToken
-    )
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
+    ) => _documents.UpdateStatusAsync(documentId, status, cancellationToken);
 
-        using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE Documents SET Status = @status WHERE Id = @id;";
-        command.Parameters.AddWithValue("@status", status.ToString());
-        command.Parameters.AddWithValue("@id", documentId.ToString());
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    private async Task DeleteDocumentRowAsync(Guid documentId, CancellationToken cancellationToken)
-    {
-        await using var connection = _db.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            using var deleteChunks = connection.CreateCommand();
-            deleteChunks.Transaction = (SqliteTransaction)transaction;
-            deleteChunks.CommandText = "DELETE FROM Chunks WHERE DocumentId = @id;";
-            deleteChunks.Parameters.AddWithValue("@id", documentId.ToString());
-            await deleteChunks.ExecuteNonQueryAsync(cancellationToken);
-
-            using var deleteDoc = connection.CreateCommand();
-            deleteDoc.Transaction = (SqliteTransaction)transaction;
-            deleteDoc.CommandText = "DELETE FROM Documents WHERE Id = @id;";
-            deleteDoc.Parameters.AddWithValue("@id", documentId.ToString());
-            await deleteDoc.ExecuteNonQueryAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-    }
+    private Task DeleteDocumentRowAsync(Guid documentId, CancellationToken cancellationToken) =>
+        _documents.DeleteAsync(documentId, cancellationToken);
 
     private async Task<IReadOnlyList<Chunk>> GetOrCreateChunksAsync(
         Stream content,
@@ -584,41 +397,5 @@ public sealed class IngestService
         }
 
         return allEmbeddings;
-    }
-
-    private static Document MapDocument(SqliteDataReader reader)
-    {
-        var mimeText = reader.GetString(2);
-        var mime = mimeText switch
-        {
-            "application/pdf" => DocumentMimeType.Pdf,
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" =>
-                DocumentMimeType.Docx,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" =>
-                DocumentMimeType.Xlsx,
-            "text/plain" => DocumentMimeType.Txt,
-            "text/markdown" => DocumentMimeType.Md,
-            _ => throw new InvalidOperationException($"Unknown MIME type in database: {mimeText}"),
-        };
-
-        if (!Enum.TryParse<DocumentStatus>(reader.GetString(5), out var status))
-        {
-            throw new InvalidOperationException(
-                $"Unknown status in database: {reader.GetString(5)}"
-            );
-        }
-
-        return new Document
-        {
-            Id = Guid.Parse(reader.GetString(0)),
-            Filename = reader.GetString(1),
-            Mime = mime,
-            Size = reader.GetInt64(3),
-            Hash = reader.GetString(4),
-            Status = status,
-            CreatedBy = reader.GetString(6),
-            CreatedByName = reader.IsDBNull(7) ? null : reader.GetString(7),
-            CreatedAt = DateTime.Parse(reader.GetString(8)),
-        };
     }
 }

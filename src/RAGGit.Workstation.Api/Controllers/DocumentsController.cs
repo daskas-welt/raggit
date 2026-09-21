@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using RAGGit.Core.Abstractions;
-using RAGGit.Core.Data;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
 
@@ -25,14 +25,14 @@ public sealed class DocumentsController : ControllerBase
 {
     private readonly IngestService _ingestService;
     private readonly IVirusScanner _virusScanner;
-    private readonly DocumentMineStore _mineStore;
+    private readonly IDocumentRepository _mineStore;
     private readonly IDocumentContentStore _contentStore;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         IngestService ingestService,
         IVirusScanner virusScanner,
-        DocumentMineStore mineStore,
+        IDocumentRepository mineStore,
         IDocumentContentStore contentStore,
         ILogger<DocumentsController> logger
     )
@@ -211,7 +211,7 @@ public sealed class DocumentsController : ControllerBase
             return Unauthorized(new { error = "unauthorized" });
         }
 
-        var page = await _mineStore.ListAsync(sub, limit, offset, cancellationToken);
+        var page = await _mineStore.ListMineAsync(sub, limit, offset, cancellationToken);
         return Ok(page);
     }
 
@@ -247,51 +247,39 @@ public sealed class DocumentsController : ControllerBase
     {
         mime = default;
 
-        // Prefer the declared content type, stripping charset if present.
-        var declared = contentType?.Split(';').FirstOrDefault()?.Trim().ToLowerInvariant();
-        if (!string.IsNullOrEmpty(declared))
-        {
-            switch (declared)
-            {
-                case "application/pdf":
-                    mime = DocumentMimeType.Pdf;
-                    return true;
-                case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                    mime = DocumentMimeType.Docx;
-                    return true;
-                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                    mime = DocumentMimeType.Xlsx;
-                    return true;
-                case "text/plain":
-                    mime = DocumentMimeType.Txt;
-                    return true;
-                case "text/markdown":
-                    mime = DocumentMimeType.Md;
-                    return true;
-            }
-        }
-
-        // Fall back to file extension.
+        // The filename allow-list is authoritative. Never let a caller make
+        // an unsupported extension acceptable by declaring a supported MIME.
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
         switch (extension)
         {
             case ".pdf":
                 mime = DocumentMimeType.Pdf;
-                return true;
+                break;
             case ".docx":
                 mime = DocumentMimeType.Docx;
-                return true;
+                break;
             case ".xlsx":
                 mime = DocumentMimeType.Xlsx;
-                return true;
+                break;
             case ".txt":
                 mime = DocumentMimeType.Txt;
-                return true;
-            case ".md":
-                mime = DocumentMimeType.Md;
-                return true;
+                break;
+            default:
+                return false;
         }
 
-        return false;
+        // If a declared type is present, it must agree with the allow-listed
+        // extension. Empty or generic picker types are accepted.
+        var declared = contentType?.Split(';').FirstOrDefault()?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(declared) && declared != "application/octet-stream")
+        {
+            if (declared != mime.GetContentType())
+            {
+                mime = default;
+                return false;
+            }
+        }
+
+        return true;
     }
 }

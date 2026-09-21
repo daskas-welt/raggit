@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -10,19 +11,19 @@ using Xunit;
 namespace RAGGit.Tests.Unit;
 
 /// <summary>
-/// T007: Verify UserStore lookup, create, and update operations.
+/// T007: Verify user repository lookup, create, and update operations.
 /// </summary>
-public sealed class UserStoreTests : IAsyncLifetime
+public sealed class UserRepositoryTests : IAsyncLifetime
 {
     private readonly string _dbPath;
     private readonly RagDbContext _db;
-    private readonly UserStore _store;
+    private readonly IUserRepository _store;
 
-    public UserStoreTests()
+    public UserRepositoryTests()
     {
         _dbPath = Path.Combine(Path.GetTempPath(), $"raggit-t007-{Guid.NewGuid()}.db");
         _db = new RagDbContext($"Data Source={_dbPath}");
-        _store = new UserStore(_db);
+        _store = new SqliteUserRepository(_db);
     }
 
     public async Task InitializeAsync() => await _db.EnsureCreatedAsync();

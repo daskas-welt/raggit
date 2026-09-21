@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -152,7 +153,7 @@ public sealed class AuthSecurityContractTests
     )
     {
         using var scope = factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {

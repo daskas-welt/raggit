@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -18,7 +19,7 @@ public sealed class LockoutPolicyTests : IAsyncLifetime
 {
     private readonly string _dbPath;
     private readonly RagDbContext _db;
-    private readonly UserStore _store;
+    private readonly IUserRepository _store;
     private readonly LockoutPolicyOptions _options;
     private readonly LockoutPolicy _policy;
 
@@ -26,7 +27,7 @@ public sealed class LockoutPolicyTests : IAsyncLifetime
     {
         _dbPath = Path.Combine(Path.GetTempPath(), $"raggit-t019-{Guid.NewGuid()}.db");
         _db = new RagDbContext($"Data Source={_dbPath}");
-        _store = new UserStore(_db);
+        _store = new SqliteUserRepository(_db);
         _options = new LockoutPolicyOptions { Threshold = 5, Minutes = 15 };
         _policy = new LockoutPolicy(_store, Options.Create(_options));
     }

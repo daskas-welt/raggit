@@ -44,6 +44,8 @@ public sealed class HistoryCitation
 {
     public Guid DocumentId { get; set; }
 
+    public string? DocumentName { get; set; }
+
     public Guid ChunkId { get; set; }
 
     public string Text { get; set; } = string.Empty;

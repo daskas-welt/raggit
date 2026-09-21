@@ -148,6 +148,7 @@ components:
             required: [documentId, chunkId, text, ordinal]
             properties:
               documentId: { type: string }
+              documentName: { type: string, nullable: true, description: Original uploaded filename when available }
               chunkId: { type: string }
               text: { type: string }
               ordinal: { type: integer, minimum: 0 }

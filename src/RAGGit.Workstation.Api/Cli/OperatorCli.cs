@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
-using RAGGit.Core.Data;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Workstation.Api.Cli;
@@ -15,7 +15,7 @@ public sealed class OperatorCli
 {
     public async Task<int> RunAsync(
         string[] args,
-        UserStore store,
+        IUserRepository store,
         CancellationToken cancellationToken = default
     )
     {

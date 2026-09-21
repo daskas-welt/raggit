@@ -78,6 +78,7 @@ public sealed class QueryContractTests : IClassFixture<TestApiFactory>
 
         var citation = json.GetProperty("citations")[0];
         citation.GetProperty("documentId").GetString().Should().Be(documentId.ToString());
+        citation.TryGetProperty("documentName", out _).Should().BeTrue();
         citation.GetProperty("chunkId").GetString().Should().Be(chunkId.ToString());
         citation
             .GetProperty("text")

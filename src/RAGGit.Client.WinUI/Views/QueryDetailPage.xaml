@@ -34,14 +34,22 @@
                     Foreground="{ThemeResource OnSurface}"
                     VerticalAlignment="Center"
                 />
-                <Button
+                <StackPanel
                     Grid.Column="1"
-                    Content="Back"
-                    Click="OnBackClicked"
-                    Height="36"
-                    FontSize="13"
+                    Orientation="Horizontal"
+                    Spacing="8"
                     VerticalAlignment="Center"
-                />
+                >
+                    <Button
+                        Content="Ask again"
+                        Click="OnAskAgainClicked"
+                        Height="36"
+                        FontSize="13"
+                        AutomationProperties.AutomationId="AskAgainButton"
+                        ToolTipService.ToolTip="Run this query again"
+                    />
+                    <Button Content="Back" Click="OnBackClicked" Height="36" FontSize="13" />
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -74,6 +82,16 @@
                     Text="{Binding Detail.Prompt, FallbackValue=''}"
                     FontSize="14"
                     TextWrapping="Wrap"
+                    IsTextSelectionEnabled="True"
+                />
+                <Button
+                    Content="Copy"
+                    FontSize="11"
+                    Padding="6,2"
+                    HorizontalAlignment="Right"
+                    ToolTipService.ToolTip="Copy prompt"
+                    AutomationProperties.AutomationId="CopyPromptButton"
+                    Click="CopyPromptButton_Click"
                 />
             </StackPanel>
         </Border>
@@ -98,6 +116,16 @@
                     Text="{Binding Detail.Answer, FallbackValue=''}"
                     FontSize="14"
                     TextWrapping="Wrap"
+                    IsTextSelectionEnabled="True"
+                />
+                <Button
+                    Content="Copy"
+                    FontSize="11"
+                    Padding="6,2"
+                    HorizontalAlignment="Right"
+                    ToolTipService.ToolTip="Copy answer"
+                    AutomationProperties.AutomationId="CopyAnswerButton"
+                    Click="CopyAnswerButton_Click"
                 />
             </StackPanel>
         </Border>
@@ -149,11 +177,22 @@
                                             Text="{Binding Text}"
                                             FontSize="13"
                                             TextWrapping="Wrap"
+                                            IsTextSelectionEnabled="True"
                                         />
                                         <TextBlock
                                             FontSize="11"
                                             Foreground="{ThemeResource OnSurfaceVariant}"
                                             Text="{Binding Converter={StaticResource CitationSubtitle}}"
+                                            IsTextSelectionEnabled="True"
+                                        />
+                                        <Button
+                                            Content="Copy"
+                                            FontSize="11"
+                                            Padding="6,2"
+                                            HorizontalAlignment="Right"
+                                            ToolTipService.ToolTip="Copy citation"
+                                            AutomationProperties.AutomationId="CopyCitationButton"
+                                            Click="CopyCitationButton_Click"
                                         />
                                     </StackPanel>
                                 </Border>

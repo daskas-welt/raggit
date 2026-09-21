@@ -67,10 +67,11 @@ public sealed class CoverageBoostTests
         await db.EnsureCreatedAsync();
         var store = new FakeVectorStoreForCov();
         var embedder = new FakeEmbedderForCov();
+        var documents = new SqliteDocumentRepository(db);
         var svc = new IngestService(
             embedder,
             store,
-            db,
+            documents,
             NullLogger<IngestService>.Instance,
             contentStore: new FileDocumentContentStore(Path.Combine(tmp, "originals")),
             options: Options.Create(
@@ -119,10 +120,11 @@ public sealed class CoverageBoostTests
         await db.EnsureCreatedAsync();
         var store = new FakeVectorStoreForCov();
         var embedder = new FakeEmbedderForCov();
+        var documents = new SqliteDocumentRepository(db);
         var svc = new IngestService(
             embedder,
             store,
-            db,
+            documents,
             NullLogger<IngestService>.Instance,
             contentStore: new FileDocumentContentStore(Path.Combine(tmp, "originals"))
         );

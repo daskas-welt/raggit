@@ -28,6 +28,7 @@ artifacts/
 # NOTE: bare /data/ only matches the repo root — runtime data also lives
 # under src/<project>/data/, so both forms (plus key material) are listed.
 **/data/
+**/data.backup-*/
 *.db
 /models/
 *.gguf

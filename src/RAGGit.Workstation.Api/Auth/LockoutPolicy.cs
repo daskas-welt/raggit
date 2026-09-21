@@ -2,21 +2,21 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
-using RAGGit.Core.Data;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Workstation.Api.Auth;
 
 /// <summary>
 /// Account lockout policy: after a configured number of consecutive failed sign-ins,
-/// the account is locked until a configured duration passes. Persists state via <see cref="UserStore/>.
+/// the account is locked until a configured duration passes. Persists state via <see cref="IUserRepository"/>.
 /// </summary>
 public sealed class LockoutPolicy
 {
-    private readonly UserStore _store;
+    private readonly IUserRepository _store;
     private readonly LockoutPolicyOptions _options;
 
-    public LockoutPolicy(UserStore store, IOptions<LockoutPolicyOptions> options)
+    public LockoutPolicy(IUserRepository store, IOptions<LockoutPolicyOptions> options)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));

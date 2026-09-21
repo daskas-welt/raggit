@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -123,7 +124,7 @@ public sealed class OfflineIdentityTests
     )
     {
         using var scope = factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var password = $"{username}-secure-pass-1";
         var now = DateTime.UtcNow;
         var user = new User

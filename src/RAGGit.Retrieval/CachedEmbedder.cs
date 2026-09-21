@@ -133,7 +133,13 @@ public sealed class CachedEmbedder : IEmbedder, IDisposable
         var builder = new StringBuilder(trimmed.Length);
         foreach (var c in trimmed)
         {
-            if (!char.IsPunctuation(c))
+            if (c == 'ς')
+            {
+                // Greek final sigma → medial sigma, so the same word caches
+                // identically whether capitalized (Σ→σ) or not (ς).
+                builder.Append('σ');
+            }
+            else if (!char.IsPunctuation(c))
             {
                 builder.Append(c);
             }

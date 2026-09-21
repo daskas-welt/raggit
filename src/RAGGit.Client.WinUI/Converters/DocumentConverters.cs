@@ -59,7 +59,31 @@ public sealed class CitationSubtitleConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) =>
         value is Citation citation
-            ? $"Document: {citation.DocumentId} | Chunk: {citation.ChunkId}"
+            ? $"Chunk {ShortId(citation.ChunkId)}  ·  Document {ShortId(citation.DocumentId)}"
+            : string.Empty;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+
+    private static string ShortId(Guid id) => id.ToString("N")[..8];
+}
+
+public sealed class CitationOrdinalConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language) =>
+        value is int ordinal ? $"[{ordinal + 1}]" : string.Empty;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+}
+
+public sealed class CitationDocumentNameConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language) =>
+        value is Citation citation
+            ? !string.IsNullOrWhiteSpace(citation.DocumentName)
+                ? citation.DocumentName
+                : $"Document {citation.DocumentId.ToString("N")[..8]}"
             : string.Empty;
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>

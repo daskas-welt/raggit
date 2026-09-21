@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -94,7 +95,7 @@ public sealed class DeactivationRefusalTests : IClassFixture<IntegrationTestFact
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {
@@ -124,7 +125,7 @@ public sealed class DeactivationRefusalTests : IClassFixture<IntegrationTestFact
     private async Task<User> GetUserByUsernameAsync(string username)
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var user = await store.GetByUsernameAsync(username);
         return user ?? throw new InvalidOperationException($"User {username} not found.");
     }

@@ -24,6 +24,8 @@ public sealed class Citation
 {
     public Guid DocumentId { get; set; }
 
+    public string? DocumentName { get; set; }
+
     public Guid ChunkId { get; set; }
 
     [Required]
@@ -44,4 +46,21 @@ public sealed class QueryResponse
     public List<Guid> RetrievedChunkIds { get; set; } = new();
 
     public int LatencyMs { get; set; }
+
+    /// <summary>
+    /// Closest person names actually present in retrieved chunks when the
+    /// asked name does not match. Surname-anchored hints only; never
+    /// transferred facts. Empty when citations exist or no surname matches.
+    /// </summary>
+    public List<PersonSuggestion> SuggestedPersons { get; set; } = new();
+}
+
+/// <summary>
+/// A did-you-mean person hint for near-miss name queries.
+/// </summary>
+public sealed class PersonSuggestion
+{
+    public string Name { get; set; } = string.Empty;
+
+    public Guid? DocumentId { get; set; }
 }

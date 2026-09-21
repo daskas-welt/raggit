@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Auth;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -106,8 +107,8 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         var queryId = Guid.NewGuid();
         using (var scope = _factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-            await db.InsertQueryAsync(
+            var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+            await queries.AddAsync(
                 new Query
                 {
                     Id = queryId,
@@ -141,8 +142,8 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         var legacyEmployeeId = Guid.NewGuid();
         using (var scope = _factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-            await db.InsertQueryAsync(
+            var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+            await queries.AddAsync(
                 new Query
                 {
                     Id = legacyAdminId,
@@ -155,7 +156,7 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
                     CreatedAt = DateTime.UtcNow,
                 }
             );
-            await db.InsertQueryAsync(
+            await queries.AddAsync(
                 new Query
                 {
                     Id = legacyEmployeeId,
@@ -201,8 +202,8 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         var queryId = Guid.NewGuid();
         using (var scope = _factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-            await db.InsertQueryAsync(
+            var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+            await queries.AddAsync(
                 new Query
                 {
                     Id = queryId,
@@ -241,8 +242,8 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
         var queryId = Guid.NewGuid();
         using (var scope = _factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
-            await db.InsertQueryAsync(
+            var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
+            await queries.AddAsync(
                 new Query
                 {
                     Id = queryId,
@@ -402,7 +403,7 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<UserStore>();
+        var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var now = DateTime.UtcNow;
         var user = new User
         {
@@ -434,10 +435,10 @@ public sealed class CrossUserIsolationTests : IClassFixture<IntegrationTestFacto
     )
     {
         using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        var queries = scope.ServiceProvider.GetRequiredService<IQueryRepository>();
         foreach (var row in rows)
         {
-            await db.InsertQueryAsync(
+            await queries.AddAsync(
                 new Query
                 {
                     Id = Guid.NewGuid(),

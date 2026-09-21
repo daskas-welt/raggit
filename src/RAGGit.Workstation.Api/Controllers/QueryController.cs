@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using RAGGit.Core.Abstractions;
-using RAGGit.Core.Data;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 using RAGGit.Retrieval;
 
@@ -28,27 +28,31 @@ public sealed class QueryController : ControllerBase
     private readonly RetrievalService _retrievalService;
     private readonly GenerationService _generationService;
     private readonly ILlmClient _llmClient;
-    private readonly RagDbContext _dbContext;
-    private readonly QueryHistoryStore _historyStore;
+    private readonly IQueryRepository _historyStore;
+    private readonly IDocumentRepository _documents;
     private readonly ILogger<QueryController> _logger;
 
     public QueryController(
         RetrievalService retrievalService,
         GenerationService generationService,
         ILlmClient llmClient,
-        RagDbContext dbContext,
-        QueryHistoryStore historyStore,
+        IQueryRepository historyStore,
+        IDocumentRepository documents,
         ILogger<QueryController> logger
     )
     {
-        _retrievalService =
-            retrievalService ?? throw new ArgumentNullException(nameof(retrievalService));
-        _generationService =
-            generationService ?? throw new ArgumentNullException(nameof(generationService));
-        _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(retrievalService);
+        ArgumentNullException.ThrowIfNull(generationService);
+        ArgumentNullException.ThrowIfNull(llmClient);
+        ArgumentNullException.ThrowIfNull(historyStore);
+        ArgumentNullException.ThrowIfNull(documents);
+        ArgumentNullException.ThrowIfNull(logger);
+        _retrievalService = retrievalService;
+        _generationService = generationService;
+        _llmClient = llmClient;
+        _historyStore = historyStore;
+        _documents = documents;
+        _logger = logger;
     }
 
     /// <summary>
@@ -73,7 +77,7 @@ public sealed class QueryController : ControllerBase
             return Unauthorized(new { error = "unauthorized" });
         }
 
-        var page = await _historyStore.ListAsync(sub, limit, offset, cancellationToken);
+        var page = await _historyStore.ListHistoryAsync(sub, limit, offset, cancellationToken);
         return Ok(page);
     }
 
@@ -163,20 +167,41 @@ public sealed class QueryController : ControllerBase
                 );
             }
 
+            var documentNames = await ResolveDocumentNamesAsync(chunks, cancellationToken);
+
             var (answer, citationIds) = await _generationService.GenerateAsync(
                 request.Query,
                 chunks,
+                documentNames,
                 cancellationToken
             );
 
             var latencyMs = (int)stopwatch.ElapsedMilliseconds;
             var retrievedChunkIds = chunks.Select(c => c.ChunkId).ToList();
 
+            // Strict grounding is preserved: when the LLM cites nothing (e.g.
+            // near-miss person name like Αρετής vs Πηνελόπης), offer
+            // surname-anchored did-you-mean hints from retrieved chunks only.
+            var suggestions = new List<PersonSuggestion>();
+            if (citationIds.Count == 0)
+            {
+                suggestions = PersonNameSuggester.Suggest(request.Query, chunks).ToList();
+            }
+
+            var finalAnswer = answer;
+            if (suggestions.Count > 0 && AnswerLanguage.IsRefusalLike(answer))
+            {
+                var names = string.Join("; ", suggestions.Select(s => s.Name));
+                finalAnswer = AnswerLanguage.IsGreek(request.Query)
+                    ? $"{answer} Μήπως εννοούσατε: {names}; Παρακαλώ επιβεβαιώστε."
+                    : $"{answer} Did you mean: {names}? Please confirm.";
+            }
+
             await SaveQueryAsync(
                 userId,
                 request.Query,
                 retrievedChunkIds,
-                answer,
+                finalAnswer,
                 citationIds,
                 latencyMs,
                 cancellationToken
@@ -184,9 +209,11 @@ public sealed class QueryController : ControllerBase
 
             var citations = chunks
                 .Where(c => citationIds.Contains(c.ChunkId))
+                .Where(c => Guid.TryParse(c.DocumentId, out _))
                 .Select(c => new Citation
                 {
                     DocumentId = Guid.Parse(c.DocumentId),
+                    DocumentName = documentNames.GetValueOrDefault(c.DocumentId),
                     ChunkId = c.ChunkId,
                     Text = c.Text,
                     Ordinal = c.Ordinal,
@@ -194,19 +221,23 @@ public sealed class QueryController : ControllerBase
                 .ToList();
 
             _logger.LogInformation(
-                "Query from {UserId} answered with {CitationCount} citations in {LatencyMs}ms",
+                "Query from {UserId} answered with {CitationCount}/{RetrievedCount} citations and {SuggestionCount} suggestions in {LatencyMs}ms; top scores [{Scores}]",
                 userId,
                 citations.Count,
-                latencyMs
+                chunks.Count,
+                suggestions.Count,
+                latencyMs,
+                string.Join(", ", chunks.Take(5).Select(c => c.Score.ToString("0.###")))
             );
 
             return Ok(
                 new QueryResponse
                 {
-                    Answer = answer,
+                    Answer = finalAnswer,
                     Citations = citations,
                     RetrievedChunkIds = retrievedChunkIds,
                     LatencyMs = latencyMs,
+                    SuggestedPersons = suggestions,
                 }
             );
         }
@@ -262,6 +293,37 @@ public sealed class QueryController : ControllerBase
         }
     }
 
+    private async Task<Dictionary<string, string?>> ResolveDocumentNamesAsync(
+        IReadOnlyList<SearchResult> chunks,
+        CancellationToken cancellationToken
+    )
+    {
+        var names = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var documentId in chunks.Select(c => c.DocumentId).Distinct())
+        {
+            if (!Guid.TryParse(documentId, out var id))
+            {
+                continue;
+            }
+
+            try
+            {
+                var document = await _documents.FindByIdAsync(id, cancellationToken);
+                names[documentId] = document?.Filename;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogDebug(
+                    exception,
+                    "Document name lookup failed for {DocumentId}; using id in prompt",
+                    documentId
+                );
+            }
+        }
+
+        return names;
+    }
+
     private async Task SaveQueryAsync(
         string userId,
         string prompt,
@@ -284,6 +346,6 @@ public sealed class QueryController : ControllerBase
             CreatedAt = DateTime.UtcNow,
         };
 
-        await _dbContext.InsertQueryAsync(query, cancellationToken);
+        await _historyStore.AddAsync(query, cancellationToken);
     }
 }
