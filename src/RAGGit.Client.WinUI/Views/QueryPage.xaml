@@ -5,7 +5,7 @@
     xmlns:components="using:RAGGit.Client.WinUI.Components"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
     xmlns:models="using:RAGGit.Core.Models"
-    Background="{ThemeResource SurfaceVariant}"
+    Background="{ThemeResource DashboardSurface}"
 >
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
@@ -14,7 +14,7 @@
         <!-- Header card -->
         <Border
             Grid.Row="0"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Background="{ThemeResource MetricTileBackground}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"
@@ -41,7 +41,7 @@
         <Border
             Grid.Row="2"
             Visibility="{Binding HasSuggestedPersons, Converter={StaticResource BoolVisibility}}"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Background="{ThemeResource MetricTileBackground}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"

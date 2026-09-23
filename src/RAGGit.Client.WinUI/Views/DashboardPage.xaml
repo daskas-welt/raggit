@@ -1,0 +1,424 @@
+<Page
+    x:Class="RAGGit.Client.WinUI.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:components="using:RAGGit.Client.WinUI.Components"
+    xmlns:converters="using:RAGGit.Client.WinUI.Converters"
+    xmlns:models="using:RAGGit.Core.Models"
+    Background="{ThemeResource DashboardSurface}"
+    SizeChanged="OnPageSizeChanged"
+>
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InverseBoolVisibility" />
+        <converters:ShortDateConverter x:Key="ShortDate" />
+        <converters:StatusSeverityConverter x:Key="StatusSeverity" />
+    </Page.Resources>
+
+    <Grid Padding="28,24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="HeaderGrid" Grid.Row="0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4">
+                <TextBlock
+                    Text="Welcome back"
+                    FontSize="30"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource OnSurface}"
+                />
+                <TextBlock
+                    Text="Your library at a glance"
+                    FontSize="14"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
+                />
+                <TextBlock
+                    Text="{Binding RoleContext}"
+                    FontSize="12"
+                    Foreground="{ThemeResource OnSurfaceVariant}"
+                />
+            </StackPanel>
+            <Border
+                x:Name="ProfileCard"
+                Grid.Column="1"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="14,10"
+                AutomationProperties.AutomationId="DashboardProfileCard"
+                AutomationProperties.Name="Logged user profile"
+            >
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" MinWidth="260">
+                    <Border
+                        Width="40"
+                        Height="40"
+                        Background="{ThemeResource NavigationRailSelectedBackground}"
+                        CornerRadius="20"
+                        VerticalAlignment="Center"
+                    >
+                        <SymbolIcon
+                            Symbol="Contact"
+                            Foreground="{ThemeResource NavigationRailSelectedForeground}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                        />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock
+                            Text="{Binding UserDisplayName}"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                            TextTrimming="CharacterEllipsis"
+                        />
+                        <TextBlock
+                            Text="{Binding UserHandle}"
+                            FontSize="12"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            TextTrimming="CharacterEllipsis"
+                        />
+                        <TextBlock
+                            Text="{Binding UserDetails}"
+                            FontSize="11"
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            TextTrimming="CharacterEllipsis"
+                        />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Button
+                x:Name="RefreshButton"
+                Grid.Column="2"
+                Content="Refresh"
+                Command="{Binding LoadCommand}"
+                AutomationProperties.AutomationId="DashboardRefreshButton"
+                AutomationProperties.Name="Refresh dashboard"
+                MinWidth="100"
+                MinHeight="44"
+            />
+        </Grid>
+
+        <Grid x:Name="MetricsGrid" Grid.Row="1" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                x:Name="DocumentsMetric"
+                Grid.Column="0"
+                Click="OnLibraryClicked"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                AutomationProperties.AutomationId="DashboardMetricDocuments"
+                AutomationProperties.Name="Open document library"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                MinHeight="92"
+            >
+                <StackPanel Spacing="6" HorizontalAlignment="Left">
+                    <TextBlock Text="Documents" Foreground="{ThemeResource OnSurfaceVariant}" />
+                    <TextBlock
+                        Text="{Binding TotalDocuments}"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                    />
+                    <TextBlock
+                        Text="{Binding LibrarySummary}"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                </StackPanel>
+            </Button>
+            <Button
+                x:Name="QueriesMetric"
+                Grid.Column="1"
+                Click="OnAskClicked"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                AutomationProperties.AutomationId="DashboardMetricQueries"
+                AutomationProperties.Name="Ask the library"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                MinHeight="92"
+            >
+                <StackPanel Spacing="6" HorizontalAlignment="Left">
+                    <TextBlock
+                        Text="Saved questions"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                    <TextBlock
+                        Text="{Binding TotalQueries}"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                    />
+                    <TextBlock
+                        Text="{Binding QuerySummary}"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                </StackPanel>
+            </Button>
+            <Border
+                x:Name="ReadyMetric"
+                Grid.Column="2"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                Padding="16,12"
+                CornerRadius="6"
+            >
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Ready to use" Foreground="{ThemeResource OnSurfaceVariant}" />
+                    <TextBlock
+                        Text="{Binding ReadyDocuments}"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                    />
+                    <TextBlock
+                        Text="indexed documents"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                </StackPanel>
+            </Border>
+            <Border
+                x:Name="MineMetric"
+                Grid.Column="3"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                Padding="16,12"
+                CornerRadius="6"
+            >
+                <StackPanel Spacing="6">
+                    <TextBlock Text="My documents" Foreground="{ThemeResource OnSurfaceVariant}" />
+                    <TextBlock
+                        Text="{Binding MyDocuments}"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource OnSurface}"
+                    />
+                    <TextBlock
+                        Text="uploaded by you"
+                        FontSize="12"
+                        Foreground="{ThemeResource OnSurfaceVariant}"
+                    />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="ContentGrid" Grid.Row="2" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.15*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border
+                x:Name="RecentDocumentsPanel"
+                Grid.Column="0"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="18"
+            >
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            Text="Recent documents"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                        />
+                        <Button
+                            Grid.Column="1"
+                            Content="View library"
+                            Click="OnLibraryClicked"
+                            AutomationProperties.AutomationId="DashboardLibraryButton"
+                            MinHeight="44"
+                        />
+                    </Grid>
+                    <ListView
+                        Grid.Row="1"
+                        ItemsSource="{Binding RecentDocuments}"
+                        SelectionMode="None"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Visibility="{Binding HasLibraryData, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Document">
+                                <Grid
+                                    Padding="0,10"
+                                    ColumnDefinitions="*,Auto,Auto"
+                                    ColumnSpacing="12"
+                                >
+                                    <TextBlock
+                                        Text="{Binding Filename}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Foreground="{ThemeResource OnSurface}"
+                                        VerticalAlignment="Center"
+                                    />
+                                    <components:StatusChip
+                                        Grid.Column="1"
+                                        Status="{Binding Status}"
+                                        VerticalAlignment="Center"
+                                    />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                        Foreground="{ThemeResource OnSurfaceVariant}"
+                                        VerticalAlignment="Center"
+                                    />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <StackPanel
+                        Grid.Row="1"
+                        Spacing="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding HasLibraryData, Converter={StaticResource InverseBoolVisibility}}"
+                    >
+                        <TextBlock
+                            Text="No documents yet"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                            HorizontalAlignment="Center"
+                        />
+                        <TextBlock
+                            Text="Open the library to upload your first document."
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            HorizontalAlignment="Center"
+                        />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border
+                x:Name="RecentQuestionsPanel"
+                Grid.Column="1"
+                Background="{ThemeResource MetricTileBackground}"
+                BorderBrush="{ThemeResource MetricTileBorder}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="18"
+            >
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            Text="Recent questions"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                        />
+                        <Button
+                            Grid.Column="1"
+                            Content="Ask"
+                            Click="OnAskClicked"
+                            AutomationProperties.AutomationId="DashboardAskButton"
+                            MinHeight="44"
+                        />
+                    </Grid>
+                    <ListView
+                        Grid.Row="1"
+                        ItemsSource="{Binding RecentQueries}"
+                        SelectionMode="None"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Visibility="{Binding HasQueryData, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:HistoryItem">
+                                <StackPanel Padding="0,10" Spacing="4">
+                                    <TextBlock
+                                        Text="{Binding PromptPreview}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Foreground="{ThemeResource OnSurface}"
+                                    />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock
+                                            Text="{Binding CitationCount}"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
+                                        />
+                                        <TextBlock
+                                            Text="citations"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource OnSurfaceVariant}"
+                                        />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <StackPanel
+                        Grid.Row="1"
+                        Spacing="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding HasQueryData, Converter={StaticResource InverseBoolVisibility}}"
+                    >
+                        <TextBlock
+                            Text="No questions yet"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource OnSurface}"
+                            HorizontalAlignment="Center"
+                        />
+                        <TextBlock
+                            Text="Ask the library to find grounded answers."
+                            Foreground="{ThemeResource OnSurfaceVariant}"
+                            HorizontalAlignment="Center"
+                        />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <InfoBar
+            Grid.Row="3"
+            IsOpen="{Binding HasStatus}"
+            IsClosable="False"
+            Message="{Binding StatusMessage}"
+            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
+            Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
+            AutomationProperties.AutomationId="DashboardStatusBar"
+            AutomationProperties.LiveSetting="Polite"
+        />
+        <ProgressRing
+            Grid.Row="2"
+            IsActive="{Binding IsBusy}"
+            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Width="42"
+            Height="42"
+        />
+    </Grid>
+</Page>

@@ -10,6 +10,8 @@ public sealed class ClientSession : INotifyPropertyChanged
     public string WorkstationUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
     public string IdentityType { get; set; } = "ApiKey";
+    public string? Username { get; set; }
+    public string? DisplayName { get; set; }
 
     public string Role
     {

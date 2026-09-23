@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
     xmlns:models="using:RAGGit.Core.Models"
-    Background="{ThemeResource SurfaceVariant}"
+    Background="{ThemeResource DashboardSurface}"
 >
     <Page.Resources>
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
@@ -14,7 +14,7 @@
         <!-- Header card -->
         <Border
             Grid.Row="0"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Background="{ThemeResource MetricTileBackground}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"
@@ -72,7 +72,7 @@
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:HistoryItem">
                         <Border
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            Background="{ThemeResource MetricTileBackground}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
@@ -135,7 +135,7 @@
             <Border
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                Background="{ThemeResource MetricTileBackground}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"

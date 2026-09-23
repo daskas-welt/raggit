@@ -21,6 +21,54 @@
                     <SolidColorBrush x:Key="StatusInProgressBrush" Color="#CA5010" />
                     <SolidColorBrush x:Key="StatusErrorBrush" Color="#B3261E" />
                     <SolidColorBrush x:Key="StatusNeutralBrush" Color="#605E5C" />
+                    <SolidColorBrush x:Key="NavigationRailBackground" Color="#087CC1" />
+                    <SolidColorBrush x:Key="NavigationRailForeground" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="BrandNameForeground" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="NavigationRailSelectedBackground" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="NavigationRailSelectedForeground" Color="#075985" />
+                    <SolidColorBrush x:Key="DashboardSurface" Color="#F7F9FB" />
+                    <SolidColorBrush x:Key="MetricTileBackground" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="MetricTileBorder" Color="#E4E8ED" />
+                    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#087CC1" />
+                    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#087CC1" />
+                    <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#087CC1" />
+                    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="#075985" />
+                    <SolidColorBrush x:Key="NavigationViewItemForeground" Color="#FFFFFF" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemForegroundPointerOver"
+                        Color="#FFFFFF"
+                    />
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FFFFFF" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemForegroundDisabled"
+                        Color="#B3FFFFFF"
+                    />
+                    <SolidColorBrush x:Key="NavigationViewItemIconForeground" Color="#FFFFFF" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundSelected"
+                        Color="#075985"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundPointerOver"
+                        Color="#FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundPressed"
+                        Color="#FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemBackgroundPointerOver"
+                        Color="#33FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemBackgroundPressed"
+                        Color="#66FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewSelectionIndicatorForeground"
+                        Color="#FFFFFF"
+                    />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="Primary" Color="#D0BCFF" />
@@ -34,6 +82,54 @@
                     <SolidColorBrush x:Key="StatusInProgressBrush" Color="#F9911A" />
                     <SolidColorBrush x:Key="StatusErrorBrush" Color="#F2B8B5" />
                     <SolidColorBrush x:Key="StatusNeutralBrush" Color="#ADABAB" />
+                    <SolidColorBrush x:Key="NavigationRailBackground" Color="#075985" />
+                    <SolidColorBrush x:Key="NavigationRailForeground" Color="#F8FAFC" />
+                    <SolidColorBrush x:Key="BrandNameForeground" Color="#F8FAFC" />
+                    <SolidColorBrush x:Key="NavigationRailSelectedBackground" Color="#E0F2FE" />
+                    <SolidColorBrush x:Key="NavigationRailSelectedForeground" Color="#082F49" />
+                    <SolidColorBrush x:Key="DashboardSurface" Color="#111827" />
+                    <SolidColorBrush x:Key="MetricTileBackground" Color="#1F2937" />
+                    <SolidColorBrush x:Key="MetricTileBorder" Color="#374151" />
+                    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#075985" />
+                    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#075985" />
+                    <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="#075985" />
+                    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#E0F2FE" />
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="#082F49" />
+                    <SolidColorBrush x:Key="NavigationViewItemForeground" Color="#F8FAFC" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemForegroundPointerOver"
+                        Color="#F8FAFC"
+                    />
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#F8FAFC" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemForegroundDisabled"
+                        Color="#B3F8FAFC"
+                    />
+                    <SolidColorBrush x:Key="NavigationViewItemIconForeground" Color="#F8FAFC" />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundSelected"
+                        Color="#082F49"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundPointerOver"
+                        Color="#F8FAFC"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemIconForegroundPressed"
+                        Color="#F8FAFC"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemBackgroundPointerOver"
+                        Color="#33FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewItemBackgroundPressed"
+                        Color="#66FFFFFF"
+                    />
+                    <SolidColorBrush
+                        x:Key="NavigationViewSelectionIndicatorForeground"
+                        Color="#F8FAFC"
+                    />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <StaticResource x:Key="Primary" ResourceKey="SystemColorHotlightColorBrush" />
@@ -67,6 +163,82 @@
                     <StaticResource
                         x:Key="StatusNeutralBrush"
                         ResourceKey="SystemColorGrayTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationRailBackground"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationRailForeground"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="BrandNameForeground"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationRailSelectedBackground"
+                        ResourceKey="SystemColorHighlightColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationRailSelectedForeground"
+                        ResourceKey="SystemColorHighlightTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="DashboardSurface"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="MetricTileBackground"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="MetricTileBorder"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewExpandedPaneBackground"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewDefaultPaneBackground"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewTopPaneBackground"
+                        ResourceKey="SystemColorWindowColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemBackgroundSelected"
+                        ResourceKey="SystemColorHighlightColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemForegroundSelected"
+                        ResourceKey="SystemColorHighlightTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemForeground"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemForegroundPointerOver"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemForegroundPressed"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemIconForeground"
+                        ResourceKey="SystemColorWindowTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewItemIconForegroundSelected"
+                        ResourceKey="SystemColorHighlightTextColorBrush"
+                    />
+                    <StaticResource
+                        x:Key="NavigationViewSelectionIndicatorForeground"
+                        ResourceKey="SystemColorHighlightTextColorBrush"
                     />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>

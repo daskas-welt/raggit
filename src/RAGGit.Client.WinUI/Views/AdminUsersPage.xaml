@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:RAGGit.Client.WinUI.Converters"
     xmlns:services="using:RAGGit.Client.Maui.Services"
-    Background="{ThemeResource SurfaceVariant}"
+    Background="{ThemeResource DashboardSurface}"
 >
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
@@ -27,7 +27,7 @@
         <!-- Header -->
         <Border
             Grid.Row="0"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Background="{ThemeResource MetricTileBackground}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"
@@ -72,7 +72,7 @@
         <!-- Users list: fills remaining space, scrolls/virtualizes internally. -->
         <Border
             Grid.Row="2"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Background="{ThemeResource MetricTileBackground}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8"
@@ -272,7 +272,7 @@
                     x:Name="CreateCard"
                     Grid.Row="0"
                     Grid.Column="0"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ThemeResource MetricTileBackground}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
@@ -330,7 +330,7 @@
                     x:Name="ResetCard"
                     Grid.Row="0"
                     Grid.Column="1"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ThemeResource MetricTileBackground}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"

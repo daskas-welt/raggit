@@ -9,11 +9,32 @@
         <controls:NavigationView
             x:Name="Nav"
             PaneDisplayMode="Left"
+            Background="{ThemeResource NavigationRailBackground}"
+            Foreground="{ThemeResource NavigationRailForeground}"
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
             SelectionChanged="Nav_SelectionChanged"
+            SizeChanged="Nav_SizeChanged"
         >
+            <controls:NavigationView.PaneHeader>
+                <TextBlock
+                    Text="Raggit"
+                    FontSize="20"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource BrandNameForeground}"
+                    Padding="16,12,16,10"
+                    AutomationProperties.AutomationId="RaggitBrandLabel"
+                    AutomationProperties.Name="Product name Raggit"
+                />
+            </controls:NavigationView.PaneHeader>
             <controls:NavigationView.MenuItems>
+                <controls:NavigationViewItem
+                    x:Name="DashboardItem"
+                    Content="Dashboard"
+                    Tag="dashboard"
+                    Icon="Home"
+                    AutomationProperties.AutomationId="NavDashboard"
+                />
                 <controls:NavigationViewItem
                     x:Name="LibraryItem"
                     Content="Library"

@@ -20,6 +20,8 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hWnd);
 
+    private bool _synchronizingNavigation;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -70,7 +72,7 @@ public sealed partial class MainWindow : Window
             }
 
             await DiscoverRoleAsync();
-            NavigateToLibrary();
+            NavigateToDashboard();
             return;
         }
 
@@ -79,11 +81,34 @@ public sealed partial class MainWindow : Window
 
     public void NavigateToLogin() => ContentFrame.Navigate(typeof(LoginPage));
 
+    public void NavigateToDashboard()
+    {
+        NavigateTo(typeof(DashboardPage), DashboardItem);
+    }
+
     public void NavigateToLibrary()
     {
-        ContentFrame.Navigate(typeof(LibraryPage));
-        Nav.SelectedItem = LibraryItem;
-        RefreshAdminVisibility();
+        NavigateTo(typeof(LibraryPage), LibraryItem);
+    }
+
+    public void NavigateToQuery()
+    {
+        NavigateTo(typeof(QueryPage), AskItem);
+    }
+
+    private void NavigateTo(Type pageType, NavigationViewItem navigationItem)
+    {
+        _synchronizingNavigation = true;
+        try
+        {
+            Nav.SelectedItem = navigationItem;
+            ContentFrame.Navigate(pageType);
+            RefreshAdminVisibility();
+        }
+        finally
+        {
+            _synchronizingNavigation = false;
+        }
     }
 
     public async Task DiscoverRoleAsync()
@@ -101,6 +126,8 @@ public sealed partial class MainWindow : Window
         {
             session.Role = result.Data.Role;
             session.IdentityType = result.Data.IdentityType;
+            session.Username = result.Data.Username;
+            session.DisplayName = result.Data.DisplayName;
             if (connection is not null)
             {
                 connection.ErrorMessage = null;
@@ -112,6 +139,8 @@ public sealed partial class MainWindow : Window
         else if (result.IsUnauthorized)
         {
             session.Role = string.Empty;
+            session.Username = null;
+            session.DisplayName = null;
             if (connection is not null)
             {
                 connection.ErrorMessage = result.ErrorMessage ?? "unauthorized — sign in again.";
@@ -144,6 +173,11 @@ public sealed partial class MainWindow : Window
         NavigationViewSelectionChangedEventArgs args
     )
     {
+        if (_synchronizingNavigation)
+        {
+            return;
+        }
+
         if (args.SelectedItem is not NavigationViewItem item || item.Tag is not string tag)
         {
             return;
@@ -154,6 +188,9 @@ public sealed partial class MainWindow : Window
 
         switch (tag)
         {
+            case "dashboard":
+                ContentFrame.Navigate(typeof(DashboardPage));
+                break;
             case "library":
                 ContentFrame.Navigate(typeof(LibraryPage));
                 break;
@@ -170,5 +207,13 @@ public sealed partial class MainWindow : Window
                 ContentFrame.Navigate(typeof(AdminUsersPage));
                 break;
         }
+    }
+
+    private void Nav_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Nav.PaneDisplayMode =
+            e.NewSize.Width <= 720
+                ? NavigationViewPaneDisplayMode.Top
+                : NavigationViewPaneDisplayMode.Left;
     }
 }

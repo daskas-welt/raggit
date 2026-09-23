@@ -138,6 +138,15 @@ public sealed partial class App : Application
                     new HttpClient { BaseAddress = new Uri("http://invalid-config") }
                 )
             ));
+            services.AddTransient<DashboardViewModel>(_ => new DashboardViewModel(
+                new DocumentsApiClient(
+                    new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                ),
+                new QueryHistoryApiClient(
+                    new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                ),
+                session
+            ));
             services.AddTransient<UploadViewModel>(_ => new UploadViewModel(
                 new DocumentsApiClient(
                     new HttpClient { BaseAddress = new Uri("http://invalid-config") }
@@ -206,6 +215,7 @@ public sealed partial class App : Application
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<QueryDetailViewModel>();
         services.AddTransient<DocumentsMineViewModel>();
+        services.AddTransient<DashboardViewModel>();
         services.AddTransient<UploadViewModel>();
         services.AddTransient<AdminUsersViewModel>();
 

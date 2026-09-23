@@ -23,7 +23,7 @@ public sealed partial class LoginPage : Page
                 if (window is not null)
                 {
                     await window.DiscoverRoleAsync();
-                    window.NavigateToLibrary();
+                    window.NavigateToDashboard();
                 }
             }
         );
