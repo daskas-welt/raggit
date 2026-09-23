@@ -46,14 +46,16 @@
                     Grid.Column="1"
                     Command="{Binding LoadUsersCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                    Width="44"
+                    Height="44"
+                    MinWidth="44"
                     MinHeight="44"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="RefreshUsersButton"
+                    AutomationProperties.Name="Refresh users"
+                    ToolTipService.ToolTip="Refresh users"
                 >
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <SymbolIcon Symbol="Refresh" />
-                        <TextBlock Text="Refresh" FontSize="13" VerticalAlignment="Center" />
-                    </StackPanel>
+                    <SymbolIcon Symbol="Refresh" />
                 </Button>
             </Grid>
         </Border>
@@ -316,13 +318,19 @@
                             AutomationProperties.AutomationId="NewPasswordBox"
                         />
                         <Button
-                            Content="Create"
                             Command="{Binding CreateUserCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                            Width="44"
+                            Height="44"
+                            MinWidth="44"
                             MinHeight="44"
-                            HorizontalAlignment="Stretch"
+                            HorizontalAlignment="Left"
                             AutomationProperties.AutomationId="CreateUserButton"
-                        />
+                            AutomationProperties.Name="Create user"
+                            ToolTipService.ToolTip="Create user"
+                        >
+                            <SymbolIcon Symbol="Add" />
+                        </Button>
                     </StackPanel>
                 </Border>
 
@@ -364,13 +372,22 @@
                             AutomationProperties.AutomationId="ResetMustChangeCheck"
                         />
                         <Button
-                            Content="Reset Password"
                             Click="OnResetPasswordClicked"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                            Width="44"
+                            Height="44"
+                            MinWidth="44"
                             MinHeight="44"
-                            HorizontalAlignment="Stretch"
+                            HorizontalAlignment="Left"
                             AutomationProperties.AutomationId="ResetPasswordButton"
-                        />
+                            AutomationProperties.Name="Reset password"
+                            ToolTipService.ToolTip="Reset password"
+                        >
+                            <FontIcon
+                                Glyph="&#xE72E;"
+                                FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            />
+                        </Button>
                     </StackPanel>
                 </Border>
             </Grid>

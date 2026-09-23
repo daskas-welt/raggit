@@ -103,6 +103,7 @@ public sealed partial class LoginViewModel : ObservableObject
                     _session.IdentityType = meResult.Data.IdentityType;
                     _session.Username = meResult.Data.Username;
                     _session.DisplayName = meResult.Data.DisplayName;
+                    _session.LastLoginAtUtc = DateTime.UtcNow;
                     ErrorMessage = null;
 
                     if (_onLoginSuccess is not null)

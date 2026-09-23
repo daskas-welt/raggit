@@ -45,23 +45,33 @@
                     VerticalAlignment="Center"
                 >
                     <Button
-                        Content="Refresh"
                         Command="{Binding LoadDocumentsCommand}"
-                        Height="36"
-                        FontSize="13"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="RefreshButton"
-                    />
+                        AutomationProperties.Name="Refresh documents"
+                        ToolTipService.ToolTip="Refresh documents"
+                    >
+                        <SymbolIcon Symbol="Refresh" />
+                    </Button>
                     <Button
                         x:Name="UploadButton"
-                        Content="Upload"
                         Click="OnUploadClicked"
-                        Height="36"
-                        FontSize="13"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
                         Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="UploadButton"
-                    />
+                        AutomationProperties.Name="Upload documents"
+                        ToolTipService.ToolTip="Upload documents"
+                    >
+                        <SymbolIcon Symbol="Upload" />
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>

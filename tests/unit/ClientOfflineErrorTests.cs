@@ -28,7 +28,10 @@ public sealed class ClientOfflineErrorTests
             Timeout = TimeSpan.FromSeconds(2),
         };
         var api = new QueryApiClient(http);
-        var vm = new QueryViewModel(api);
+        var history = new QueryHistoryApiClient(
+            new HttpClient { BaseAddress = new Uri("http://localhost:5001") }
+        );
+        var vm = new QueryViewModel(api, history, new ClientSession(), new ConversationStore());
         vm.QueryText = "refund policy";
 
         await vm.AskCommand.ExecuteAsync(null);

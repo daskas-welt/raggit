@@ -41,14 +41,29 @@
                     VerticalAlignment="Center"
                 >
                     <Button
-                        Content="Ask again"
                         Click="OnAskAgainClicked"
-                        Height="36"
-                        FontSize="13"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
                         AutomationProperties.AutomationId="AskAgainButton"
+                        AutomationProperties.Name="Run this query again"
                         ToolTipService.ToolTip="Run this query again"
-                    />
-                    <Button Content="Back" Click="OnBackClicked" Height="36" FontSize="13" />
+                    >
+                        <SymbolIcon Symbol="Refresh" />
+                    </Button>
+                    <Button
+                        Click="OnBackClicked"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
+                        AutomationProperties.AutomationId="BackButton"
+                        AutomationProperties.Name="Back"
+                        ToolTipService.ToolTip="Back"
+                    >
+                        <SymbolIcon Symbol="Back" />
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -85,14 +100,20 @@
                     IsTextSelectionEnabled="True"
                 />
                 <Button
-                    Content="Copy"
-                    FontSize="11"
-                    Padding="6,2"
                     HorizontalAlignment="Right"
+                    Background="Transparent"
+                    Width="36"
+                    Height="32"
+                    MinWidth="36"
+                    MinHeight="32"
+                    Padding="0"
                     ToolTipService.ToolTip="Copy prompt"
                     AutomationProperties.AutomationId="CopyPromptButton"
+                    AutomationProperties.Name="Copy prompt"
                     Click="CopyPromptButton_Click"
-                />
+                >
+                    <SymbolIcon Symbol="Copy" />
+                </Button>
             </StackPanel>
         </Border>
 
@@ -119,14 +140,20 @@
                     IsTextSelectionEnabled="True"
                 />
                 <Button
-                    Content="Copy"
-                    FontSize="11"
-                    Padding="6,2"
                     HorizontalAlignment="Right"
+                    Background="Transparent"
+                    Width="36"
+                    Height="32"
+                    MinWidth="36"
+                    MinHeight="32"
+                    Padding="0"
                     ToolTipService.ToolTip="Copy answer"
                     AutomationProperties.AutomationId="CopyAnswerButton"
+                    AutomationProperties.Name="Copy answer"
                     Click="CopyAnswerButton_Click"
-                />
+                >
+                    <SymbolIcon Symbol="Copy" />
+                </Button>
             </StackPanel>
         </Border>
 
@@ -186,14 +213,20 @@
                                             IsTextSelectionEnabled="True"
                                         />
                                         <Button
-                                            Content="Copy"
-                                            FontSize="11"
-                                            Padding="6,2"
                                             HorizontalAlignment="Right"
+                                            Background="Transparent"
+                                            Width="36"
+                                            Height="32"
+                                            MinWidth="36"
+                                            MinHeight="32"
+                                            Padding="0"
                                             ToolTipService.ToolTip="Copy citation"
                                             AutomationProperties.AutomationId="CopyCitationButton"
+                                            AutomationProperties.Name="Copy citation"
                                             Click="CopyCitationButton_Click"
-                                        />
+                                        >
+                                            <SymbolIcon Symbol="Copy" />
+                                        </Button>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

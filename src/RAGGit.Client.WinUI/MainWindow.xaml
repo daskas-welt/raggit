@@ -33,6 +33,7 @@
                     Content="Dashboard"
                     Tag="dashboard"
                     Icon="Home"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavDashboard"
                 />
                 <controls:NavigationViewItem
@@ -40,6 +41,7 @@
                     Content="Library"
                     Tag="library"
                     Icon="Folder"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavLibrary"
                 />
                 <controls:NavigationViewItem
@@ -47,6 +49,7 @@
                     Content="Ask"
                     Tag="query"
                     Icon="Message"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavAsk"
                 />
                 <controls:NavigationViewItem
@@ -54,6 +57,7 @@
                     Content="History"
                     Tag="history"
                     Icon="Clock"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavHistory"
                 />
                 <controls:NavigationViewItem
@@ -61,6 +65,7 @@
                     Content="My Docs"
                     Tag="mine"
                     Icon="Page"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavMyDocs"
                 />
                 <controls:NavigationViewItem
@@ -68,6 +73,7 @@
                     Content="Admin"
                     Tag="admin"
                     Icon="People"
+                    Foreground="{ThemeResource NavigationRailForeground}"
                     AutomationProperties.AutomationId="NavAdmin"
                 />
             </controls:NavigationView.MenuItems>

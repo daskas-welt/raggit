@@ -103,6 +103,8 @@ public sealed partial class App : Application
 
         services.AddSingleton(session);
         services.AddSingleton<IConfiguration>(configuration);
+        var conversation = new ConversationStore();
+        services.AddSingleton(conversation);
 
         if (!startupConfig.IsValid)
         {
@@ -121,7 +123,12 @@ public sealed partial class App : Application
             services.AddTransient<QueryViewModel>(_ => new QueryViewModel(
                 new QueryApiClient(
                     new HttpClient { BaseAddress = new Uri("http://invalid-config") }
-                )
+                ),
+                new QueryHistoryApiClient(
+                    new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+                ),
+                session,
+                conversation
             ));
             services.AddTransient<HistoryViewModel>(_ => new HistoryViewModel(
                 new QueryHistoryApiClient(

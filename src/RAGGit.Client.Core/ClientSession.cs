@@ -13,6 +13,13 @@ public sealed class ClientSession : INotifyPropertyChanged
     public string? Username { get; set; }
     public string? DisplayName { get; set; }
 
+    /// <summary>
+    /// UTC moment the current login session began (interactive sign-in or
+    /// startup token restore). Null when no person session is established
+    /// (e.g. API-key identity). Ask scopes its conversation to this boundary.
+    /// </summary>
+    public DateTime? LastLoginAtUtc { get; set; }
+
     public string Role
     {
         get => _role;

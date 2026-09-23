@@ -98,13 +98,17 @@
             <Button
                 x:Name="RefreshButton"
                 Grid.Column="2"
-                Content="Refresh"
                 Command="{Binding LoadCommand}"
                 AutomationProperties.AutomationId="DashboardRefreshButton"
                 AutomationProperties.Name="Refresh dashboard"
-                MinWidth="100"
+                ToolTipService.ToolTip="Refresh dashboard"
+                MinWidth="44"
                 MinHeight="44"
-            />
+                Width="44"
+                Height="44"
+            >
+                <SymbolIcon Symbol="Refresh" />
+            </Button>
         </Grid>
 
         <Grid x:Name="MetricsGrid" Grid.Row="1" ColumnSpacing="8">
@@ -121,10 +125,14 @@
                 Background="{ThemeResource MetricTileBackground}"
                 BorderBrush="{ThemeResource MetricTileBorder}"
                 BorderThickness="1"
+                CornerRadius="6"
+                Padding="16,12"
                 AutomationProperties.AutomationId="DashboardMetricDocuments"
                 AutomationProperties.Name="Open document library"
                 HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Top"
                 MinHeight="92"
             >
                 <StackPanel Spacing="6" HorizontalAlignment="Left">
@@ -139,6 +147,8 @@
                         Text="{Binding LibrarySummary}"
                         FontSize="12"
                         Foreground="{ThemeResource OnSurfaceVariant}"
+                        MaxLines="1"
+                        TextTrimming="CharacterEllipsis"
                     />
                 </StackPanel>
             </Button>
@@ -149,10 +159,14 @@
                 Background="{ThemeResource MetricTileBackground}"
                 BorderBrush="{ThemeResource MetricTileBorder}"
                 BorderThickness="1"
+                CornerRadius="6"
+                Padding="16,12"
                 AutomationProperties.AutomationId="DashboardMetricQueries"
                 AutomationProperties.Name="Ask the library"
                 HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Top"
                 MinHeight="92"
             >
                 <StackPanel Spacing="6" HorizontalAlignment="Left">
@@ -170,6 +184,8 @@
                         Text="{Binding QuerySummary}"
                         FontSize="12"
                         Foreground="{ThemeResource OnSurfaceVariant}"
+                        MaxLines="1"
+                        TextTrimming="CharacterEllipsis"
                     />
                 </StackPanel>
             </Button>
@@ -181,6 +197,8 @@
                 BorderThickness="1"
                 Padding="16,12"
                 CornerRadius="6"
+                MinHeight="92"
+                VerticalAlignment="Stretch"
             >
                 <StackPanel Spacing="6">
                     <TextBlock Text="Ready to use" Foreground="{ThemeResource OnSurfaceVariant}" />
@@ -205,6 +223,8 @@
                 BorderThickness="1"
                 Padding="16,12"
                 CornerRadius="6"
+                MinHeight="92"
+                VerticalAlignment="Stretch"
             >
                 <StackPanel Spacing="6">
                     <TextBlock Text="My documents" Foreground="{ThemeResource OnSurfaceVariant}" />
@@ -251,11 +271,17 @@
                         />
                         <Button
                             Grid.Column="1"
-                            Content="View library"
                             Click="OnLibraryClicked"
                             AutomationProperties.AutomationId="DashboardLibraryButton"
+                            AutomationProperties.Name="View library"
+                            ToolTipService.ToolTip="View library"
+                            Width="44"
+                            Height="44"
+                            MinWidth="44"
                             MinHeight="44"
-                        />
+                        >
+                            <SymbolIcon Symbol="Folder" />
+                        </Button>
                     </Grid>
                     <ListView
                         Grid.Row="1"
@@ -339,11 +365,17 @@
                         />
                         <Button
                             Grid.Column="1"
-                            Content="Ask"
                             Click="OnAskClicked"
                             AutomationProperties.AutomationId="DashboardAskButton"
+                            AutomationProperties.Name="Ask the library"
+                            ToolTipService.ToolTip="Ask the library"
+                            Width="44"
+                            Height="44"
+                            MinWidth="44"
                             MinHeight="44"
-                        />
+                        >
+                            <SymbolIcon Symbol="Message" />
+                        </Button>
                     </Grid>
                     <ListView
                         Grid.Row="1"

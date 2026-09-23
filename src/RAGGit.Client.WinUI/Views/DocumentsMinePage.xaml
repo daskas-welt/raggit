@@ -36,13 +36,18 @@
                 />
                 <Button
                     Grid.Column="1"
-                    Content="Refresh"
                     Command="{Binding RefreshCommand}"
-                    Height="36"
-                    FontSize="13"
+                    Width="44"
+                    Height="44"
+                    MinWidth="44"
+                    MinHeight="44"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="RefreshButton"
-                />
+                    AutomationProperties.Name="Refresh documents"
+                    ToolTipService.ToolTip="Refresh documents"
+                >
+                    <SymbolIcon Symbol="Refresh" />
+                </Button>
             </Grid>
         </Border>
 

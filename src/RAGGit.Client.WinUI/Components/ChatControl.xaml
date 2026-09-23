@@ -49,15 +49,21 @@
                                     IsTextSelectionEnabled="True"
                                 />
                                 <Button
-                                    Content="Copy"
-                                    FontSize="11"
-                                    Padding="6,2"
                                     HorizontalAlignment="Right"
                                     Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    Background="Transparent"
+                                    Width="36"
+                                    Height="32"
+                                    MinWidth="36"
+                                    MinHeight="32"
+                                    Padding="0"
                                     ToolTipService.ToolTip="Copy message"
                                     AutomationProperties.AutomationId="CopyMessageButton"
+                                    AutomationProperties.Name="Copy message"
                                     Click="CopyMessageButton_Click"
-                                />
+                                >
+                                    <SymbolIcon Symbol="Copy" />
+                                </Button>
                             </StackPanel>
                         </Border>
                         <!-- Assistant message (left-aligned) -->
@@ -165,14 +171,20 @@
                                     </ListView>
                                 </StackPanel>
                                 <Button
-                                    Content="Copy"
-                                    FontSize="11"
-                                    Padding="6,2"
                                     HorizontalAlignment="Right"
+                                    Background="Transparent"
+                                    Width="36"
+                                    Height="32"
+                                    MinWidth="36"
+                                    MinHeight="32"
+                                    Padding="0"
                                     ToolTipService.ToolTip="Copy message"
                                     AutomationProperties.AutomationId="CopyMessageButton"
+                                    AutomationProperties.Name="Copy message"
                                     Click="CopyMessageButton_Click"
-                                />
+                                >
+                                    <SymbolIcon Symbol="Copy" />
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>

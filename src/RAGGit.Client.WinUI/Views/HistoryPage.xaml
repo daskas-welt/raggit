@@ -35,13 +35,18 @@
                 />
                 <Button
                     Grid.Column="1"
-                    Content="Refresh"
                     Command="{Binding RefreshCommand}"
-                    Height="36"
-                    FontSize="13"
+                    Width="44"
+                    Height="44"
+                    MinWidth="44"
+                    MinHeight="44"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="RefreshButton"
-                />
+                    AutomationProperties.Name="Refresh history"
+                    ToolTipService.ToolTip="Refresh history"
+                >
+                    <SymbolIcon Symbol="Refresh" />
+                </Button>
             </Grid>
         </Border>
 
@@ -110,21 +115,33 @@
                                     Margin="0,8,0,0"
                                 >
                                     <Button
-                                        Content="View"
-                                        FontSize="12"
-                                        Padding="10,4"
+                                        Background="Transparent"
+                                        Width="36"
+                                        Height="32"
+                                        MinWidth="36"
+                                        MinHeight="32"
+                                        Padding="0"
                                         ToolTipService.ToolTip="Open query detail"
                                         AutomationProperties.AutomationId="ViewQueryButton"
+                                        AutomationProperties.Name="Open query detail"
                                         Click="OnViewClicked"
-                                    />
+                                    >
+                                        <SymbolIcon Symbol="View" />
+                                    </Button>
                                     <Button
-                                        Content="Ask again"
-                                        FontSize="12"
-                                        Padding="10,4"
+                                        Background="Transparent"
+                                        Width="36"
+                                        Height="32"
+                                        MinWidth="36"
+                                        MinHeight="32"
+                                        Padding="0"
                                         ToolTipService.ToolTip="Run this query again"
                                         AutomationProperties.AutomationId="AskAgainButton"
+                                        AutomationProperties.Name="Run this query again"
                                         Click="OnAskAgainClicked"
-                                    />
+                                    >
+                                        <SymbolIcon Symbol="Refresh" />
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>

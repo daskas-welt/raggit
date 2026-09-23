@@ -72,6 +72,12 @@ public sealed partial class MainWindow : Window
             }
 
             await DiscoverRoleAsync();
+            var session = App.Services.GetService<ClientSession>();
+            if (session is not null && !string.IsNullOrWhiteSpace(session.Role))
+            {
+                session.LastLoginAtUtc = DateTime.UtcNow;
+            }
+
             NavigateToDashboard();
             return;
         }

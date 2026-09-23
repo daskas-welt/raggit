@@ -67,16 +67,15 @@
                         x:Name="AddFilesButton"
                         Command="{Binding PickFileCommand}"
                         HorizontalAlignment="Center"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
                         AutomationProperties.AutomationId="AddFilesButton"
+                        AutomationProperties.Name="Browse files"
+                        ToolTipService.ToolTip="Browse files"
                     >
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <SymbolIcon Symbol="Add" />
-                            <TextBlock
-                                Text="Browse files"
-                                FontSize="14"
-                                VerticalAlignment="Center"
-                            />
-                        </StackPanel>
+                        <SymbolIcon Symbol="Add" />
                     </Button>
                     <TextBlock
                         Text="{Binding SupportedTypesText, Mode=OneWay}"

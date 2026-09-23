@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RAGGit.Client.Core.Models;
+using RAGGit.Client.Maui;
 using RAGGit.Client.Maui.Services;
 using RAGGit.Core.Models;
 
@@ -15,7 +16,18 @@ namespace RAGGit.Client.Maui.ViewModels;
 /// </summary>
 public sealed partial class QueryViewModel : ObservableObject
 {
+    /// <summary>
+    /// Upper bound on session queries materialized into the Ask chat (each
+    /// yields a user + assistant message). History list rows are previews, so
+    /// every item costs one detail round-trip; the cap keeps navigation
+    /// snappy while the full archive stays on the History page.
+    /// </summary>
+    public const int MaxSessionItems = 50;
+
     private readonly QueryApiClient _apiClient;
+    private readonly QueryHistoryApiClient _historyApiClient;
+    private readonly ClientSession _session;
+    private readonly ConversationStore _conversation;
 
     [ObservableProperty]
     private string _queryText = string.Empty;
@@ -79,9 +91,199 @@ public sealed partial class QueryViewModel : ObservableObject
         UseSuggestedPersonCommand.NotifyCanExecuteChanged();
     }
 
-    public QueryViewModel(QueryApiClient apiClient)
+    public QueryViewModel(
+        QueryApiClient apiClient,
+        QueryHistoryApiClient historyApiClient,
+        ClientSession session,
+        ConversationStore conversation
+    )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        _historyApiClient =
+            historyApiClient ?? throw new ArgumentNullException(nameof(historyApiClient));
+        _session = session ?? throw new ArgumentNullException(nameof(session));
+        _conversation = conversation ?? throw new ArgumentNullException(nameof(conversation));
+
+        // The page is recreated on every navigation: re-seed from the
+        // login-scoped cache so asked questions survive leaving Ask.
+        _conversation.EnsureOwner(ConversationOwnerKey(_session));
+        _messages = new ObservableCollection<ChatMessage>(_conversation.Messages);
+    }
+
+    internal static string ConversationOwnerKey(ClientSession session) =>
+        $"{session.Username}|{session.LastLoginAtUtc:O}";
+
+    /// <summary>
+    /// Loads the current login session's queries (server scopes by JWT sub,
+    /// client keeps only items at/after <see cref="ClientSession.LastLoginAtUtc"/>)
+    /// as chat pairs, oldest first. Session-scoped by design: a restart or a
+    /// new login starts with an empty conversation; the full archive lives on
+    /// the History page. Bounded to the <see cref="MaxSessionItems"/> most
+    /// recent in-session queries with details fetched in small parallel
+    /// batches; pass a <see cref="CancellationToken"/> to abort on navigation
+    /// away (aborted loads leave the cached messages and store untouched).
+    /// Replaces <see cref="Messages"/> wholesale so user switches never leak
+    /// across logins. History list rows carry 120-char previews, so each
+    /// item's full detail is fetched for prompt/answer/citations.
+    /// </summary>
+    public async Task LoadHistoryAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = null;
+
+        try
+        {
+            // History pages arrive newest-first: stop paging once items predate
+            // the login boundary, and never hold more than the cap.
+            var since = _session.LastLoginAtUtc;
+            var items = new List<HistoryItem>();
+            const int pageSize = 100;
+            var offset = 0;
+            while (items.Count < MaxSessionItems)
+            {
+                var page = await _historyApiClient.GetHistoryAsync(
+                    pageSize,
+                    offset,
+                    cancellationToken
+                );
+                items.AddRange(page.Items);
+                if (
+                    items.Count >= page.Total
+                    || page.Items.Count == 0
+                    // Pages arrive newest-first: once any item predates the
+                    // login boundary, every later page is older too.
+                    || (since is not null && page.Items.Any(i => i.CreatedAt < since))
+                )
+                {
+                    break;
+                }
+
+                offset += page.Items.Count;
+            }
+
+            var targets = items
+                .Where(i => since is null || i.CreatedAt >= since)
+                .OrderByDescending(i => i.CreatedAt)
+                .ThenByDescending(i => i.Id)
+                .Take(MaxSessionItems)
+                .OrderBy(i => i.CreatedAt)
+                .ThenBy(i => i.Id)
+                .ToList();
+
+            // Bounded parallel detail fetch; index-aligned so chat order is stable.
+            var details = new QueryDetail[targets.Count];
+            await Parallel.ForEachAsync(
+                Enumerable.Range(0, targets.Count),
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 4,
+                    CancellationToken = cancellationToken,
+                },
+                async (index, token) =>
+                {
+                    details[index] = await _historyApiClient.GetDetailAsync(
+                        targets[index].Id,
+                        token
+                    );
+                }
+            );
+
+            var messages = new ObservableCollection<ChatMessage>();
+            foreach (var detail in details)
+            {
+                messages.Add(
+                    new ChatMessage
+                    {
+                        Text = detail.Prompt,
+                        IsUser = true,
+                        Timestamp = detail.CreatedAt,
+                    }
+                );
+                messages.Add(
+                    new ChatMessage
+                    {
+                        Text = detail.Answer,
+                        IsUser = false,
+                        Timestamp = detail.CreatedAt,
+                        Citations = detail
+                            .Citations.OrderBy(c => c.Ordinal)
+                            .Select(c => new Citation
+                            {
+                                DocumentId = c.DocumentId,
+                                DocumentName = c.DocumentName,
+                                ChunkId = c.ChunkId,
+                                Text = c.Text,
+                                Ordinal = c.Ordinal,
+                            })
+                            .ToList(),
+                    }
+                );
+            }
+
+            Messages = messages;
+            _conversation.ReplaceAll(messages);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Navigated away mid-load: keep the cached messages and store untouched.
+        }
+        catch (HttpRequestException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Same, but the client wrapped the cancellation in HttpRequestException.
+        }
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains(
+                    "model unavailable offline",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        {
+            StatusMessage = "model unavailable offline";
+        }
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains(
+                    "cannot reach AI workstation",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        {
+            StatusMessage = ClientErrorText.CannotReach(exception.Message);
+        }
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains(
+                    "AI workstation unavailable",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        {
+            StatusMessage = exception.Message;
+        }
+        catch (HttpRequestException exception)
+            when (exception.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusMessage = "Please sign in to see your conversation.";
+        }
+        catch (HttpRequestException exception)
+        {
+            StatusMessage = ClientErrorText.Unavailable(exception.Message);
+        }
+        catch (TaskCanceledException exception)
+        {
+            StatusMessage = ClientErrorText.Unavailable(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            StatusMessage = $"Failed to load conversation: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanAsk))]
@@ -180,7 +382,9 @@ public sealed partial class QueryViewModel : ObservableObject
         HasSuggestedPersons = false;
 
         // Push user message to chat, then clear the input.
-        Messages.Add(new ChatMessage { Text = question, IsUser = true });
+        var userMessage = new ChatMessage { Text = question, IsUser = true };
+        Messages.Add(userMessage);
+        _conversation.Messages.Add(userMessage);
         QueryText = string.Empty;
 
         try
@@ -195,14 +399,14 @@ public sealed partial class QueryViewModel : ObservableObject
             HasSuggestedPersons = SuggestedPersons.Count > 0;
             IsResultVisible = true;
             // Push assistant message to chat
-            Messages.Add(
-                new ChatMessage
-                {
-                    Text = response.Answer,
-                    IsUser = false,
-                    Citations = response.Citations,
-                }
-            );
+            var assistantMessage = new ChatMessage
+            {
+                Text = response.Answer,
+                IsUser = false,
+                Citations = response.Citations,
+            };
+            Messages.Add(assistantMessage);
+            _conversation.Messages.Add(assistantMessage);
 
             if (response.Citations.Count == 0)
             {
