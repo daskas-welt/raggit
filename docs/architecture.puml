@@ -1,0 +1,54 @@
+@startuml RAGGit Architecture
+' RAGGit - single-tenant offline RAG (WinUI 3 + Workstation API)
+' Presentation SVG: docs/images/architecture.svg via @plantuml/mcp-js
+' (Official JS engine dialect: rectangle/actor/package/database + arrows
+'  + notes. Avoid [bracket] components and : trailing labels on
+'  declarations, which flip type inference. Multiline names via \n.)
+' NOTE: <style> database block required - the JS engine emits can shapes
+' with no stroke otherwise (invisible borders).
+<style>
+componentDiagram {
+  database {
+    LineColor #181818
+    LineThickness 1.5
+  }
+  rectangle {
+    LineColor #181818
+    LineThickness 1.5
+  }
+}
+</style>
+skinparam defaultFontSize 16
+skinparam arrowThickness 2
+
+actor Employee as employee
+actor Admin as admin
+
+package "Employee PCs\nordinary office PCs" {
+  rectangle "WinUI app\nNavigationView + chat" as winui
+  rectangle "Client.Core\nViewModels + HttpClient" as core
+}
+
+package "AI workstation PC\ncompany network" {
+  rectangle "Workstation.Api\ncontrollers - HTTPS :5001" as api
+  rectangle "Retrieval\ntopK=5 + grounded answers" as retrieval
+  rectangle "Ingest\nchunk 512/50 + embed" as ingest
+  database "LanceDB\n./data/lancedb\nvectors" as lancedb
+  database "SQLite\nrag.db\nusers + docs + queries" as sqlite
+  rectangle "Ollama :11434\nembed + generate" as ollama
+}
+
+employee --> winui : asks
+admin --> winui : uploads (<100MB)
+winui --> core : binds
+core --> api : HTTPS over LAN/VPN
+api --> retrieval : query path
+api --> ingest : ingest path
+retrieval --> lancedb : vector search
+ingest --> lancedb : upsert
+api --> sqlite : users/docs/queries
+retrieval --> ollama : embed + generate
+ingest --> ollama : embed batch
+
+note right of api : Single-tenant: no company_id\nLAN-only: no query-time WAN
+@enduml

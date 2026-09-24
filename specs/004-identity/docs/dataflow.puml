@@ -1,0 +1,23 @@
+@startuml 004 Identity Dataflow
+' Credential & attribution lineage
+' NOTE: no !theme directive - the official @plantuml/mcp-js engine hangs
+' rendering when a theme is requested (themes.js unavailable headless).
+skinparam componentStyle rectangle
+
+actor Operator as op
+database "users" as users
+rectangle "jwt" as jwt
+rectangle "client-cache\nSecureStorage" as cache
+database "docs-table" as docs
+database "queries-table" as queries
+rectangle "admin-screen" as admin
+rectangle "audit" as audit
+
+op --> users : seed credentials\nPBKDF2 hash
+users --> jwt : verified identity\n8h token
+jwt --> cache : Bearer cache\nrole + displayName
+cache --> docs : upload\nCreatedBy = person id
+docs --> queries : attributed retrieval\ntopK=5 + citations
+queries --> admin : manage\nlist / deactivate
+queries --> audit : who asked what\nper-person history
+@enduml

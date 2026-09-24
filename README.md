@@ -30,6 +30,25 @@ show their sources.
 4. **Employees ask questions** in everyday language and get answers with
    citations they can click through to verify.
 
+![RAGGit system architecture](docs/images/architecture.svg)
+*Where everything lives: the desktop app talks to one AI workstation on
+your network — documents, accounts, and answers never leave it.*
+
+![Asking with citations](docs/images/query-sequence.svg)
+*What happens when someone asks: the workstation finds the relevant
+passages and answers with named sources — or says nothing relevant
+exists instead of guessing.*
+
+![Accounts and sessions](docs/images/identity-sequence.svg)
+*How people get in: an operator creates accounts, staff sign in for
+8-hour sessions, admins manage access.*
+
+Sources: [architecture](docs/architecture.puml) ·
+[query flow](docs/query-sequence.puml) ·
+[identity flow](specs/004-identity/docs/sequence.puml)
+(rendered with the official PlantUML MCP server,
+`npx -y @plantuml/mcp-js@0.2.2`).
+
 ## Key promises
 
 - **Works offline.** Pull the internet plug and searching still works —

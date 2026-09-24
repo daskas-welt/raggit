@@ -1,0 +1,39 @@
+@startuml RAGGit Query Sequence
+' Presentation query path: ask -> retrieve -> cited answer
+' Rendered to docs/images/query-sequence.svg via @plantuml/mcp-js
+' NOTE: <style> lifeLine block required - the JS engine emits lifelines
+' with no stroke otherwise (invisible lines).
+<style>
+sequenceDiagram {
+  lifeLine {
+    LineColor #181818
+    LineThickness 1.5
+  }
+}
+</style>
+skinparam defaultFontSize 16
+skinparam sequenceArrowThickness 2
+
+actor Employee as employee
+participant "WinUI app" as app
+participant "workstation-api" as api
+participant "Retrieval\ntopK=5 + MinScore" as retrieval
+database "LanceDB" as lancedb
+participant "Ollama :11434" as ollama
+
+employee -> app : asks in plain language
+app -> api : POST /api/queries\n(X-Api-Key or Bearer)
+api -> retrieval : embed question
+retrieval -> ollama : embed (nomic-embed)
+ollama --> retrieval : query vector
+retrieval -> lancedb : vector search topK=5
+lancedb --> retrieval : chunks + scores
+retrieval -> retrieval : filter MinScore
+retrieval -> ollama : grounded prompt\n(chunks only)
+ollama --> retrieval : draft answer
+retrieval --> api : answer + [chunk-GUID]\nor exactly no relevant content found
+api --> app : citations to verify
+app --> employee : answer with sources
+
+note over api, lancedb : LAN-only: no query-time WAN\nSingle-tenant: person-scoped rows
+@enduml

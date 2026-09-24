@@ -1,0 +1,39 @@
+@startuml 004 Identity Sequence
+' Request lifecycle: login / me / documents / users / refresh
+' NOTE: no !theme directive - the official @plantuml/mcp-js engine hangs
+' rendering when a theme is requested (themes.js unavailable headless).
+' NOTE: <style> lifeLine block required - the JS engine emits lifelines
+' with no stroke otherwise (invisible lines).
+<style>
+sequenceDiagram {
+  lifeLine {
+    LineColor #181818
+    LineThickness 1.5
+  }
+}
+</style>
+actor Operator as op
+participant "WinUI client" as client
+participant "workstation-api" as api
+database "users-db" as users
+participant "jwt-auth" as jwt
+database "lancedb" as lance
+
+op -> client : provision (operator CLI)\nraggit user add
+client -> api : POST /api/auth/login\nusername + password
+api -> users : lookup COLLATE NOCASE
+api -> api : PBKDF2 verify\nFixedTimeEquals
+api -> jwt : issue 8h (sub, role)
+api --> client : Bearer token
+client -> api : GET /api/auth/me\nAuthorization: Bearer
+api -> jwt : validate + liveness\nIsActive, lockout
+api --> client : displayName/username/sub
+client -> api : POST /api/documents (upload)\nCreatedBy = person id
+api -> lance : chunk 512/50 + upsert
+client -> api : GET /api/users (Admin)\nBearer role=Admin
+api -> users : list / patch / reset-password
+client -> api : POST /api/auth/refresh
+api -> jwt : re-issue
+api --> client : new 8h token
+note over api, users : Expiry -> 401 -> re-login\n404 not 403 for non-owned rows
+@enduml

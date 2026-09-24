@@ -1,0 +1,25 @@
+@startuml 004 Identity Workflow
+' Provision -> authenticate -> use & manage runbook
+' NOTE: no !theme directive - the official @plantuml/mcp-js engine hangs
+' rendering when a theme is requested (themes.js unavailable headless).
+start
+:cli-provision\nraggit user add Admin/Employee;
+:seed-users\nhashed PBKDF2, no plaintext;
+:login\nPOST /api/auth/login;
+if (credentials valid?) then (yes)
+  :jwt-issue\n8h Bearer token;
+  :me\nGET /api/auth/me\nrole + displayName;
+  :upload-query\nattributed docs;
+  :stored\nCreatedBy = person id;
+  :admin-manage\nGET|POST /api/users\nPATCH /api/users/{id};
+  if (deactivate or lockout?) then (yes)
+    :deactivate-lockout\nIsActive=false or\n5 fails x 15min;
+    :retry-login\n401 -> re-login;
+  else (no)
+  endif
+  stop
+else (no)
+  :401 / 403 / 429;
+  stop
+endif
+@enduml
