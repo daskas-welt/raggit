@@ -1,6 +1,6 @@
 # Quickstart & Validation — 004-identity (Per-Person Identity & Accounts)
 
-**Date**: 2026-09-13 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Contract**: [contracts/api.yaml](./contracts/api.yaml) (1.3.0) | **Diagrams**: [docs/architecture.html](./docs/architecture.html?theme=light) → [docs/workflow.html](./docs/workflow.html?theme=light) → [docs/sequence.html](./docs/sequence.html?theme=light)
+**Date**: 2026-09-13 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Contract**: [contracts/api.yaml](./contracts/api.yaml) (1.3.0) | **Diagrams**: [docs/architecture.puml](./docs/architecture.puml) → [docs/workflow.puml](./docs/workflow.puml) → [docs/sequence.puml](./docs/sequence.puml) (PlantUML; presentation SVGs in `docs/images/`)
 
 Seven end-to-end validation steps. Each maps to a user story, FRs, and SCs; the same flows are automated in `tests/contract/` and `tests/integration/` (see [verification.md](./verification.md)). Prerequisites: built `RAGGit.Workstation.Api` + `RAGGit.Client.Maui`, workstation `data/` directory, and a client machine that trusts the workstation certificate (step 2a).
 

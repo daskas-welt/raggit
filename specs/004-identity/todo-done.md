@@ -40,5 +40,5 @@
 - [x] T038 quickstart.md steps 1-7 validation + verification.md [DONE: 2026-09-13] [By: coder]
 - [x] T039 WAN-disabled CI leg with identity steps [DONE: 2026-09-13] [By: coder]
 - [x] T040 Security hardening tests [DONE: 2026-09-13] [By: coder]
-- [x] T041 Maintain Archify sequence diagram with refresh flow [DONE: 2026-09-13] [By: coder]
+- [x] T041 Maintain sequence diagram with refresh flow [DONE: 2026-09-13] [By: coder] (migrated to PlantUML 2026-09-24)
 - [x] T042 Cleanup: csharpier check, build, test [DONE: 2026-09-13] [By: coder]

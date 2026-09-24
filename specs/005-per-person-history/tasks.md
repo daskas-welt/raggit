@@ -149,7 +149,7 @@
 - [ ] T032 Run `specs/005-per-person-history/quickstart.md` steps 1-11 validation and fill `specs/005-per-person-history/verification.md` SC-001..005 with measured timings (`SC-001 p95 <2s 1k rows`)
 - [ ] T033 Extend `.github/workflows/ci.yml` WAN-disabled leg with `OfflineHistoryTests` (reuse `unshare -n` fallback) and assert `0` cross-user leak (`CrossUserIsolationTests`)
 - [ ] T034 Security hardening — ensure history/detail/mine never leak `PasswordHash` or other user's rows, `401`/`404` semantics, `404` not `403` for non-owned detail to avoid enumeration
-- [ ] T035 Run `dotnet csharpier check .`, `dotnet build`, `dotnet test` (contract 100%, library ≥80%), remove any placeholder `.write-probe.txt`, verify no Archify drift (history is query-layer, `specs/004-identity/docs/{architecture,workflow,sequence}.html?theme=light` still valid)
+- [ ] T035 Run `dotnet csharpier check .`, `dotnet build`, `dotnet test` (contract 100%, library ≥80%), remove any placeholder `.write-probe.txt`, verify no PlantUML drift (history is query-layer, `specs/004-identity/docs/{architecture,workflow,sequence}.puml` still valid)
 
 ---
 

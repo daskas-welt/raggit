@@ -55,7 +55,6 @@ nuget.exe
 publish/
 app.publish/
 
-# Archify visual-check sidecars (evidence, regenerated on demand)
-*.visual-check.html
-*.visual-check.json
-*.visual-check.*.png
+# PlantUML renders are committed (SVG canonical in docs/images/, PNG optional via jar)
+# CodeGraph local index (12MB+), never commit
+.codegraph/

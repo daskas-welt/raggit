@@ -71,7 +71,7 @@ Resolved in [research.md](./research.md):
 | R6 | SecureStorage cache + refresh | `SecureStorage.Default` + `BearerDelegatingHandler`; 401 → re-prompt; `/auth/refresh` implemented but optional (P3) |
 | R7 | Offline-invariant proof | WAN-disabled CI: provision → login → me → cited query; fail-fast 503 |
 | R8 | Operator CLI verb | `raggit user add` (arg intercept in `Workstation.Api`, no new project, direct DB write) |
-| R9 | Diagram theme | viewer-runtime; reference `?theme=light`; light visual-check evidence committed |
+| R9 | Diagram handling | PlantUML `.puml` + committed SVG (MCP `@plantuml/mcp-js`); no `!theme` directive (hangs the JS engine) |
 | R10 | Username case handling | `COLLATE NOCASE` unique index; case-insensitive lookup |
 
 ## Phase 1 — Design Artifacts
@@ -82,16 +82,16 @@ Resolved in [research.md](./research.md):
 - **Verification**: [verification.md](./verification.md) — SC-001..006 measurement checklist + FR traceability
 - **Tasks**: `tasks.md` is Phase 2 output of `/speckit.tasks` — NOT created by this plan
 
-## Architecture Diagrams (Archify — visual contract for /speckit.tasks + coder)
+## Architecture Diagrams (PlantUML — visual contract for /speckit.tasks + coder)
 
-Delivered showcase-quality, light-theme-legible standalone HTML under `specs/004-identity/docs/`. Theme is viewer-runtime (not a JSON field): open with `?theme=light`; committed `*.visual-check.*.light.png` (1440×900 and 2048×1320) are the light-theme evidence. **Node IDs are stable** — code artifacts map to them.
+PlantUML sources under `specs/004-identity/docs/` with rendered `.svg` in `docs/images/` (see `docs/images/README.md`). **Component names are stable** — code artifacts map to them.
 
-| Diagram | File (append `?theme=light`) | Covers |
+| Diagram | File | Covers |
 |---|---|---|
-| Architecture | [docs/architecture.html](./docs/architecture.html?theme=light) | Topology & boundaries: `maui-client`, `operator-cli`, `workstation-api`, `jwt-auth`, `users-db`, `lancedb`, `ollama`, `eval-tests`; LAN region + `sg-workstation` (:5001 HTTPS, :11434 loopback) |
-| Workflow | [docs/workflow.html](./docs/workflow.html?theme=light) | Runbook provision → authenticate → use & manage: `cli-provision`, `seed-users`, `login`, `jwt-issue`, `me`, `upload-query`, `stored`, `admin-manage`, `deactivate-lockout`, `retry-login` |
-| Sequence | [docs/sequence.html](./docs/sequence.html?theme=light) | Request lifecycle: login (PBKDF2 verify → issue 8h), `me` (Bearer validate → role+displayName), documents (CreatedBy = person id), users (Admin), expiry → 401 → re-login |
-| Data-flow | [docs/dataflow.html](./docs/dataflow.html?theme=light) | Credential & attribution lineage: operator → `users` → `jwt` → `client-cache` (SecureStorage) → `docs-table`/`queries-table` → `admin-screen`/`audit` |
+| Architecture | [docs/architecture.puml](./docs/architecture.puml) | Topology & boundaries: `maui-client`, `operator-cli`, `workstation-api`, `jwt-auth`, `users-db`, `lancedb`, `ollama`, `eval-tests`; LAN workstation (:5001 HTTPS, :11434 loopback) |
+| Workflow | [docs/workflow.puml](./docs/workflow.puml) | Runbook provision → authenticate → use & manage: `cli-provision`, `seed-users`, `login`, `jwt-issue`, `me`, `upload-query`, `stored`, `admin-manage`, `deactivate-lockout`, `retry-login` |
+| Sequence | [docs/sequence.puml](./docs/sequence.puml) | Request lifecycle: login (PBKDF2 verify → issue 8h), `me` (Bearer validate → role+displayName), documents (CreatedBy = person id), users (Admin), expiry → 401 → re-login |
+| Data-flow | [docs/dataflow.puml](./docs/dataflow.puml) | Credential & attribution lineage: operator → `users` → `jwt` → `client-cache` (SecureStorage) → `docs-table`/`queries-table` → `admin-screen`/`audit` |
 | Lifecycle | **deferred (conditional)** | Account states (Active ⇄ LockedOut, Active → Inactive → Active) are fully specified in data-model.md §State Transitions and visualized via the workflow `deactivate-lockout` node; a standalone lifecycle diagram is deferred until per-person query history (later feature) or richer account states justify it |
 
 ## Project Structure

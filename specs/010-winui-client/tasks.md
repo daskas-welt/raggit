@@ -110,7 +110,7 @@
 **Purpose**: Debt paydown and final consistency
 
 - [ ] T028 [P] Optional namespace rename `RAGGit.Client.Maui.*` → `RAGGit.Client.Core.*`/`RAGGit.Client.*` across `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WinUI/`, `tests/unit/` (only if churn is affordable; behavior-neutral)
-- [x] T029 [P] Update `specs/010-winui-client/` with `checklists/requirements.md` validation record and refresh `docs/` screenshots/diagrams from MAUI to WinUI (done 2026-09-17: checklist created; `publish.md` rewritten to WinUI MSIX; `architecture.md`/`operator-cli.md`/`performance.md`/`001-quickstart.md` updated; no client screenshots exist in `docs/` — only 004-identity arch diagrams; `raggit-architecture.json/html` are Archify-generated, regen via Archify)
+- [x] T029 [P] Update `specs/010-winui-client/` with `checklists/requirements.md` validation record and refresh `docs/` screenshots/diagrams from MAUI to WinUI (done 2026-09-17: checklist created; `publish.md` rewritten to WinUI MSIX; `architecture.md`/`operator-cli.md`/`performance.md`/`001-quickstart.md` updated; no client screenshots exist in `docs/` — only 004-identity arch diagrams; `raggit-architecture.json/html` were legacy-generated and removed 2026-09-24, regen via PlantUML)
 - [ ] T030 Run full validation: `dotnet build` + `dotnet test` + `csharpier` + quickstart offline-invariant flow against the WinUI client
 
 ---

@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `specs/004-identity/`
 
-**Prerequisites**: plan.md (required), spec.md, research.md (R1-R10), data-model.md (Users, state transitions), contracts/api.yaml (1.3.0), quickstart.md (7 steps), docs/*.html?theme=light (Archify showcase)
+**Prerequisites**: plan.md (required), spec.md, research.md (R1-R10), data-model.md (Users, state transitions), contracts/api.yaml (1.3.0), quickstart.md (7 steps), docs/*.puml (+ rendered .svg in docs/images/, PlantUML)
 
 **Tests**: Constitution VI Test-First NON-NEGOTIABLE — contract/integration tests written first and FAIL before implementation; WAN-disabled suite extended.
 
@@ -30,7 +30,7 @@
 - [ ] T008 Configure `src/RAGGit.Workstation.Api/Program.cs` — JwtBearer HS256 with key at `data/auth.key` (256-bit random, creates on first use, NTFS ACL), `OnTokenValidated` DB liveness check (IsActive + not locked), multi-scheme `[Authorize]` Bearer|ApiKey, `UseHttpsRedirection()`
 - [ ] T009 Add `src/RAGGit.Workstation.Api/Auth/JwtTokenService.cs` — issue 8h token (sub=User.Id, role, unique_name, name, iss/aud raggit-workstation), validate, ClockSkew 5m
 
-**Checkpoint**: Foundational ready — Users table + hasher + JWT + HTTPS + constitution amendment merged. Archify architecture/workflow/sequence/dataflow remain valid as visual contract.
+**Checkpoint**: Foundational ready — Users table + hasher + JWT + HTTPS + constitution amendment merged. PlantUML architecture/workflow/sequence/dataflow remain valid as visual contract.
 
 ## Phase 3: User Story 1 — Operator provisions the first people (P1)
 
@@ -115,7 +115,7 @@
 - [x] T038 Run `specs/004-identity/quickstart.md` steps 1-7 validation (operator CLI → HTTPS login → me → upload attribution → admin create/deactivate → lockout → offline proof) and fill `specs/004-identity/verification.md` SC-001..006
 - [x] T039 Extend WAN-disabled CI leg with identity steps (provision → login → me → cited query, 0 egress beyond LAN/loopback, SC-005) in `.github/workflows/ci.yml`
 - [x] T040 Security hardening — ensure no hard-coded URLs/keys per `ClientConfigTests`, HTTPS-only enforcement for auth, PBKDF2 fixed-time verify, no PasswordHash serialization
-- [x] T041 Maintain Archify diagrams — if any topology/flow/state drifted during implementation, update affected `specs/004-identity/docs/*.json` and re-deliver (showcase `?theme=light`, light visual-check) same commit
+- [x] T041 Maintain PlantUML diagrams — if any topology/flow/state drifted during implementation, update affected `specs/004-identity/docs/*.puml` and re-render same commit (was legacy `*.json` before removal 2026-09-24)
 - [x] T042 Cleanup — `dotnet csharpier check .`, `dotnet build`, `dotnet test` (contract 100%, library ≥80%), remove any placeholder `.write-probe.txt`
 
 ## Dependencies & Execution Order

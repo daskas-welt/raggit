@@ -1,6 +1,6 @@
 # Data Model — 004-identity (Per-Person Identity & Accounts)
 
-**Date**: 2026-09-13 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Diagrams**: [docs/dataflow.html](./docs/dataflow.html?theme=light), [docs/architecture.html](./docs/architecture.html?theme=light)
+**Date**: 2026-09-13 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Diagrams**: [docs/dataflow.puml](./docs/dataflow.puml), [docs/architecture.puml](./docs/architecture.puml) (PlantUML)
 
 Single-tenant (Constitution I): **no `company_id` / tenant column anywhere**. All timestamps UTC ISO-8601 round-trip (`"O"`) text, matching the existing `RagDbContext` convention (`src/RAGGit.Core/Data/RagDbContext.cs:52`).
 

@@ -42,4 +42,4 @@ Each SC is measured by a named procedure; ☐ = not yet run (coder executes duri
 
 ## Exit Criteria for the Feature
 
-All SC rows ☑ · all FR rows verified · WAN-disabled CI leg green · constitution amendment applied to `.specify/memory/constitution.md` with version 1.2.0 · diagrams (`docs/*.html?theme=light`) still match delivered code (node IDs stable) or updated in the same commit.
+All SC rows ☑ · all FR rows verified · WAN-disabled CI leg green · constitution amendment applied to `.specify/memory/constitution.md` with version 1.2.0 · diagrams (`docs/*.puml`, SVGs in `docs/images/`) still match delivered code (component names stable) or updated in the same commit.

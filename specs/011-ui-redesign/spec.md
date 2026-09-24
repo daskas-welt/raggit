@@ -90,4 +90,4 @@ Admin uses `SettingsCard`/`SettingsExpander` with proper `Header` labels; Login 
 - Dev Home (discontinued May 2025) is a visual/code reference only, never a dependency.
 - Upload ruling default: keep the dialog, add a nav item that opens it (record otherwise in Phase 0).
 - `RAGGit.Client.Core` namespaces stay as-is (T028 rename is out of scope).
-- `raggit-architecture.json/html` regen via Archify is a docs follow-up, not a redesign task.
+- `docs/architecture.puml` regen via PlantUML is a docs follow-up, not a redesign task.

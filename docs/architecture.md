@@ -2,13 +2,13 @@
 
 **Constitution:** `v1.3.0` • Single-tenant LAN-only • Workstation-Owned AI • WinUI 3 (Windows 10 1809+ / 11) • NavigationView shell + ListView grid + chat (Windows App SDK 1.5)
 
-**Diagram:** [`raggit.html`](./raggit.html) — interactive Archify showcase (9/9 checks), dark/light, search/focus, upstream/downstream, 3 guided views.
+**Diagram:** [`architecture.puml`](./architecture.puml) — PlantUML system topology. Presentation render: [`images/architecture.svg`](./images/architecture.svg) (via official MCP `npx -y @plantuml/mcp-js@0.2.2`; PNG optionally via `scripts/Render-PlantUml.ps1`).
 
-> Open `docs/raggit.html` in a browser. Use `/` to search, focus a node → Upstream/Downstream, `R` to probe routes, `P` to play stories.
+> Edit the `.puml` source, re-render the `.svg`, and commit both together.
 
 ## Source
 
-Typed IR: [`raggit-architecture.json`](./raggit-architecture.json) (SHA256 `261246e...`).
+PlantUML: [`architecture.puml`](./architecture.puml).
 
 ## Views
 
@@ -23,6 +23,7 @@ Typed IR: [`raggit-architecture.json`](./raggit-architecture.json) (SHA256 `2612
 - **Storage** — LanceDB `./data/lancedb` HNSW m=16 + SQLite `rag.db`
 - **AI** — Ollama :11434 nomic-embed + llama3.2:3b / ONNX bge-micro-v2, cached, no pull at query
 - **Cache** — IMemoryCache + ETag, SemaphoreSlim herd guard for 200×50+ q/day, p95 <7s
+- **Placement** — `RAGGit.Client.Core` ships only in the employee MSIX, never to the workstation (the API references `RAGGit.Core`/`Ingest`/`Retrieval` only)
 
 ## Invariants
 

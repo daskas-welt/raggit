@@ -69,9 +69,9 @@ Resolves every open design question behind spec Clarifications Q1–Q6. No `[NEE
 **Rationale**: the operator's OS-level access is the provisioning trust anchor (Assumptions); a separate CLI project would violate VII's single-project rule.
 **Rejected**: first-run in-app admin wizard (explicitly rejected, Q3); seeding a secret into appsettings (plaintext in config — violates FR-004).
 
-## R9 — Archify diagram theme handling
+## R9 — Diagram handling (PlantUML since 2026-09-24)
 
-**Decision**: theme is a **viewer-runtime** concern (URL query param), not a JSON field — diagram JSON stays theme-agnostic. Diagrams are authored for light legibility and referenced from plan.md/quickstart as `docs/<name>.html?theme=light`; the committed `docs/*.visual-check.*.light.png` (1440×900, 2048×1320) are the light-theme evidence. Node IDs are stable across revisions and serve as the code↔diagram mapping contract for `/speckit.tasks` and coder.
+**Decision**: diagrams are PlantUML `.puml` sources with rendered `.svg` in `docs/images/` (map in `docs/images/README.md`). Component names are stable across revisions and serve as the code↔diagram mapping contract for `/speckit.tasks` and coder.
 
 ## R10 — Username uniqueness & case handling
 
