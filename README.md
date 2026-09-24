@@ -86,6 +86,9 @@ Full step-by-step (accounts, desktop app, offline check, MSIX install):
 [Publishing guide](docs/publish.md) ·
 [Operator guide](docs/operator-cli.md)
 
+Inspect a populated vector index read-only in your browser:
+[Lance data viewer](docs/workstation.md#inspecting-the-vector-index-read-only).
+
 ## Project map (for contributors)
 
 - `src/RAGGit.Workstation.Api` — the workstation web service

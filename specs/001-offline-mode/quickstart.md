@@ -63,6 +63,7 @@ dotnet run --project src/RAGGit.Workstation.Api -- user add --username bob --dis
 dotnet run --project src/RAGGit.Workstation.Api --urls https://0.0.0.0:5001
 # Swagger https://ai-workstation.local:5001/swagger
 # Health: GET https://ai-workstation.local:5001/health → 200 {vectorDb: ok, llm: ok, version:"1.3.0"}
+# Inspect vectors read-only (Docker, offline-safe after pull): see docs/workstation.md "Inspecting the vector index"
 # Bootstrap auth: GET /api/auth/me -H "X-Api-Key: <key>" → 200 {identityType:"ApiKey", role:"Admin"|"Employee"}
 # Per-person auth: POST /api/auth/login (HTTPS) → {access_token, token_type:"Bearer", expires_in:28800}
 ```

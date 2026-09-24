@@ -56,6 +56,49 @@ both must succeed. CI enforces this automatically on every change.
 - `./models` can be re-downloaded — back it up only if bandwidth is scarce.
 - If disk fills up, queries fail: keep 10GB+ free (models + growth).
 
+## Inspecting the vector index (read-only)
+
+Use the Lance data viewer to look inside `./data/lancedb` (table
+`library`) without touching the API. It is read-only and runs locally —
+pull needs WAN once, running it is LAN-only and offline-safe.
+
+```powershell
+docker pull ghcr.io/lance-format/lance-data-viewer:latest
+docker run --rm -p 8080:8080 -v "C:\path\to\data\lancedb:/data:ro" ghcr.io/lance-format/lance-data-viewer:latest
+# UI: http://localhost:8080 -> library
+# Health: Invoke-RestMethod http://localhost:8080/healthz
+```
+
+Bash variant:
+
+```bash
+docker pull ghcr.io/lance-format/lance-data-viewer:latest
+docker run --rm -p 8080:8080 \
+  -v /path/to/data/lancedb:/data:ro \
+  ghcr.io/lance-format/lance-data-viewer:latest
+```
+
+Which folder to mount:
+
+| Environment | Mount this host folder as `/data:ro` |
+|---|---|
+| Dev (repo checkout) | `src/RAGGit.Workstation.Api/data/lancedb` |
+| Prod workstation | `./data/lancedb` (i.e. `VECTORDB__PATH=/app/data/lancedb` in `docker-compose.yml`) |
+
+Rules:
+
+- Always mount `:ro` and mount the folder containing `library.lance`,
+  never the `.lance` folder itself.
+- Old image name `ghcr.io/lancedb/lance-data-viewer` returns
+  `unauthorized` from GHCR — the org moved to `lance-format`.
+- If the API is running, the index may be locked — stop the API first
+  or copy `data/lancedb` to a temp folder and mount the copy.
+- Never write through the viewer: the writer is the .NET `LanceDB`
+  SDK (`src/RAGGit.Ingest`), and `VectorDb:VectorSize` (384|768|1024)
+  must still match the embedding model.
+- `latest` floats; if the viewer ever fails to open the table after a
+  re-pull, pin a versioned tag (e.g. `lancedb-0.33.0`) for that inspection.
+
 ## Troubleshooting
 
 - **Query times out, health was ok**: model cold or box overloaded — warm
