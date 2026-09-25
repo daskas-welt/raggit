@@ -85,7 +85,11 @@ public sealed class IngestService
         {
             if (content.CanSeek && content.Position != 0)
                 content.Position = 0;
-            var preview = await Chunker.ExtractTextAsync(content, mime);
+            var preview = await Chunker.ExtractTextAsync(
+                content,
+                mime,
+                _options.MaxSpreadsheetCells
+            );
             if (string.IsNullOrWhiteSpace(preview))
                 throw new NoExtractableContentException("no extractable content");
             // Also cap already thrown as SpreadsheetCellCapExceededException during preview
