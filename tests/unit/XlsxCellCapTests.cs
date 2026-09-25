@@ -31,6 +31,19 @@ public sealed class XlsxCellCapTests
     }
 
     [Fact]
+    public async Task Configured_Cap_Allows_More_Than_Default_Cap()
+    {
+        await using var stream = GenerateXlsx(100_001, visibleOnly: true);
+        var text = await Chunker.ExtractTextAsync(
+            stream,
+            DocumentMimeType.Xlsx,
+            maxSpreadsheetCells: 500_000
+        );
+
+        text.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task Hidden_Sheet_Cells_Excluded_From_Count_80kVisible_Plus_50kHidden_Passes()
     {
         // 80k visible + 50k hidden => should pass because hidden excluded

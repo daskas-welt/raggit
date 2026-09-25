@@ -825,6 +825,10 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
         {
             return unsupported.Message;
         }
+        if (exception is UploadRejectedException rejected)
+        {
+            return rejected.Message;
+        }
         if (
             exception is HttpRequestException http
             && (

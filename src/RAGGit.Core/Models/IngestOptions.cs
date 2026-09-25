@@ -10,6 +10,12 @@ namespace RAGGit.Core.Models;
 public sealed class IngestOptions
 {
     /// <summary>
+    /// Maximum number of cells read from visible spreadsheet sheets.
+    /// Default: 100,000.
+    /// </summary>
+    public int MaxSpreadsheetCells { get; set; } = DocumentValidation.MaxSpreadsheetCells;
+
+    /// <summary>
     /// Maximum number of chunks embedded in a single call to the embedder.
     /// Smaller values reduce peak memory; larger values improve throughput.
     /// Default: 64.

@@ -348,7 +348,7 @@ public sealed class IngestService
                 .ToList();
         }
 
-        var text = await Chunker.ExtractTextAsync(content, mime);
+        var text = await Chunker.ExtractTextAsync(content, mime, _options.MaxSpreadsheetCells);
         var chunks = Chunker.ChunkText(
             text,
             document.Id,

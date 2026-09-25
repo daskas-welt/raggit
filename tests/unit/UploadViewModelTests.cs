@@ -437,6 +437,28 @@ public sealed class UploadViewModelTests
     }
 
     [Fact]
+    public async Task Upload_CellCapRejection_ShowsServerMessage()
+    {
+        var vm = CreateViewModel(
+            _ => new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge)
+            {
+                Content = new StringContent(
+                    "{\"error\":\"Spreadsheet exceeds 100,000 cell limit (found 100,001 cells)\"}"
+                ),
+            },
+            new SequenceFilePicker(Picked("greek.xlsx"))
+        );
+
+        await vm.PickFileCommand.ExecuteAsync(null);
+        await vm.UploadCommand.ExecuteAsync(null);
+
+        vm.Queue[0]
+            .ErrorMessage.Should()
+            .Be("Spreadsheet exceeds 100,000 cell limit (found 100,001 cells)");
+        vm.StatusMessage.Should().Contain("Spreadsheet exceeds 100,000 cell limit");
+    }
+
+    [Fact]
     public async Task CancelUpload_MarksCurrentItemCancelled()
     {
         var vm = CreateViewModel(new SequenceFilePicker(PickedPdf()));

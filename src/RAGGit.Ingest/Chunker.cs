@@ -23,19 +23,28 @@ public static class Chunker
     /// <summary>
     /// Extracts raw text from a stream based on the document MIME type.
     /// </summary>
-    public static async Task<string> ExtractTextAsync(Stream stream, DocumentMimeType mime)
+    public static async Task<string> ExtractTextAsync(
+        Stream stream,
+        DocumentMimeType mime,
+        int maxSpreadsheetCells = DocumentValidation.MaxSpreadsheetCells
+    )
     {
+        if (maxSpreadsheetCells <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxSpreadsheetCells));
+        }
+
         return mime switch
         {
             DocumentMimeType.Pdf => ExtractPdfText(stream),
             DocumentMimeType.Docx => ExtractDocxText(stream),
-            DocumentMimeType.Xlsx => await ExtractXlsxTextAsync(stream),
+            DocumentMimeType.Xlsx => await ExtractXlsxTextAsync(stream, maxSpreadsheetCells),
             DocumentMimeType.Txt or DocumentMimeType.Md => await ExtractPlainTextAsync(stream),
             _ => throw new NotSupportedException($"Unsupported MIME type: {mime}"),
         };
     }
 
-    private static Task<string> ExtractXlsxTextAsync(Stream stream)
+    private static Task<string> ExtractXlsxTextAsync(Stream stream, int maxSpreadsheetCells)
     {
         try
         {
@@ -163,10 +172,10 @@ public static class Chunker
                             foreach (var cell in row.Elements<Cell>())
                             {
                                 visibleCellCount++;
-                                if (visibleCellCount > DocumentValidation.MaxSpreadsheetCells)
+                                if (visibleCellCount > maxSpreadsheetCells)
                                 {
                                     throw new SpreadsheetCellCapExceededException(
-                                        DocumentValidation.MaxSpreadsheetCells,
+                                        maxSpreadsheetCells,
                                         visibleCellCount
                                     );
                                 }

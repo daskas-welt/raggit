@@ -227,14 +227,23 @@ public sealed class DocumentsApiClient
             throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
         }
 
-        if (response.StatusCode == HttpStatusCode.BadRequest)
+        if (
+            response.StatusCode == HttpStatusCode.BadRequest
+            || response.StatusCode == HttpStatusCode.RequestEntityTooLarge
+        )
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
                 _jsonOptions,
                 cancellationToken
             );
+            var message = error?.Error;
+            if (response.StatusCode == HttpStatusCode.RequestEntityTooLarge)
+            {
+                throw new UploadRejectedException(message ?? "File exceeds the upload limit.");
+            }
+
             throw new UnsupportedDocumentTypeException(
-                error?.Error ?? $"unsupported type: {Path.GetExtension(fileName)}"
+                message ?? $"unsupported type: {Path.GetExtension(fileName)}"
             );
         }
 
@@ -286,6 +295,15 @@ public sealed class DocumentsApiClient
 public sealed class UnsupportedDocumentTypeException : Exception
 {
     public UnsupportedDocumentTypeException(string message)
+        : base(message) { }
+}
+
+/// <summary>
+/// Thrown when the workstation rejects an upload after inspecting its contents.
+/// </summary>
+public sealed class UploadRejectedException : Exception
+{
+    public UploadRejectedException(string message)
         : base(message) { }
 }
 
