@@ -80,17 +80,19 @@ public sealed class IngestService
             return (existing, false);
         }
 
+        string? extractedText = null;
+
         // For xlsx, validate extraction + cap + empty BEFORE creating Document row so rejections never persist a row (per data-model.md)
         if (mime == DocumentMimeType.Xlsx)
         {
             if (content.CanSeek && content.Position != 0)
                 content.Position = 0;
-            var preview = await Chunker.ExtractTextAsync(
+            extractedText = await Chunker.ExtractTextAsync(
                 content,
                 mime,
                 _options.MaxSpreadsheetCells
             );
-            if (string.IsNullOrWhiteSpace(preview))
+            if (string.IsNullOrWhiteSpace(extractedText))
                 throw new NoExtractableContentException("no extractable content");
             // Also cap already thrown as SpreadsheetCellCapExceededException during preview
             if (content.CanSeek)
@@ -132,7 +134,13 @@ public sealed class IngestService
                 content.Position = 0;
             }
 
-            var chunks = await GetOrCreateChunksAsync(content, mime, document, cancellationToken);
+            var chunks = await GetOrCreateChunksAsync(
+                content,
+                mime,
+                document,
+                cancellationToken,
+                extractedText
+            );
             if (mime == DocumentMimeType.Xlsx && chunks.Count == 0)
                 throw new NoExtractableContentException("no extractable content");
             _logger.LogInformation(
@@ -328,7 +336,8 @@ public sealed class IngestService
         Stream content,
         DocumentMimeType mime,
         Document document,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        string? extractedText = null
     )
     {
         var cacheKey = $"chunks:{document.Hash}";
@@ -352,7 +361,9 @@ public sealed class IngestService
                 .ToList();
         }
 
-        var text = await Chunker.ExtractTextAsync(content, mime, _options.MaxSpreadsheetCells);
+        var text =
+            extractedText
+            ?? await Chunker.ExtractTextAsync(content, mime, _options.MaxSpreadsheetCells);
         var chunks = Chunker.ChunkText(
             text,
             document.Id,
