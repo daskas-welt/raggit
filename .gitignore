@@ -29,6 +29,11 @@ artifacts/
 # under src/<project>/data/, so both forms (plus key material) are listed.
 **/data/
 **/data.backup-*/
+# ...but a SOURCE directory named Data is not runtime data. On Windows the rule
+# above matches it case-insensitively, so re-include it explicitly — otherwise
+# the SQLite repositories under src/RAGGit.Core/Data/ silently leave the index.
+!src/RAGGit.Core/Data/
+!src/RAGGit.Core/Data/**
 *.db
 /models/
 *.gguf
