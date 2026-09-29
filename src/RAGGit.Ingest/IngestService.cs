@@ -178,7 +178,11 @@ public sealed class IngestService
             }
 
             document.Status = DocumentStatus.Ready;
-            await UpdateDocumentStatusAsync(document.Id, DocumentStatus.Ready, cancellationToken);
+            await UpdateDocumentStatusAsync(
+                document.Id,
+                DocumentStatus.Ready,
+                cancellationToken: cancellationToken
+            );
             _logger.LogInformation("Completed ingest for document {DocumentId}", document.Id);
 
             return (document, true);
@@ -238,10 +242,251 @@ public sealed class IngestService
         catch (Exception exception)
         {
             _logger.LogError(exception, "Ingest failed for document {DocumentId}", document.Id);
-            await UpdateDocumentStatusAsync(document.Id, DocumentStatus.Failed, cancellationToken);
+            await UpdateDocumentStatusAsync(
+                document.Id,
+                DocumentStatus.Failed,
+                FailureReasonFor(exception),
+                cancellationToken
+            );
             throw;
         }
     }
+
+    /// <summary>
+    /// Creates a visible upload record and stores the original bytes without
+    /// waiting for extraction, embedding, or vector storage. The document is
+    /// reported as <see cref="DocumentStatus.Uploading"/> (accepted, not yet
+    /// indexed), the state the POST response carries; the work queue then marks
+    /// it <see cref="DocumentStatus.Queued"/> and the worker moves it on to
+    /// <see cref="DocumentStatus.Indexing"/> and finally
+    /// <see cref="DocumentStatus.Ready"/> or <see cref="DocumentStatus.Failed"/>.
+    /// A document whose hash already exists is not re-indexed — except when the
+    /// existing row already <see cref="DocumentStatus.Failed"/>, which makes it
+    /// retryable: the row is re-staged (reason cleared, bytes re-stored) and
+    /// reported as created so the caller enqueues it again.
+    /// </summary>
+    public async Task<(Document Document, bool Created)> StageAsync(
+        Stream content,
+        string filename,
+        DocumentMimeType mime,
+        long size,
+        string createdBy,
+        string? createdByName = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentException.ThrowIfNullOrWhiteSpace(filename);
+        ArgumentException.ThrowIfNullOrWhiteSpace(createdBy);
+
+        var hash = await Chunker.ComputeHashAsync(content);
+        var existing = await FindByHashAsync(hash, cancellationToken);
+        if (existing is not null)
+        {
+            if (existing.Status != DocumentStatus.Failed)
+            {
+                _logger.LogInformation(
+                    "Duplicate hash detected for {Filename}; returning existing document {DocumentId}",
+                    filename,
+                    existing.Id
+                );
+                return (existing, false);
+            }
+
+            _logger.LogInformation(
+                "Retrying failed document {DocumentId} ({Filename})",
+                existing.Id,
+                filename
+            );
+            existing.Status = DocumentStatus.Uploading;
+            existing.FailureReason = null;
+            await _documents.UpdateStatusAsync(
+                existing.Id,
+                DocumentStatus.Uploading,
+                failureReason: null,
+                cancellationToken
+            );
+
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+            await _contentStore.SaveAsync(existing.Id, content, cancellationToken);
+            return (existing, true);
+        }
+
+        var document = new Document
+        {
+            Id = Guid.NewGuid(),
+            Filename = filename,
+            Mime = mime,
+            Size = size,
+            Hash = hash,
+            Status = DocumentStatus.Uploading,
+            CreatedBy = createdBy,
+            CreatedByName = createdByName,
+        };
+
+        await InsertDocumentAsync(document, cancellationToken);
+        try
+        {
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+
+            await _contentStore.SaveAsync(document.Id, content, cancellationToken);
+            return (document, true);
+        }
+        catch
+        {
+            await DeleteDocumentRowAsync(document.Id, cancellationToken);
+            await DeleteStoredOriginalBestEffortAsync(document.Id, cancellationToken);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Marks a staged document as waiting for a free ingest worker. This is the
+    /// only transition into <see cref="DocumentStatus.Queued"/>: it is applied
+    /// when the document is handed to the work queue, so a queued document is
+    /// distinguishable from one whose bytes are still being stored.
+    /// </summary>
+    public Task MarkQueuedAsync(Guid documentId, CancellationToken cancellationToken = default) =>
+        UpdateDocumentStatusAsync(
+            documentId,
+            DocumentStatus.Queued,
+            failureReason: null,
+            cancellationToken
+        );
+
+    /// <summary>
+    /// Processes a staged document in the background and updates its persisted
+    /// status to <c>Ready</c> or <c>Failed</c>.
+    /// </summary>
+    public async Task ProcessStagedAsync(
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var document = await FindDocumentByIdAsync(documentId, cancellationToken);
+        if (document is null || document.Status == DocumentStatus.Ready)
+        {
+            return;
+        }
+
+        await UpdateDocumentStatusAsync(
+            documentId,
+            DocumentStatus.Indexing,
+            failureReason: null,
+            cancellationToken
+        );
+        document.Status = DocumentStatus.Indexing;
+        document.FailureReason = null;
+
+        try
+        {
+            await using var content =
+                await _contentStore.OpenReadAsync(documentId, cancellationToken)
+                ?? throw new FileNotFoundException("staged document content is missing");
+
+            var chunks = await GetOrCreateChunksAsync(
+                content,
+                document.Mime,
+                document,
+                cancellationToken
+            );
+            if (document.Mime == DocumentMimeType.Xlsx && chunks.Count == 0)
+            {
+                throw new NoExtractableContentException("no extractable content");
+            }
+
+            if (chunks.Count > 0)
+            {
+                var embeddings = await EmbedInBatchesAsync(
+                    chunks,
+                    _options.EmbedBatchSize,
+                    cancellationToken
+                );
+                var records = chunks
+                    .Select(
+                        (chunk, index) =>
+                            new VectorRecord(
+                                chunk.Id,
+                                embeddings[index],
+                                new Dictionary<string, object?>
+                                {
+                                    ["documentId"] = document.Id.ToString(),
+                                    ["text"] = chunk.Text,
+                                    ["ordinal"] = chunk.Ordinal,
+                                }
+                            )
+                    )
+                    .ToList();
+
+                await _vectorStore.UpsertAsync(records, cancellationToken);
+                await InsertChunksAsync(chunks, cancellationToken);
+            }
+
+            document.Status = DocumentStatus.Ready;
+            await UpdateDocumentStatusAsync(
+                documentId,
+                DocumentStatus.Ready,
+                cancellationToken: cancellationToken
+            );
+            _logger.LogInformation(
+                "Completed background ingest for document {DocumentId}",
+                documentId
+            );
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Background ingest failed for document {DocumentId} ({Filename})",
+                documentId,
+                document.Filename
+            );
+            try
+            {
+                await _vectorStore.DeleteAsync(documentId.ToString(), cancellationToken);
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogWarning(
+                    cleanupException,
+                    "Background vector cleanup failed for document {DocumentId}",
+                    documentId
+                );
+            }
+
+            document.Status = DocumentStatus.Failed;
+            document.FailureReason = FailureReasonFor(exception);
+            await UpdateDocumentStatusAsync(
+                documentId,
+                DocumentStatus.Failed,
+                document.FailureReason,
+                cancellationToken
+            );
+        }
+    }
+
+    /// <summary>
+    /// Maps a background-ingest failure to the short reason stored on the
+    /// document (and shown by clients). User-actionable failures keep their own
+    /// message; anything unexpected gets a generic sentence so exception types,
+    /// paths, and stack traces never reach the client — the full exception is
+    /// always logged by the caller.
+    /// </summary>
+    private static string FailureReasonFor(Exception exception) =>
+        exception switch
+        {
+            SpreadsheetCellCapExceededException => exception.Message,
+            NoExtractableContentException => exception.Message,
+            CorruptDocumentException => exception.Message,
+            FileNotFoundException => "stored original is missing; upload the file again",
+            _ => "indexing failed; see workstation logs for details",
+        };
 
     /// <summary>
     /// Finds a document by id, or null when absent. Used by the download
@@ -326,8 +571,9 @@ public sealed class IngestService
     private Task UpdateDocumentStatusAsync(
         Guid documentId,
         DocumentStatus status,
-        CancellationToken cancellationToken
-    ) => _documents.UpdateStatusAsync(documentId, status, cancellationToken);
+        string? failureReason = null,
+        CancellationToken cancellationToken = default
+    ) => _documents.UpdateStatusAsync(documentId, status, failureReason, cancellationToken);
 
     private Task DeleteDocumentRowAsync(Guid documentId, CancellationToken cancellationToken) =>
         _documents.DeleteAsync(documentId, cancellationToken);
@@ -349,16 +595,17 @@ public sealed class IngestService
         )
         {
             _logger.LogDebug("Chunk cache hit for document {DocumentId}", document.Id);
-            return cached
-                .Select(c => new Chunk
+            return
+            [
+                .. cached.Select(c => new Chunk
                 {
                     Id = Guid.NewGuid(),
                     DocumentId = document.Id,
                     Ordinal = c.Ordinal,
                     Text = c.Text,
                     TokenCount = c.TokenCount,
-                })
-                .ToList();
+                }),
+            ];
         }
 
         var text =

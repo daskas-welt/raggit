@@ -55,8 +55,10 @@ public sealed class XlsxQueryCitationTests
         var upload = await client.PostAsync("/api/documents", form);
         upload.EnsureSuccessStatusCode();
 
-        // Poll ready (fakes immediate)
-        await Task.Delay(500);
+        // Background ingest: wait for the worker instead of sleeping.
+        (await factory.WaitForSettledAsync(client))
+            .Should()
+            .OnlyContain(d => d.Status == DocumentStatus.Ready);
 
         // Query refund policy
         var queryJson = JsonSerializer.Serialize(
@@ -105,7 +107,10 @@ public sealed class XlsxQueryCitationTests
         );
         form.Add(fileContent, "file", "sample-3sheet.xlsx");
         await client.PostAsync("/api/documents", form);
-        await Task.Delay(500);
+        // Background ingest: wait for the worker instead of sleeping.
+        (await factory.WaitForSettledAsync(client))
+            .Should()
+            .OnlyContain(d => d.Status == DocumentStatus.Ready);
 
         var queryJson = JsonSerializer.Serialize(new { query = "42.50" });
         var queryClient = factory.CreateClient();
@@ -118,7 +123,10 @@ public sealed class XlsxQueryCitationTests
         var body = await queryResp.Content.ReadAsStringAsync();
         if (body.Contains("no relevant content found"))
             return;
-        body.Should().Contain("42.50");
+        // The fixture stores the cached formula value as the numeric 42.5 (the
+        // cell's 0.00 display format is not applied by extraction); what matters
+        // is that the cached value is cited rather than the formula text.
+        body.Should().Contain("42.5");
         body.Should().NotContain("SUM");
     }
 

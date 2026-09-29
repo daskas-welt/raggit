@@ -117,7 +117,7 @@ public sealed class QueryOfflineTests
         return client;
     }
 
-    private static async Task SeedRefundPolicyDocumentAsync(IntegrationTestFactory factory)
+    private async Task SeedRefundPolicyDocumentAsync(IntegrationTestFactory factory)
     {
         var adminClient = factory.CreateClient();
         adminClient.DefaultRequestHeaders.Add("X-Api-Key", factory.AdminKey);
@@ -133,6 +133,16 @@ public sealed class QueryOfflineTests
 
         var response = await adminClient.PostAsync("/api/documents", form);
         response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
+        var staged = await response.Content.ReadFromJsonAsync<Document>(_jsonOptions);
+        staged.Should().NotBeNull();
+
+        // Uploads are accepted for background indexing: wait until the worker
+        // reports Ready, otherwise retrieval finds no chunks yet.
+        var settled = await factory.WaitForSettledAsync(adminClient);
+        var indexed = settled.Single(d => d.Id == staged!.Id);
+        indexed
+            .Status.Should()
+            .Be(DocumentStatus.Ready, $"seeding failed: {indexed.FailureReason}");
     }
 
     private static FakeLlmClient GetLlmClient(IntegrationTestFactory factory) =>

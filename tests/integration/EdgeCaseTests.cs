@@ -55,7 +55,7 @@ public sealed class EdgeCaseTests
 
         var listResponse = await client.GetAsync("/api/documents");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var documents = await DeserializeListAsync(listResponse);
+        var documents = await factory.WaitForSettledAsync(client);
         documents.Should().HaveCount(count);
         documents.Should().OnlyContain(d => d.Status == DocumentStatus.Ready);
     }
@@ -113,6 +113,11 @@ public sealed class EdgeCaseTests
         adminClient.DefaultRequestHeaders.Add("X-Api-Key", factory.AdminKey);
         await UploadTextAsync(adminClient, "lan-partition.txt", "Content before partition.");
 
+        // Index before partitioning: the outage must break a store that already
+        // holds the vector, not race the background worker.
+        var settled = await factory.WaitForSettledAsync(adminClient);
+        settled.Should().OnlyContain(d => d.Status == DocumentStatus.Ready);
+
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
 
@@ -159,6 +164,12 @@ public sealed class EdgeCaseTests
             );
             upload.StatusCode.Should().Be(HttpStatusCode.Created);
             persistedDocument = await DeserializeDocumentAsync(upload);
+            (await factory1.WaitForSettledAsync(adminClient))
+                .Should()
+                .Contain(
+                    d => d.Id == persistedDocument.Id && d.Status == DocumentStatus.Ready,
+                    "the document must be fully indexed before the restart"
+                );
 
             var employeeClient = factory1.CreateClient();
             employeeClient.DefaultRequestHeaders.Add("X-Api-Key", factory1.EmployeeKey);
@@ -228,11 +239,13 @@ public sealed class EdgeCaseTests
 
     /// <summary>
     /// Factory that reuses fixed SQLite/LanceDB paths to simulate a workstation
-    /// restart (new process, same persisted data) per FR-008.
+    /// restart (new process, same persisted data) per FR-008. Runs at the
+    /// workstation's configured VectorSize (appsettings) so the startup
+    /// dimension guard accepts the collection left by the first session.
     /// </summary>
     private sealed class RestartableFactory : IntegrationTestFactory
     {
         public RestartableFactory(string dbPath, string lanceDbPath)
-            : base(dbPath, lanceDbPath) { }
+            : base(dbPath, lanceDbPath, vectorSize: 1024) { }
     }
 }

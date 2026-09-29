@@ -20,6 +20,8 @@ public enum DocumentMimeType
 /// </summary>
 public enum DocumentStatus
 {
+    Uploading,
+    Queued,
     Indexing,
     Ready,
     Failed,
@@ -67,6 +69,15 @@ public sealed class Document
     public string? CreatedByName { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Why background processing last failed, set together with
+    /// <see cref="DocumentStatus.Failed"/> and cleared when the document is
+    /// (re)staged or indexed successfully. Holds a short, user-safe sentence,
+    /// never an exception type or stack trace; null whenever the document is
+    /// not in a failed state.
+    /// </summary>
+    public string? FailureReason { get; set; }
 
     /// <summary>
     /// Returns the content-type string for this document's MIME type.

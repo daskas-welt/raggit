@@ -72,6 +72,14 @@ public sealed class OfflineIdentityTests
         document.Should().NotBeNull();
         document!.CreatedBy.Should().Be(admin.Id.ToString());
 
+        // Background ingest: the cited query below needs the worker to finish.
+        (await factory.WaitForSettledAsync(adminClient))
+            .Should()
+            .Contain(
+                d => d.Id == document.Id && d.Status == DocumentStatus.Ready,
+                "the upload must be indexed before the cited query"
+            );
+
         // Employee login and cited query — entirely local.
         var employeeClient = factory.CreateClient();
         var employeeToken = await LoginAsync(employeeClient, employee.Username, employeePassword);

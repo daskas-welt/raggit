@@ -19,6 +19,7 @@ using RAGGit.Ingest.Ai;
 using RAGGit.Ingest.Vector;
 using RAGGit.Retrieval;
 using RAGGit.Retrieval.Ai;
+using RAGGit.Workstation.Api;
 using RAGGit.Workstation.Api.Auth;
 using RAGGit.Workstation.Api.Cli;
 using RAGGit.Workstation.Api.Middleware;
@@ -310,6 +311,8 @@ builder.Services.AddSingleton<ILlmClient>(sp => new OllamaLlmClient(
 builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
 builder.Services.Configure<RetrievalOptions>(builder.Configuration.GetSection("Retrieval"));
 builder.Services.Configure<GenerationOptions>(builder.Configuration.GetSection("Generation"));
+builder.Services.AddSingleton<IngestWorkQueue>();
+builder.Services.AddHostedService<IngestWorker>();
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();

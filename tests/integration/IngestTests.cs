@@ -61,7 +61,7 @@ public sealed class IngestTests
 
         var listResponse = await client.GetAsync("/api/documents");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var documents = await DeserializeListAsync(listResponse);
+        var documents = await factory.WaitForSettledAsync(client);
         documents.Should().HaveCount(count);
         documents.Should().OnlyContain(d => d.Status == DocumentStatus.Ready);
 
@@ -155,13 +155,6 @@ public sealed class IngestTests
         return JsonSerializer.Deserialize<Document>(json, JsonOptions)
             ?? throw new InvalidOperationException("Failed to deserialize Document.");
     }
-
-    private static async Task<List<Document>> DeserializeListAsync(HttpResponseMessage response)
-    {
-        var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<List<Document>>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Failed to deserialize document list.");
-    }
 }
 
 /// <summary>
@@ -172,14 +165,41 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 {
     public string AdminKey { get; } = "admin-integration-test";
     public string EmployeeKey { get; } = "employee-integration-test";
-    public float[] QueryVector { get; } = CreateQueryVector();
+    public float[] QueryVector { get; }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
+    };
 
     private readonly string _dbPath;
     private readonly string _lanceDbPath;
     private readonly string _contentDir;
+    private readonly int _vectorSize;
 
     public IntegrationTestFactory()
+        : this(vectorSize: 384) { }
+
+    internal IntegrationTestFactory(string dbPath, string lanceDbPath, int vectorSize = 384)
+        : this(vectorSize)
     {
+        _dbPath = dbPath;
+        _lanceDbPath = lanceDbPath;
+        _contentDir = Path.Combine(
+            Path.GetDirectoryName(dbPath) ?? Path.GetTempPath(),
+            "documents"
+        );
+    }
+
+    private IntegrationTestFactory(int vectorSize)
+    {
+        // The store and the fake embedder must agree with VectorDb:VectorSize,
+        // which the workstation validates at startup against an existing
+        // collection (restart tests reuse the LanceDB path across factories).
+        _vectorSize = vectorSize;
+        QueryVector = new float[vectorSize];
+        QueryVector[0] = 1.0f;
+
         var baseDir = Path.Combine(
             Path.GetTempPath(),
             "raggit-integration-tests",
@@ -191,14 +211,42 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
         _contentDir = Path.Combine(baseDir, "documents");
     }
 
-    internal IntegrationTestFactory(string dbPath, string lanceDbPath)
+    /// <summary>
+    /// Polls the library until the background worker has settled every document
+    /// (nothing left Uploading/Queued/Indexing) and returns the final list, so
+    /// tests assert on settled state instead of racing the ingest worker.
+    /// On timeout the current list is returned and the caller's assertions
+    /// report the unsettled state.
+    /// </summary>
+    public async Task<List<Document>> WaitForSettledAsync(
+        HttpClient adminClient,
+        TimeSpan? timeout = null
+    )
     {
-        _dbPath = dbPath;
-        _lanceDbPath = lanceDbPath;
-        _contentDir = Path.Combine(
-            Path.GetDirectoryName(dbPath) ?? Path.GetTempPath(),
-            "documents"
-        );
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromMinutes(2));
+        while (true)
+        {
+            var response = await adminClient.GetAsync("/api/documents");
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var documents =
+                JsonSerializer.Deserialize<List<Document>>(json, JsonOptions)
+                ?? new List<Document>();
+
+            if (
+                documents.TrueForAll(d => d.Status is DocumentStatus.Ready or DocumentStatus.Failed)
+            )
+            {
+                return documents;
+            }
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                return documents;
+            }
+
+            await Task.Delay(150);
+        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -216,22 +264,19 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
             services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
             services.AddSingleton<IDocumentContentStore>(new FileDocumentContentStore(_contentDir));
-            services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lanceDbPath, 384));
-            services.AddSingleton<IEmbedder>(new FakeEmbedder());
+            services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lanceDbPath, _vectorSize));
+            services.AddSingleton<IEmbedder>(new FakeEmbedder(_vectorSize));
             services.AddSingleton<ILlmClient>(new FakeLlmClient());
         });
-    }
-
-    private static float[] CreateQueryVector()
-    {
-        var vector = new float[384];
-        vector[0] = 1.0f;
-        return vector;
     }
 }
 
 internal sealed class FakeEmbedder : IEmbedder
 {
+    private readonly int _vectorSize;
+
+    public FakeEmbedder(int vectorSize = 384) => _vectorSize = vectorSize;
+
     /// <summary>
     /// Optional query-to-vector overrides. The first matching substring wins.
     /// </summary>
@@ -257,7 +302,7 @@ internal sealed class FakeEmbedder : IEmbedder
                     }
                 }
 
-                var vector = new float[384];
+                var vector = new float[_vectorSize];
                 vector[0] = 1.0f;
                 return vector;
             })

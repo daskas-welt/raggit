@@ -10,6 +10,12 @@ namespace RAGGit.Core.Models;
 public sealed class IngestOptions
 {
     /// <summary>
+    /// Maximum number of documents processed concurrently by the background
+    /// ingestion worker. Default: 2.
+    /// </summary>
+    public int MaxConcurrentJobs { get; set; } = 2;
+
+    /// <summary>
     /// Maximum number of cells read from visible spreadsheet sheets.
     /// Default: 100,000.
     /// </summary>

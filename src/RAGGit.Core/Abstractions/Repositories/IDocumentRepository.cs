@@ -52,11 +52,15 @@ public interface IDocumentRepository
     Task AddChunksAsync(IEnumerable<Chunk> chunks, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates a document's processing status.
+    /// Updates a document's processing status and its failure explanation.
+    /// <paramref name="failureReason"/> is written together with the status —
+    /// null clears any previous reason, so a retried document does not keep a
+    /// stale explanation.
     /// </summary>
     Task UpdateStatusAsync(
         Guid documentId,
         DocumentStatus status,
+        string? failureReason = null,
         CancellationToken cancellationToken = default
     );
 

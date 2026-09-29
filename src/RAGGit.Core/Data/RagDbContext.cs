@@ -45,7 +45,21 @@ public sealed class RagDbContext : IAsyncDisposable
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await MigrateDocumentsCreatedByNameAsync(connection, transaction, cancellationToken);
+        await EnsureDocumentColumnAsync(
+            connection,
+            transaction,
+            "CreatedByName",
+            "TEXT",
+            cancellationToken
+        );
+
+        await EnsureDocumentColumnAsync(
+            connection,
+            transaction,
+            "FailureReason",
+            "TEXT",
+            cancellationToken
+        );
 
         using var seedCommand = connection.CreateCommand();
         seedCommand.Transaction = (SqliteTransaction)transaction;
@@ -60,14 +74,18 @@ public sealed class RagDbContext : IAsyncDisposable
     }
 
     /// <summary>
-    /// Adds <c>Documents.CreatedByName</c> to databases created before 009.
-    /// SQLite has no ADD COLUMN IF NOT EXISTS on all supported versions, so
-    /// probe first and alter only when absent. Fresh databases already carry
-    /// the column via <see cref="GetSchemaCommands"/>.
+    /// Adds a nullable <c>Documents</c> column to databases created before the
+    /// column existed (<c>CreatedByName</c> arrived with 009, <c>FailureReason</c>
+    /// with the background-ingest refactor). SQLite has no ADD COLUMN IF NOT
+    /// EXISTS on all supported versions, so probe first and alter only when
+    /// absent. Fresh databases already carry the columns via
+    /// <see cref="GetSchemaCommands"/>.
     /// </summary>
-    private static async Task MigrateDocumentsCreatedByNameAsync(
+    private static async Task EnsureDocumentColumnAsync(
         SqliteConnection connection,
         System.Data.Common.DbTransaction transaction,
+        string columnName,
+        string columnType,
         CancellationToken cancellationToken
     )
     {
@@ -77,7 +95,7 @@ public sealed class RagDbContext : IAsyncDisposable
         await using var reader = await pragmaCommand.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            if (reader.GetString(0) == "CreatedByName")
+            if (string.Equals(reader.GetString(0), columnName, StringComparison.Ordinal))
             {
                 return;
             }
@@ -85,7 +103,7 @@ public sealed class RagDbContext : IAsyncDisposable
 
         using var alterCommand = connection.CreateCommand();
         alterCommand.Transaction = (SqliteTransaction)transaction;
-        alterCommand.CommandText = "ALTER TABLE Documents ADD COLUMN CreatedByName TEXT;";
+        alterCommand.CommandText = $"ALTER TABLE Documents ADD COLUMN {columnName} {columnType};";
         await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -108,6 +126,7 @@ public sealed class RagDbContext : IAsyncDisposable
                 Status TEXT NOT NULL,
                 CreatedBy TEXT NOT NULL,
                 CreatedByName TEXT,
+                FailureReason TEXT,
                 CreatedAt TEXT NOT NULL
             );";
 

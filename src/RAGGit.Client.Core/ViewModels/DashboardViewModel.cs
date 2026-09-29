@@ -125,7 +125,12 @@ public sealed partial class DashboardViewModel : ObservableObject
 
             TotalDocuments = documents.Count;
             ReadyDocuments = documents.Count(d => d.Status == DocumentStatus.Ready);
-            IndexingDocuments = documents.Count(d => d.Status == DocumentStatus.Indexing);
+            IndexingDocuments = documents.Count(d =>
+                d.Status
+                    is DocumentStatus.Uploading
+                        or DocumentStatus.Queued
+                        or DocumentStatus.Indexing
+            );
             FailedDocuments = documents.Count(d => d.Status == DocumentStatus.Failed);
             TotalQueries = history.Total;
             MyDocuments = mine.Total;

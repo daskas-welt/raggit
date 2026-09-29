@@ -24,6 +24,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     private readonly string _storagePath;
     private readonly int _vectorSize;
     private readonly SemaphoreSlim _initLock = new(1, 1);
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private Connection? _connection;
     private lancedb.Table? _table;
     private bool _initialized;
@@ -119,19 +120,27 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     {
         ArgumentNullException.ThrowIfNull(vectors);
 
-        var table = await EnsureTableAsync(cancellationToken);
-        var batch = BuildBatch(vectors);
-
-        if (batch.Length == 0)
+        await _writeLock.WaitAsync(cancellationToken);
+        try
         {
-            return;
-        }
+            var table = await EnsureTableAsync(cancellationToken);
+            var batch = BuildBatch(vectors);
 
-        await table
-            .MergeInsert("id")
-            .WhenMatchedUpdateAll()
-            .WhenNotMatchedInsertAll()
-            .Execute(batch);
+            if (batch.Length == 0)
+            {
+                return;
+            }
+
+            await table
+                .MergeInsert("id")
+                .WhenMatchedUpdateAll()
+                .WhenNotMatchedInsertAll()
+                .Execute(batch);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <inheritdoc />
@@ -177,9 +186,17 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(documentId);
 
-        var table = await EnsureTableAsync(cancellationToken);
-        var filter = Expr.Col("documentId").Eq(Expr.Lit(documentId));
-        await table.Delete(filter.ToSql());
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var table = await EnsureTableAsync(cancellationToken);
+            var filter = Expr.Col("documentId").Eq(Expr.Lit(documentId));
+            await table.Delete(filter.ToSql());
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <summary>
@@ -248,6 +265,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         _table?.Dispose();
         _connection?.Dispose();
         _initLock.Dispose();
+        _writeLock.Dispose();
         _disposed = true;
     }
 

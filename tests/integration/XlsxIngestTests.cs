@@ -38,13 +38,7 @@ public sealed class XlsxIngestTests
         var doc = await DeserializeDocumentAsync(response);
         doc.Mime.Should().Be(DocumentMimeType.Xlsx);
 
-        // Poll GET /api/documents → Ready (with fake embedder, immediate)
-        var listResp = await client.GetAsync("/api/documents");
-        listResp.StatusCode.Should().Be(HttpStatusCode.OK);
-        var docs = await DeserializeListAsync(listResp);
-        var uploaded = docs.FirstOrDefault(d => d.Id == doc.Id);
-        uploaded.Should().NotBeNull();
-        uploaded!.Status.Should().Be(DocumentStatus.Ready);
+        var uploaded = await WaitForStatusAsync(client, doc.Id, DocumentStatus.Ready);
 
         // Chunks rows for that document contain [Sheet: prefix
         var db = factory.Services.GetRequiredService<RagDbContext>();
@@ -136,5 +130,26 @@ public sealed class XlsxIngestTests
                 json,
                 JsonOptions
             ) ?? throw new InvalidOperationException("Failed to deserialize document list.");
+    }
+
+    private static async Task<Document> WaitForStatusAsync(
+        HttpClient client,
+        Guid documentId,
+        DocumentStatus expected
+    )
+    {
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            var docs = await DeserializeListAsync(await client.GetAsync("/api/documents"));
+            var document = docs.FirstOrDefault(d => d.Id == documentId);
+            if (document?.Status == expected)
+            {
+                return document;
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException($"Document {documentId} did not reach {expected}.");
     }
 }

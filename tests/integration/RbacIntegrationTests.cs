@@ -41,7 +41,10 @@ public sealed class RbacIntegrationTests
 
         var adminList = await adminClient.GetAsync("/api/documents");
         adminList.StatusCode.Should().Be(HttpStatusCode.OK);
-        var adminDocuments = await DeserializeListAsync(adminList);
+        // Background ingest: wait for the worker to settle before reading the two
+        // lists, or one of them can be captured mid-transition (Uploading vs Ready).
+        var adminDocuments = await factory.WaitForSettledAsync(adminClient);
+        adminDocuments.Should().Contain(d => d.Status == DocumentStatus.Ready);
 
         var employeeList = await employeeClient.GetAsync("/api/documents");
         employeeList.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -18,7 +18,9 @@ using Xunit;
 namespace RAGGit.Tests.Integration;
 
 /// <summary>
-/// SC-005: corrupted pdf/docx → 400 with no partial index.
+/// SC-005: corrupted pdf/docx must never be partially indexed. Uploads are
+/// accepted for background indexing, so the rejection surfaces as a Failed
+/// document carrying a user-safe reason (and zero Chunks/vectors).
 /// Truncated PDF must not leave Documents/Chunks rows or LanceDB vectors.
 /// </summary>
 public sealed class CorruptedDocumentTests
@@ -29,7 +31,7 @@ public sealed class CorruptedDocumentTests
     };
 
     [Fact]
-    public async Task Upload_TruncatedPdf_Returns400_And_NoPartialIndex()
+    public async Task Upload_TruncatedPdf_IsRejectedInBackground_AndNoPartialIndex()
     {
         using var factory = new IntegrationTestFactory();
         var client = factory.CreateClient();
@@ -43,17 +45,20 @@ public sealed class CorruptedDocumentTests
 
         var response = await client.PostAsync("/api/documents", form);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("corrupted pdf");
+        // SC-005: corrupted content is never partially indexed. Uploads are
+        // accepted for background indexing, so the rejection surfaces as a
+        // Failed document carrying a user-safe reason instead of a 400.
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var staged = await DeserializeDocumentAsync(response);
 
-        // No partial index: GET does not list it
-        var listResponse = await client.GetAsync("/api/documents");
-        listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var documents = await DeserializeListAsync(listResponse);
-        documents.Should().NotContain(d => d.Filename == "bad.pdf");
+        var settled = await factory.WaitForSettledAsync(client);
+        var document = settled.Single(d => d.Id == staged.Id);
+        document.Status.Should().Be(DocumentStatus.Failed);
+        document.FailureReason.Should().NotBeNullOrWhiteSpace();
+        document.FailureReason!.ToLowerInvariant().Should().Contain("corrupted pdf");
+        document.FailureReason.Should().NotContain("Exception", "internals must not leak");
 
-        // No Chunks rows for bad.pdf (hash not present or no chunks)
+        // No Chunks rows for bad.pdf
         var db = factory.Services.GetRequiredService<RagDbContext>();
         await using var conn = db.CreateConnection();
         await conn.OpenAsync();
@@ -66,8 +71,6 @@ public sealed class CorruptedDocumentTests
         // No vectors for bad.pdf
         var store = factory.Services.GetRequiredService<IVectorStore>();
         var hits = await store.SearchAsync(CreateProbeVector(), limit: 100);
-        // Hits should not contain documentId referencing bad.pdf; since bad.pdf not indexed, count remains 0 for that doc
-        // We simply assert no hit has text from bad.pdf (which would be garbage)
         hits.Should()
             .NotContain(r =>
                 r.Text != null && r.Text.Contains("bad.pdf", StringComparison.OrdinalIgnoreCase)
@@ -75,7 +78,7 @@ public sealed class CorruptedDocumentTests
     }
 
     [Fact]
-    public async Task Upload_CorruptedDocx_Returns400_And_NoPartialIndex()
+    public async Task Upload_CorruptedDocx_IsRejectedInBackground_AndNoPartialIndex()
     {
         using var factory = new IntegrationTestFactory();
         var client = factory.CreateClient();
@@ -91,13 +94,25 @@ public sealed class CorruptedDocumentTests
 
         var response = await client.PostAsync("/api/documents", form);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.ToLowerInvariant().Should().Contain("corrupted");
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var staged = await DeserializeDocumentAsync(response);
 
-        var listResponse = await client.GetAsync("/api/documents");
-        var documents = await DeserializeListAsync(listResponse);
-        documents.Should().NotContain(d => d.Filename == "bad.docx");
+        var settled = await factory.WaitForSettledAsync(client);
+        var document = settled.Single(d => d.Id == staged.Id);
+        document.Status.Should().Be(DocumentStatus.Failed);
+        document.FailureReason.Should().NotBeNullOrWhiteSpace();
+        document.FailureReason!.ToLowerInvariant().Should().Contain("corrupted");
+        document.FailureReason.Should().NotContain("Exception", "internals must not leak");
+
+        // No index artifacts for bad.docx
+        var db = factory.Services.GetRequiredService<RagDbContext>();
+        await using var conn = db.CreateConnection();
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "SELECT COUNT(*) FROM Chunks WHERE DocumentId IN (SELECT Id FROM Documents WHERE Filename='bad.docx');";
+        var chunkCount = Convert.ToInt64(await cmd.ExecuteScalarAsync());
+        chunkCount.Should().Be(0, "corrupted document must not leave Chunks");
     }
 
     private static async Task<byte[]> LoadBadPdfAsync()
@@ -139,14 +154,10 @@ public sealed class CorruptedDocumentTests
         return v;
     }
 
-    private static async Task<System.Collections.Generic.List<Document>> DeserializeListAsync(
-        HttpResponseMessage response
-    )
+    private static async Task<Document> DeserializeDocumentAsync(HttpResponseMessage response)
     {
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<System.Collections.Generic.List<Document>>(
-                json,
-                JsonOptions
-            ) ?? throw new InvalidOperationException("Failed to deserialize document list.");
+        return JsonSerializer.Deserialize<Document>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize Document.");
     }
 }

@@ -12,6 +12,7 @@ using RAGGit.Core.Abstractions;
 using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
+using RAGGit.Workstation.Api;
 
 namespace RAGGit.Workstation.Api.Controllers;
 
@@ -27,6 +28,7 @@ public sealed class DocumentsController : ControllerBase
     private readonly IVirusScanner _virusScanner;
     private readonly IDocumentRepository _mineStore;
     private readonly IDocumentContentStore _contentStore;
+    private readonly IngestWorkQueue _ingestQueue;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
@@ -34,6 +36,7 @@ public sealed class DocumentsController : ControllerBase
         IVirusScanner virusScanner,
         IDocumentRepository mineStore,
         IDocumentContentStore contentStore,
+        IngestWorkQueue ingestQueue,
         ILogger<DocumentsController> logger
     )
     {
@@ -41,6 +44,7 @@ public sealed class DocumentsController : ControllerBase
         _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
         _mineStore = mineStore ?? throw new ArgumentNullException(nameof(mineStore));
         _contentStore = contentStore ?? throw new ArgumentNullException(nameof(contentStore));
+        _ingestQueue = ingestQueue ?? throw new ArgumentNullException(nameof(ingestQueue));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -119,7 +123,7 @@ public sealed class DocumentsController : ControllerBase
                 return BadRequest(new { error = "File failed security scan." });
             }
 
-            var (document, created) = await _ingestService.IngestAsync(
+            var (stagedDocument, staged) = await _ingestService.StageAsync(
                 validatedStream,
                 file.FileName,
                 mime,
@@ -129,22 +133,18 @@ public sealed class DocumentsController : ControllerBase
                 cancellationToken
             );
 
-            return created ? StatusCode(StatusCodes.Status201Created, document) : Ok(document);
+            if (staged)
+            {
+                await _ingestQueue.EnqueueAsync(stagedDocument.Id, cancellationToken);
+            }
+
+            return staged
+                ? StatusCode(StatusCodes.Status201Created, stagedDocument)
+                : Ok(stagedDocument);
         }
-        catch (SpreadsheetCellCapExceededException ex)
-        {
-            _logger.LogWarning(ex, "Upload rejected: cap exceeded {Filename}", file.FileName);
-            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { error = ex.Message });
-        }
-        catch (NoExtractableContentException ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Upload rejected: no extractable content {Filename}",
-                file.FileName
-            );
-            return BadRequest(new { error = ex.Message });
-        }
+        // Cell-cap and no-extractable-content rejections moved to the background
+        // worker with the async ingest refactor: the upload is accepted and the
+        // document ends up Failed with a FailureReason the client can display.
         catch (CorruptDocumentException ex)
         {
             _logger.LogWarning(ex, "Upload rejected: corrupted document {Filename}", file.FileName);

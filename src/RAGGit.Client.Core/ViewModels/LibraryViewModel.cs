@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,6 +20,7 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly ClientSession _session;
     private readonly ILibraryPreferences _preferences;
     private readonly ILauncherService _launcher;
+    private Task? _statusPollingTask;
 
     [ObservableProperty]
     private ObservableCollection<Document> _documents = new();
@@ -155,6 +157,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             var documents = await _apiClient.GetDocumentsAsync();
             Documents = new ObservableCollection<Document>(documents);
+            StartStatusPolling();
         }
         catch (HttpRequestException ex)
             when (ex.Message.Contains(
@@ -200,6 +203,39 @@ public sealed partial class LibraryViewModel : ObservableObject
             IsBusy = false;
         }
     }
+
+    private void StartStatusPolling()
+    {
+        if (_statusPollingTask is { IsCompleted: false } || !Documents.Any(IsActiveStatus))
+        {
+            return;
+        }
+
+        _statusPollingTask = PollDocumentStatusesAsync();
+    }
+
+    private async Task PollDocumentStatusesAsync()
+    {
+        try
+        {
+            while (Documents.Any(IsActiveStatus))
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+                var documents = await _apiClient.GetDocumentsAsync();
+                Documents = new ObservableCollection<Document>(documents);
+            }
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = $"Could not refresh document status: {exception.Message}";
+        }
+    }
+
+    private static bool IsActiveStatus(Document document) =>
+        document.Status
+            is DocumentStatus.Uploading
+                or DocumentStatus.Queued
+                or DocumentStatus.Indexing;
 
     [RelayCommand]
     private async Task RetryAsync()

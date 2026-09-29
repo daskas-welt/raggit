@@ -16,6 +16,8 @@ public sealed class DocumentStatusPresentationTests
     [InlineData("Ready", StatusTone.Positive)]
     [InlineData("ready", StatusTone.Positive)]
     [InlineData("Indexing", StatusTone.InProgress)]
+    [InlineData("Uploading", StatusTone.InProgress)]
+    [InlineData("Queued", StatusTone.InProgress)]
     [InlineData("processing", StatusTone.InProgress)]
     [InlineData("Failed", StatusTone.Error)]
     [InlineData("mystery", StatusTone.Neutral)]
@@ -33,6 +35,8 @@ public sealed class DocumentStatusPresentationTests
             var status in new[]
             {
                 DocumentStatus.Ready,
+                DocumentStatus.Uploading,
+                DocumentStatus.Queued,
                 DocumentStatus.Indexing,
                 DocumentStatus.Failed,
             }
@@ -47,6 +51,8 @@ public sealed class DocumentStatusPresentationTests
 
     [Theory]
     [InlineData(DocumentStatus.Ready, "Ready")]
+    [InlineData(DocumentStatus.Uploading, "Uploading")]
+    [InlineData(DocumentStatus.Queued, "Queued")]
     [InlineData(DocumentStatus.Indexing, "Indexing")]
     [InlineData(DocumentStatus.Failed, "Failed")]
     public void LabelFor_Enum_Normalizes(DocumentStatus status, string expected) =>

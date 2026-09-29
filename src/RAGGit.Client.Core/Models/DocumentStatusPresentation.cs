@@ -26,6 +26,8 @@ public static class DocumentStatusPresentation
         status switch
         {
             DocumentStatus.Ready => StatusTone.Positive,
+            DocumentStatus.Uploading => StatusTone.InProgress,
+            DocumentStatus.Queued => StatusTone.InProgress,
             DocumentStatus.Indexing => StatusTone.InProgress,
             DocumentStatus.Failed => StatusTone.Error,
             _ => StatusTone.Neutral,
@@ -66,6 +68,8 @@ public static class DocumentStatusPresentation
         status switch
         {
             DocumentStatus.Ready => "Ready",
+            DocumentStatus.Uploading => "Uploading",
+            DocumentStatus.Queued => "Queued",
             DocumentStatus.Indexing => "Indexing",
             DocumentStatus.Failed => "Failed",
             _ => status.ToString(),

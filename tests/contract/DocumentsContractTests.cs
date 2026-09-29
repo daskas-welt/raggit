@@ -52,7 +52,9 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
         var doc = await DeserializeDocumentAsync(response);
         doc.Filename.Should().Be("contract-test.pdf");
         doc.Mime.Should().Be(DocumentMimeType.Pdf);
-        doc.Status.Should().Be(DocumentStatus.Ready);
+        // Uploads are accepted for background indexing: the 201 body reports the
+        // freshly staged state, never a synchronously indexed Ready.
+        doc.Status.Should().Be(DocumentStatus.Uploading);
         doc.Size.Should().BeGreaterThan(0);
         doc.Id.Should().NotBe(Guid.Empty);
     }
@@ -122,7 +124,7 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
     }
 
     [Fact]
-    public async Task Post_CorruptedPdf_Returns400CorruptedPdf()
+    public async Task Post_CorruptedPdf_IsAccepted_ThenFailsWithReason()
     {
         var bytes = await LoadFixtureBytesAsync("bad.pdf");
 
@@ -134,13 +136,17 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
 
         var response = await _client.PostAsync("/api/documents", form);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("corrupted pdf");
+        // Uploads are accepted for background indexing: a header-only corrupt PDF
+        // is stored, then the worker rejects it with a user-safe reason.
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var staged = await DeserializeDocumentAsync(response);
+
+        var failed = await WaitForFailedAsync(staged.Id);
+        failed.FailureReason.Should().Be("corrupted pdf");
     }
 
     [Fact]
-    public async Task Post_CorruptedDocx_Returns400Corrupted()
+    public async Task Post_CorruptedDocx_IsAccepted_ThenFailsWithReason()
     {
         var bytes = await LoadFixtureBytesAsync("bad.docx");
 
@@ -154,9 +160,48 @@ public sealed class DocumentsContractTests : IClassFixture<TestApiFactory>
 
         var response = await _client.PostAsync("/api/documents", form);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.ToLowerInvariant().Should().Contain("corrupted");
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var staged = await DeserializeDocumentAsync(response);
+
+        var failed = await WaitForFailedAsync(staged.Id);
+        failed.FailureReason.Should().NotBeNullOrWhiteSpace();
+        failed.FailureReason!.ToLowerInvariant().Should().Contain("corrupted");
+        failed.FailureReason.Should().NotContain("Exception", "internals must never reach clients");
+    }
+
+    /// <summary>
+    /// Polls the library until the background worker has rejected the document,
+    /// so a corrupt upload is never left silently accepted.
+    /// </summary>
+    private async Task<Document> WaitForFailedAsync(Guid documentId)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        Document? latest = null;
+        while (DateTime.UtcNow < deadline)
+        {
+            var response = await _client.GetAsync("/api/documents");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var documents = await JsonSerializer.DeserializeAsync<List<Document>>(
+                await response.Content.ReadAsStreamAsync(),
+                _jsonOptions
+            );
+            latest = documents?.FirstOrDefault(d => d.Id == documentId);
+            if (latest?.Status == DocumentStatus.Failed)
+            {
+                return latest;
+            }
+
+            await Task.Delay(200);
+        }
+
+        latest.Should().NotBeNull("the uploaded document should still be listed");
+        latest!
+            .Status.Should()
+            .Be(
+                DocumentStatus.Failed,
+                "the background worker must reject corrupt content instead of leaving it accepted"
+            );
+        return latest;
     }
 
     private static async Task<byte[]> LoadFixtureBytesAsync(string filename)

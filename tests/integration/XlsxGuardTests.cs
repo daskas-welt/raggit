@@ -25,7 +25,7 @@ public sealed class XlsxGuardTests
     };
 
     [Fact]
-    public async Task Overcap_413_WithActualCount_And_NothingRetained()
+    public async Task LargeWorkbook_IsRetained_AsBackgroundDocument()
     {
         using var factory = new IntegrationTestFactory();
         var client = factory.CreateClient();
@@ -43,34 +43,21 @@ public sealed class XlsxGuardTests
         var beforeCount = beforeList.Count;
 
         var response = await client.PostAsync("/api/documents", form);
-        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("100,000");
-        body.Should().Contain("exceeds 100,000 cell limit");
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        // GET count unchanged
-        var afterList = await DeserializeListAsync(await client.GetAsync("/api/documents"));
-        afterList.Count.Should().Be(beforeCount);
-
-        // Zero Chunks rows
-        var db = factory.Services.GetRequiredService<RagDbContext>();
-        await using var conn = db.CreateConnection();
-        await conn.OpenAsync();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM Chunks;";
-        var chunkCount = Convert.ToInt64(await cmd.ExecuteScalarAsync());
-        // Chunks for overcap should be 0 for that hash; but other docs may have chunks. Just ensure no chunks for that doc exist via hash lookup
-        // Check no Document with that filename
-        afterList.Should().NotContain(d => d.Filename == "sample-overcap.xlsx");
-
-        // Zero LanceDB vectors for that hash (search probe)
-        var store = factory.Services.GetRequiredService<IVectorStore>();
-        var hits = await store.SearchAsync(CreateProbeVector(), 100);
-        hits.Should().NotContain(r => r.Text != null && r.DocumentId == "sample-overcap.xlsx");
+        var afterList = await WaitForFilenameStatusAsync(
+            client,
+            "sample-overcap.xlsx",
+            DocumentStatus.Ready
+        );
+        afterList.Count.Should().Be(beforeCount + 1);
+        afterList
+            .Should()
+            .Contain(d => d.Filename == "sample-overcap.xlsx" && d.Status == DocumentStatus.Ready);
     }
 
     [Fact]
-    public async Task EmptyHiddenOnly_400_NoExtractableContent_NothingRetained()
+    public async Task EmptyHiddenOnly_IsRetained_AsFailedBackgroundDocument()
     {
         using var factory = new IntegrationTestFactory();
         var client = factory.CreateClient();
@@ -84,15 +71,17 @@ public sealed class XlsxGuardTests
         form.Add(file, "file", "empty-hidden-only.xlsx");
         var before = await DeserializeListAsync(await client.GetAsync("/api/documents"));
         var resp = await client.PostAsync("/api/documents", form);
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await resp.Content.ReadAsStringAsync();
-        body.ToLowerInvariant().Should().Contain("no extractable content");
-        var after = await DeserializeListAsync(await client.GetAsync("/api/documents"));
-        after.Count.Should().Be(before.Count);
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var after = await WaitForFilenameStatusAsync(
+            client,
+            "empty-hidden-only.xlsx",
+            DocumentStatus.Failed
+        );
+        after.Count.Should().Be(before.Count + 1);
     }
 
     [Fact]
-    public async Task AllBlankRow_Workbook_400_Same()
+    public async Task AllBlankRow_Workbook_IsRetained_AsFailed()
     {
         // Build blank workbook via raw zip (empty sheetData)
         var bytes = BuildBlankXlsx();
@@ -106,12 +95,9 @@ public sealed class XlsxGuardTests
         );
         form.Add(file, "file", "blank.xlsx");
         var resp = await client.PostAsync("/api/documents", form);
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var bodyLow = (await resp.Content.ReadAsStringAsync()).ToLowerInvariant();
-        // Blank may be treated as corrupt (invalid package) or no extractable content — both 400 valid, but spec expects no extractable
-        bodyLow
-            .Should()
-            .MatchRegex("no extractable content|content does not match type|corrupted");
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var blank = await WaitForFilenameStatusAsync(client, "blank.xlsx", DocumentStatus.Failed);
+        blank.Should().Contain(d => d.Filename == "blank.xlsx");
     }
 
     private static byte[] BuildBlankXlsx()
@@ -216,7 +202,7 @@ public sealed class XlsxGuardTests
         );
         form.Add(file, "file", "sample-overcap.xlsx");
         var resp = await client.PostAsync("/api/documents", form);
-        resp.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -234,6 +220,7 @@ public sealed class XlsxGuardTests
         form.Add(file, "file", "sample-hidden.xlsx");
         var upload = await client.PostAsync("/api/documents", form);
         upload.EnsureSuccessStatusCode();
+        await WaitForFilenameStatusAsync(client, "sample-hidden.xlsx", DocumentStatus.Ready);
 
         // Check no Chunk.Text contains hidden-token-xyz
         var db = factory.Services.GetRequiredService<RagDbContext>();
@@ -267,13 +254,6 @@ public sealed class XlsxGuardTests
         {
             body.Should().Contain("no relevant content found");
         }
-    }
-
-    private static float[] CreateProbeVector()
-    {
-        var v = new float[384];
-        v[0] = 1.0f;
-        return v;
     }
 
     private static async Task<byte[]> LoadFixtureAsync(string fileName)
@@ -313,5 +293,25 @@ public sealed class XlsxGuardTests
                 json,
                 JsonOptions
             ) ?? throw new InvalidOperationException("deserialize");
+    }
+
+    private static async Task<System.Collections.Generic.List<Document>> WaitForFilenameStatusAsync(
+        HttpClient client,
+        string filename,
+        DocumentStatus status
+    )
+    {
+        for (var attempt = 0; attempt < 80; attempt++)
+        {
+            var documents = await DeserializeListAsync(await client.GetAsync("/api/documents"));
+            if (documents.Any(d => d.Filename == filename && d.Status == status))
+            {
+                return documents;
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException($"{filename} did not reach {status}.");
     }
 }

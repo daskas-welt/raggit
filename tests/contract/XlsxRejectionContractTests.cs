@@ -21,7 +21,7 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
     }
 
     [Fact]
-    public async Task Overcap_413_Body_Matches_ApiYaml_Shape()
+    public async Task Overcap_IsAccepted_ForBackgroundIndexing()
     {
         var bytes = await LoadFixtureAsync("sample-overcap.xlsx");
         var form = new MultipartFormDataContent();
@@ -31,11 +31,9 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         );
         form.Add(file, "file", "sample-overcap.xlsx");
         var resp = await _client.PostAsync("/api/documents", form);
-        resp.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await resp.Content.ReadAsStringAsync();
-        body.Should().Contain("error");
-        body.Should().Contain("100,000");
-        body.Should().MatchRegex(@".*Spreadsheet exceeds 100,000 cell limit.*found [\d,]+ cells.*");
+        body.Should().Contain("Uploading");
     }
 
     [Fact]
@@ -54,7 +52,7 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
     }
 
     [Fact]
-    public async Task EmptyHiddenOnly_400_NoExtractableContent_Shape()
+    public async Task EmptyHiddenOnly_IsAccepted_ForBackgroundIndexing()
     {
         var bytes = await LoadFixtureAsync("empty-hidden-only.xlsx");
         var form = new MultipartFormDataContent();
@@ -64,11 +62,8 @@ public sealed class XlsxRejectionContractTests : IClassFixture<TestApiFactory>
         );
         form.Add(file, "file", "empty-hidden-only.xlsx");
         var resp = await _client.PostAsync("/api/documents", form);
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await resp.Content.ReadAsStringAsync())
-            .ToLowerInvariant()
-            .Should()
-            .Contain("no extractable content");
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
+        (await resp.Content.ReadAsStringAsync()).Should().Contain("Uploading");
     }
 
     private static async Task<byte[]> LoadFixtureAsync(string name)
