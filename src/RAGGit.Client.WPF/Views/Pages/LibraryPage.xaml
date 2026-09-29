@@ -1,0 +1,346 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.LibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
+    xmlns:models="clr-namespace:RAGGit.Core.Models;assembly=RAGGit.Core"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Library"
+>
+    <Page.Resources>
+        <converters:DocumentMimeLabelConverter x:Key="MimeLabel" />
+        <converters:SizeMbConverter x:Key="SizeMb" />
+        <converters:CreatorLabelConverter x:Key="CreatorLabel" />
+        <converters:ShortDateConverter x:Key="ShortDate" />
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
+    </Page.Resources>
+    <Grid Margin="0,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header card -->
+        <ui:Card Grid.Row="0" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Document Library" />
+                    <ui:TextBlock
+                        Style="{StaticResource PageSubtitleText}"
+                        Text="Documents available to everyone"
+                    />
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                    <ui:Button
+                        Width="44"
+                        Height="44"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="RefreshButton"
+                        AutomationProperties.Name="Refresh documents"
+                        Command="{Binding LoadDocumentsCommand}"
+                        ToolTip="Refresh documents"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button
+                        x:Name="UploadButton"
+                        Width="44"
+                        Height="44"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="UploadButton"
+                        AutomationProperties.Name="Upload documents"
+                        Click="OnUploadClicked"
+                        ToolTip="Upload documents"
+                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowUpload24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+        </ui:Card>
+
+        <!-- Document list card -->
+        <ui:Card Grid.Row="1" Margin="0,12,0,0" Padding="0" VerticalAlignment="Stretch">
+            <Grid>
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                >
+                    <StackPanel MinWidth="880">
+                        <Grid Margin="16,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBlock
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Filename"
+                            />
+                            <ui:TextBlock
+                                Grid.Column="1"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Type"
+                            />
+                            <ui:TextBlock
+                                Grid.Column="2"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Size"
+                            />
+                            <ui:TextBlock
+                                Grid.Column="3"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Status"
+                            />
+                            <ui:TextBlock
+                                Grid.Column="4"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Creator"
+                            />
+                            <ui:TextBlock
+                                Grid.Column="5"
+                                Margin="0,0,12,0"
+                                FontTypography="Caption"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SecondaryText}"
+                                Text="Created"
+                            />
+                            <Border
+                                Grid.ColumnSpan="8"
+                                Height="1"
+                                IsHitTestVisible="False"
+                                VerticalAlignment="Bottom"
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                            />
+                        </Grid>
+                        <ItemsControl x:Name="DocumentsList" ItemsSource="{Binding PageItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <Grid Margin="16,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="44" />
+                                            <ColumnDefinition Width="44" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBlock
+                                            Grid.Column="0"
+                                            Margin="0,0,12,0"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding Filename}"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Column="1"
+                                            Margin="0,0,12,0"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource SecondaryText}"
+                                            Text="{Binding Converter={StaticResource MimeLabel}}"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Column="2"
+                                            Margin="0,0,12,0"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource SecondaryText}"
+                                            Text="{Binding Converter={StaticResource SizeMb}}"
+                                        />
+                                        <components:StatusChip
+                                            Grid.Column="3"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.HelpText="{Binding FailureReason}"
+                                            Status="{Binding Status}"
+                                            ToolTip="{Binding FailureReason}"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Column="4"
+                                            Margin="0,0,12,0"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource SecondaryText}"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding Converter={StaticResource CreatorLabel}}"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Column="5"
+                                            Margin="0,0,12,0"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource SecondaryText}"
+                                            Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                        />
+                                        <ui:Button
+                                            Grid.Column="6"
+                                            Width="36"
+                                            Height="32"
+                                            Margin="0,0,8,0"
+                                            Padding="0"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.Name="Download document"
+                                            Click="OnDownloadClicked"
+                                            ToolTip="Download document"
+                                        >
+                                            <ui:Button.Icon>
+                                                <ui:SymbolIcon Symbol="ArrowDownload24" />
+                                            </ui:Button.Icon>
+                                        </ui:Button>
+                                        <ui:Button
+                                            Grid.Column="7"
+                                            Width="36"
+                                            Height="32"
+                                            Padding="0"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.Name="Delete document"
+                                            Click="OnDeleteClicked"
+                                            ToolTip="Delete document"
+                                            Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
+                                        >
+                                            <ui:Button.Icon>
+                                                <ui:SymbolIcon Symbol="Delete24" />
+                                            </ui:Button.Icon>
+                                        </ui:Button>
+                                        <Border
+                                            Grid.ColumnSpan="8"
+                                            Height="1"
+                                            IsHitTestVisible="False"
+                                            VerticalAlignment="Bottom"
+                                            BorderThickness="0,0,0,1"
+                                            BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                                        />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Empty state (ItemsControl has no empty view) -->
+                <ui:Card
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
+                >
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon
+                            Symbol="Document24"
+                            Style="{StaticResource EmptyStateGlyph}"
+                            Margin="0,0,0,12"
+                        />
+                        <ui:TextBlock
+                            HorizontalAlignment="Center"
+                            FontTypography="Title"
+                            Text="No documents yet"
+                        />
+                        <ui:TextBlock
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            Text="Upload a document to see it here."
+                        />
+                    </StackPanel>
+                </ui:Card>
+
+                <ui:ProgressRing
+                    Width="200"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsIndeterminate="True"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                />
+            </Grid>
+        </ui:Card>
+
+        <!-- Pagination footer -->
+        <components:PaginationFooterControl
+            Grid.Row="2"
+            Margin="0,12,0,0"
+            VerticalAlignment="Center"
+            PageSizeOptions="{Binding PageSizeOptions}"
+            SelectedPageSize="{Binding PageSize, Mode=TwoWay}"
+            StatusText="{Binding StatusText}"
+            Sequence="{Binding VisibleSequence}"
+            GoToCommand="{Binding GoToPageCommand}"
+            FirstCommand="{Binding FirstPageCommand}"
+            PreviousCommand="{Binding PreviousPageCommand}"
+            NextCommand="{Binding NextPageCommand}"
+            LastCommand="{Binding LastPageCommand}"
+            CanGoPrevious="{Binding HasPrevious}"
+            CanGoNext="{Binding HasNext}"
+        />
+
+        <!-- Footer -->
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:TextBlock
+                Grid.Column="0"
+                FontTypography="Body"
+                VerticalAlignment="Center"
+                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                TextTrimming="CharacterEllipsis"
+                TextWrapping="Wrap"
+                Text="{Binding ErrorMessage}"
+            />
+            <ui:Button
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="LibraryRetryButton"
+                AutomationProperties.Name="Retry loading library"
+                Command="{Binding RetryCommand}"
+                Content="Retry"
+                Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
+            />
+        </Grid>
+    </Grid>
+</Page>

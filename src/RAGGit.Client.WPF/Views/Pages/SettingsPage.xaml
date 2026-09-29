@@ -1,0 +1,183 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Settings"
+>
+    <ScrollViewer
+        Margin="0,24"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto"
+    >
+        <StackPanel MaxWidth="760">
+            <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Settings" />
+            <ui:TextBlock
+                Style="{StaticResource PageSubtitleText}"
+                Text="Preferences for this client"
+            />
+
+            <!-- Appearance & behavior -->
+            <ui:TextBlock
+                Margin="0,24,0,8"
+                Style="{StaticResource SectionHeaderText}"
+                Text="Appearance &amp; behavior"
+            />
+            <ui:CardControl
+                Margin="0,0,0,12"
+                AutomationProperties.AutomationId="SettingsRowAppearance"
+            >
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Color24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="App theme" />
+                        <ui:TextBlock
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            Text="Select which app theme to display"
+                        />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <RadioButton
+                        x:Name="LightThemeRadio"
+                        AutomationProperties.AutomationId="LightThemeRadio"
+                        TabIndex="0"
+                        VerticalContentAlignment="Center"
+                        Content="Light"
+                        GroupName="AppTheme"
+                        Checked="OnLightThemeChecked"
+                    />
+                    <RadioButton
+                        x:Name="DarkThemeRadio"
+                        AutomationProperties.AutomationId="DarkThemeRadio"
+                        TabIndex="1"
+                        Margin="16,0,0,0"
+                        VerticalContentAlignment="Center"
+                        Content="Dark"
+                        GroupName="AppTheme"
+                        Checked="OnDarkThemeChecked"
+                    />
+                </StackPanel>
+            </ui:CardControl>
+
+            <!-- Connection -->
+            <ui:TextBlock
+                Margin="0,24,0,8"
+                Style="{StaticResource SectionHeaderText}"
+                Text="Connection"
+            />
+            <ui:CardControl
+                Margin="0,0,0,12"
+                AutomationProperties.AutomationId="SettingsRowConnection"
+            >
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Link24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="Workstation URL" />
+                        <ui:TextBlock
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            Text="The AI workstation this client connects to"
+                        />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:TextBlock
+                    x:Name="WorkstationUrlText"
+                    AutomationProperties.AutomationId="WorkstationUrlValue"
+                    MaxWidth="320"
+                    VerticalAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    Text="(not configured)"
+                />
+            </ui:CardControl>
+            <ui:CardControl
+                Margin="0,0,0,12"
+                AutomationProperties.AutomationId="SettingsRowSignedInAs"
+            >
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Person24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="Signed in as" />
+                        <ui:TextBlock
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            Text="The account currently using this client"
+                        />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:TextBlock
+                    x:Name="SignedInAsText"
+                    AutomationProperties.AutomationId="SignedInAsValue"
+                    MaxWidth="320"
+                    VerticalAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    Text=""
+                />
+            </ui:CardControl>
+            <ui:CardControl AutomationProperties.AutomationId="SettingsRowConnectionStatus">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="PlugConnected24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="Connection status" />
+                        <ui:TextBlock
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            Text="Reachability of the AI workstation"
+                        />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:TextBlock
+                    x:Name="ConnectionStatusText"
+                    AutomationProperties.AutomationId="ConnectionStatusValue"
+                    MaxWidth="320"
+                    VerticalAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    Text=""
+                />
+            </ui:CardControl>
+
+            <!-- Session -->
+            <ui:TextBlock
+                Margin="0,24,0,8"
+                Style="{StaticResource SectionHeaderText}"
+                Text="Session"
+            />
+            <ui:CardControl AutomationProperties.AutomationId="SettingsRowSession">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="SignOut24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="Sign out" />
+                        <ui:TextBlock
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            Text="End this session on this device"
+                        />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:Button
+                    x:Name="SignOutButton"
+                    AutomationProperties.AutomationId="SignOutButton"
+                    TabIndex="2"
+                    HorizontalAlignment="Left"
+                    Appearance="Danger"
+                    Content="Sign out"
+                    Click="OnSignOutClicked"
+                />
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

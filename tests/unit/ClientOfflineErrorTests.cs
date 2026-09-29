@@ -152,7 +152,7 @@ public sealed class ClientOfflineErrorTests
             "..",
             "..",
             "src",
-            "RAGGit.Client.WinUI"
+            "RAGGit.Client.WPF"
         );
         if (!System.IO.Directory.Exists(clientSourceRoot))
             clientSourceRoot = System.IO.Path.GetFullPath(
@@ -164,7 +164,7 @@ public sealed class ClientOfflineErrorTests
                     "..",
                     "..",
                     "src",
-                    "RAGGit.Client.WinUI"
+                    "RAGGit.Client.WPF"
                 )
             );
 

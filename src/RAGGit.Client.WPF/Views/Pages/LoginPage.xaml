@@ -1,0 +1,59 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Sign in"
+>
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ui:Card Width="360" Padding="24">
+            <StackPanel>
+                <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Sign in to RAGGit" />
+                <ui:TextBlock
+                    Margin="0,8,0,16"
+                    Style="{StaticResource PageSubtitleText}"
+                    Text="Enter your workstation credentials."
+                />
+
+                <ui:TextBox
+                    x:Name="UsernameBox"
+                    AutomationProperties.AutomationId="UsernameBox"
+                    Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="Username"
+                    Margin="0,0,0,12"
+                />
+
+                <ui:PasswordBox
+                    x:Name="PasswordBox"
+                    AutomationProperties.AutomationId="PasswordBox"
+                    PlaceholderText="Password"
+                    Margin="0,0,0,12"
+                    PasswordChanged="OnPasswordChanged"
+                />
+
+                <ui:TextBlock
+                    Margin="0,0,0,12"
+                    Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                    Text="{Binding ErrorMessage}"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                />
+
+                <ui:Button
+                    x:Name="SignInButton"
+                    AutomationProperties.AutomationId="SignInButton"
+                    Appearance="Primary"
+                    Command="{Binding LoginCommand}"
+                    Content="Sign in"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                />
+
+                <ui:ProgressRing
+                    Margin="0,12,0,0"
+                    IsIndeterminate="True"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                />
+            </StackPanel>
+        </ui:Card>
+    </Grid>
+</Page>

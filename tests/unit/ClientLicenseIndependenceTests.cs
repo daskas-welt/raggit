@@ -48,15 +48,17 @@ public sealed class ClientLicenseIndependenceTests
     }
 
     [Fact]
-    public void ClientWinUIProject_UsesWindowsAppSdkAndNoMaui()
+    public void ClientWpfProject_UsesWpfUiAndNoMaui()
     {
         var root = FindRepositoryRoot();
-        var csproj = Path.Combine(root, "src", "RAGGit.Client.WinUI", "RAGGit.Client.WinUI.csproj");
+        var csproj = Path.Combine(root, "src", "RAGGit.Client.WPF", "RAGGit.Client.WPF.csproj");
         File.Exists(csproj).Should().BeTrue();
         var text = File.ReadAllText(csproj);
-        text.Should().Contain("Microsoft.WindowsAppSDK");
+        text.Should().Contain("WPF-UI");
+        text.Should().Contain("<UseWPF>true</UseWPF>");
         text.Should().NotContain("Microsoft.Maui");
         text.Should().NotContain("CommunityToolkit.Maui");
+        text.Should().NotContain("Microsoft.WindowsAppSDK");
     }
 
     [Fact]
@@ -77,7 +79,7 @@ public sealed class ClientLicenseIndependenceTests
             var relative in new[]
             {
                 Path.Combine("src", "RAGGit.Client.Core", "RAGGit.Client.Core.csproj"),
-                Path.Combine("src", "RAGGit.Client.WinUI", "RAGGit.Client.WinUI.csproj"),
+                Path.Combine("src", "RAGGit.Client.WPF", "RAGGit.Client.WPF.csproj"),
             }
         )
         {

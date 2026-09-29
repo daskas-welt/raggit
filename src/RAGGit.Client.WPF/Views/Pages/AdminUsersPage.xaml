@@ -1,0 +1,360 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.AdminUsersPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="People Management"
+>
+    <Page.Resources>
+        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+        <converters:SelectedUserLabelConverter x:Key="SelectedUserLabel" />
+        <converters:RoleActionLabelConverter x:Key="RoleActionLabel" />
+        <converters:ActiveVerbConverter x:Key="ActiveVerb" />
+        <converters:ActiveToggleLabelConverter x:Key="ActiveToggleLabel" />
+        <converters:LockedLabelConverter x:Key="LockedLabel" />
+        <converters:LockStatusLabelConverter x:Key="LockStatusLabel" />
+    </Page.Resources>
+    <Grid Margin="0,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <ui:Card Grid.Row="0" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <ui:TextBlock Style="{StaticResource PageTitleText}" Text="People Management" />
+                    <ui:TextBlock
+                        Style="{StaticResource PageSubtitleText}"
+                        Text="Manage accounts and access"
+                    />
+                </StackPanel>
+                <ui:Button
+                    x:Name="RefreshUsersButton"
+                    Grid.Column="1"
+                    AutomationProperties.AutomationId="RefreshUsersButton"
+                    AutomationProperties.Name="Refresh users"
+                    ToolTip="Refresh users"
+                    TabIndex="0"
+                    VerticalAlignment="Center"
+                    Content="Refresh"
+                    Command="{Binding LoadUsersCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                />
+            </Grid>
+        </ui:Card>
+
+        <!-- Dedicated status surface: every outcome lands here. -->
+        <Border
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            Padding="12,8"
+            BorderThickness="1"
+            CornerRadius="8"
+            AutomationProperties.AutomationId="AdminStatusBar"
+            AutomationProperties.LiveSetting="Polite"
+            Visibility="{Binding HasStatus, Converter={StaticResource BooleanToVisibilityConverter}}"
+        >
+            <ui:TextBlock
+                FontTypography="Body"
+                TextWrapping="Wrap"
+                Text="{Binding StatusMessage}"
+            />
+        </Border>
+
+        <!-- Users list -->
+        <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="16,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="110" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock
+                        Grid.Column="0"
+                        FontTypography="Caption"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SecondaryText}"
+                        Text="User"
+                    />
+                    <ui:TextBlock
+                        Grid.Column="1"
+                        FontTypography="Caption"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SecondaryText}"
+                        Text="Role"
+                    />
+                    <ui:TextBlock
+                        Grid.Column="2"
+                        FontTypography="Caption"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SecondaryText}"
+                        Text="Active"
+                    />
+                    <ui:TextBlock
+                        Grid.Column="3"
+                        FontTypography="Caption"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SecondaryText}"
+                        Text="Lock status"
+                    />
+                    <Border
+                        Grid.ColumnSpan="4"
+                        Height="1"
+                        IsHitTestVisible="False"
+                        VerticalAlignment="Bottom"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                    />
+                </Grid>
+                <Separator Grid.Row="1" Margin="0" />
+                <Grid Grid.Row="2">
+                    <ui:ListView
+                        x:Name="UsersList"
+                        ItemsSource="{Binding Users}"
+                        SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        MinHeight="240"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        TabIndex="1"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        AutomationProperties.AutomationId="UsersList"
+                        AutomationProperties.Name="Users"
+                    >
+                        <ui:ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                            </Style>
+                        </ui:ListView.ItemContainerStyle>
+                        <ui:ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="16,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <ui:TextBlock
+                                            FontTypography="BodyStrong"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding Username}"
+                                        />
+                                        <ui:TextBlock
+                                            FontTypography="Caption"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding DisplayName}"
+                                        />
+                                    </StackPanel>
+                                    <ui:Button
+                                        Grid.Column="1"
+                                        MinWidth="96"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Content="{Binding Role}"
+                                        AutomationProperties.Name="{Binding Converter={StaticResource RoleActionLabel}}"
+                                        ToolTip="{Binding Converter={StaticResource RoleActionLabel}}"
+                                        Click="OnChangeRoleClicked"
+                                    />
+                                    <ui:Button
+                                        Grid.Column="2"
+                                        MinWidth="110"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Content="{Binding IsActive, Converter={StaticResource ActiveVerb}}"
+                                        AutomationProperties.Name="{Binding Converter={StaticResource ActiveToggleLabel}}"
+                                        ToolTip="{Binding Converter={StaticResource ActiveToggleLabel}}"
+                                        Click="OnToggleActiveClicked"
+                                    />
+                                    <ui:TextBlock
+                                        Grid.Column="3"
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        Text="{Binding LockedOut, Converter={StaticResource LockedLabel}}"
+                                        AutomationProperties.Name="{Binding Converter={StaticResource LockStatusLabel}}"
+                                    />
+                                    <Border
+                                        Grid.ColumnSpan="4"
+                                        Height="1"
+                                        IsHitTestVisible="False"
+                                        VerticalAlignment="Bottom"
+                                        BorderThickness="0,0,0,1"
+                                        BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                                    />
+                                </Grid>
+                            </DataTemplate>
+                        </ui:ListView.ItemTemplate>
+                    </ui:ListView>
+
+                    <ui:ProgressRing
+                        Width="200"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsIndeterminate="True"
+                        AutomationProperties.Name="Loading users"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    />
+
+                    <ui:Card
+                        Padding="24"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding ShowEmptyUsers, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    >
+                        <StackPanel HorizontalAlignment="Center">
+                            <ui:SymbolIcon
+                                Symbol="People24"
+                                Style="{StaticResource EmptyStateGlyph}"
+                                Margin="0,0,0,12"
+                            />
+                            <ui:TextBlock
+                                HorizontalAlignment="Center"
+                                FontTypography="Title"
+                                Text="No users found"
+                            />
+                            <ui:TextBlock
+                                Margin="0,8,0,0"
+                                HorizontalAlignment="Center"
+                                FontTypography="Body"
+                                Text="People you create will appear here."
+                            />
+                        </StackPanel>
+                    </ui:Card>
+                </Grid>
+            </Grid>
+        </ui:Card>
+
+        <!-- Forms: side by side; the ScrollViewer keeps them reachable on short windows. -->
+        <ScrollViewer
+            Grid.Row="3"
+            MaxHeight="380"
+            Margin="0,12,0,0"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto"
+        >
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ui:Card x:Name="CreateCard" Grid.Column="0" Margin="0,0,6,0" Padding="16">
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Title" Text="Create Person" />
+                        <ui:TextBlock Margin="0,12,0,4" FontTypography="Body" Text="Username" />
+                        <ui:TextBox
+                            x:Name="NewUsernameBox"
+                            AutomationProperties.AutomationId="NewUsernameBox"
+                            TabIndex="2"
+                            PlaceholderText="Unique login name"
+                            Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                        <ui:TextBlock Margin="0,12,0,4" FontTypography="Body" Text="Display Name" />
+                        <ui:TextBox
+                            x:Name="NewDisplayNameBox"
+                            AutomationProperties.AutomationId="NewDisplayNameBox"
+                            TabIndex="3"
+                            PlaceholderText="Shown in the users list"
+                            Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                        <ui:TextBlock Margin="0,12,0,4" FontTypography="Body" Text="Role" />
+                        <ComboBox
+                            x:Name="NewRoleCombo"
+                            AutomationProperties.AutomationId="NewRoleCombo"
+                            TabIndex="4"
+                            HorizontalAlignment="Stretch"
+                            FontSize="14"
+                            ItemsSource="{Binding Roles}"
+                            SelectedItem="{Binding NewRole, Mode=TwoWay}"
+                        />
+                        <ui:TextBlock Margin="0,12,0,4" FontTypography="Body" Text="Password" />
+                        <ui:PasswordBox
+                            x:Name="NewPasswordBox"
+                            AutomationProperties.AutomationId="NewPasswordBox"
+                            TabIndex="5"
+                            PlaceholderText="Initial password for the new account"
+                            Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                        <ui:Button
+                            x:Name="CreateUserButton"
+                            AutomationProperties.AutomationId="CreateUserButton"
+                            AutomationProperties.Name="Create user"
+                            ToolTip="Create user"
+                            TabIndex="6"
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Left"
+                            Appearance="Primary"
+                            Content="Create user"
+                            Command="{Binding CreateUserCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                        />
+                    </StackPanel>
+                </ui:Card>
+
+                <ui:Card x:Name="ResetCard" Grid.Column="1" Margin="6,0,0,0" Padding="16">
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Title" Text="Reset Password" />
+                        <ui:TextBlock
+                            Margin="0,12,0,0"
+                            FontTypography="Caption"
+                            TextWrapping="Wrap"
+                            Text="{Binding SelectedUser, Converter={StaticResource SelectedUserLabel}}"
+                        />
+                        <ui:TextBlock Margin="0,12,0,4" FontTypography="Body" Text="New Password" />
+                        <ui:PasswordBox
+                            x:Name="ResetPasswordBox"
+                            AutomationProperties.AutomationId="ResetPasswordBox"
+                            TabIndex="7"
+                            PlaceholderText="The selected user signs in with this next"
+                            Password="{Binding ResetPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                        <CheckBox
+                            x:Name="ResetMustChangeCheck"
+                            AutomationProperties.AutomationId="ResetMustChangeCheck"
+                            TabIndex="8"
+                            Margin="0,12,0,0"
+                            VerticalContentAlignment="Center"
+                            Content="Must change password"
+                            IsChecked="{Binding ResetMustChangePassword, Mode=TwoWay}"
+                        />
+                        <ui:Button
+                            x:Name="ResetPasswordButton"
+                            AutomationProperties.AutomationId="ResetPasswordButton"
+                            AutomationProperties.Name="Reset password"
+                            ToolTip="Reset password"
+                            TabIndex="9"
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Left"
+                            Appearance="Primary"
+                            Content="Reset password"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                            Click="OnResetPasswordClicked"
+                        />
+                    </StackPanel>
+                </ui:Card>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

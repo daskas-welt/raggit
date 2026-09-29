@@ -1,0 +1,50 @@
+<Application
+    x:Class="RAGGit.Client.WPF.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    Startup="OnStartup"
+>
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
+            <!-- Hero banner gradient (theme-accent; adapts to Light/Dark/High Contrast). -->
+            <LinearGradientBrush x:Key="HeroAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Offset="0" Color="{DynamicResource SystemAccentColorPrimary}" />
+                <GradientStop Offset="1" Color="{DynamicResource SystemAccentColorSecondary}" />
+            </LinearGradientBrush>
+
+            <!-- Design-system text styles (feature 023). Adopt these instead of re-declaring attributes. -->
+            <Style x:Key="PageTitleText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Title" />
+            </Style>
+            <Style x:Key="PageSubtitleText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Body" />
+                <Setter Property="Appearance" Value="Secondary" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="SectionHeaderText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="BodyStrong" />
+            </Style>
+            <Style x:Key="SecondaryText" TargetType="ui:TextBlock">
+                <Setter Property="Appearance" Value="Secondary" />
+            </Style>
+            <Style x:Key="EmptyStateGlyph" TargetType="ui:SymbolIcon">
+                <Setter Property="FontSize" Value="40" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter
+                    Property="Foreground"
+                    Value="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

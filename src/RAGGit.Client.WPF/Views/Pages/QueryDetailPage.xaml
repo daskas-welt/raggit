@@ -1,0 +1,194 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.QueryDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Query Detail"
+>
+    <Page.Resources>
+        <converters:HistoryCitationSubtitleConverter x:Key="CitationSubtitle" />
+        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+    </Page.Resources>
+    <Grid Margin="0,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header card -->
+        <ui:Card Grid.Row="0" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query Detail" />
+                    <ui:TextBlock
+                        Style="{StaticResource PageSubtitleText}"
+                        Text="A saved question and its grounded answer"
+                    />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button
+                        x:Name="AskAgainButton"
+                        AutomationProperties.AutomationId="AskAgainButton"
+                        AutomationProperties.Name="Run this query again"
+                        ToolTip="Run this query again"
+                        TabIndex="0"
+                        Margin="0,0,8,0"
+                        Content="Ask again"
+                        Click="OnAskAgainClicked"
+                    />
+                    <ui:Button
+                        x:Name="BackButton"
+                        AutomationProperties.AutomationId="BackButton"
+                        AutomationProperties.Name="Back"
+                        ToolTip="Back"
+                        TabIndex="1"
+                        Content="Back"
+                        Click="OnBackClicked"
+                    />
+                </StackPanel>
+            </Grid>
+        </ui:Card>
+
+        <!-- Error -->
+        <ui:TextBlock
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            FontTypography="Body"
+            TextWrapping="Wrap"
+            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+            Text="{Binding ErrorMessage}"
+        />
+
+        <!-- Prompt card -->
+        <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="12">
+            <StackPanel>
+                <ui:TextBlock FontTypography="Caption" Text="Prompt" />
+                <ui:TextBlock
+                    Margin="0,6,0,0"
+                    FontTypography="Body"
+                    TextWrapping="Wrap"
+                    Text="{Binding Detail.Prompt}"
+                />
+                <ui:Button
+                    x:Name="CopyPromptButton"
+                    AutomationProperties.AutomationId="CopyPromptButton"
+                    AutomationProperties.Name="Copy prompt"
+                    ToolTip="Copy prompt"
+                    TabIndex="2"
+                    HorizontalAlignment="Right"
+                    Margin="0,6,0,0"
+                    Content="Copy"
+                    Click="CopyPromptButton_Click"
+                />
+            </StackPanel>
+        </ui:Card>
+
+        <!-- Answer card -->
+        <ui:Card Grid.Row="3" Margin="0,12,0,0" Padding="12">
+            <StackPanel>
+                <ui:TextBlock FontTypography="Caption" Text="Answer" />
+                <ui:TextBlock
+                    Margin="0,6,0,0"
+                    FontTypography="Body"
+                    TextWrapping="Wrap"
+                    Text="{Binding Detail.Answer}"
+                />
+                <ui:Button
+                    x:Name="CopyAnswerButton"
+                    AutomationProperties.AutomationId="CopyAnswerButton"
+                    AutomationProperties.Name="Copy answer"
+                    ToolTip="Copy answer"
+                    TabIndex="3"
+                    HorizontalAlignment="Right"
+                    Margin="0,6,0,0"
+                    Content="Copy"
+                    Click="CopyAnswerButton_Click"
+                />
+            </StackPanel>
+        </ui:Card>
+
+        <!-- Citations card -->
+        <ui:Card Grid.Row="4" Margin="0,12,0,0" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ui:TextBlock Grid.Row="0" FontTypography="Caption" Text="Citations" />
+                <Grid Grid.Row="1" Margin="0,12,0,0">
+                    <ListBox
+                        ItemsSource="{Binding Detail.Citations}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    >
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,4" />
+                                <Setter Property="Focusable" Value="False" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12" BorderThickness="1" CornerRadius="8">
+                                    <StackPanel>
+                                        <ui:TextBlock
+                                            FontTypography="Body"
+                                            TextWrapping="Wrap"
+                                            Text="{Binding Text}"
+                                        />
+                                        <ui:TextBlock
+                                            Margin="0,4,0,0"
+                                            FontTypography="Caption"
+                                            Text="{Binding Converter={StaticResource CitationSubtitle}}"
+                                        />
+                                        <ui:Button
+                                            AutomationProperties.AutomationId="CopyCitationButton"
+                                            AutomationProperties.Name="Copy citation"
+                                            ToolTip="Copy citation"
+                                            HorizontalAlignment="Right"
+                                            Margin="0,6,0,0"
+                                            Content="Copy"
+                                            Click="CopyCitationButton_Click"
+                                        />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <ui:TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontTypography="Body"
+                        Text="No citations for this query."
+                        Visibility="{Binding Detail.Citations, Converter={StaticResource EmptyListVisibility}}"
+                    />
+                </Grid>
+            </Grid>
+        </ui:Card>
+
+        <!-- Loading overlay -->
+        <ui:ProgressRing
+            Grid.Row="0"
+            Grid.RowSpan="5"
+            Width="200"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsIndeterminate="True"
+            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+        />
+    </Grid>
+</Page>

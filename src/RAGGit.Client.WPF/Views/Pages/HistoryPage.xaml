@@ -1,0 +1,179 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.HistoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="History"
+>
+    <Page.Resources>
+        <converters:HistoryMetaConverter x:Key="HistoryMeta" />
+    </Page.Resources>
+    <Grid Margin="0,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header card -->
+        <ui:Card Grid.Row="0" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query History" />
+                    <ui:TextBlock
+                        Style="{StaticResource PageSubtitleText}"
+                        Text="Your past questions"
+                    />
+                </StackPanel>
+                <ui:Button
+                    x:Name="RefreshButton"
+                    Grid.Column="1"
+                    AutomationProperties.AutomationId="RefreshButton"
+                    AutomationProperties.Name="Refresh history"
+                    ToolTip="Refresh history"
+                    TabIndex="0"
+                    VerticalAlignment="Center"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                />
+            </Grid>
+        </ui:Card>
+
+        <!-- History list -->
+        <Grid Grid.Row="1" Margin="0,12,0,0">
+            <ui:ListView
+                x:Name="HistoryList"
+                ItemsSource="{Binding Items}"
+                SelectionMode="Single"
+                Background="Transparent"
+                BorderThickness="0"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                MouseDoubleClick="OnListDoubleClicked"
+            >
+                <ui:ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,6" />
+                    </Style>
+                </ui:ListView.ItemContainerStyle>
+                <ui:ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ui:Card Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ui:TextBlock
+                                    Grid.Row="0"
+                                    FontTypography="BodyStrong"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding PromptPreview}"
+                                />
+                                <ui:TextBlock
+                                    Grid.Row="1"
+                                    FontTypography="Body"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding AnswerPreview}"
+                                />
+                                <ui:TextBlock
+                                    Grid.Row="2"
+                                    Margin="0,4,0,0"
+                                    FontTypography="Caption"
+                                    Text="{Binding Converter={StaticResource HistoryMeta}}"
+                                />
+                                <StackPanel Grid.Row="3" Margin="0,8,0,0" Orientation="Horizontal">
+                                    <ui:Button
+                                        AutomationProperties.AutomationId="ViewQueryButton"
+                                        AutomationProperties.Name="Open query detail"
+                                        ToolTip="Open query detail"
+                                        Margin="0,0,8,0"
+                                        Content="View"
+                                        Click="OnViewClicked"
+                                    />
+                                    <ui:Button
+                                        AutomationProperties.AutomationId="AskAgainButton"
+                                        AutomationProperties.Name="Run this query again"
+                                        ToolTip="Run this query again"
+                                        Content="Ask again"
+                                        Click="OnAskAgainClicked"
+                                    />
+                                </StackPanel>
+                            </Grid>
+                        </ui:Card>
+                    </DataTemplate>
+                </ui:ListView.ItemTemplate>
+            </ui:ListView>
+
+            <!-- Empty state card -->
+            <ui:Card
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+            >
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ui:SymbolIcon
+                        Symbol="History24"
+                        Style="{StaticResource EmptyStateGlyph}"
+                        Margin="0,0,0,12"
+                    />
+                    <ui:TextBlock
+                        HorizontalAlignment="Center"
+                        FontTypography="Title"
+                        Text="No queries yet"
+                    />
+                    <ui:TextBlock
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center"
+                        FontTypography="Body"
+                        Text="Ask a question to see it here."
+                    />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:ProgressRing
+                Width="200"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsIndeterminate="True"
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+            />
+        </Grid>
+
+        <!-- Load more -->
+        <ui:Button
+            x:Name="LoadMoreButton"
+            Grid.Row="2"
+            AutomationProperties.AutomationId="LoadMoreButton"
+            TabIndex="1"
+            Margin="0,12,0,0"
+            HorizontalAlignment="Center"
+            Content="Load more"
+            Command="{Binding LoadMoreCommand}"
+            Visibility="{Binding HasMore, Converter={StaticResource BooleanToVisibilityConverter}}"
+        />
+
+        <!-- Footer -->
+        <ui:TextBlock
+            Grid.Row="3"
+            Margin="0,12,0,0"
+            FontTypography="Body"
+            TextTrimming="CharacterEllipsis"
+            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+            Text="{Binding ErrorMessage}"
+        />
+    </Grid>
+</Page>

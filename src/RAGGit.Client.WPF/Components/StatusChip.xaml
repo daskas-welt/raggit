@@ -1,0 +1,95 @@
+<UserControl
+    x:Class="RAGGit.Client.WPF.Components.StatusChip"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="Root"
+>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <ui:SymbolIcon
+            x:Name="StatusGlyph"
+            FontSize="16"
+            VerticalAlignment="Center"
+            Margin="0,0,6,0"
+        >
+            <ui:SymbolIcon.Style>
+                <Style TargetType="ui:SymbolIcon">
+                    <Setter Property="Symbol" Value="Circle24" />
+                    <Setter Property="Filled" Value="True" />
+                    <Setter
+                        Property="Foreground"
+                        Value="{DynamicResource SystemFillColorNeutralBrush}"
+                    />
+                    <Style.Triggers>
+                        <DataTrigger
+                            Binding="{Binding ToneName, ElementName=Root}"
+                            Value="Positive"
+                        >
+                            <Setter Property="Symbol" Value="CheckmarkCircle24" />
+                            <Setter Property="Filled" Value="True" />
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource SystemFillColorSuccessBrush}"
+                            />
+                        </DataTrigger>
+                        <DataTrigger
+                            Binding="{Binding ToneName, ElementName=Root}"
+                            Value="InProgress"
+                        >
+                            <Setter Property="Symbol" Value="ArrowSyncCircle24" />
+                            <Setter Property="Filled" Value="True" />
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource AccentFillColorDefaultBrush}"
+                            />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ToneName, ElementName=Root}" Value="Error">
+                            <Setter Property="Symbol" Value="ErrorCircle24" />
+                            <Setter Property="Filled" Value="True" />
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource SystemFillColorCriticalBrush}"
+                            />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ui:SymbolIcon.Style>
+        </ui:SymbolIcon>
+        <ui:TextBlock Text="{Binding Text, ElementName=Root}" FontTypography="Body">
+            <ui:TextBlock.Style>
+                <Style TargetType="ui:TextBlock">
+                    <Setter
+                        Property="Foreground"
+                        Value="{DynamicResource TextFillColorPrimaryBrush}"
+                    />
+                    <Style.Triggers>
+                        <DataTrigger
+                            Binding="{Binding ToneName, ElementName=Root}"
+                            Value="Positive"
+                        >
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource SystemFillColorSuccessBrush}"
+                            />
+                        </DataTrigger>
+                        <DataTrigger
+                            Binding="{Binding ToneName, ElementName=Root}"
+                            Value="InProgress"
+                        >
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource AccentFillColorDefaultBrush}"
+                            />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ToneName, ElementName=Root}" Value="Error">
+                            <Setter
+                                Property="Foreground"
+                                Value="{DynamicResource SystemFillColorCriticalBrush}"
+                            />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ui:TextBlock.Style>
+        </ui:TextBlock>
+    </StackPanel>
+</UserControl>

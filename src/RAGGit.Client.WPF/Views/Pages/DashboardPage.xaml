@@ -1,0 +1,634 @@
+<Page
+    x:Class="RAGGit.Client.WPF.Views.Pages.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
+    xmlns:models="clr-namespace:RAGGit.Core.Models;assembly=RAGGit.Core"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Dashboard"
+>
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
+        <converters:ShortDateConverter x:Key="ShortDate" />
+        <converters:StatusSeverityConverter x:Key="StatusSeverity" />
+    </Page.Resources>
+    <Grid>
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto"
+            Padding="0,24"
+        >
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Hero banner: theme-accent gradient, signed-in context. -->
+                <Border
+                    Grid.Row="0"
+                    MinHeight="170"
+                    Padding="28,24"
+                    CornerRadius="12"
+                    Background="{StaticResource HeroAccentGradientBrush}"
+                >
+                    <Grid>
+                        <ui:SymbolIcon
+                            Symbol="BookInformation24"
+                            FontSize="96"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"
+                            Foreground="{ui:ThemeResource TextOnAccentFillColorDisabledBrush}"
+                        />
+                        <WrapPanel>
+                            <StackPanel MinWidth="300" Margin="0,0,24,0" VerticalAlignment="Center">
+                                <ui:TextBlock
+                                    FontTypography="TitleLarge"
+                                    Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    Text="Welcome back"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,4,0,0"
+                                    FontTypography="Body"
+                                    Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    Text="Your library at a glance"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,4,0,0"
+                                    FontTypography="Caption"
+                                    Foreground="{ui:ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                    Text="{Binding RoleContext}"
+                                />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                        Text="{Binding TotalDocuments}"
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                        Text=" documents  ·  "
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                        Text="{Binding TotalQueries}"
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                        Text=" questions  ·  "
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                        Text="{Binding ReadyDocuments}"
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                        Text=" ready  ·  "
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                        Text="{Binding MyDocuments}"
+                                    />
+                                    <ui:TextBlock
+                                        FontTypography="Caption"
+                                        Foreground="{ui:ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                        Text=" mine"
+                                    />
+                                </WrapPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:Card
+                                    Padding="14,10"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="DashboardProfileCard"
+                                    AutomationProperties.Name="Logged user profile"
+                                >
+                                    <Grid MinWidth="260">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border
+                                            Width="40"
+                                            Height="40"
+                                            VerticalAlignment="Center"
+                                            BorderThickness="1"
+                                            CornerRadius="20"
+                                        >
+                                            <ui:SymbolIcon
+                                                Symbol="Person24"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                            />
+                                        </Border>
+                                        <StackPanel
+                                            Grid.Column="1"
+                                            Margin="10,0,0,0"
+                                            VerticalAlignment="Center"
+                                        >
+                                            <ui:TextBlock
+                                                FontTypography="BodyStrong"
+                                                TextTrimming="CharacterEllipsis"
+                                                Text="{Binding UserDisplayName}"
+                                            />
+                                            <ui:TextBlock
+                                                Margin="0,2,0,0"
+                                                FontTypography="Caption"
+                                                Style="{StaticResource SecondaryText}"
+                                                TextTrimming="CharacterEllipsis"
+                                                Text="{Binding UserHandle}"
+                                            />
+                                            <ui:TextBlock
+                                                Margin="0,2,0,0"
+                                                FontTypography="Caption"
+                                                Style="{StaticResource SecondaryText}"
+                                                TextTrimming="CharacterEllipsis"
+                                                Text="{Binding UserDetails}"
+                                            />
+                                        </StackPanel>
+                                    </Grid>
+                                </ui:Card>
+                                <ui:Button
+                                    Width="44"
+                                    Height="44"
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="DashboardRefreshButton"
+                                    AutomationProperties.Name="Refresh dashboard"
+                                    Command="{Binding LoadCommand}"
+                                    ToolTip="Refresh dashboard"
+                                >
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </StackPanel>
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Destination tiles: icon + title + one-line description; wrap at small widths. -->
+                <WrapPanel Grid.Row="1" Margin="0,16,0,0" Orientation="Horizontal">
+                    <ui:CardAction
+                        Width="320"
+                        Margin="0,0,12,12"
+                        Padding="0"
+                        IsChevronVisible="False"
+                        AutomationProperties.AutomationId="DashboardMetricDocuments"
+                        AutomationProperties.Name="Open document library"
+                        Click="OnLibraryClicked"
+                    >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Width="44"
+                                Height="44"
+                                Margin="16,0,12,0"
+                                CornerRadius="10"
+                                VerticalAlignment="Center"
+                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Library24"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="0,14" VerticalAlignment="Center">
+                                <ui:TextBlock FontTypography="BodyStrong" Text="Library" />
+                                <ui:TextBlock
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="Browse and upload documents"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardAction>
+                    <ui:CardAction
+                        Width="320"
+                        Margin="0,0,12,12"
+                        Padding="0"
+                        IsChevronVisible="False"
+                        AutomationProperties.AutomationId="DashboardMetricQueries"
+                        AutomationProperties.Name="Ask the library"
+                        Click="OnAskClicked"
+                    >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Width="44"
+                                Height="44"
+                                Margin="16,0,12,0"
+                                CornerRadius="10"
+                                VerticalAlignment="Center"
+                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Chat24"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="0,14" VerticalAlignment="Center">
+                                <ui:TextBlock FontTypography="BodyStrong" Text="Ask" />
+                                <ui:TextBlock
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="Find grounded answers"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardAction>
+                    <ui:CardAction
+                        Width="320"
+                        Margin="0,0,12,12"
+                        Padding="0"
+                        IsChevronVisible="False"
+                        AutomationProperties.AutomationId="DashboardTileHistory"
+                        AutomationProperties.Name="Open history"
+                        Click="OnHistoryClicked"
+                    >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Width="44"
+                                Height="44"
+                                Margin="16,0,12,0"
+                                CornerRadius="10"
+                                VerticalAlignment="Center"
+                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="History24"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="0,14" VerticalAlignment="Center">
+                                <ui:TextBlock FontTypography="BodyStrong" Text="History" />
+                                <ui:TextBlock
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="Revisit past questions"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardAction>
+                    <ui:CardAction
+                        Width="320"
+                        Margin="0,0,12,12"
+                        Padding="0"
+                        IsChevronVisible="False"
+                        AutomationProperties.AutomationId="DashboardTileMyDocs"
+                        AutomationProperties.Name="Open my documents"
+                        Click="OnMyDocsClicked"
+                    >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Width="44"
+                                Height="44"
+                                Margin="16,0,12,0"
+                                CornerRadius="10"
+                                VerticalAlignment="Center"
+                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Document24"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="0,14" VerticalAlignment="Center">
+                                <ui:TextBlock FontTypography="BodyStrong" Text="My Docs" />
+                                <ui:TextBlock
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="Documents you uploaded"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardAction>
+                    <ui:CardAction
+                        Width="320"
+                        Margin="0,0,12,12"
+                        Padding="0"
+                        IsChevronVisible="False"
+                        AutomationProperties.AutomationId="DashboardTileAdmin"
+                        AutomationProperties.Name="Open admin"
+                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                        Click="OnAdminClicked"
+                    >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Width="44"
+                                Height="44"
+                                Margin="16,0,12,0"
+                                CornerRadius="10"
+                                VerticalAlignment="Center"
+                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="People24"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="0,14" VerticalAlignment="Center">
+                                <ui:TextBlock FontTypography="BodyStrong" Text="Admin" />
+                                <ui:TextBlock
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="Manage people and access"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardAction>
+                </WrapPanel>
+
+                <!-- Content -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.15*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Card
+                        Grid.Column="0"
+                        Margin="0,0,8,0"
+                        Padding="18"
+                        VerticalAlignment="Stretch"
+                    >
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBlock
+                                    Grid.Column="0"
+                                    FontTypography="Title"
+                                    VerticalAlignment="Center"
+                                    Text="Recent documents"
+                                />
+                                <ui:Button
+                                    Grid.Column="1"
+                                    Width="44"
+                                    Height="44"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="DashboardLibraryButton"
+                                    AutomationProperties.Name="View library"
+                                    Click="OnLibraryClicked"
+                                    ToolTip="View library"
+                                >
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Library24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </Grid>
+                            <ItemsControl
+                                Grid.Row="1"
+                                ItemsSource="{Binding RecentDocuments}"
+                                Visibility="{Binding HasLibraryData, Converter={StaticResource BoolVisibility}}"
+                            >
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:Document}">
+                                        <Grid Margin="0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ui:TextBlock
+                                                Grid.Column="0"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Center"
+                                                TextTrimming="CharacterEllipsis"
+                                                Text="{Binding Filename}"
+                                            />
+                                            <components:StatusChip
+                                                Grid.Column="1"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Center"
+                                                Status="{Binding Status}"
+                                            />
+                                            <ui:TextBlock
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource SecondaryText}"
+                                                Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                            />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel
+                                Grid.Row="1"
+                                Margin="0,24"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasLibraryData, Converter={StaticResource InvertedBoolVisibility}}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Document24"
+                                    Style="{StaticResource EmptyStateGlyph}"
+                                    Margin="0,0,0,12"
+                                />
+                                <ui:TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontTypography="Title"
+                                    Text="No documents yet"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,8,0,0"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource SecondaryText}"
+                                    Text="Open the library to upload your first document."
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:Card>
+
+                    <ui:Card
+                        Grid.Column="1"
+                        Margin="8,0,0,0"
+                        Padding="18"
+                        VerticalAlignment="Stretch"
+                    >
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBlock
+                                    Grid.Column="0"
+                                    FontTypography="Title"
+                                    VerticalAlignment="Center"
+                                    Text="Recent questions"
+                                />
+                                <ui:Button
+                                    Grid.Column="1"
+                                    Width="44"
+                                    Height="44"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="DashboardAskButton"
+                                    AutomationProperties.Name="Ask the library"
+                                    Click="OnAskClicked"
+                                    ToolTip="Ask the library"
+                                >
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Chat24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </Grid>
+                            <ItemsControl
+                                Grid.Row="1"
+                                ItemsSource="{Binding RecentQueries}"
+                                Visibility="{Binding HasQueryData, Converter={StaticResource BoolVisibility}}"
+                            >
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:HistoryItem}">
+                                        <StackPanel Margin="0,10">
+                                            <ui:TextBlock
+                                                TextTrimming="CharacterEllipsis"
+                                                Text="{Binding PromptPreview}"
+                                            />
+                                            <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                                <ui:TextBlock
+                                                    FontTypography="Caption"
+                                                    Style="{StaticResource SecondaryText}"
+                                                    Text="{Binding CitationCount}"
+                                                />
+                                                <ui:TextBlock
+                                                    Margin="4,0,0,0"
+                                                    FontTypography="Caption"
+                                                    Style="{StaticResource SecondaryText}"
+                                                    Text="citations"
+                                                />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel
+                                Grid.Row="1"
+                                Margin="0,24"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasQueryData, Converter={StaticResource InvertedBoolVisibility}}"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Chat24"
+                                    Style="{StaticResource EmptyStateGlyph}"
+                                    Margin="0,0,0,12"
+                                />
+                                <ui:TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontTypography="Title"
+                                    Text="No questions yet"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,8,0,0"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource SecondaryText}"
+                                    Text="Ask the library to find grounded answers."
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:Card>
+                </Grid>
+
+                <!-- Status -->
+                <Grid Grid.Row="3" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:InfoBar
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DashboardStatusBar"
+                        AutomationProperties.LiveSetting="Polite"
+                        AutomationProperties.Name="Dashboard status"
+                        IsClosable="False"
+                        IsOpen="{Binding HasStatus}"
+                        Message="{Binding StatusMessage}"
+                        Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+                    />
+                    <ui:Button
+                        Grid.Column="1"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DashboardRetryButton"
+                        AutomationProperties.Name="Retry loading dashboard"
+                        Command="{Binding RetryCommand}"
+                        Content="Retry"
+                        Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
+                    />
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+
+        <ui:ProgressRing
+            Width="42"
+            Height="42"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsIndeterminate="{Binding IsBusy}"
+            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+        />
+    </Grid>
+</Page>

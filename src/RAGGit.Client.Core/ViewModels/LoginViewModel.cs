@@ -17,6 +17,7 @@ public sealed partial class LoginViewModel : ObservableObject
     private readonly AuthApiClient _authApiClient;
     private readonly ClientSession _session;
     private readonly Func<Task>? _onLoginSuccess;
+    private readonly INavigationService? _navigationService;
 
     [ObservableProperty]
     private string _workstationUrl = string.Empty;
@@ -42,12 +43,14 @@ public sealed partial class LoginViewModel : ObservableObject
     public LoginViewModel(
         AuthApiClient authApiClient,
         ClientSession session,
-        Func<Task>? onLoginSuccess = null
+        Func<Task>? onLoginSuccess = null,
+        INavigationService? navigationService = null
     )
     {
         _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _onLoginSuccess = onLoginSuccess;
+        _navigationService = navigationService;
         WorkstationUrl = session.WorkstationUrl;
     }
 
@@ -106,7 +109,11 @@ public sealed partial class LoginViewModel : ObservableObject
                     _session.LastLoginAtUtc = DateTime.UtcNow;
                     ErrorMessage = null;
 
-                    if (_onLoginSuccess is not null)
+                    if (_navigationService is not null)
+                    {
+                        _navigationService.NavigateToDashboard();
+                    }
+                    else if (_onLoginSuccess is not null)
                     {
                         await _onLoginSuccess();
                     }

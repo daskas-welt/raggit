@@ -1,0 +1,255 @@
+<UserControl
+    x:Class="RAGGit.Client.WPF.Components.ChatControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    x:Name="Root"
+>
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
+        <converters:CitationOrdinalConverter x:Key="CitationOrdinal" />
+        <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
+        <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Messages -->
+        <ListBox
+            Grid.Row="0"
+            x:Name="MessagesList"
+            ItemsSource="{Binding Messages, ElementName=Root}"
+            SelectionMode="Single"
+            BorderThickness="0"
+            Background="Transparent"
+            HorizontalContentAlignment="Stretch"
+        >
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid HorizontalAlignment="Stretch" Margin="0,4">
+                        <!-- User message (right-aligned) -->
+                        <Border
+                            HorizontalAlignment="Right"
+                            MaxWidth="400"
+                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                            CornerRadius="16,16,4,16"
+                            Padding="12,8"
+                            Visibility="{Binding IsUser, Converter={StaticResource BoolVisibility}}"
+                        >
+                            <StackPanel>
+                                <ui:TextBlock
+                                    Text="{Binding Text}"
+                                    Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    FontTypography="Body"
+                                    TextWrapping="Wrap"
+                                />
+                                <ui:Button
+                                    HorizontalAlignment="Right"
+                                    Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Width="36"
+                                    Height="32"
+                                    Padding="0"
+                                    ToolTip="Copy message"
+                                    AutomationProperties.AutomationId="CopyMessageButton"
+                                    AutomationProperties.Name="Copy message"
+                                    Click="CopyMessageButton_Click"
+                                >
+                                    <ui:SymbolIcon Symbol="Copy24" />
+                                </ui:Button>
+                            </StackPanel>
+                        </Border>
+                        <!-- Assistant message (left-aligned) -->
+                        <Border
+                            HorizontalAlignment="Left"
+                            MaxWidth="500"
+                            BorderThickness="1"
+                            CornerRadius="16,16,16,4"
+                            Padding="12,8"
+                            Visibility="{Binding IsUser, Converter={StaticResource InvertedBoolVisibility}}"
+                        >
+                            <StackPanel>
+                                <ui:TextBlock
+                                    Text="{Binding Text}"
+                                    FontTypography="Body"
+                                    TextWrapping="Wrap"
+                                />
+                                <Expander
+                                    Margin="0,8,0,0"
+                                    Visibility="{Binding HasCitations, Converter={StaticResource BoolVisibility}}"
+                                    AutomationProperties.AutomationId="{Binding SourcesAutomationId}"
+                                >
+                                    <Expander.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:TextBlock Text="Sources" Margin="0,0,4,0" />
+                                            <ui:TextBlock
+                                                Text="{Binding Citations.Count}"
+                                                Style="{StaticResource SecondaryText}"
+                                            />
+                                        </StackPanel>
+                                    </Expander.Header>
+                                    <ListBox
+                                        ItemsSource="{Binding Citations}"
+                                        SelectionMode="Single"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        HorizontalContentAlignment="Stretch"
+                                        AutomationProperties.AutomationId="{Binding MessageCitationsAutomationId}"
+                                    >
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter
+                                                    Property="HorizontalContentAlignment"
+                                                    Value="Stretch"
+                                                />
+                                                <Setter Property="Padding" Value="0" />
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="8"
+                                                    Margin="0,2"
+                                                >
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border
+                                                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                            CornerRadius="6"
+                                                            Padding="6,3"
+                                                            VerticalAlignment="Top"
+                                                        >
+                                                            <ui:TextBlock
+                                                                Text="{Binding Ordinal, Converter={StaticResource CitationOrdinal}}"
+                                                                FontTypography="Caption"
+                                                                Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                            />
+                                                        </Border>
+                                                        <StackPanel
+                                                            Grid.Column="1"
+                                                            Margin="8,0,0,0"
+                                                        >
+                                                            <ui:TextBlock
+                                                                Text="{Binding Converter={StaticResource CitationDocumentName}}"
+                                                                FontTypography="Caption"
+                                                                TextTrimming="CharacterEllipsis"
+                                                            />
+                                                            <ui:TextBlock
+                                                                Text="{Binding Text}"
+                                                                FontTypography="Body"
+                                                                TextWrapping="Wrap"
+                                                            />
+                                                            <ui:TextBlock
+                                                                Text="{Binding Converter={StaticResource CitationSubtitle}}"
+                                                                FontTypography="Caption"
+                                                                Style="{StaticResource SecondaryText}"
+                                                                TextTrimming="CharacterEllipsis"
+                                                            />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Expander>
+                                <ui:Button
+                                    HorizontalAlignment="Right"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Width="36"
+                                    Height="32"
+                                    Padding="0"
+                                    ToolTip="Copy message"
+                                    AutomationProperties.AutomationId="CopyMessageButton"
+                                    AutomationProperties.Name="Copy message"
+                                    Click="CopyMessageButton_Click"
+                                >
+                                    <ui:SymbolIcon Symbol="Copy24" />
+                                </ui:Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Empty state (toggled in code-behind) -->
+        <StackPanel
+            x:Name="EmptyState"
+            Grid.Row="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+        >
+            <ui:SymbolIcon
+                Symbol="Chat24"
+                Style="{StaticResource EmptyStateGlyph}"
+                Margin="0,0,0,12"
+            />
+            <ui:TextBlock
+                Text="Ask a question to get started"
+                FontTypography="Title"
+                HorizontalAlignment="Center"
+            />
+            <ui:TextBlock
+                Text="Your conversation will appear here."
+                FontTypography="Body"
+                Style="{StaticResource SecondaryText}"
+                Margin="0,8,0,0"
+                HorizontalAlignment="Center"
+            />
+        </StackPanel>
+
+        <!-- Input bar (fixed at bottom) -->
+        <Border Grid.Row="1" BorderThickness="1" CornerRadius="24" Padding="8" Margin="0,8,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:TextBox
+                    Grid.Column="0"
+                    x:Name="InputBox"
+                    Text="{Binding InputText, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="Type your question..."
+                    FontSize="14"
+                    VerticalAlignment="Center"
+                    BorderThickness="0"
+                    KeyDown="InputBox_KeyDown"
+                    AutomationProperties.AutomationId="ChatInputBox"
+                />
+                <ui:Button
+                    Grid.Column="1"
+                    AutomationProperties.AutomationId="SendQuestionButton"
+                    AutomationProperties.Name="Send question"
+                    ToolTip="Send question"
+                    Command="{Binding SendCommand, ElementName=Root}"
+                    Width="40"
+                    Height="40"
+                    Padding="0"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Send24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
