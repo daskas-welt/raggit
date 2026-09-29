@@ -63,3 +63,7 @@ app.publish/
 # PlantUML renders are committed (SVG canonical in docs/images/, PNG optional via jar)
 # CodeGraph local index (12MB+), never commit
 .codegraph/
+# Per-tool mirrors of the CodeGraph agent block (AGENTS.md is canonical)
+.claude/
+.gemini/
+GEMINI.md

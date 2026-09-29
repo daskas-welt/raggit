@@ -21,13 +21,9 @@
       ],
       "enabled": true
     },
-    "plantuml-js": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@plantuml/mcp-js@0.2.2"
-      ],
+    "vercel": {
+      "type": "remote",
+      "url": "https://mcp.vercel.com",
       "enabled": true
     }
   }
