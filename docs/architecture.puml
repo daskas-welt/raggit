@@ -1,6 +1,6 @@
 @startuml RAGGit Architecture
 ' RAGGit - single-tenant offline RAG (WinUI 3 + Workstation API)
-' Presentation SVG: docs/images/architecture.svg via @plantuml/mcp-js
+' Presentation SVG: docs/images/architecture.svg via PlantUML tooling
 ' (Official JS engine dialect: rectangle/actor/package/database + arrows
 '  + notes. Avoid [bracket] components and : trailing labels on
 '  declarations, which flip type inference. Multiline names via \n.)

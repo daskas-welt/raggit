@@ -46,8 +46,7 @@ exists instead of guessing.*
 Sources: [architecture](docs/architecture.puml) ·
 [query flow](docs/query-sequence.puml) ·
 [identity flow](specs/004-identity/docs/sequence.puml)
-(rendered with the official PlantUML MCP server,
-`npx -y @plantuml/mcp-js@0.2.2`).
+(rendered with PlantUML tooling).
 
 ## Key promises
 
@@ -92,7 +91,7 @@ Inspect a populated vector index read-only in your browser:
 ## Project map (for contributors)
 
 - `src/RAGGit.Workstation.Api` — the workstation web service
-- `src/RAGGit.Client.WinUI` — the Windows desktop app
+- `src/RAGGit.Client.WPF` — the Windows desktop app (WPF + WPF-UI)
 - `src/RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`, `RAGGit.Client.Core` — shared libraries
 - `specs/` — feature specifications, plans, and verification records
 - `docs/` — architecture diagrams, performance and publishing guides

@@ -1,7 +1,7 @@
 @startuml 004 Identity Architecture
 ' Feature 004-identity — per-person accounts topology
-' Render: scripts/Render-PlantUml.ps1 (PNG) or @plantuml/mcp-js (SVG)
-' NOTE: no !theme directive - the official @plantuml/mcp-js engine hangs
+' Render: scripts/Render-PlantUml.ps1 (PNG) or PlantUML tooling (SVG)
+' NOTE: no !theme directive for renderer compatibility
 ' rendering when a theme is requested (themes.js unavailable headless).
 ' Dialect: rectangle/actor/package (JS-engine safe; no [bracket] components).
 skinparam defaultFontSize 15

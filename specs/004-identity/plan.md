@@ -71,7 +71,7 @@ Resolved in [research.md](./research.md):
 | R6 | SecureStorage cache + refresh | `SecureStorage.Default` + `BearerDelegatingHandler`; 401 → re-prompt; `/auth/refresh` implemented but optional (P3) |
 | R7 | Offline-invariant proof | WAN-disabled CI: provision → login → me → cited query; fail-fast 503 |
 | R8 | Operator CLI verb | `raggit user add` (arg intercept in `Workstation.Api`, no new project, direct DB write) |
-| R9 | Diagram handling | PlantUML `.puml` + committed SVG (MCP `@plantuml/mcp-js`); no `!theme` directive (hangs the JS engine) |
+| R9 | Diagram handling | PlantUML `.puml` + committed SVG; no `!theme` directive |
 | R10 | Username case handling | `COLLATE NOCASE` unique index; case-insensitive lookup |
 
 ## Phase 1 — Design Artifacts

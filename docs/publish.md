@@ -1,13 +1,13 @@
 # Publishing RAGGit
 
-This guide covers building the workstation API and the WinUI 3 client for
+This guide covers building the workstation API and the WPF desktop client for
 distribution inside a single-tenant environment.
 
 ## Prerequisites
 
-- .NET 8 SDK (`global.json` pins `8.0.425`)
-- Windows 10 1809+ / 11 with the Windows App SDK 1.5 runtime (no MAUI workload;
-  clean-checkout `dotnet build RAGGit.sln` must succeed with no MAUI installed)
+- .NET 10 SDK (`global.json` pins the SDK)
+- Windows 10 1809+ / 11 (no extra workloads;
+  clean-checkout `dotnet build RAGGit.sln -p:Platform=x64` must succeed)
 - Docker (optional, for the workstation container)
 
 ## AI Workstation
@@ -33,49 +33,37 @@ The API listens on port `5001` and expects the Ollama daemon to be reachable
 at `http://host.docker.internal:11434` by default. Override with the
 `OLLAMA__URL` environment variable.
 
-## WinUI 3 Client
+## WPF Desktop Client
 
-Single project `src/RAGGit.Client.WinUI` (`net8.0-windows10.0.17763.0`, Windows
-App SDK 1.5). The client is a thin HttpClient-only app; no model weights are
-bundled. One binary covers Windows 10 1809+ and Windows 11 (x64/x86/ARM64).
+Single project `src/RAGGit.Client.WPF` (`net10.0-windows10.0.17763.0`) styled
+with WPF-UI. The client is a thin HttpClient-only app; no model weights are
+bundled. One binary covers Windows 10 1809+ and Windows 11 (x64).
 
-### Debug — unpackaged F5 loop
+### Debug — F5 loop
 
 ```powershell
-dotnet run --project src/RAGGit.Client.WinUI -p:Platform=x64
+dotnet run --project src/RAGGit.Client.WPF -p:Platform=x64
 ```
 
-Debug builds set `WindowsPackageType=None` (self-contained App Runtime) so F5
-works on machines where the store-framework lookup fails.
-
-### Release — signed MSIX sideload
+### Release — self-contained executable
 
 ```powershell
-dotnet publish src/RAGGit.Client.WinUI `
+dotnet publish src/RAGGit.Client.WPF `
   -c Release `
   -p:Platform=x64 `
-  -p:WindowsPackageType=MSIX
+  -o ./out/desktop
 ```
 
-Sign the resulting MSIX with the company code-signing certificate (local dev
-test certificate is fine for sideload testing) before private enterprise
-distribution. The MSIX installs with double-click on clean Win10 1809+ and
-Win11 machines — no extra runtime install step.
+Distribute the contents of `./out/desktop` privately inside the
+single-tenant environment (no Store/MSIX step).
 
 ### Release the desktop client to employees
 
-1. Get the unsigned package from the CI `RAGGit.Client.WinUI-msix` artifact
-   (or build it with the command above plus
-   `-p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true`).
-2. Sign it: `signtool sign /fd SHA256 /f <company-cert>.pfx /p <password>
-   RAGGit.Client.WinUI_*_x64.msix`. The cert subject MUST match the
-   `Publisher` in `Package.appxmanifest` (and in `RAGGit.appinstaller`).
-3. In `src/RAGGit.Client.WinUI/RAGGit.appinstaller`: replace the example
-   URLs with the real internal HTTPS location, and bump `Version`
-   (appinstaller + manifest + package must all agree).
-4. Copy the signed `.msix` and the edited `.appinstaller` to that internal
-   location. Employees install once via the `.appinstaller` link
-   ([employee guide](./install.md)); updates then arrive automatically.
+1. Get the desktop build from the CI `RAGGit.Client.WPF-desktop` artifact
+   (or build it with the publish command above).
+2. Copy the published folder to the internal distribution location.
+   Employees run `RAGGit.Client.WPF.exe` directly
+   ([employee guide](./install.md)).
 
 ## LAN Discovery
 
@@ -94,5 +82,5 @@ when the LAN/VPN path is unavailable.
 - [ ] Workstation Ollama models cached (`ollama pull nomic-embed-text` and chat model).
 - [ ] API keys configured via environment variables or secret manager.
 - [ ] `./data` and `./models` excluded from backups you do not want to keep.
-- [ ] Client MSIX signed and distributed privately.
+- [ ] Client desktop build published and distributed privately.
 - [ ] WAN disabled for the workstation and query flow verified.

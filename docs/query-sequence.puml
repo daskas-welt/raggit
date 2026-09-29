@@ -1,6 +1,6 @@
 @startuml RAGGit Query Sequence
 ' Presentation query path: ask -> retrieve -> cited answer
-' Rendered to docs/images/query-sequence.svg via @plantuml/mcp-js
+' Rendered to docs/images/query-sequence.svg via PlantUML tooling
 ' NOTE: <style> lifeLine block required - the JS engine emits lifelines
 ' with no stroke otherwise (invisible lines).
 <style>

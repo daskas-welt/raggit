@@ -1,6 +1,6 @@
 @startuml 004 Identity Sequence
 ' Request lifecycle: login / me / documents / users / refresh
-' NOTE: no !theme directive - the official @plantuml/mcp-js engine hangs
+' NOTE: no !theme directive for renderer compatibility
 ' rendering when a theme is requested (themes.js unavailable headless).
 ' NOTE: <style> lifeLine block required - the JS engine emits lifelines
 ' with no stroke otherwise (invisible lines).

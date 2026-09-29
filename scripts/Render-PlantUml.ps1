@@ -6,8 +6,8 @@
   Finds plantuml.jar via $env:PLANTUML_JAR or ./tools/plantuml.jar, else prints
   install hints (choco install plantuml / manual jar download). No network at
   query time — diagrams are build-time artifacts.
-  Canonical outputs are SVG in docs/images/ via @plantuml/mcp-js (0.2.2);
-  this script is the optional PNG path (needs Java). Commit source + renders.
+  SVG outputs in docs/images/ are committed presentation artifacts; this script
+  is the optional PNG path (needs Java). Commit source + renders.
 .EXAMPLE
   powershell -File scripts/Render-PlantUml.ps1
   powershell -File scripts/Render-PlantUml.ps1 -Sources docs/architecture.puml
@@ -38,7 +38,7 @@ if (-not (Test-Path -LiteralPath $jar)) {
 }
 
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
-  throw 'Java not found on PATH. Install a JRE, or use the SVG path: npx -y @plantuml/mcp-js@0.2.2 (see docs/images/README.md).'
+  throw 'Java not found on PATH. Install a JRE to render PNG files (see docs/images/README.md).'
 }
 $images = Join-Path $root 'docs/images'
 foreach ($rel in $Sources) {
