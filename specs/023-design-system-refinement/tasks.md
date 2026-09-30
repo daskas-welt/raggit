@@ -271,16 +271,18 @@ end to end; `022` retains only its own scope.
   `TextFillColorSecondaryBrush`, `TextOnAccentFillColorDisabledBrush`, `SystemFillColorCriticalBrush`)
   is a library-defined `ThemeResource` member, with zero literals and zero `Opacity=`. A manual HC
   pass is still recommended.
-- **Theme and icon verification (2026-09-30, T044/T045)** — icon sizes are now stated per step with
-  their realisation (explicit `FontSize` vs the component library's control style) and the live
-  measurements behind it; the T044 correction above replaces the earlier "24 nav rows/chips" claim. The
-  status chip was captured on the Library in **Light** (all 17 rows `Ready` with the filled
-  `CheckmarkCircle24` and the success label — the T038 colour roles hold). **Dark** could not be verified
-  for that page: with the app theme demonstrably Dark (`LightThemeRadio.IsSelected = False` after
-  navigating away and back) the Settings page renders correctly dark while the Library kept light
-  surfaces across six captures — the next convergence pass should establish whether that page's surfaces
-  follow a Dark theme. **High Contrast** remains unverified (the client exposes Light/Dark radios only).
-  PNGs: `…\Temp\opencode\converge-023\`.
+- **Theme and icon verification (2026-09-30, T044/T045; corrected the same day by T046)** — icon sizes
+  are now stated per step with their realisation (explicit `FontSize` vs the component library's control
+  style) and the live measurements behind it; the T044 correction above replaces the earlier
+  "24 nav rows/chips" claim. The status chip was captured on the Library in **Light** (all 17 rows
+  `Ready` with the filled `CheckmarkCircle24` and the success label — the T038 colour roles hold) and in
+  **Dark**: the first six Dark captures looked light because `winapp ui screenshot --capture-screen`
+  returned a stale frame for a page navigated to immediately before the capture; after a forced repaint
+  (minimize and restore) the Library renders correctly dark — dark navigation, dark table card, light
+  text, green `Ready` chips and the accent selection bar on the active destination
+  (`library-dark-repaint.png`, 1200x800 at 63 KB like the reliable dark Settings capture, against
+  ~147 KB for the stale frames). **High Contrast** remains the only unverified case (the client exposes
+  Light/Dark radios; High Contrast follows the OS theme). PNGs: `…\Temp\opencode\converge-023\`.
 
 ---
 
@@ -314,4 +316,17 @@ end to end; `022` retains only its own scope.
 - [X] T043 Correct the Query Detail row of the page inventory in `specs/023-design-system-refinement/data-model.md`: it lists the header as "section headings", but `src/RAGGit.Client.WPF/Views/Pages/QueryDetailPage.xaml` renders `PageTitleText` + `PageSubtitleText` ("Query Detail" / "A saved question and its grounded answer") and uses no `SectionHeaderText`, while `design-system.md` already reads "title + line" — so the two references disagree with each other and with the page — per FR-001/FR-004 (partial)
 - [X] T044 State in the icon scale how each step is realised and reconcile the navigation step: `src/RAGGit.Client.WPF/ViewModels/MainWindowViewModel.cs` builds every nav `SymbolIcon` with no `FontSize`, and the pager, settings-row, list-action and inline-action glyphs set none either (the client's only explicit sizes are the status chip 16, the Dashboard tiles 24, the empty-state style 40 and the documented 96 hero watermark), yet `design-system.md`'s Icon scale assigns navigation to the 20 step while the Implementation Record claims "24 nav rows/chips" — record what the unset glyphs inherit (the library's control style) and correct whichever statement is wrong — per FR-007/SC-005 (partial)
 - [X] T045 Close out the High-Contrast half of T036 for the status chip's colour roles: the in-progress glyph now uses `SystemAccentColorPrimaryBrush` as a foreground with primary text for its label (T038) and is verified only by construction plus a dependency-property probe, while FR-015/SC-003 still rests on the recorded "a manual HC pass is still recommended" caveat — capture the affected surfaces with a status chip under Light and Dark (drivable through `LightThemeRadio`/`DarkThemeRadio`) and under High Contrast if the system theme can be switched, then record the result or the residual limitation — per FR-015/SC-003 (partial)
+
+---
+
+## Phase 12: Convergence
+
+- [X] T046 Correct the theme-verification record in `specs/023-design-system-refinement/tasks.md`: the T045 caveat reports that the Library's Dark rendering "could not be verified" and that its surfaces stayed light, but the live check re-run with a forced repaint (switch to Dark, navigate to the Library, then minimize/restore before capturing) shows the page renders correctly Dark — dark navigation, dark table card, light text, green filled `Ready` chips and the accent selection bar on the active destination (`…\Temp\opencode\converge-023\library-dark-repaint.png`, `1200x800` at 63 KB like the reliable dark Settings capture, against ~147 KB for the stale light-looking frames). State Dark as verified and keep High Contrast as the only residual, and note in `quickstart.md`'s UI walkthrough that `--capture-screen` can return a stale frame for a page navigated to immediately before the capture, so a theme capture must force a repaint — per FR-015/SC-003 (contradicts)
+- [X] T047 Make the static checks in `specs/023-design-system-refinement/quickstart.md` runnable and complete: the two reflection-based checks (D3 `SymbolRegular` names and D2 `ui:ThemeResource` keys) only work under PowerShell 7 — under Windows PowerShell 5.1 `$asm.GetType(...)` returns null and every `Symbol="…"` and `ThemeResource` key is reported as invalid, while pwsh 7.6 reports 0 invalid against 9235 `SymbolRegular` and 179 `ThemeResource` members — and the D7 check greps XAML only, so it cannot see the seven `Nav*` IDs that `src/RAGGit.Client.WPF/ViewModels/MainWindowViewModel.cs` creates and passes without confirming the frozen 22. State the required shell for the reflection checks and extend the ID check (or add its C# counterpart) so the guide can prove FR-014/SC-008 as written — per plan: static checks, FR-014/SC-008 (partial)
+
+---
+
+## Phase 13: Convergence
+
+- [X] T048 Annotate the icon-scale rationale in `specs/023-design-system-refinement/research.md` (Decision: Icon size scale + filled-for-state) so it stops asserting purposes the shipped client does not realise: it lists "20 nav/buttons" and "32–44 tiles/empty states", whereas navigation sits on the 16 inline step and the Dashboard tiles on 24 (empty states remain 40), and the authoritative values are the ones in `design-system.md` — a bracketed note naming the realised values, with the decision text and its dated reasoning left intact, is enough to stop a reader adopting the superseded numbers — per FR-007/SC-005 (contradicts)
 

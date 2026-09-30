@@ -26,7 +26,11 @@ dotnet test tests/integration/RAGGit.Tests.Integration.csproj -c Release --filte
 
 ## Static design audits
 
-Run from the repo root. Each **MUST** return no output (except the presence checks, which report).
+Run from the repo root. The two reflection checks (D3 icon names, D2 `ThemeResource` keys) load the
+WPF-UI assembly and **MUST** run under PowerShell 7 (`pwsh`): Windows PowerShell 5.1 cannot resolve the
+`net10.0-windows` types, so `$asm.GetType(...)` returns null and every symbol name and `ThemeResource` key
+is reported as invalid instead of the check failing loudly. The `Select-String` checks run under either
+shell. Each check **MUST** return no output (except the presence checks, which report).
 
 **D2 — no hard-coded colours:**
 
@@ -78,9 +82,21 @@ Get-ChildItem src/RAGGit.Client.WPF -Recurse -File -Include *.xaml |
 
 **D7 — automation IDs preserved (expect a superset of the frozen list in [data-model.md](data-model.md)):**
 
+XAML-defined IDs:
+
 ```powershell
 Select-String -Path (Get-ChildItem src/RAGGit.Client.WPF -Recurse -File -Include *.xaml |
   Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' }).FullName -Pattern 'AutomationId="'
+```
+
+Seven of the frozen 22 are set in code rather than XAML (`NavDashboard`, `NavLibrary`, `NavAsk`,
+`NavHistory`, `NavMyDocs`, `NavAdmin`, `NavSettings`, created by `ViewModels/MainWindowViewModel.cs`), so
+the XAML check alone cannot confirm the frozen set. Check them explicitly (expect no `MISS`):
+
+```powershell
+foreach ($id in 'NavDashboard','NavLibrary','NavAsk','NavHistory','NavMyDocs','NavAdmin','NavSettings') {
+  if (-not (Select-String -Path src/RAGGit.Client.WPF/ViewModels/MainWindowViewModel.cs -Pattern $id -Quiet)) {
+    "MISS $id" } }
 ```
 
 **D1/D5 — page headers and empty states present:** for each page in the data-model's Page table,
@@ -102,13 +118,22 @@ winapp ui click "NavSettings"  -a $Pid; winapp ui screenshot -a $Pid -o "setting
 winapp ui click "NavDashboard" -a $Pid; winapp ui screenshot -a $Pid -o "active-nav.png" # filled active glyph
 ```
 
+> **Capture pitfall**: `winapp ui screenshot --capture-screen` can return a stale frame for a page that
+> was navigated to immediately before the capture, so a theme capture may show the previous theme. Force
+> a repaint first (minimize and restore the window, or change the theme while the page is already on
+> screen) and review that PNG. A dark page also compresses far smaller than a light one — in this
+> feature's captures the Dark ones came out around 60 KB where the light ones were around 150 KB. Treat
+> an unexpectedly large PNG as a hint to re-check rather than as proof: what the capture shows is the
+> evidence.
+
 Review each screenshot against D1–D6. UIA assertions do not see clipping, overlap, wrong theming or
 spacing — the PNGs do.
 
 ## Manual checks
 
 1. **Themes (D2, SC-003)** — cycle Light / Dark / High Contrast on every page; confirm supporting
-   text, status glyphs, row separators and the active nav destination all stay legible.
+   text, status glyphs, row separators and the active nav destination all stay legible. Force a repaint
+   before each capture (see the capture pitfall above) or the PNG may show the previous theme.
 2. **Layout (FR-015)** — at 800×600 confirm empty-state glyphs and separators do not clip.
 3. **Consistency (D1, D3)** — compare every page header and every repeated concept glyph across
    pages; confirm one treatment, one symbol.

@@ -72,6 +72,11 @@ scale with a stated purpose (16 inline · 20 nav/buttons · 24 rows/chip glyphs 
 states) removes the guesswork (FR-007). `SymbolIcon.Filled` is a real bool and `SymbolFilled` mirrors
 the vocabulary, so stateful glyphs can be filled without swapping symbol names (FR-009).
 
+> *Realised values (T044/T048, 2026-09-30): two of the purposes above moved a step in the shipped client
+> — navigation renders at 16 (inline) and the Dashboard tiles at 24 (row), while the empty states stay 40
+> and the pager keeps the 20 step by glyph family. [design-system.md](design-system.md) (Icon scale &
+> state) is authoritative for the scale as built.*
+
 **Alternatives considered**: swap to `SymbolFilled.*` names — rejected, doubles the name surface for
 no gain when `Filled="True"` exists; mixed sizes for the pager — rejected, no 24px double-chevron
 exists, so the scale's 20px step is the correct fallback.
