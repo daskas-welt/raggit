@@ -9,6 +9,7 @@
         <Nullable>enable</Nullable>
         <UserSecretsId>d29c144e-f44d-4ef3-aca8-c5ee220683f6</UserSecretsId>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Assets\RaggitIcon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -34,5 +35,10 @@
         <Content Include="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Embedded so the shell can reference the identity by pack URI (feature 024). -->
+        <Resource Include="Assets\RaggitIcon.ico" />
     </ItemGroup>
 </Project>

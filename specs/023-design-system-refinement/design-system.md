@@ -44,6 +44,11 @@ a `ui:ThemeResource` enum member and throws at load).
 `Text/Tertiary` and `Text/Disabled` are **control states, not content** (per the component library's
 own guidance) — content emphasis stops at Secondary.
 
+**Outside the roles (feature `024-client-app-icon`)**: the application icon is the one place the client
+uses a colour that is not a theme token — the product's first fixed brand colour `#0F6CBD`, owned by the
+icon asset and the generator beside it (`src/RAGGit.Client.WPF/Assets/`). It is never used on a UI
+surface, so the rules above still hold everywhere they apply.
+
 ## Icon scale & state
 
 | Step | Size | Use | Realised by |

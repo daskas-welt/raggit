@@ -8,6 +8,7 @@
     xmlns:pages="clr-namespace:RAGGit.Client.WPF.Views.Pages"
     xmlns:vm="clr-namespace:RAGGit.Client.WPF.ViewModels"
     Title="{Binding WindowTitle}"
+    Icon="pack://application:,,,/Assets/RaggitIcon.ico"
     Width="1200"
     Height="800"
     MinWidth="800"
@@ -29,7 +30,18 @@
             Grid.Row="0"
             Title="RAGGit"
             AutomationProperties.AutomationId="RaggitBrandLabel"
-        />
+        >
+            <!-- The library's custom title bar does not draw the operating system icon, so the
+                 identity is carried here explicitly (feature 024). Icon takes an element, not a
+                 string attribute. -->
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon
+                    Source="pack://application:,,,/Assets/RaggitIcon.ico"
+                    Width="16"
+                    Height="16"
+                />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <ui:NavigationView
             x:Name="RootNavigationView"

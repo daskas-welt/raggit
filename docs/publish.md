@@ -65,6 +65,10 @@ single-tenant environment (no Store/MSIX step).
    Employees run `RAGGit.Client.WPF.exe` directly
    ([employee guide](./install.md)).
 
+The published executable carries the application identity: the Raggit icon (feature
+`024-client-app-icon`) rides with the build, so the file, the taskbar button and Alt-Tab need no
+per-machine setup.
+
 ## LAN Discovery
 
 Clients locate the workstation through one of the following mechanisms:

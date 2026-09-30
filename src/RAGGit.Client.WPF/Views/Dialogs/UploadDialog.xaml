@@ -6,6 +6,7 @@
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
     xmlns:services="clr-namespace:RAGGit.Client.Maui.Services;assembly=RAGGit.Client.Core"
     Title="Upload Documents"
+    Icon="pack://application:,,,/Assets/RaggitIcon.ico"
     Width="520"
     MinWidth="420"
     MinHeight="400"
