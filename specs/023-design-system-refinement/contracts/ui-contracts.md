@@ -32,8 +32,10 @@ a `FontSize` on a `ui:TextBlock`.
 
 ## D3 — Icon Contract (FR-007, FR-008, SC-005)
 
-1. Icon sizes are drawn from the scale: **16** inline · **20** control/nav/pager · **24** rows &
-   chip glyphs · **32–44** tiles & empty states.
+1. Icon sizes are drawn from the scale: **16** inline (status chips, navigation) · **20** control
+   (pager and button-hosted glyphs, a glyph-family choice) · **24** rows (settings rows, list actions,
+   tile chip glyphs) · **40** empty states. A step is either an explicit `FontSize` or the size the
+   component library's control style supplies where the client sets none.
 2. One symbol per product concept (Library, Ask, History, My Documents, Admin, Settings, Refresh,
    Upload, Download, Delete, Copy, Send, Browse).
 3. Every referenced name is a valid `SymbolRegular`/`SymbolFilled` member.

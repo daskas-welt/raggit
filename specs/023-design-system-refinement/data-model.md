@@ -45,17 +45,26 @@ accent surface; `AccentFillColorDefaultBrush` only via `{DynamicResource}`.
 
 Drives FR-007, FR-008, FR-009, SC-005.
 
-| Step | Size | Purpose | Examples |
-|------|------|---------|----------|
-| Inline | 16 | beside Caption/meta text, status chips | `StatusChip` glyphs |
-| Control | 20 | navigation, buttons, icon-only actions, pager | `Chevron*20` |
-| Row | 24 | settings rows, list/row actions, tile chip glyphs | `Color24`, `Link24`, `Person24` |
-| Feature | 32–44 | destination tiles, empty states | `EmptyStateGlyph` (40) |
+| Step | Size | Purpose | Realisation / examples |
+|------|------|---------|------------------------|
+| Inline | 16 | status chips, navigation rows, glyphs beside Caption/meta text | explicit `FontSize="16"` (`StatusChip`); the navigation control's own style |
+| Control | 20 | pager and button-hosted glyphs | glyph family `Chevron*20` (`PaginationFooterControl`), sized by the button style |
+| Row | 24 | settings rows, list/row actions, tile chip glyphs | `FontSize="24"` on the Dashboard tiles; the library's `SymbolIcon` size elsewhere (`Color24`, `Link24`, `Person24`) |
+| Feature | 40 | empty states | `EmptyStateGlyph` (`FontSize="40"`) |
 
 **State convention**: Regular = resting; `Filled="True"` = status/active/emphasis.
 
+**Status vocabulary**: a document-status chip (`Components/StatusChip`) is one per state, painted with
+the tone's colour roles — in-progress states (`Uploading`/`Queued`/`Indexing`) share the
+`ArrowSyncCircle24` glyph with the accent **decoration** token (`SystemAccentColorPrimaryBrush`),
+`Ready` uses `CheckmarkCircle24` with the success status token, `Failed` uses `ErrorCircle24` with the
+critical status token, and labels stop at primary text except for those two terminal states. The full
+table is in [design-system.md](design-system.md) (Status vocabulary).
+
 **Validation rules**: every referenced name is a valid `SymbolRegular`/`SymbolFilled` member; one
-symbol per concept; sizes drawn from the scale (documented fallback where a step has no variant).
+symbol per concept; sizes drawn from the scale (documented fallback where a step has no variant). Where
+the client sets no `FontSize`, the size is the component library's control style for that control — the
+live-measured values are in [design-system.md](design-system.md) (Icon scale & state).
 
 ## Entity: Shared Style
 
@@ -85,8 +94,8 @@ Drives FR-004, FR-011, FR-012, SC-002, SC-006.
 | My Documents | title + subtitle | — | no documents |
 | Admin (People) | title + subtitle | rows + header | no people |
 | Settings | title + subtitle | — | — |
-| Login | title (centred card) | — | — |
-| Query Detail | section headings | — | — |
+| Login | title + supporting line (centred card) | — | — |
+| Query Detail | title + subtitle | — | — |
 
 **Validation rules**: every listed header shows a title and a supporting line; every listed empty
 state shows a glyph, a title and a next-step hint; every table shows row separation and a distinct
@@ -107,6 +116,9 @@ SignOutButton
 
 ## State Transitions
 
-Not applicable — no runtime state machine. The only selection state the client owns is the active
-navigation destination, expressed as the selected item's filled glyph plus the library's selection
-indicator.
+The only selection state the client owns is the active navigation destination, expressed as the
+selected item's filled glyph plus the library's selection indicator.
+
+Document status is a server-side lifecycle the client renders rather than a client state machine:
+`Uploading → Queued → Indexing → Ready | Failed` (background ingest). The per-state tone, glyph and
+colour roles are in [design-system.md](design-system.md) (Status vocabulary).

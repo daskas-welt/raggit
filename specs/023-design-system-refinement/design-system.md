@@ -46,15 +46,46 @@ own guidance) — content emphasis stops at Secondary.
 
 ## Icon scale & state
 
-| Step | Size | Use |
-|------|------|-----|
-| Inline | 16 | status chips, beside Caption text |
-| Control | 20 | navigation, buttons, icon-only actions, pager |
-| Row | 24 | settings rows, list actions, tile chip glyphs |
-| Feature | 32–44 | destination tiles, empty states (40) |
+| Step | Size | Use | Realised by |
+|------|------|-----|-------------|
+| Inline | 16 | status chips, navigation rows, glyphs beside Caption text | `FontSize="16"` on the status chip; the navigation control's own style for nav glyphs |
+| Control | 20 | pager and button-hosted glyphs | the glyph family the client picks (`Chevron*20` in `PaginationFooterControl`); the button style supplies the size |
+| Row | 24 | settings rows, list and row actions, tile chip glyphs | `FontSize="24"` on the Dashboard tiles; the component library's `SymbolIcon` size for row and action glyphs |
+| Feature | 40 | empty states | the `EmptyStateGlyph` shared style (`FontSize="40"`) |
+
+**Realisation**: a glyph's size comes from an explicit `FontSize` where the client or a shared style sets
+one — status chip 16, Dashboard tiles 24, `EmptyStateGlyph` 40, the hero watermark 96 (the documented
+decoration exception) — and otherwise from the component library's control style, because the client sets
+no size at all on navigation, pager, row or action glyphs. Measured live with UI Automation on
+2026-09-30 (100% scaling): a `History24` glyph measures `24x26` in a Dashboard tile (explicit 24) and
+`16x17` in a navigation row, and a settings-row glyph measures `24x26`; so navigation sits on the Inline
+step and rows, tiles and actions on the Row step. Where the commitment is a glyph family rather than a
+client-set size (the pager's `Chevron*20`), the family names the step and the control style sizes it.
 
 **State**: Regular = resting; `Filled="True"` = status/active/emphasis. The active navigation
 destination uses the filled variant of its item glyph plus the pane's own selection indicator.
+
+### Status vocabulary
+
+The document status indicator (`Components/StatusChip`) renders one chip per state at the inline (16)
+step: the tone picks the glyph shape and the two colour roles the chip publishes for its glyph and its
+label (`GlyphBrushKey` / `LabelBrushKey`). The two in-flight states — `Uploading` and `Queued` —
+arrived with the background-ingest feature and use this same vocabulary.
+
+| State | Tone | Glyph (`Filled="True"`) | Glyph colour role | Label colour role |
+|-------|------|-------------------------|-------------------|-------------------|
+| `Uploading` | InProgress | `ArrowSyncCircle24` | accent decoration (`SystemAccentColorPrimaryBrush`) | primary text |
+| `Queued` | InProgress | `ArrowSyncCircle24` | accent decoration | primary text |
+| `Indexing` | InProgress | `ArrowSyncCircle24` | accent decoration | primary text |
+| `Ready` | Positive | `CheckmarkCircle24` | status (`SystemFillColorSuccessBrush`) | status |
+| `Failed` | Error | `ErrorCircle24` | status (`SystemFillColorCriticalBrush`) | status |
+| unknown | Neutral | `Circle24` | status (`SystemFillColorNeutralBrush`) | primary text |
+
+**Rule**: the accent **fill** token (`AccentFillColorDefaultBrush`) is never a foreground — it exists to
+sit behind text on accent. The two colour columns are independent. The **glyph** of a non-in-progress
+state uses the `SystemFillColor*` status tokens and the glyph of an in-progress state uses the accent
+**decoration** token; the **label** carries a status colour only for the two terminal states (`Ready`,
+`Failed`) and every other label — including the neutral one — stops at primary text.
 
 **Concepts** (one glyph each): Dashboard `Home24` · Library `Library24` · Ask `Chat24` ·
 History `History24` · My Docs `Document24` · Admin `People24` · Settings `Settings24` ·
@@ -82,9 +113,11 @@ listed empty state shows `EmptyStateGlyph` + title + hint.
 | Admin (People) | title + line | ✅ rows + header | no users |
 | Query Detail | title + line | — | — |
 | Settings | title + line | — | — |
-| Login | title (centred card) | — | — |
+| Login | title + supporting line (centred card) | — | — |
 
 ## Behaviour-freeze
 
-`RAGGit.Client.Core`, `RAGGit.Workstation.Api` and `specs/*/contracts/api.yaml` are untouched; the 22
-frozen automation IDs remain (see [baseline.md](baseline.md)).
+This feature changed only `src/RAGGit.Client.WPF/`; `RAGGit.Client.Core`, `RAGGit.Workstation.Api` and
+`specs/*/contracts/api.yaml` were untouched by it — the later background-ingest feature is what extended
+the Core status vocabulary (`Uploading`/`Queued`) and its label/tone mapping. The 22 frozen automation
+IDs remain (see [baseline.md](baseline.md)).

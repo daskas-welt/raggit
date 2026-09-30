@@ -223,8 +223,10 @@ end to end; `022` retains only its own scope.
   `SystemAccentColorPrimaryBrush`).
 - **US3 (icons)** — navigation items are built with an explicit `SymbolIcon`; a guarded
   `SelectionChanged` handler in `Views/MainWindow.xaml.cs` sets `Filled="True"` on the active item and
-  `False` on the rest. Icon sizes confirmed on scale: 16 status · 20 pager · 24 nav rows/chips ·
-  40 empty states (hero watermark documented as a 96px decoration exception).
+  `False` on the rest. Icon sizes confirmed on scale: 16 status chips and navigation rows · 20 pager
+  (glyph family) · 24 settings rows, tiles and actions · 40 empty states (hero watermark documented as
+  a 96px decoration exception); the navigation figure is corrected from "24 nav rows/chips" by T044
+  after live measurement.
 - **US4 (data surfaces)** — Library and People tables gained `DividerStrokeColorDefaultBrush` row
   separators and a distinct, secondary-styled header row; six empty states gained
   `EmptyStateGlyph` imagery (Dashboard ×2, Library, History, My Documents, People Management).
@@ -269,6 +271,16 @@ end to end; `022` retains only its own scope.
   `TextFillColorSecondaryBrush`, `TextOnAccentFillColorDisabledBrush`, `SystemFillColorCriticalBrush`)
   is a library-defined `ThemeResource` member, with zero literals and zero `Opacity=`. A manual HC
   pass is still recommended.
+- **Theme and icon verification (2026-09-30, T044/T045)** — icon sizes are now stated per step with
+  their realisation (explicit `FontSize` vs the component library's control style) and the live
+  measurements behind it; the T044 correction above replaces the earlier "24 nav rows/chips" claim. The
+  status chip was captured on the Library in **Light** (all 17 rows `Ready` with the filled
+  `CheckmarkCircle24` and the success label — the T038 colour roles hold). **Dark** could not be verified
+  for that page: with the app theme demonstrably Dark (`LightThemeRadio.IsSelected = False` after
+  navigating away and back) the Settings page renders correctly dark while the Library kept light
+  surfaces across six captures — the next convergence pass should establish whether that page's surfaces
+  follow a Dark theme. **High Contrast** remains unverified (the client exposes Light/Dark radios only).
+  PNGs: `…\Temp\opencode\converge-023\`.
 
 ---
 
@@ -279,4 +291,27 @@ end to end; `022` retains only its own scope.
 - [X] T035 Re-run the Contract and remaining offline suites and record whether the outstanding failures are pre-existing (background-ingest refactor, not assertion changes) so SC-009 can be settled for this feature; do not modify `RAGGit.Workstation.Api` or `RAGGit.Ingest` here — per SC-009 (partial)
 - [X] T036 Verify light/dark/high-contrast legibility and 800×600 no-clipping on the affected surfaces and fix any contrast or clipping found — per FR-015/SC-003/SC-007 (partial)
 - [X] T037 Give the Login page header a supporting line via `PageSubtitleText` and adopt `PageTitleText` in `src/RAGGit.Client.WPF/Views/Pages/LoginPage.xaml` — per FR-004/SC-002/SC-004 (partial)
+
+---
+
+## Phase 9: Convergence
+
+- [X] T038 Repaint the in-progress status indicator with the documented colour roles: in `src/RAGGit.Client.WPF/Components/StatusChip.xaml` (glyph and label triggers) and `StatusChip.xaml.cs` (`ResolveToneBrush`), use accent **decoration** (`SystemAccentColorPrimaryBrush`) for the glyph and a documented status/text role for the label instead of reusing the interactive accent **fill** token as foreground, and express the tone→brush mapping in one place so the two copies cannot drift — per FR-005/FR-009, D2/D4 (contradicts)
+- [X] T039 Document the document-status vocabulary in the state conventions of `specs/023-design-system-refinement/design-system.md` and `data-model.md`: `Uploading`/`Queued`/`Indexing` → in-progress, `Ready` → positive, `Failed` → error, with each tone's glyph and the 16px inline size, noting that the two in-flight states arrived with the background-ingest feature — per FR-001/FR-009 (partial)
+- [X] T040 Update the Login row of the page inventory in `specs/023-design-system-refinement/design-system.md` and `data-model.md` from "title (centred card)" to "title + supporting line (centred card)" so the reference matches `src/RAGGit.Client.WPF/Views/Pages/LoginPage.xaml` — per FR-001/FR-004 (partial)
+
+---
+
+## Phase 10: Convergence
+
+- [X] T041 Make the document-status chip label the state it represents instead of "Unknown": in `src/RAGGit.Client.WPF/Components/StatusChip.xaml.cs` stop the constructor's `RefreshFromStatus(null)` from publishing `LabelFor(null)` as the chip's `Text` (or track that the label is auto-generated) so `OnStatusChanged` refreshes it for every state — today every chip on Library, My Documents and the Dashboard reads "Unknown", and because `Uploading`/`Queued`/`Indexing` share one glyph and colour the wrong label removes the only remaining signal that tells those three states apart — per FR-009/D4 (contradicts)
+
+---
+
+## Phase 11: Convergence
+
+- [X] T042 Align the status-chip colour documentation with the implemented roles: in `specs/023-design-system-refinement/design-system.md` (Status vocabulary, the "Rule" paragraph) scope the `SystemFillColor*` sentence so it cannot be read as covering the label column — the neutral/unknown label is primary text (`TextFillColorPrimaryBrush`, per `LabelBrushKey`) — and in `src/RAGGit.Client.WPF/Components/StatusChip.xaml.cs` refresh the `ToneNameProperty` comment, which still says the view's `DataTrigger`s recolor the glyph and label although they now only select the glyph shape, with colour arriving on `DotBrush`/`TextBrush` — per FR-009/FR-001 (contradicts)
+- [X] T043 Correct the Query Detail row of the page inventory in `specs/023-design-system-refinement/data-model.md`: it lists the header as "section headings", but `src/RAGGit.Client.WPF/Views/Pages/QueryDetailPage.xaml` renders `PageTitleText` + `PageSubtitleText` ("Query Detail" / "A saved question and its grounded answer") and uses no `SectionHeaderText`, while `design-system.md` already reads "title + line" — so the two references disagree with each other and with the page — per FR-001/FR-004 (partial)
+- [X] T044 State in the icon scale how each step is realised and reconcile the navigation step: `src/RAGGit.Client.WPF/ViewModels/MainWindowViewModel.cs` builds every nav `SymbolIcon` with no `FontSize`, and the pager, settings-row, list-action and inline-action glyphs set none either (the client's only explicit sizes are the status chip 16, the Dashboard tiles 24, the empty-state style 40 and the documented 96 hero watermark), yet `design-system.md`'s Icon scale assigns navigation to the 20 step while the Implementation Record claims "24 nav rows/chips" — record what the unset glyphs inherit (the library's control style) and correct whichever statement is wrong — per FR-007/SC-005 (partial)
+- [X] T045 Close out the High-Contrast half of T036 for the status chip's colour roles: the in-progress glyph now uses `SystemAccentColorPrimaryBrush` as a foreground with primary text for its label (T038) and is verified only by construction plus a dependency-property probe, while FR-015/SC-003 still rests on the recorded "a manual HC pass is still recommended" caveat — capture the affected surfaces with a status chip under Light and Dark (drivable through `LightThemeRadio`/`DarkThemeRadio`) and under High Contrast if the system theme can be switched, then record the result or the residual limitation — per FR-015/SC-003 (partial)
 
