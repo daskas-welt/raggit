@@ -23,7 +23,7 @@
             VerticalScrollBarVisibility="Auto"
             Padding="0,24"
         >
-            <Grid>
+            <Grid x:Name="DashboardLayout" SizeChanged="OnDashboardLayoutSizeChanged">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -455,22 +455,40 @@
                 </WrapPanel>
 
                 <!-- Content -->
-                <Grid Grid.Row="2" Margin="0,4,0,0">
+                <Grid x:Name="PanelsGrid" Grid.Row="2" Margin="0,4,0,0">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition
+                                            Binding="{Binding HasLibraryData}"
+                                            Value="False"
+                                        />
+                                        <Condition Binding="{Binding HasQueryData}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.15*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <!-- Border, not Card: the library's Card style centres its content, which pushes
-                         this section title down whenever the sibling card is taller. -->
-                    <Border
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:Card
+                        x:Name="DocumentsPanel"
+                        Grid.Row="0"
                         Grid.Column="0"
                         Margin="0,0,8,0"
                         Padding="18"
-                        VerticalAlignment="Stretch"
-                        Background="{DynamicResource CardBackground}"
-                        BorderBrush="{DynamicResource CardBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
                     >
                         <Grid>
                             <Grid.RowDefinitions>
@@ -564,18 +582,16 @@
                                 />
                             </StackPanel>
                         </Grid>
-                    </Border>
+                    </ui:Card>
 
-                    <!-- Border, not Card: see the note on the first card. -->
-                    <Border
+                    <ui:Card
+                        x:Name="QuestionsPanel"
+                        Grid.Row="0"
                         Grid.Column="1"
                         Margin="8,0,0,0"
                         Padding="18"
-                        VerticalAlignment="Stretch"
-                        Background="{DynamicResource CardBackground}"
-                        BorderBrush="{DynamicResource CardBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
                     >
                         <Grid>
                             <Grid.RowDefinitions>
@@ -662,7 +678,7 @@
                                 />
                             </StackPanel>
                         </Grid>
-                    </Border>
+                    </ui:Card>
                 </Grid>
 
                 <!-- Status -->
