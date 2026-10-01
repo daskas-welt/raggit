@@ -54,7 +54,8 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 ## Architecture (not obvious from names)
 
 - The desktop client is **WPF** (`src/RAGGit.Client.WPF`, using `WPF-UI` / `WPF-UI.DependencyInjection`
-  4.3.0; upstream: https://github.com/lepoco/wpfui; docs via Context7 `/lepoco/wpfui`).
+  4.3.0; upstream: https://github.com/lepoco/wpfui; site: https://wpfui.lepo.co/; documentation:
+  https://wpfui.lepo.co/documentation/; docs via Context7 `/lepoco/wpfui`).
   `src/RAGGit.Client.WinUI` and the constitution's "WinUI 3" wording are superseded — do not resurrect
   them or create files there.
 - **Use Fluent (WPF-UI) controls only.** Compose every surface from `ui:*` controls — `ui:Card`,
