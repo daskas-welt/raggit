@@ -44,12 +44,7 @@
     </UserControl.Resources>
 
     <Border BorderThickness="1" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
-        <Grid VerticalAlignment="Center">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Grid VerticalAlignment="Center" ColumnDefinitions="Auto, *, Auto">
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <ui:TextBlock
                     Text="Rows per page"

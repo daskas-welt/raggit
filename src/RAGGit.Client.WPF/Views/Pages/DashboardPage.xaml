@@ -23,15 +23,11 @@
             VerticalScrollBarVisibility="Auto"
             Padding="0,24"
         >
-            <Grid x:Name="DashboardLayout" SizeChanged="OnDashboardLayoutSizeChanged">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
+            <Grid
+                x:Name="DashboardLayout"
+                SizeChanged="OnDashboardLayoutSizeChanged"
+                RowDefinitions="Auto, Auto, Auto, Auto, Auto"
+            >
                 <!-- Compact header: title + supporting line on the left, quick actions on the right. -->
                 <WrapPanel Grid.Row="0" Orientation="Horizontal">
                     <StackPanel MinWidth="280" Margin="0,0,24,12" VerticalAlignment="Center">
@@ -92,11 +88,7 @@
                             AutomationProperties.AutomationId="DashboardProfileCard"
                             AutomationProperties.Name="Logged user profile"
                         >
-                            <Grid MinWidth="260">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                            <Grid MinWidth="260" ColumnDefinitions="Auto, *">
                                 <Border
                                     Width="40"
                                     Height="40"
@@ -177,11 +169,7 @@
                         ToolTip="Open library"
                         Click="OnLibraryClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -222,11 +210,7 @@
                         ToolTip="Open library"
                         Click="OnLibraryClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -267,11 +251,7 @@
                         ToolTip="Open library"
                         Click="OnLibraryClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -312,11 +292,7 @@
                         ToolTip="Open library"
                         Click="OnLibraryClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -376,11 +352,7 @@
                         ToolTip="Ask the library"
                         Click="OnAskClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -421,11 +393,7 @@
                         ToolTip="Open my documents"
                         Click="OnMyDocsClicked"
                     >
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid ColumnDefinitions="Auto, *">
                             <Border
                                 Grid.Column="0"
                                 Width="44"
@@ -516,7 +484,13 @@
                 </ui:Card>
 
                 <!-- Content -->
-                <Grid x:Name="PanelsGrid" Grid.Row="3" Margin="0,4,0,0">
+                <Grid
+                    x:Name="PanelsGrid"
+                    Grid.Row="3"
+                    Margin="0,4,0,0"
+                    ColumnDefinitions="1.15*, *"
+                    RowDefinitions="Auto, Auto"
+                >
                     <Grid.Style>
                         <Style TargetType="Grid">
                             <Setter Property="Visibility" Value="Visible" />
@@ -534,14 +508,6 @@
                             </Style.Triggers>
                         </Style>
                     </Grid.Style>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.15*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
                     <ui:Card
                         x:Name="DocumentsPanel"
                         Grid.Row="0"
@@ -551,16 +517,8 @@
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
                     >
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                        <Grid RowDefinitions="Auto, *">
+                            <Grid Margin="0,0,0,12" ColumnDefinitions="*, Auto">
                                 <ui:TextBlock
                                     Grid.Column="0"
                                     FontTypography="Title"
@@ -589,12 +547,7 @@
                             >
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models:Document}">
-                                        <Grid Margin="0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Margin="0,10" ColumnDefinitions="*, Auto, Auto">
                                             <ui:TextBlock
                                                 Grid.Column="0"
                                                 Margin="0,0,12,0"
@@ -654,16 +607,8 @@
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
                     >
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                        <Grid RowDefinitions="Auto, *">
+                            <Grid Margin="0,0,0,12" ColumnDefinitions="*, Auto">
                                 <ui:TextBlock
                                     Grid.Column="0"
                                     FontTypography="Title"
@@ -743,11 +688,7 @@
                 </Grid>
 
                 <!-- Status -->
-                <Grid Grid.Row="4" Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <Grid Grid.Row="4" Margin="0,12,0,0" ColumnDefinitions="*, Auto">
                     <ui:InfoBar
                         Grid.Column="0"
                         VerticalAlignment="Center"

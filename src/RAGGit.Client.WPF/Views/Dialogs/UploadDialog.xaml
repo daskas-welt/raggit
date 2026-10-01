@@ -23,16 +23,7 @@
          placeholder and the list. Upload/Cancel buttons sit in the footer;
          the InfoBar carries outcomes/errors only. Spacing follows the 4px
          scale (4/8/12). -->
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
+    <Grid Margin="16" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
         <!-- Intake: drop zone + browse action + supported-types hint -->
         <Border
             Grid.Row="0"
@@ -119,11 +110,10 @@
         <!-- Single queue card: header + placeholder/list swap -->
         <Border Grid.Row="2" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,12,0,0">
             <StackPanel>
-                <Grid Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid
+                    Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
+                    ColumnDefinitions="Auto, *"
+                >
                     <ui:TextBlock Text="Upload queue" FontTypography="BodyStrong" />
                     <ui:TextBlock
                         Grid.Column="1"
@@ -155,12 +145,7 @@
                     </ui:ListView.ItemContainerStyle>
                     <ui:ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,0,0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                            <Grid Margin="0,0,0,4" ColumnDefinitions="Auto, *, Auto">
                                 <ui:SymbolIcon
                                     Grid.Column="0"
                                     Symbol="Document24"
@@ -198,11 +183,8 @@
                                     <Grid
                                         Margin="0,4,0,0"
                                         Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}"
+                                        ColumnDefinitions="Auto, *"
                                     >
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
                                         <ui:SymbolIcon
                                             Symbol="ErrorCircle24"
                                             Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"

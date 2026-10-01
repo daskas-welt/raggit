@@ -14,22 +14,10 @@
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
         <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
-    <Grid Margin="0,24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
+    <Grid Margin="0,24" RowDefinitions="Auto, Auto, Auto, Auto, *">
         <!-- Header card -->
         <ui:Card Grid.Row="0" Padding="16,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <Grid ColumnDefinitions="*, Auto">
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query Detail" />
                     <ui:TextBlock
@@ -74,11 +62,8 @@
             Grid.Row="1"
             Margin="0,12,0,0"
             Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
+            ColumnDefinitions="Auto, *"
         >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
             <ui:SymbolIcon
                 Grid.Column="0"
                 Symbol="ErrorCircle24"
@@ -154,11 +139,7 @@
 
         <!-- Citations card -->
         <ui:Card Grid.Row="4" Margin="0,12,0,0" Padding="12">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+            <Grid RowDefinitions="Auto, *">
                 <ui:TextBlock Grid.Row="0" FontTypography="Caption" Text="Citations" />
                 <Grid Grid.Row="1" Margin="0,12,0,0">
                     <ListBox

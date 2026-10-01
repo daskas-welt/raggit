@@ -13,12 +13,7 @@
         <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
     </UserControl.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
+    <Grid RowDefinitions="*, Auto">
         <!-- Messages -->
         <ListBox
             Grid.Row="0"
@@ -129,11 +124,7 @@
                                                     Padding="8"
                                                     Margin="0,2"
                                                 >
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
+                                                    <Grid ColumnDefinitions="Auto, *">
                                                         <Border
                                                             Background="{DynamicResource AccentFillColorDefaultBrush}"
                                                             CornerRadius="6"
@@ -222,11 +213,7 @@
 
         <!-- Input bar (fixed at bottom) -->
         <Border Grid.Row="1" BorderThickness="1" CornerRadius="24" Padding="8" Margin="0,8,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <Grid ColumnDefinitions="*, Auto">
                 <ui:TextBox
                     Grid.Column="0"
                     x:Name="InputBox"

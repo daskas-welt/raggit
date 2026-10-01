@@ -16,14 +16,7 @@
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </Page.Resources>
     <Grid>
-        <Grid Margin="24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
+        <Grid Margin="24" RowDefinitions="Auto, *, Auto, Auto">
             <!-- Header card -->
             <ui:Card Grid.Row="0" Padding="12">
                 <StackPanel>
