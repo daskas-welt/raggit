@@ -50,11 +50,15 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+*.tmp
+*.swp
+.idea/
 
 # NuGet
 *.nupkg
 *.snupkg
 nuget.exe
+packages/
 
 # Publish
 publish/

@@ -57,6 +57,11 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   4.3.0; upstream: https://github.com/lepoco/wpfui; docs via Context7 `/lepoco/wpfui`).
   `src/RAGGit.Client.WinUI` and the constitution's "WinUI 3" wording are superseded — do not resurrect
   them or create files there.
+- **Use Fluent (WPF-UI) controls only.** Compose every surface from `ui:*` controls — `ui:Card`,
+  `ui:CardControl`, `ui:CardAction`, `ui:Button`, `ui:TextBlock`, `ui:InfoBar`, `ui:Flyout`,
+  `ui:SymbolIcon`, `ui:ProgressRing`, … — not stock WPF chrome (`Button`, `GroupBox`, `TabControl`,
+  `Expander`, stock `TextBox`, …) where a Fluent equivalent exists. Stock WPF stays for layout only
+  (`Grid`, `WrapPanel`, `DockPanel`, `ScrollViewer`) and where WPF-UI exposes no equivalent.
 - Shared client code uses the `RAGGit.Client.Core.*` namespaces (`.Services`, `.ViewModels`, `.Config`);
   keep those framework-independent roots when adding or moving client behavior.
 - Flow: WPF pages/code-behind → `Client.Core` ViewModels (`CommunityToolkit.Mvvm`
