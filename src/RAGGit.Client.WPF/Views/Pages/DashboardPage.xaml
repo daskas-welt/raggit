@@ -29,6 +29,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Compact header: title + supporting line on the left, quick actions on the right. -->
@@ -454,8 +455,68 @@
                     </ui:CardAction>
                 </WrapPanel>
 
+                <!-- Whole-dashboard empty state: only when the library is empty and no questions exist. -->
+                <ui:Card
+                    Grid.Row="2"
+                    Margin="0,4,0,0"
+                    Padding="24"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    AutomationProperties.AutomationId="DashboardEmptyState"
+                    AutomationProperties.Name="Empty library"
+                >
+                    <ui:Card.Style>
+                        <Style TargetType="ui:Card">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition
+                                            Binding="{Binding HasLibraryData}"
+                                            Value="False"
+                                        />
+                                        <Condition Binding="{Binding HasQueryData}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Card.Style>
+                    <StackPanel HorizontalAlignment="Center">
+                        <ui:SymbolIcon
+                            Symbol="Library24"
+                            Style="{StaticResource EmptyStateGlyph}"
+                            Margin="0,0,0,12"
+                        />
+                        <ui:TextBlock
+                            HorizontalAlignment="Center"
+                            FontTypography="Title"
+                            Text="No documents yet"
+                        />
+                        <ui:TextBlock
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource SecondaryText}"
+                            Text="Open the library to upload your first document."
+                        />
+                        <ui:Button
+                            Margin="0,16,0,0"
+                            HorizontalAlignment="Center"
+                            Appearance="Primary"
+                            AutomationProperties.Name="Open the library"
+                            Content="Open the library"
+                            ToolTip="Open the library"
+                            Click="OnLibraryClicked"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Library24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </ui:Card>
+
                 <!-- Content -->
-                <Grid x:Name="PanelsGrid" Grid.Row="2" Margin="0,4,0,0">
+                <Grid x:Name="PanelsGrid" Grid.Row="3" Margin="0,4,0,0">
                     <Grid.Style>
                         <Style TargetType="Grid">
                             <Setter Property="Visibility" Value="Visible" />
@@ -682,7 +743,7 @@
                 </Grid>
 
                 <!-- Status -->
-                <Grid Grid.Row="3" Margin="0,12,0,0">
+                <Grid Grid.Row="4" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
