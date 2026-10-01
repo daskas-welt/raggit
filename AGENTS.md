@@ -63,6 +63,12 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   `ui:SymbolIcon`, `ui:ProgressRing`, … — not stock WPF chrome (`Button`, `GroupBox`, `TabControl`,
   `Expander`, stock `TextBox`, …) where a Fluent equivalent exists. Stock WPF stays for layout only
   (`Grid`, `WrapPanel`, `DockPanel`, `ScrollViewer`) and where WPF-UI exposes no equivalent.
+- Stay on **WPF-UI (lepoco)**; do **not** migrate to the built-in WPF Fluent theme (.NET 9+). That
+  theme is still experimental/in progress, only restyles stock WPF controls, and supplies none of the
+  `ui:*` controls or theme tokens used here — running both would compete for stock-control priority.
+  `WPF Gallery` (https://apps.microsoft.com/detail/9ndlx60wx4kq; source
+  https://github.com/microsoft/WPF-Samples/tree/main/Sample%20Applications/WPFGallery, MIT) is a
+  reference only, not a dependency.
 - Shared client code uses the `RAGGit.Client.Core.*` namespaces (`.Services`, `.ViewModels`, `.Config`);
   keep those framework-independent roots when adding or moving client behavior.
 - Flow: WPF pages/code-behind → `Client.Core` ViewModels (`CommunityToolkit.Mvvm`
