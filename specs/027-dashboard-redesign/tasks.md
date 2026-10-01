@@ -37,7 +37,7 @@ implementation tasks are sequential — no `[P]` markers on same-file work.
 
 **Purpose**: Record the current Dashboard layout and frozen IDs before changing anything.
 
-- [ ] T001 Inspect `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml` and record the
+- [x] T001 Inspect `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml` and record the
   current hero, tiles, metric strip, panels, and all 11 frozen Dashboard automation IDs
   in `specs/027-dashboard-redesign/tasks.md` (Implementation Record baseline)
 
@@ -61,13 +61,13 @@ a failed refresh.
 cards show the right counts and land on their destinations; fail a refresh and verify
 last-known numbers remain beside the error.
 
-- [ ] T002 [US1] Replace the hero banner in
+- [x] T002 [US1] Replace the hero banner in
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml` with the compact header (title
   with `PageTitleText`, supporting line with `PageSubtitleText`, existing
   `DashboardProfileCard`, `DashboardRefreshButton`, labeled History/MyDocs/Admin actions
   keeping `DashboardTileHistory`/`DashboardTileMyDocs`/`DashboardTileAdmin`; Admin bound
   to existing admin visibility)
-- [ ] T003 [US1] Replace the tiles and inline metric strip in
+- [x] T003 [US1] Replace the tiles and inline metric strip in
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml` with six Fluent metric cards
   bound to the existing view-model counts (`DashboardMetricDocuments` and
   `DashboardMetricQueries` keep their IDs/destinations; add `DashboardMetricReady`,
@@ -91,11 +91,11 @@ narrow widths, each with its own empty state.
 **Independent Test**: With and without panel content, verify content and empty states at
 a wide width and at 800×600, confirming the stacked layout at ≤720 DIPs content width.
 
-- [ ] T005 [US2] Replace the two hand-rolled Border panels in
+- [x] T005 [US2] Replace the two hand-rolled Border panels in
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml` with real `ui:Card` controls
   keeping the existing recent-documents/questions bindings, `DashboardLibraryButton`,
   `DashboardAskButton`, and both per-panel empty states
-- [ ] T006 [US2] Implement page-owned side-by-side→stacked switching at ≤720 DIPs
+- [x] T006 [US2] Implement page-owned side-by-side→stacked switching at ≤720 DIPs
   content width in `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml.cs`, leaving
   all existing handlers and the shared view model unchanged
 - [ ] T007 [US2] Verify US2 via `specs/027-dashboard-redesign/quickstart.md`
@@ -114,7 +114,7 @@ when the library is empty and no saved questions exist.
 **Independent Test**: Fresh library with no saved questions shows the single empty
 state whose action opens the library; adding one document hides it.
 
-- [ ] T008 [US3] Add the whole-dashboard empty state with its "Open the library" action
+- [x] T008 [US3] Add the whole-dashboard empty state with its "Open the library" action
   (wired to the existing library navigation) in
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml`, shown only when the existing
   empty-library AND empty-history conditions both hold
@@ -134,7 +134,7 @@ Contrast legibility across the redesigned page.
 **Independent Test**: Complete header-action, card, and panel flows by keyboard and
 screen reader in Light/Dark/High Contrast at 800×600 and a wide size.
 
-- [ ] T010 [US4] Audit and fix keyboard order, visible focus, per-control accessible
+- [x] T010 [US4] Audit and fix keyboard order, visible focus, per-control accessible
   names, tooltips, ≥44-DIP targets, and theme-token-only styling in
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml`; confirm all 11 frozen IDs
   remain exactly present alongside the four new metric-card IDs
@@ -151,14 +151,14 @@ screen reader in Light/Dark/High Contrast at 800×600 and a wide size.
 
 **Purpose**: Prove the contract, scope, and regression gates; record the implementation.
 
-- [ ] T012 Run the 023 design audits from
+- [x] T012 Run the 023 design audits from
   `specs/023-design-system-refinement/quickstart.md` over
   `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml`: valid icon/theme keys, no
   hard-coded colors or `Opacity=`, no ad-hoc `ui:TextBlock FontSize`, frozen ID set
-- [ ] T013 Run `dotnet tool restore`, `dotnet csharpier check .`, `dotnet build
+- [x] T013 Run `dotnet tool restore`, `dotnet csharpier check .`, `dotnet build
   RAGGit.sln -c Release -p:Platform=x64`, all unit/contract suites, and the offline
   integration subset; record results in `specs/027-dashboard-redesign/tasks.md`
-- [ ] T014 Write the Implementation Record and Caveats in
+- [x] T014 Write the Implementation Record and Caveats in
   `specs/027-dashboard-redesign/tasks.md`: baseline summary, changed files,
   frozen-ID/new-ID audit, last-known-good confirmation, UI captures, gates, and any
   remaining limitation
@@ -167,17 +167,93 @@ screen reader in Light/Dark/High Contrast at 800×600 and a wide size.
 
 ### Baseline (T001)
 
-- _To be recorded: current hero, five tiles, inline metric strip, two Border panels,
-  and the 11 frozen Dashboard automation IDs._
+- Tall `HeroAccentGradientBrush` hero banner ("Welcome back" + supporting line +
+  `RoleContext` + inline `·`-separated metric strip binding `TotalDocuments`,
+  `TotalQueries`, `ReadyDocuments`, `MyDocuments`).
+- Five `ui:CardAction` nav tiles: Library (`DashboardMetricDocuments` → library),
+  Ask (`DashboardMetricQueries` → ask), History (`DashboardTileHistory`), My Docs
+  (`DashboardTileMyDocs`), Admin (`DashboardTileAdmin`, admin-gated).
+- Two hand-rolled `<Border>`-as-card panels (explicit comment: avoided `ui:Card`
+  because its style centres content), fixed two-column `1.15*` / `*` grid.
+- Status row: `ui:InfoBar` (`DashboardStatusBar`) + Retry `ui:Button`
+  (`DashboardRetryButton`).
+- All 11 frozen Dashboard automation IDs present: `DashboardProfileCard`,
+  `DashboardRefreshButton`, `DashboardMetricDocuments`, `DashboardMetricQueries`,
+  `DashboardLibraryButton`, `DashboardAskButton`, `DashboardStatusBar`,
+  `DashboardRetryButton`, `DashboardTileHistory`, `DashboardTileMyDocs`,
+  `DashboardTileAdmin`.
 
 ### Delivered
 
-- _To be recorded on implementation._
+- Changed files (only these two):
+  - `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml`
+  - `src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml.cs`
+- Row 0: compact header in nested `WrapPanel`s — `PageTitleText` "Dashboard" +
+  `PageSubtitleText` bound to `LibrarySummary`; labeled History / My Docs / Admin
+  `ui:Button`s (icon + text, `MinHeight="44"`); unchanged `DashboardProfileCard`;
+  unchanged refresh button pattern (`LoadCommand`, `InverseBooleanConverter`,
+  `ArrowClockwise24` ↔ `ProgressRing` swap).
+- Row 1: six `ui:CardAction` metric cards (fixed `Width="200"`, wrap; 44px glyph
+  chip; count `FontTypography="Title"`; label `SecondaryText`;
+  `IsChevronVisible="False"`; per-card `AutomationProperties.Name` with count via
+  `StringFormat`, e.g. "{n} documents — open library"): Documents (`Library24` →
+  library), Ready (`CheckmarkCircle24` → library), Indexing (`ArrowSyncCircle24`,
+  accent → library), Failed (`ErrorCircle24`, critical when > 0 via
+  `DataTrigger` on `FailedDocuments == 0`, accent otherwise → library),
+  Questions (`Chat24` → ask), Mine (`Document24` → my docs).
+- Row 2: whole-dashboard `ui:Card` empty state (`DashboardEmptyState`,
+  `EmptyStateGlyph` + "No documents yet" + hint + primary "Open the library" →
+  `OnLibraryClicked`), visible only when `HasLibraryData == False` AND
+  `HasQueryData == False` (XAML `MultiDataTrigger`, no view-model change).
+- Row 3: both panels are real `ui:Card`s (`DocumentsPanel` / `QuestionsPanel`,
+  `HorizontalContentAlignment="Stretch"` + `VerticalContentAlignment="Stretch"`)
+  in `PanelsGrid` (`1.15*` / `*` wide); the grid collapses via `MultiDataTrigger`
+  when fully empty so it never coexists with the whole-dashboard empty state.
+  All recent-documents/questions bindings, `DashboardLibraryButton`,
+  `DashboardAskButton`, and per-panel empty states kept verbatim.
+- Code-behind: existing `ViewModel`, constructor, `OnLoaded` (plus one
+  `ApplyResponsiveLayout(DashboardLayout.ActualWidth)` call), and all
+  `On*Clicked` handlers unchanged; added `_compactPanels` +
+  `OnDashboardLayoutSizeChanged` + `ApplyResponsiveLayout` mirroring
+  `AdminUsersPage` (stacked: second column `0`, `QuestionsPanel` to row 1/col 0;
+  ≤720 DIPs content width).
+- No `Client.Core`, API, contract, storage, or retrieval change.
+- Frozen-ID audit: each of the 11 frozen IDs appears exactly once with unchanged
+  navigation/meaning; new IDs `DashboardMetricReady`, `DashboardMetricIndexing`,
+  `DashboardMetricFailed`, `DashboardMetricMine` (plus `DashboardEmptyState`)
+  appear exactly once.
+- Last-known-good: unchanged view-model behavior — failed `LoadAsync` sets only
+  the error status and never clears counts; the page binds the same properties,
+  so previously loaded numbers stay beside the error (confirmed by inspection;
+  live failed-refresh is part of the remaining manual walkthrough below).
+- Interpretation note: when fully empty the six metric cards remain visible
+  (showing zeros, still navigating — zero is a displayable value per
+  data-model.md) while only the two panels hide behind the whole-dashboard
+  empty state, per the agreed layout ("The two panels are hidden in that
+  state").
 
 ### Verification
 
-- _To be recorded: csharpier, build, unit/contract/offline-integration results, design
-  audits, walkthrough captures._
+- `dotnet tool restore`: ok. `dotnet csharpier check .`: clean (249 files).
+- `dotnet build RAGGit.sln -c Release -p:Platform=x64`: 0 errors (5 pre-existing
+  warnings in unrelated files).
+- Unit: 346/346 passed (incl. `DashboardViewModelTests` 4/4 — view model
+  untouched). Contract: 89/89 passed. Offline integration subset
+  (`QueryOfflineTests|OfflineIdentityTests|OfflineHistoryTests|CrossUserIsolationTests`):
+  12/12 passed.
+- 023 static audits over `src/RAGGit.Client.WPF`: 0 hard-coded colours,
+  0 `Opacity=`, 0 ad-hoc `ui:TextBlock FontSize`, 0 invalid `SymbolRegular`
+  names, 0 invalid `ThemeResource` keys (reflection under `pwsh` against
+  WPF-UI 4.3.0), frozen-ID superset confirmed (11 × exactly-once + 5 new IDs).
+- Live `winapp ui` walkthrough (T004/T007/T009/T011 — header/cards/failed-refresh,
+  wide+stacked panels, whole empty state, keyboard/screen-reader ×
+  Light/Dark/High Contrast at 800×600 and wide): NOT attempted — remaining
+  manual verification. Requires a running workstation API with seeded
+  (mixed-state + saved-question), fresh-empty, admin, and non-admin fixtures
+  plus an interactive desktop session; no screenshots are claimed. `winapp`
+  CLI is present on PATH for the follow-up run.
+- Diagram status: no PlantUML set exists for this feature (presentation-only
+  page re-bind; no topology/flow change) — nothing to update.
 
 ---
 
