@@ -423,7 +423,8 @@
                     </ui:CardAction>
                 </WrapPanel>
 
-                <!-- Whole-dashboard empty state: only when the library is empty and no questions exist. -->
+                <!-- Whole-dashboard empty state: only after a successful load, once the library is
+                     confirmed empty and no questions exist. Not shown while loading or after a failure. -->
                 <ui:Card
                     Grid.Row="2"
                     Margin="0,4,0,0"
@@ -444,6 +445,10 @@
                                             Value="False"
                                         />
                                         <Condition Binding="{Binding HasQueryData}" Value="False" />
+                                        <Condition
+                                            Binding="{Binding StatusSeverity}"
+                                            Value="Success"
+                                        />
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Visibility" Value="Visible" />
                                 </MultiDataTrigger>
