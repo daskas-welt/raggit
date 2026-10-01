@@ -1,6 +1,6 @@
 using System;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Single point for client-facing workstation error text (010-winui-client).

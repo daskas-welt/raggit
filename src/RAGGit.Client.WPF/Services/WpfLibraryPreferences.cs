@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 
 namespace RAGGit.Client.WPF.Services;
 

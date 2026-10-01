@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Attaches the cached Bearer token to outgoing requests and clears the cache when

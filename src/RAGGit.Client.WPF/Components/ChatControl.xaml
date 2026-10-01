@@ -92,6 +92,11 @@
                                 >
                                     <Expander.Header>
                                         <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon
+                                                Symbol="TextQuote24"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,6,0"
+                                            />
                                             <ui:TextBlock Text="Sources" Margin="0,0,4,0" />
                                             <ui:TextBlock
                                                 Text="{Binding Citations.Count}"

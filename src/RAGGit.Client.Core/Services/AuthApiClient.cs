@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Thin client for /api/auth endpoints. Supports anonymous login, token refresh,

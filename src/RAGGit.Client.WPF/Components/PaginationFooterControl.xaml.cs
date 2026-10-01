@@ -8,8 +8,8 @@ namespace RAGGit.Client.WPF.Components;
 
 /// <summary>
 /// Selects the footer template: current page (highlighted), other page
-/// numbers, or ellipsis. The current page gets its own template (mirrors the
-/// MAUI DataTrigger behavior).
+/// numbers, or ellipsis. The current page gets its own template so it is visually
+/// distinct from the other page numbers.
 /// </summary>
 public sealed class PageTokenTemplateSelector : DataTemplateSelector
 {

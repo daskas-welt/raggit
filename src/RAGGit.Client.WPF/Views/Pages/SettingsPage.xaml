@@ -138,14 +138,22 @@
                         />
                     </StackPanel>
                 </ui:CardControl.Header>
-                <ui:TextBlock
-                    x:Name="ConnectionStatusText"
-                    AutomationProperties.AutomationId="ConnectionStatusValue"
-                    MaxWidth="320"
-                    VerticalAlignment="Center"
-                    TextTrimming="CharacterEllipsis"
-                    Text=""
-                />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:SymbolIcon
+                        x:Name="ConnectionStatusIcon"
+                        Symbol="PlugConnected24"
+                        VerticalAlignment="Center"
+                        Margin="0,0,6,0"
+                    />
+                    <ui:TextBlock
+                        x:Name="ConnectionStatusText"
+                        AutomationProperties.AutomationId="ConnectionStatusValue"
+                        MaxWidth="320"
+                        VerticalAlignment="Center"
+                        TextTrimming="CharacterEllipsis"
+                        Text=""
+                    />
+                </StackPanel>
             </ui:CardControl>
 
             <!-- Session -->
@@ -176,7 +184,11 @@
                     Appearance="Danger"
                     Content="Sign out"
                     Click="OnSignOutClicked"
-                />
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="SignOut24" />
+                    </ui:Button.Icon>
+                </ui:Button>
             </ui:CardControl>
         </StackPanel>
     </ScrollViewer>

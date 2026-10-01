@@ -109,7 +109,7 @@ public partial class ChatControl : UserControl
 
     private void InputBox_KeyDown(object sender, KeyEventArgs e)
     {
-        // Mirrors the MAUI Entry ReturnCommand.
+        // Submit the query when Enter is pressed in the chat input.
         if (e.Key == Key.Enter && SendCommand?.CanExecute(null) == true)
         {
             SendCommand.Execute(null);

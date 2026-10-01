@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace RAGGit.Client.Maui.Config;
+namespace RAGGit.Client.Core.Config;
 
 public sealed record ClientConfigResult(
     bool IsValid,

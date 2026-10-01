@@ -170,11 +170,22 @@
                                     AutomationProperties.AutomationId="DashboardRefreshButton"
                                     AutomationProperties.Name="Refresh dashboard"
                                     Command="{Binding LoadCommand}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                                     ToolTip="Refresh dashboard"
                                 >
-                                    <ui:Button.Icon>
-                                        <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                                    </ui:Button.Icon>
+                                    <Grid Width="24" Height="24">
+                                        <ui:SymbolIcon
+                                            Symbol="ArrowClockwise24"
+                                            Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                                        />
+                                        <ui:ProgressRing
+                                            Width="24"
+                                            Height="24"
+                                            IsIndeterminate="True"
+                                            AutomationProperties.Name="Refreshing dashboard"
+                                            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                                        />
+                                    </Grid>
                                 </ui:Button>
                             </StackPanel>
                         </WrapPanel>
@@ -397,11 +408,17 @@
                         <ColumnDefinition Width="1.15*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ui:Card
+                    <!-- Border, not Card: the library's Card style centres its content, which pushes
+                         this section title down whenever the sibling card is taller. -->
+                    <Border
                         Grid.Column="0"
                         Margin="0,0,8,0"
                         Padding="18"
                         VerticalAlignment="Stretch"
+                        Background="{DynamicResource CardBackground}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
                     >
                         <Grid>
                             <Grid.RowDefinitions>
@@ -495,13 +512,18 @@
                                 />
                             </StackPanel>
                         </Grid>
-                    </ui:Card>
+                    </Border>
 
-                    <ui:Card
+                    <!-- Border, not Card: see the note on the first card. -->
+                    <Border
                         Grid.Column="1"
                         Margin="8,0,0,0"
                         Padding="18"
                         VerticalAlignment="Stretch"
+                        Background="{DynamicResource CardBackground}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
                     >
                         <Grid>
                             <Grid.RowDefinitions>
@@ -588,7 +610,7 @@
                                 />
                             </StackPanel>
                         </Grid>
-                    </ui:Card>
+                    </Border>
                 </Grid>
 
                 <!-- Status -->
@@ -617,18 +639,13 @@
                         Command="{Binding RetryCommand}"
                         Content="Retry"
                         Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
-                    />
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                 </Grid>
             </Grid>
         </ScrollViewer>
-
-        <ui:ProgressRing
-            Width="42"
-            Height="42"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            IsIndeterminate="{Binding IsBusy}"
-            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-        />
     </Grid>
 </Page>

@@ -98,6 +98,22 @@ Refresh `ArrowClockwise24` · Upload `ArrowUpload24` · Browse `FolderOpen24` ·
 Download `ArrowDownload24` · Delete `Delete24` · Copy `Copy24` · Send `Send24` ·
 Pager `Chevron*20`.
 
+**Concepts added by feature `025-fluent-system-icons`**: Sign in `ArrowEnterLeft24` · Sign out `SignOut24` ·
+Create person `PersonAdd24` · Change role `PersonEdit24` · Reset password `KeyReset24` ·
+Retry `ArrowClockwise24` (shares the reload concept with Refresh) · Load more `ArrowDown24` ·
+Cancel `Dismiss24` · Close `Dismiss24` (shares the dismiss concept with Cancel) ·
+Ask again `ArrowRepeatAll24` · Back `ArrowLeft24` · View `Eye24` · Sources `TextQuote24`.
+
+**State glyphs added by `025`**: person active `Checkmark24` (Activate) / `Dismiss24` (Deactivate) ·
+person lock `LockClosed24` (locked) / `LockOpen24` (not locked) · connection reachable
+`PlugConnected24` / unavailable `PlugDisconnected24` · message severity `Info24` (informational) /
+`CheckmarkCircle24` (success) / `Warning24` (warning) / `ErrorCircle24` (error).
+
+The glyphs `025` adds set **no** `FontSize`; they take the component library's control size, exactly as
+navigation, row and action glyphs already do. Every one of them is delivered **beside** its label — no
+labelled control becomes icon-only (`016`'s decision stands), and the Ask page's repeated person
+suggestion chips stay text-only.
+
 **Documented exceptions**: the Dashboard hero watermark uses `BookInformation24` at `FontSize="96"`
 (a background decoration, outside the control scale); double chevrons have no 24px variant, so the
 pager standardises on 20.

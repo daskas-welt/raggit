@@ -57,6 +57,17 @@ public class TestApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<ILlmClient>(new FakeLlmClient());
         });
     }
+
+    public async Task ClearUsersAsync()
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RagDbContext>();
+        await using var connection = db.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM Users;";
+        await command.ExecuteNonQueryAsync();
+    }
 }
 
 internal sealed class FakeVectorStore : IVectorStore

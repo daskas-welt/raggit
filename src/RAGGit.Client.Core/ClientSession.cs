@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace RAGGit.Client.Maui;
+namespace RAGGit.Client.Core;
 
 public sealed class ClientSession : INotifyPropertyChanged
 {

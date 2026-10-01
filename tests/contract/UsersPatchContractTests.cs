@@ -106,6 +106,98 @@ public sealed class UsersPatchContractTests : IClassFixture<TestApiFactory>
     }
 
     [Fact]
+    public async Task Patch_DemoteLastActiveAdmin_Returns409AndLeavesAccountUnchanged()
+    {
+        await DemoteExistingAdminsAsync();
+        var admin = await CreateUserAsync(
+            "last-admin-demote",
+            "Last Admin Demote",
+            UserRole.Admin,
+            "last-admin-pass-1"
+        );
+        var client = CreateAdminClient();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/users/{admin.Id}",
+            new { role = "Employee" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var error = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        error.RootElement.GetProperty("error").GetString().Should().Contain("last active Admin");
+
+        var stored = await client.GetAsync($"/api/users/{admin.Id}");
+        stored.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = JsonDocument.Parse(await stored.Content.ReadAsStringAsync());
+        account.RootElement.GetProperty("role").GetString().Should().Be("Admin");
+        account.RootElement.GetProperty("isActive").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Patch_DeactivateLastActiveAdmin_Returns409AndLeavesAccountUnchanged()
+    {
+        await DemoteExistingAdminsAsync();
+        var admin = await CreateUserAsync(
+            "last-admin-disable",
+            "Last Admin Disable",
+            UserRole.Admin,
+            "last-admin-pass-2"
+        );
+        var client = CreateAdminClient();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/users/{admin.Id}",
+            new { isActive = false }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var error = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        error.RootElement.GetProperty("error").GetString().Should().Contain("last active Admin");
+
+        var stored = await client.GetAsync($"/api/users/{admin.Id}");
+        stored.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = JsonDocument.Parse(await stored.Content.ReadAsStringAsync());
+        account.RootElement.GetProperty("role").GetString().Should().Be("Admin");
+        account.RootElement.GetProperty("isActive").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Patch_RemoveOneOfTwoActiveAdmins_IsAllowed()
+    {
+        await DemoteExistingAdminsAsync();
+        var first = await CreateUserAsync(
+            "one-of-two-admins",
+            "First Admin",
+            UserRole.Admin,
+            "first-admin-pass-1"
+        );
+        await CreateUserAsync(
+            "second-of-two-admins",
+            "Second Admin",
+            UserRole.Admin,
+            "second-admin-pass-1"
+        );
+        var client = CreateAdminClient();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/users/{first.Id}",
+            new { role = "Employee" }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var remaining = await client.GetAsync("/api/users");
+        var accounts = JsonDocument.Parse(await remaining.Content.ReadAsStringAsync());
+        accounts
+            .RootElement.EnumerateArray()
+            .Count(account =>
+                account.GetProperty("role").GetString() == "Admin"
+                && account.GetProperty("isActive").GetBoolean()
+            )
+            .Should()
+            .Be(1);
+    }
+
+    [Fact]
     public async Task ResetPassword_Admin_Returns204AndMustChangePasswordFlag()
     {
         var user = await CreateUserAsync(
@@ -183,6 +275,11 @@ public sealed class UsersPatchContractTests : IClassFixture<TestApiFactory>
         };
         await store.CreateAsync(user);
         return user;
+    }
+
+    private async Task DemoteExistingAdminsAsync()
+    {
+        await _factory.ClearUsersAsync();
     }
 
     private async Task<string> LoginAsync(string username, string password)

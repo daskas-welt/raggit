@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Thin client for GET /api/queries/history + GET /api/queries/{id} (005-per-person-history).

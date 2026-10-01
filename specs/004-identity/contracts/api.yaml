@@ -1,12 +1,14 @@
 openapi: 3.0.3
 info:
   title: RAGGit Workstation API (Single-Tenant)
-  version: 1.3.0
+  version: 1.4.0
   description: >
     Single-tenant on-prem RAG on AI Workstation (LanceDB local path +
     Ollama/LLamaSharp/ONNX). Desktop is thin client over LAN (no WAN at query
-    time per FR-004/Constitution IV). 1.3.0 (004-identity, MINOR/ADDITIVE per
-    FR-013): local per-person accounts — POST /api/auth/login and
+     time per FR-004/Constitution IV). 1.4.0 (026-admin-people-redesign,
+     MINOR/ADDITIVE): PATCH /api/users/{id} refuses changes that would remove
+     the last active Admin with 409. 1.3.0 (004-identity, MINOR/ADDITIVE per
+     FR-013): local per-person accounts — POST /api/auth/login and
     POST /api/auth/refresh issue workstation-signed JWT bearer tokens (8h);
     /api/users CRUD (Admin-only) manages the people directory; GET /api/auth/me
     gains ADDITIVE optional fields (displayName, username, sub) — 1.2.0
@@ -214,7 +216,8 @@ paths:
         existing session — live tokens are checked against the Users row per
         request (FR-010, SC-003); takes effect without restarting the
         workstation (SC-006). Accounts are never hard-deleted (attribution
-        references persist).
+        references persist). A patch that demotes or deactivates the final
+        active Admin returns 409 and does not change the account.
       operationId: patchUser
       security:
         - ApiKey: []
@@ -236,6 +239,12 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Update would remove the last active Admin account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/users/{id}/reset-password:
     post:

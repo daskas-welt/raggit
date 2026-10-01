@@ -8,10 +8,10 @@ using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Config;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core;
+using RAGGit.Client.Core.Config;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using RAGGit.Client.WPF.Services;
 using RAGGit.Client.WPF.ViewModels;
 using RAGGit.Client.WPF.Views;
@@ -121,7 +121,7 @@ public sealed partial class App : Application
 
         // Platform services
         services.AddSingleton<
-            RAGGit.Client.Maui.Services.INavigationService,
+            RAGGit.Client.Core.Services.INavigationService,
             WpfNavigationService
         >();
         services.AddSingleton<IDialogService, WpfDialogService>();

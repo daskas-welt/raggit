@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// UI-framework-agnostic navigation service. The WPF client provides an

@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Thin client for the Admin-only /api/users people-management endpoints.
@@ -197,12 +197,39 @@ public sealed class UsersApiClient
         if (response.StatusCode == HttpStatusCode.Forbidden)
             throw new HttpRequestException($"forbidden: {body}");
         if (response.StatusCode == HttpStatusCode.Conflict)
-            throw new HttpRequestException($"conflict: {body}");
+            throw new HttpRequestException(
+                GetConflictMessage(body),
+                inner: null,
+                statusCode: HttpStatusCode.Conflict
+            );
         response.EnsureSuccessStatusCode();
     }
 
+    private static string GetConflictMessage(string body)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (
+                document.RootElement.TryGetProperty("error", out var error)
+                && error.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(error.GetString())
+            )
+            {
+                return error.GetString()!;
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall back to the response body when it is not the standard Error shape.
+        }
+
+        return $"conflict: {body}";
+    }
+
     private static bool IsMappedError(HttpRequestException ex) =>
-        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        ex.StatusCode == HttpStatusCode.Conflict
+        || ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase)

@@ -88,7 +88,24 @@ public sealed class AuthController : ControllerBase
             user.LastSignInAt = DateTime.UtcNow;
             await _userStore.UpdateAsync(user, HttpContext.RequestAborted);
 
-            var token = _tokenService.IssueToken(user);
+            // Role and active state may have changed while the password was being verified.
+            // Issue claims from the current row, never the pre-verification snapshot.
+            var currentUser = await _userStore.GetByIdAsync(user.Id, HttpContext.RequestAborted);
+            if (
+                currentUser is null
+                || !currentUser.IsActive
+                || currentUser.IsLockedOut
+                || !string.Equals(
+                    currentUser.PasswordHash,
+                    user.PasswordHash,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                return Unauthorized(new { error = "unauthorized" });
+            }
+
+            var token = _tokenService.IssueToken(currentUser);
             return Ok(
                 new TokenResponse
                 {

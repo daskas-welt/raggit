@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using Xunit;
 
 namespace RAGGit.Tests.Unit;

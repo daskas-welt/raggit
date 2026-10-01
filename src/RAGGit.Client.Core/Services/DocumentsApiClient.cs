@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Thin client for the Workstation.Api document endpoints.

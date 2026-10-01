@@ -79,18 +79,44 @@ public sealed class UserRepositoryTests : IAsyncLifetime
         var user = NewUser("carol", "Carol", UserRole.Employee);
         await _store.CreateAsync(user);
 
-        user.IsActive = false;
         user.FailedAccessCount = 3;
         user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
         await _store.UpdateAsync(user);
 
         var found = await _store.GetByIdAsync(user.Id);
         found.Should().NotBeNull();
-        found!.IsActive.Should().BeFalse();
+        found!.IsActive.Should().BeTrue();
         found.FailedAccessCount.Should().Be(3);
         found
             .LockoutUntil.Should()
             .BeCloseTo(DateTime.UtcNow.AddMinutes(15), TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DoesNotOverwriteRoleOrActiveStateFromStaleSnapshot()
+    {
+        var remainingAdmin = NewUser("guarded-admin", "Admin", UserRole.Admin);
+        var formerAdmin = NewUser("former-admin", "Former Admin", UserRole.Admin);
+        await _store.CreateAsync(remainingAdmin);
+        await _store.CreateAsync(formerAdmin);
+        var staleSnapshot = (await _store.GetByIdAsync(remainingAdmin.Id))!;
+        var demotion = await _store.TryPatchAsync(
+            formerAdmin.Id,
+            UserRole.Employee,
+            isActive: null,
+            displayName: null
+        );
+        demotion.Status.Should().Be(UserPatchStatus.Updated);
+        staleSnapshot.Role = UserRole.Employee;
+        staleSnapshot.IsActive = false;
+        staleSnapshot.DisplayName = "Updated display name";
+
+        await _store.UpdateAsync(staleSnapshot);
+
+        var stored = (await _store.GetByIdAsync(remainingAdmin.Id))!;
+        stored.Role.Should().Be(UserRole.Admin);
+        stored.IsActive.Should().BeTrue();
+        stored.DisplayName.Should().Be("Updated display name");
     }
 
     private static User NewUser(string username, string displayName, UserRole role)

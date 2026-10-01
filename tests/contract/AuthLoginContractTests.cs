@@ -112,11 +112,11 @@ public sealed class AuthLoginContractTests : IClassFixture<TestApiFactory>
         var user = await CreateUserAsync(
             "login-inactive",
             "Login Inactive",
-            UserRole.Admin,
+            UserRole.Employee,
             "inactive-pass-1"
         );
         user.IsActive = false;
-        await UpdateUserAsync(user);
+        await DeactivateUserAsync(user.Id);
 
         var client = _factory.CreateClient();
         var response = await client.PostAsJsonAsync(
@@ -157,11 +157,17 @@ public sealed class AuthLoginContractTests : IClassFixture<TestApiFactory>
         return user;
     }
 
-    private async Task UpdateUserAsync(User user)
+    private async Task DeactivateUserAsync(Guid userId)
     {
         using var scope = _factory.Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        await store.UpdateAsync(user);
+        var result = await store.TryPatchAsync(
+            userId,
+            role: null,
+            isActive: false,
+            displayName: null
+        );
+        result.Status.Should().Be(UserPatchStatus.Updated);
     }
 
     private static string ExtractError(string body)

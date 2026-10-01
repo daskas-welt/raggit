@@ -178,35 +178,30 @@ public sealed class UsersController : ControllerBase
 
         try
         {
-            var user = await _userStore.GetByIdAsync(id, cancellationToken);
-            if (user is null)
-            {
-                return NotFound(new { error = "User not found." });
-            }
+            var result = await _userStore.TryPatchAsync(
+                id,
+                request.Role,
+                request.IsActive,
+                request.DisplayName,
+                cancellationToken
+            );
 
-            if (request.Role.HasValue)
+            switch (result.Status)
             {
-                user.Role = request.Role.Value;
+                case UserPatchStatus.Updated when result.User is not null:
+                    return Ok(ToDto(result.User));
+                case UserPatchStatus.NotFound:
+                    return NotFound(new { error = "User not found." });
+                case UserPatchStatus.LastActiveAdmin:
+                    return Conflict(
+                        new
+                        {
+                            error = "The last active Admin cannot be demoted or deactivated. Promote another Admin first.",
+                        }
+                    );
+                default:
+                    throw new InvalidOperationException("Unexpected user patch result.");
             }
-
-            if (request.IsActive.HasValue)
-            {
-                user.IsActive = request.IsActive.Value;
-                if (!user.IsActive)
-                {
-                    // Clear any active lockout so reactivation is clean.
-                    user.LockoutUntil = null;
-                    user.FailedAccessCount = 0;
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.DisplayName))
-            {
-                user.DisplayName = request.DisplayName.Trim();
-            }
-
-            await _userStore.UpdateAsync(user, cancellationToken);
-            return Ok(ToDto(user));
         }
         catch (Exception)
         {

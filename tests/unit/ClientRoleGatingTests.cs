@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using FluentAssertions;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using Xunit;
 
 namespace RAGGit.Tests.Unit;
@@ -127,7 +127,7 @@ public sealed class ClientRoleGatingTests
                 .Select(p =>
                     p.ParameterType == typeof(ClientSession) ? (object)session
                     : p.ParameterType == typeof(DocumentsApiClient) ? api
-                    : p.ParameterType == typeof(RAGGit.Client.Maui.Services.ILibraryPreferences)
+                    : p.ParameterType == typeof(RAGGit.Client.Core.Services.ILibraryPreferences)
                         ? (object?)null
                     : p.ParameterType == typeof(ILauncherService) ? new InMemoryLauncherService()
                     : throw new InvalidOperationException($"Unexpected param {p.ParameterType}")

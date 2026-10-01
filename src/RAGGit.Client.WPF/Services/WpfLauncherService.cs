@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 
 namespace RAGGit.Client.WPF.Services;
 

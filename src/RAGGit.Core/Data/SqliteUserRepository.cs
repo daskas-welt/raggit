@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -139,9 +140,7 @@ public class SqliteUserRepository : IUserRepository
             UPDATE Users
             SET Username = @username,
                 DisplayName = @displayName,
-                Role = @role,
                 PasswordHash = @passwordHash,
-                IsActive = @isActive,
                 FailedAccessCount = @failedAccessCount,
                 LockoutUntil = @lockoutUntil,
                 MustChangePassword = @mustChangePassword,
@@ -149,19 +148,138 @@ public class SqliteUserRepository : IUserRepository
                 LastPasswordChangedAt = @lastPasswordChangedAt,
                 CreatedAt = @createdAt
             WHERE Id = @id;";
-        AddParameters(command, user);
+        // Role and IsActive are intentionally excluded. All access-state writes go through
+        // TryPatchAsync, which evaluates the last-active-admin invariant in the write transaction.
+        AddParameters(command, user, includeAccessState: false);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static void AddParameters(SqliteCommand command, User user)
+    public async Task<UserPatchResult> TryPatchAsync(
+        Guid id,
+        UserRole? role,
+        bool? isActive,
+        string? displayName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await using var connection = _db.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        // Acquire SQLite's write reservation before reading the target/admin count. This makes the
+        // invariant check and patch serial with other writers, including other API processes.
+        using var transaction = connection.BeginTransaction(
+            IsolationLevel.Serializable,
+            deferred: false
+        );
+
+        User? current;
+        using (var read = connection.CreateCommand())
+        {
+            read.Transaction = transaction;
+            read.CommandText =
+                @"
+                SELECT Id, Username, DisplayName, Role, PasswordHash, IsActive,
+                       FailedAccessCount, LockoutUntil, MustChangePassword,
+                       LastSignInAt, LastPasswordChangedAt, CreatedAt
+                FROM Users
+                WHERE Id = @id
+                LIMIT 1;";
+            read.Parameters.AddWithValue("@id", id.ToString());
+
+            await using var reader = await read.ExecuteReaderAsync(cancellationToken);
+            current = await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+        }
+
+        if (current is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return UserPatchResult.NotFound();
+        }
+
+        var nextRole = role ?? current.Role;
+        var nextIsActive = isActive ?? current.IsActive;
+        var removesActiveAdmin =
+            current.Role == UserRole.Admin
+            && current.IsActive
+            && (nextRole != UserRole.Admin || !nextIsActive);
+
+        if (removesActiveAdmin)
+        {
+            using var count = connection.CreateCommand();
+            count.Transaction = transaction;
+            count.CommandText =
+                "SELECT COUNT(*) FROM Users WHERE Role = 'Admin' AND IsActive = 1 AND Id <> @id;";
+            count.Parameters.AddWithValue("@id", id.ToString());
+            var otherActiveAdmins = Convert.ToInt64(
+                await count.ExecuteScalarAsync(cancellationToken),
+                CultureInfo.InvariantCulture
+            );
+            if (otherActiveAdmins == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return UserPatchResult.LastActiveAdmin();
+            }
+        }
+
+        current.Role = nextRole;
+        current.IsActive = nextIsActive;
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            current.DisplayName = displayName.Trim();
+        }
+        if (isActive == false)
+        {
+            // Preserve existing behavior: deactivation clears a temporary lockout.
+            current.LockoutUntil = null;
+            current.FailedAccessCount = 0;
+        }
+
+        using (var update = connection.CreateCommand())
+        {
+            update.Transaction = transaction;
+            update.CommandText =
+                @"
+                UPDATE Users
+                SET DisplayName = @displayName,
+                    Role = @role,
+                    IsActive = @isActive,
+                    FailedAccessCount = @failedAccessCount,
+                    LockoutUntil = @lockoutUntil
+                WHERE Id = @id;";
+            update.Parameters.AddWithValue("@id", id.ToString());
+            update.Parameters.AddWithValue("@displayName", current.DisplayName);
+            update.Parameters.AddWithValue("@role", current.Role.ToString());
+            update.Parameters.AddWithValue("@isActive", current.IsActive ? 1 : 0);
+            update.Parameters.AddWithValue("@failedAccessCount", current.FailedAccessCount);
+            update.Parameters.AddWithValue(
+                "@lockoutUntil",
+                current.LockoutUntil.HasValue
+                    ? (object)current.LockoutUntil.Value.ToString("O")
+                    : DBNull.Value
+            );
+            await update.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return UserPatchResult.Updated(current);
+    }
+
+    private static void AddParameters(
+        SqliteCommand command,
+        User user,
+        bool includeAccessState = true
+    )
     {
         command.Parameters.AddWithValue("@id", user.Id.ToString());
         command.Parameters.AddWithValue("@username", user.Username);
         command.Parameters.AddWithValue("@displayName", user.DisplayName);
-        command.Parameters.AddWithValue("@role", user.Role.ToString());
+        if (includeAccessState)
+        {
+            command.Parameters.AddWithValue("@role", user.Role.ToString());
+            command.Parameters.AddWithValue("@isActive", user.IsActive ? 1 : 0);
+        }
         command.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
-        command.Parameters.AddWithValue("@isActive", user.IsActive ? 1 : 0);
         command.Parameters.AddWithValue("@failedAccessCount", user.FailedAccessCount);
         command.Parameters.AddWithValue(
             "@lockoutUntil",

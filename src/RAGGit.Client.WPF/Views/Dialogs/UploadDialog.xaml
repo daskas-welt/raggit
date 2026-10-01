@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
-    xmlns:services="clr-namespace:RAGGit.Client.Maui.Services;assembly=RAGGit.Client.Core"
+    xmlns:services="clr-namespace:RAGGit.Client.Core.Services;assembly=RAGGit.Client.Core"
     Title="Upload Documents"
     Icon="pack://application:,,,/Assets/RaggitIcon.ico"
     Width="520"
@@ -195,14 +195,28 @@
                                         Style="{StaticResource SecondaryText}"
                                         Margin="0,4,0,0"
                                     />
-                                    <ui:TextBlock
-                                        Text="{Binding ErrorMessage, Mode=OneWay}"
-                                        FontTypography="Caption"
-                                        Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                                        TextWrapping="Wrap"
+                                    <Grid
                                         Margin="0,4,0,0"
                                         Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}"
-                                    />
+                                    >
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:SymbolIcon
+                                            Symbol="ErrorCircle24"
+                                            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                            VerticalAlignment="Top"
+                                            Margin="0,1,6,0"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Column="1"
+                                            Text="{Binding ErrorMessage, Mode=OneWay}"
+                                            FontTypography="Caption"
+                                            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                            TextWrapping="Wrap"
+                                        />
+                                    </Grid>
                                 </StackPanel>
                                 <ui:Button
                                     Grid.Column="2"
@@ -299,15 +313,27 @@
                 Appearance="Primary"
                 MinWidth="90"
                 Margin="0,0,8,0"
-            />
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowUpload24" />
+                </ui:Button.Icon>
+            </ui:Button>
             <ui:Button
                 Content="Cancel"
                 Command="{Binding CancelUploadCommand}"
                 MinWidth="90"
                 Margin="0,0,8,0"
                 Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-            />
-            <ui:Button Content="Close" MinWidth="90" Click="CloseButton_Click" />
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button Content="Close" MinWidth="90" Click="CloseButton_Click">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button.Icon>
+            </ui:Button>
         </StackPanel>
     </Grid>
 </Window>

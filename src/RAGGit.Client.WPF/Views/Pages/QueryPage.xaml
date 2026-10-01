@@ -13,6 +13,7 @@
 >
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </Page.Resources>
     <Grid>
         <Grid Margin="24">
@@ -84,7 +85,7 @@
             <ui:InfoBar
                 Grid.Row="3"
                 Margin="0,12,0,0"
-                Severity="Informational"
+                Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
                 IsClosable="False"
                 IsOpen="{Binding HasStatusMessage, Mode=OneWay}"
                 Message="{Binding StatusMessage, Mode=OneWay}"
@@ -96,6 +97,7 @@
             Height="40"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
+            AutomationProperties.Name="Processing question"
             IsIndeterminate="{Binding IsBusy}"
             Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
         />

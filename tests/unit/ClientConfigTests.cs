@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
-using RAGGit.Client.Maui.Config;
+using RAGGit.Client.Core.Config;
 using Xunit;
 
 namespace RAGGit.Tests.Unit;

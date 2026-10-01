@@ -53,12 +53,12 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 
 ## Architecture (not obvious from names)
 
-- The desktop client is **WPF** (`src/RAGGit.Client.WPF`, + `WPF-UI` / `WPF-UI.DependencyInjection`
-  4.3.0; docs via Context7 `/lepoco/wpfui`). `src/RAGGit.Client.WinUI`, `src/RAGGit.Client.Maui` and
-  the constitution's "WinUI 3" wording are superseded — do not resurrect them or create files there.
-- `RAGGit.Client.Core` still declares the **`RAGGit.Client.Maui.*` namespaces**
-  (`RAGGit.Client.Maui`, `.Services`, `.ViewModels`, `.Config`) — 26 files. That is intentional; do not
-  rename them.
+- The desktop client is **WPF** (`src/RAGGit.Client.WPF`, using `WPF-UI` / `WPF-UI.DependencyInjection`
+  4.3.0; upstream: https://github.com/lepoco/wpfui; docs via Context7 `/lepoco/wpfui`).
+  `src/RAGGit.Client.WinUI` and the constitution's "WinUI 3" wording are superseded — do not resurrect
+  them or create files there.
+- Shared client code uses the `RAGGit.Client.Core.*` namespaces (`.Services`, `.ViewModels`, `.Config`);
+  keep those framework-independent roots when adding or moving client behavior.
 - Flow: WPF pages/code-behind → `Client.Core` ViewModels (`CommunityToolkit.Mvvm`
   `[ObservableProperty]`/`[RelayCommand]` source-gen) + `*ApiClient` (HttpClient only) →
   `Workstation.Api` controllers → `RAGGit.Retrieval` (topK=5 + `MinScore`, grounded prompts) /

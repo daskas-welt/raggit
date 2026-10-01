@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Valid page sizes plus validation for the library footer preference.

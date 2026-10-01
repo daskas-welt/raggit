@@ -11,6 +11,7 @@
 >
     <Page.Resources>
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
+        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
     <Grid Margin="0,24">
         <Grid.RowDefinitions>
@@ -44,7 +45,11 @@
                     VerticalAlignment="Center"
                     Content="Refresh"
                     Command="{Binding RefreshCommand}"
-                />
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                    </ui:Button.Icon>
+                </ui:Button>
             </Grid>
         </ui:Card>
 
@@ -102,14 +107,22 @@
                                         Margin="0,0,8,0"
                                         Content="View"
                                         Click="OnViewClicked"
-                                    />
+                                    >
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Eye24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
                                     <ui:Button
                                         AutomationProperties.AutomationId="AskAgainButton"
                                         AutomationProperties.Name="Run this query again"
                                         ToolTip="Run this query again"
                                         Content="Ask again"
                                         Click="OnAskAgainClicked"
-                                    />
+                                    >
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="ArrowRepeatAll24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
                                 </StackPanel>
                             </Grid>
                         </ui:Card>
@@ -145,9 +158,11 @@
             </ui:Card>
 
             <ui:ProgressRing
-                Width="200"
+                Width="40"
+                Height="40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                AutomationProperties.Name="Loading history"
                 IsIndeterminate="True"
                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
             />
@@ -164,16 +179,37 @@
             Content="Load more"
             Command="{Binding LoadMoreCommand}"
             Visibility="{Binding HasMore, Converter={StaticResource BooleanToVisibilityConverter}}"
-        />
+        >
+            <ui:Button.Icon>
+                <ui:SymbolIcon Symbol="ArrowDown24" />
+            </ui:Button.Icon>
+        </ui:Button>
 
         <!-- Footer -->
-        <ui:TextBlock
+        <Grid
             Grid.Row="3"
             Margin="0,12,0,0"
-            FontTypography="Body"
-            TextTrimming="CharacterEllipsis"
-            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-            Text="{Binding ErrorMessage}"
-        />
+            Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
+        >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ui:SymbolIcon
+                Grid.Column="0"
+                Symbol="ErrorCircle24"
+                VerticalAlignment="Center"
+                Margin="0,0,8,0"
+                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+            />
+            <ui:TextBlock
+                Grid.Column="1"
+                FontTypography="Body"
+                VerticalAlignment="Center"
+                TextTrimming="CharacterEllipsis"
+                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                Text="{Binding ErrorMessage}"
+            />
+        </Grid>
     </Grid>
 </Page>

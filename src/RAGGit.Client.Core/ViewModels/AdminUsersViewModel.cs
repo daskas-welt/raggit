@@ -5,10 +5,10 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.ViewModels;
+namespace RAGGit.Client.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the Admin-only people management screen.
@@ -94,6 +94,9 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [ObservableProperty]
     private bool _resetMustChangePassword;
 
+    [ObservableProperty]
+    private bool _passwordResetCompleted;
+
     public IReadOnlyList<UserRole> Roles { get; } = new[] { UserRole.Admin, UserRole.Employee };
 
     public AdminUsersViewModel(UsersApiClient usersApiClient)
@@ -142,6 +145,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [RelayCommand]
     private async Task CreateUserAsync()
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(NewUsername))
         {
             SetWarning("Username is required. Enter a unique login name.");
@@ -208,6 +216,10 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     private async Task ChangeRoleAsync(UserAccountDto user)
     {
         ArgumentNullException.ThrowIfNull(user);
+        if (IsBusy)
+        {
+            return;
+        }
 
         IsBusy = true;
         ClearStatus();
@@ -245,9 +257,63 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task ChangeRoleToAsync(UserRoleChangeRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.User);
+
+        if (IsBusy)
+        {
+            return;
+        }
+
+        if (request.User.Role == request.Role)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ClearStatus();
+
+        try
+        {
+            var updated = await _usersApiClient.UpdateUserAsync(
+                request.User.Id,
+                new UpdateUserRequest { Role = request.Role }
+            );
+            UpdateUserInCollection(updated);
+            SetSuccess($"Changed '{updated.Username}' from {request.User.Role} to {request.Role}.");
+        }
+        catch (HttpRequestException ex) when (IsMappedError(ex))
+        {
+            SetError(ex.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            SetError(ClientErrorText.CannotReach(ex.Message));
+        }
+        catch (TaskCanceledException ex)
+        {
+            SetError(ClientErrorText.Unavailable(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to change role: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task ToggleActiveAsync(UserAccountDto user)
     {
         ArgumentNullException.ThrowIfNull(user);
+        if (IsBusy)
+        {
+            return;
+        }
 
         IsBusy = true;
         ClearStatus();
@@ -290,6 +356,12 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [RelayCommand]
     private async Task ResetPasswordAsync(UserAccountDto? user)
     {
+        PasswordResetCompleted = false;
+        if (IsBusy)
+        {
+            return;
+        }
+
         if (user is null)
         {
             SetWarning("Select a user first. Choose a user in the list, then reset.");
@@ -316,15 +388,21 @@ public sealed partial class AdminUsersViewModel : ObservableObject
                 }
             );
 
+            PasswordResetCompleted = true;
             ResetPassword = string.Empty;
             ResetMustChangePassword = false;
             await LoadUsersAsync();
 
-            // LoadUsersAsync owns the status surface for the refresh; only
-            // claim the reset outcome when the refresh itself succeeded.
             if (ErrorMessage is null)
             {
                 SetSuccess($"Password reset for '{user.Username}'.");
+            }
+            else
+            {
+                var refreshError = ErrorMessage;
+                SetWarning(
+                    $"Password reset for '{user.Username}', but the people list could not refresh: {refreshError}"
+                );
             }
         }
         catch (HttpRequestException ex) when (IsMappedError(ex))
@@ -356,10 +434,14 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         {
             var index = Users.IndexOf(existing);
             Users[index] = updated;
+            if (SelectedUser?.Id == updated.Id)
+            {
+                SelectedUser = updated;
+            }
         }
     }
 
-    private void ClearStatus()
+    public void ClearStatus()
     {
         ErrorMessage = null;
         StatusMessage = null;
@@ -388,10 +470,13 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     }
 
     private static bool IsMappedError(HttpRequestException ex) =>
-        ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
+        ex.StatusCode == System.Net.HttpStatusCode.Conflict
+        || ex.Message.Contains("model unavailable offline", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("AI workstation unavailable", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("cannot reach AI workstation", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
         || ex.Message.Contains("conflict", StringComparison.OrdinalIgnoreCase);
 }
+
+public sealed record UserRoleChangeRequest(UserAccountDto User, UserRole Role);

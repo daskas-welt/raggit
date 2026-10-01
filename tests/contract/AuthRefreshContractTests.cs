@@ -89,8 +89,13 @@ public sealed class AuthRefreshContractTests : IClassFixture<TestApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var store = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-            user.IsActive = false;
-            await store.UpdateAsync(user);
+            var result = await store.TryPatchAsync(
+                user.Id,
+                role: null,
+                isActive: false,
+                displayName: null
+            );
+            result.Status.Should().Be(UserPatchStatus.Updated);
         }
 
         var client = _factory.CreateClient();

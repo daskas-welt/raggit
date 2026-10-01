@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using Xunit;
 
 namespace RAGGit.Tests.Unit;

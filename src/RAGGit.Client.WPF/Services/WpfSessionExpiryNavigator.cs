@@ -1,8 +1,8 @@
 using System;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core;
+using RAGGit.Client.Core.Services;
 
 namespace RAGGit.Client.WPF.Services;
 

@@ -3,10 +3,10 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.ViewModels;
+namespace RAGGit.Client.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the per-person recent-documents view (005-per-person-history US3).

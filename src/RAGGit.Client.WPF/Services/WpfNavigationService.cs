@@ -1,14 +1,14 @@
 using System;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Client.WPF.Views.Pages;
 
 namespace RAGGit.Client.WPF.Services;
 
 /// <summary>
-/// Adapter from the shared <see cref="RAGGit.Client.Maui.Services.INavigationService"/>
+/// Adapter from the shared <see cref="RAGGit.Client.Core.Services.INavigationService"/>
 /// to WPF-UI's <see cref="Wpf.Ui.INavigationService"/>.
 /// </summary>
-public sealed class WpfNavigationService : RAGGit.Client.Maui.Services.INavigationService
+public sealed class WpfNavigationService : RAGGit.Client.Core.Services.INavigationService
 {
     private readonly Wpf.Ui.INavigationService _navigationService;
     private readonly QueryDetailNavigationState _detailState;

@@ -2,8 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Client.WPF.Views.Pages;

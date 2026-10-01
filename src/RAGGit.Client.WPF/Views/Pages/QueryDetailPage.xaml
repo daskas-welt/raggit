@@ -12,6 +12,7 @@
     <Page.Resources>
         <converters:HistoryCitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
     <Grid Margin="0,24">
         <Grid.RowDefinitions>
@@ -46,7 +47,11 @@
                         Margin="0,0,8,0"
                         Content="Ask again"
                         Click="OnAskAgainClicked"
-                    />
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowRepeatAll24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                     <ui:Button
                         x:Name="BackButton"
                         AutomationProperties.AutomationId="BackButton"
@@ -55,20 +60,41 @@
                         TabIndex="1"
                         Content="Back"
                         Click="OnBackClicked"
-                    />
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowLeft24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                 </StackPanel>
             </Grid>
         </ui:Card>
 
         <!-- Error -->
-        <ui:TextBlock
+        <Grid
             Grid.Row="1"
             Margin="0,12,0,0"
-            FontTypography="Body"
-            TextWrapping="Wrap"
-            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-            Text="{Binding ErrorMessage}"
-        />
+            Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
+        >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ui:SymbolIcon
+                Grid.Column="0"
+                Symbol="ErrorCircle24"
+                VerticalAlignment="Center"
+                Margin="0,0,8,0"
+                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+            />
+            <ui:TextBlock
+                Grid.Column="1"
+                FontTypography="Body"
+                VerticalAlignment="Center"
+                TextWrapping="Wrap"
+                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                Text="{Binding ErrorMessage}"
+            />
+        </Grid>
 
         <!-- Prompt card -->
         <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="12">
@@ -90,7 +116,11 @@
                     Margin="0,6,0,0"
                     Content="Copy"
                     Click="CopyPromptButton_Click"
-                />
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Copy24" />
+                    </ui:Button.Icon>
+                </ui:Button>
             </StackPanel>
         </ui:Card>
 
@@ -114,7 +144,11 @@
                     Margin="0,6,0,0"
                     Content="Copy"
                     Click="CopyAnswerButton_Click"
-                />
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Copy24" />
+                    </ui:Button.Icon>
+                </ui:Button>
             </StackPanel>
         </ui:Card>
 
@@ -163,7 +197,11 @@
                                             Margin="0,6,0,0"
                                             Content="Copy"
                                             Click="CopyCitationButton_Click"
-                                        />
+                                        >
+                                            <ui:Button.Icon>
+                                                <ui:SymbolIcon Symbol="Copy24" />
+                                            </ui:Button.Icon>
+                                        </ui:Button>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -184,9 +222,11 @@
         <ui:ProgressRing
             Grid.Row="0"
             Grid.RowSpan="5"
-            Width="200"
+            Width="40"
+            Height="40"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
+            AutomationProperties.Name="Loading query details"
             IsIndeterminate="True"
             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
         />

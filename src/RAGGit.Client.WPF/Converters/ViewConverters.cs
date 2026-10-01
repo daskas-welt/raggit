@@ -3,14 +3,14 @@ using System.Collections;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Client.WPF.Converters;
 
 /// <summary>
-/// WPF replacements for MAUI MultiBinding/StringFormat expressions.
-/// Pure formatting; all data comes from Core models.
+/// WPF formatting adapters for values composed by earlier XAML bindings.
+/// Pure formatting; all data comes from shared Core models.
 /// </summary>
 public sealed class HistoryMetaConverter : IValueConverter
 {
@@ -59,9 +59,7 @@ public sealed class MineMetaConverter : IValueConverter
 
 public sealed class SelectedUserLabelConverter : IValueConverter
 {
-    // NOTE: UserAccountDto still lives in the legacy RAGGit.Client.Maui.Services
-    // namespace (Client.Core project). Full rename to RAGGit.Client.Core.Services
-    // is tracked separately.
+    // UserAccountDto is part of the shared Client.Core service contracts.
     //
     // 016-admin-redesign: always returns a visible line — either the selected
     // user or a hint to pick one — so the reset form never leaves selection
@@ -116,12 +114,55 @@ public sealed class ActiveVerbConverter : IValueConverter
     ) => throw new NotSupportedException();
 }
 
+public sealed class ActiveStatusLabelConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "Active" : "Disabled";
+
+    public object ConvertBack(
+        object value,
+        Type targetType,
+        object parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+public sealed class LastSignInLabelConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateTime dateTime
+            ? $"Last sign-in: {dateTime.ToLocalTime():g}"
+            : "Never signed in";
+
+    public object ConvertBack(
+        object value,
+        Type targetType,
+        object parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
 public sealed class ActiveToggleLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is UserAccountDto user
             ? $"{(user.IsActive ? "Deactivate" : "Activate")} {user.Username}"
             : "Toggle user active state";
+
+    public object ConvertBack(
+        object value,
+        Type targetType,
+        object parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+public sealed class UserScopedAutomationIdConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is UserAccountDto user && parameter is string prefix
+            ? $"{prefix}_{user.Username}"
+            : parameter?.ToString() ?? string.Empty;
 
     public object ConvertBack(
         object value,

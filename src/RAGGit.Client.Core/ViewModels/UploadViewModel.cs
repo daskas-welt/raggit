@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.ViewModels;
+namespace RAGGit.Client.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the document upload dialog (015-file-upload-ui).

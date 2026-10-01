@@ -46,10 +46,17 @@
                     Command="{Binding LoginCommand}"
                     Content="Sign in"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                />
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowEnterLeft24" />
+                    </ui:Button.Icon>
+                </ui:Button>
 
                 <ui:ProgressRing
+                    Width="40"
+                    Height="40"
                     Margin="0,12,0,0"
+                    AutomationProperties.Name="Signing in"
                     IsIndeterminate="True"
                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                 />

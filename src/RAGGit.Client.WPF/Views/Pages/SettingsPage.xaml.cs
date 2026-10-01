@@ -1,9 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core;
+using RAGGit.Client.Core.Services;
 using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
 
 namespace RAGGit.Client.WPF.Views.Pages;
 
@@ -30,6 +31,15 @@ public partial class SettingsPage : Page
             connection.IsUnavailable ? $"Unavailable: {connection.ErrorMessage}"
             : string.IsNullOrWhiteSpace(connection.ErrorMessage) ? "Connected"
             : connection.ErrorMessage;
+        ConnectionStatusIcon.Symbol = connection.IsUnavailable
+            ? SymbolRegular.PlugDisconnected24
+            : SymbolRegular.PlugConnected24;
+        ConnectionStatusIcon.SetResourceReference(
+            System.Windows.Controls.Control.ForegroundProperty,
+            connection.IsUnavailable
+                ? "SystemFillColorCriticalBrush"
+                : "SystemFillColorSuccessBrush"
+        );
 
         var theme = ApplicationThemeManager.GetAppTheme();
         LightThemeRadio.IsChecked = theme == ApplicationTheme.Light;

@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using RAGGit.Client.Core.Models;
 
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Login-scoped in-memory conversation cache. The Ask page is recreated on

@@ -5,8 +5,8 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 
 namespace RAGGit.Client.WPF.Views.Dialogs;
 

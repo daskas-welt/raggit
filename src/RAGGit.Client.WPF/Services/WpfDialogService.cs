@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 

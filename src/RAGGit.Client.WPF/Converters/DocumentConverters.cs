@@ -69,8 +69,7 @@ public sealed class ShortDateConverter : IValueConverter
 }
 
 /// <summary>
-/// Replaces the MAUI MultiBinding citation subtitle:
-/// "Document: {id} | Chunk: {id}".
+/// Formats the citation subtitle from its document and chunk identifiers.
 /// </summary>
 public sealed class CitationSubtitleConverter : IValueConverter
 {

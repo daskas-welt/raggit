@@ -1,4 +1,4 @@
-namespace RAGGit.Client.Maui.Services;
+namespace RAGGit.Client.Core.Services;
 
 /// <summary>
 /// Notified when the workstation rejects the current session (HTTP 401) so the

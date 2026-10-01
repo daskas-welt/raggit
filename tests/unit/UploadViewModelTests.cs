@@ -7,8 +7,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RAGGit.Client.Maui.Services;
-using RAGGit.Client.Maui.ViewModels;
+using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using RAGGit.Core.Models;
 using Xunit;
 

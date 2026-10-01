@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 
 namespace RAGGit.Client.WPF.Services;
 

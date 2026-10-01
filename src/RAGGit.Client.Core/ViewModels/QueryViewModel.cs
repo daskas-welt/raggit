@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RAGGit.Client.Core;
 using RAGGit.Client.Core.Models;
-using RAGGit.Client.Maui;
-using RAGGit.Client.Maui.Services;
+using RAGGit.Client.Core.Services;
 using RAGGit.Core.Models;
 
-namespace RAGGit.Client.Maui.ViewModels;
+namespace RAGGit.Client.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the employee query view.
@@ -59,6 +59,9 @@ public sealed partial class QueryViewModel : ObservableObject
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private string _statusSeverity = "Informational";
+
     // ChatView binding — unified conversation (user + assistant messages).
     [ObservableProperty]
     private ObservableCollection<ChatMessage> _messages = new();
@@ -76,6 +79,12 @@ public sealed partial class QueryViewModel : ObservableObject
 
     partial void OnStatusMessageChanged(string? value) =>
         HasStatusMessage = !string.IsNullOrWhiteSpace(value);
+
+    private void SetStatusMessage(string? message, string severity = "Informational")
+    {
+        StatusSeverity = severity;
+        StatusMessage = message;
+    }
 
     partial void OnQueryTextChanged(string value) => AskCommand.NotifyCanExecuteChanged();
 
@@ -134,7 +143,7 @@ public sealed partial class QueryViewModel : ObservableObject
         }
 
         IsBusy = true;
-        StatusMessage = null;
+        SetStatusMessage(null);
 
         try
         {
@@ -243,7 +252,7 @@ public sealed partial class QueryViewModel : ObservableObject
                 )
             )
         {
-            StatusMessage = "model unavailable offline";
+            SetStatusMessage("model unavailable offline", "Error");
         }
         catch (HttpRequestException exception)
             when (exception.Message.Contains(
@@ -252,7 +261,7 @@ public sealed partial class QueryViewModel : ObservableObject
                 )
             )
         {
-            StatusMessage = ClientErrorText.CannotReach(exception.Message);
+            SetStatusMessage(ClientErrorText.CannotReach(exception.Message), "Error");
         }
         catch (HttpRequestException exception)
             when (exception.Message.Contains(
@@ -261,24 +270,24 @@ public sealed partial class QueryViewModel : ObservableObject
                 )
             )
         {
-            StatusMessage = exception.Message;
+            SetStatusMessage(exception.Message, "Error");
         }
         catch (HttpRequestException exception)
             when (exception.Message.Contains("unauthorized", StringComparison.OrdinalIgnoreCase))
         {
-            StatusMessage = "Please sign in to see your conversation.";
+            SetStatusMessage("Please sign in to see your conversation.", "Warning");
         }
         catch (HttpRequestException exception)
         {
-            StatusMessage = ClientErrorText.Unavailable(exception.Message);
+            SetStatusMessage(ClientErrorText.Unavailable(exception.Message), "Error");
         }
         catch (TaskCanceledException exception)
         {
-            StatusMessage = ClientErrorText.Unavailable(exception.Message);
+            SetStatusMessage(ClientErrorText.Unavailable(exception.Message), "Error");
         }
         catch (Exception exception)
         {
-            StatusMessage = $"Failed to load conversation: {exception.Message}";
+            SetStatusMessage($"Failed to load conversation: {exception.Message}", "Error");
         }
         finally
         {
@@ -292,7 +301,7 @@ public sealed partial class QueryViewModel : ObservableObject
         var question = QueryText.Trim();
         if (string.IsNullOrWhiteSpace(question))
         {
-            StatusMessage = "Please enter a question.";
+            SetStatusMessage("Please enter a question.", "Warning");
             return;
         }
 
@@ -374,7 +383,7 @@ public sealed partial class QueryViewModel : ObservableObject
         IsBusy = true;
         IsAskEnabled = false;
         IsResultVisible = false;
-        StatusMessage = null;
+        SetStatusMessage(null);
         Answer = string.Empty;
         Citations = new ObservableCollection<Citation>();
         HasCitations = false;
@@ -410,12 +419,14 @@ public sealed partial class QueryViewModel : ObservableObject
 
             if (response.Citations.Count == 0)
             {
-                StatusMessage = $"Answered in {response.LatencyMs}ms (no citations).";
+                SetStatusMessage($"Answered in {response.LatencyMs}ms (no citations).", "Success");
             }
             else
             {
-                StatusMessage =
-                    $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).";
+                SetStatusMessage(
+                    $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).",
+                    "Success"
+                );
             }
         }
         catch (HttpRequestException exception)
@@ -425,7 +436,7 @@ public sealed partial class QueryViewModel : ObservableObject
                 )
             )
         {
-            StatusMessage = "model unavailable offline";
+            SetStatusMessage("model unavailable offline", "Error");
         }
         catch (HttpRequestException exception)
             when (exception.Message.Contains(
@@ -434,7 +445,7 @@ public sealed partial class QueryViewModel : ObservableObject
                 )
             )
         {
-            StatusMessage = ClientErrorText.CannotReach(exception.Message);
+            SetStatusMessage(ClientErrorText.CannotReach(exception.Message), "Error");
         }
         catch (HttpRequestException exception)
         {
@@ -444,19 +455,19 @@ public sealed partial class QueryViewModel : ObservableObject
                     StringComparison.OrdinalIgnoreCase
                 )
             )
-                StatusMessage = exception.Message;
+                SetStatusMessage(exception.Message, "Error");
             else if (exception.Message.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
-                StatusMessage = "Forbidden: you do not have permission.";
+                SetStatusMessage("Forbidden: you do not have permission.", "Error");
             else
-                StatusMessage = ClientErrorText.Unavailable(exception.Message);
+                SetStatusMessage(ClientErrorText.Unavailable(exception.Message), "Error");
         }
         catch (TaskCanceledException exception)
         {
-            StatusMessage = ClientErrorText.Unavailable(exception.Message);
+            SetStatusMessage(ClientErrorText.Unavailable(exception.Message), "Error");
         }
         catch (Exception exception)
         {
-            StatusMessage = $"Query failed: {exception.Message}";
+            SetStatusMessage($"Query failed: {exception.Message}", "Error");
         }
         finally
         {
@@ -485,7 +496,7 @@ public sealed partial class QueryViewModel : ObservableObject
         var question = prompt?.Trim();
         if (string.IsNullOrWhiteSpace(question))
         {
-            StatusMessage = "Please enter a question.";
+            SetStatusMessage("Please enter a question.", "Warning");
             return;
         }
 
