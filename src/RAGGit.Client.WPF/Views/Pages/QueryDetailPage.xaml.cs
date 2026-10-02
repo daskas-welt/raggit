@@ -36,10 +36,9 @@ public partial class QueryDetailPage : Page
         var prompt = ViewModel.Detail?.Prompt;
         if (!string.IsNullOrWhiteSpace(prompt))
         {
-            // QueryViewModel.QueryText is settable, so preset the prompt when supported.
-            // NOTE: pages/VMs are registered transient, so this best-effort preset only
-            // takes effect if the QueryPage ends up sharing the instance.
-            App.Services.GetRequiredService<QueryViewModel>().QueryText = prompt;
+            // Pages are transient, so the prompt travels in the shared
+            // pending-ask state; QueryPage picks it up on load.
+            App.Services.GetRequiredService<AskNavigationState>().PendingPrompt = prompt;
         }
 
         App.Services.GetRequiredService<INavigationService>().NavigateToAsk();

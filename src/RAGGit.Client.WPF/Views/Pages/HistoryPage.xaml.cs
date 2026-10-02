@@ -57,8 +57,9 @@ public partial class HistoryPage : Page
             var detail = await history.GetDetailAsync(item.Id);
             if (!string.IsNullOrWhiteSpace(detail.Prompt))
             {
-                // QueryViewModel.QueryText is settable, so preset the prompt when supported.
-                App.Services.GetRequiredService<QueryViewModel>().QueryText = detail.Prompt;
+                // Pages are transient, so the prompt travels in the shared
+                // pending-ask state; QueryPage picks it up on load.
+                App.Services.GetRequiredService<AskNavigationState>().PendingPrompt = detail.Prompt;
                 App.Services.GetRequiredService<INavigationService>().NavigateToAsk();
                 return;
             }
