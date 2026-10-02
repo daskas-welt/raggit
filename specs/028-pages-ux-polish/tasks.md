@@ -94,7 +94,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 - [X] T021 [US2] Gate sign-out behind IDialogService.ConfirmAsync before the token store is cleared in src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml.cs (declining leaves the session untouched; keep `SignOutButton`)
 - [X] T022 [US2] Convert CreatePersonDialog from a modal Window to an in-window ContentDialog shown through the existing IContentDialogService host (keep its ViewModel and behavior), updating src/RAGGit.Client.WPF/Views/Dialogs/CreatePersonDialog.xaml/.cs and the caller in src/RAGGit.Client.WPF/Views/Pages/AdminUsersPage.xaml.cs (keep `AddPersonButton` semantics)
 - [X] T023 [US2] Convert ResetPasswordDialog to an in-window ContentDialog and replace the raw MessageBox.Show with IDialogService.ConfirmAsync in src/RAGGit.Client.WPF/Views/Dialogs/ResetPasswordDialog.xaml/.cs and the caller in src/RAGGit.Client.WPF/Views/Pages/AdminUsersPage.xaml.cs (keep `OpenResetPasswordButton`)
-- [ ] T024 [US2] Align UploadDialog chrome in src/RAGGit.Client.WPF/Views/Dialogs/UploadDialog.xaml/.cs: window icon, ResizeMode/ShowInTaskbar flags, shared dialog button MinWidths, and a cancel-mid-upload confirmation (declining resumes the upload view)
+- [X] T024 [US2] Align UploadDialog chrome in src/RAGGit.Client.WPF/Views/Dialogs/UploadDialog.xaml/.cs: window icon, ResizeMode/ShowInTaskbar flags, shared dialog button MinWidths, and a cancel-mid-upload confirmation (declining resumes the upload view)
 
 **Checkpoint**: User Stories 1 AND 2 both work independently
 

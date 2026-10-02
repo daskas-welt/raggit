@@ -11,6 +11,8 @@
     MinWidth="420"
     MinHeight="400"
     SizeToContent="Height"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
     WindowStartupLocation="CenterOwner"
 >
     <Window.Resources>
@@ -23,7 +25,7 @@
          placeholder and the list. Upload/Cancel buttons sit in the footer;
          the InfoBar carries outcomes/errors only. Spacing follows the 4px
          scale (4/8/12). -->
-    <Grid Margin="16" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
+    <Grid Margin="16" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto">
         <!-- Intake: drop zone + browse action + supported-types hint -->
         <Border
             Grid.Row="0"
@@ -272,9 +274,68 @@
             Margin="0,12,0,0"
         />
 
+        <!-- Cancel-mid-upload confirmation (in-window: this modal window sits
+             over the MainWindow dialog host, so the shared confirm cannot be
+             used here — and never a native message box). Shown only while an
+             upload is in flight; declining hides it with the upload untouched. -->
+        <Border
+            Grid.Row="5"
+            x:Name="CancelConfirmPanel"
+            Visibility="Collapsed"
+            Margin="0,12,0,0"
+            Padding="12,8"
+            BorderThickness="1"
+            CornerRadius="8"
+            BorderBrush="{ui:ThemeResource SystemFillColorCautionBrush}"
+            Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+        >
+            <Grid ColumnDefinitions="*, Auto">
+                <ui:TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    TextWrapping="Wrap"
+                    Text="Cancel the in-flight upload? Files already uploaded stay uploaded."
+                />
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                >
+                    <ui:Button
+                        x:Name="ConfirmCancelUploadButton"
+                        AutomationProperties.AutomationId="ConfirmCancelUploadButton"
+                        AutomationProperties.Name="Yes, cancel upload"
+                        Appearance="Danger"
+                        Content="Yes, cancel"
+                        MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                        Margin="0,0,8,0"
+                        Click="ConfirmCancelUploadButton_Click"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button
+                        x:Name="KeepUploadingButton"
+                        AutomationProperties.AutomationId="KeepUploadingButton"
+                        AutomationProperties.Name="Keep uploading"
+                        Appearance="Primary"
+                        Content="Keep uploading"
+                        MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                        Click="KeepUploadingButton_Click"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowUpload24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Footer actions -->
         <StackPanel
-            Grid.Row="5"
+            Grid.Row="6"
             Orientation="Horizontal"
             HorizontalAlignment="Right"
             Margin="0,12,0,0"
@@ -293,7 +354,7 @@
                 Content="Upload"
                 Command="{Binding UploadCommand}"
                 Appearance="Primary"
-                MinWidth="90"
+                MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
                 Margin="0,0,8,0"
             >
                 <ui:Button.Icon>
@@ -301,17 +362,22 @@
                 </ui:Button.Icon>
             </ui:Button>
             <ui:Button
+                x:Name="CancelUploadButton"
                 Content="Cancel"
-                Command="{Binding CancelUploadCommand}"
-                MinWidth="90"
+                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
                 Margin="0,0,8,0"
                 Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+                Click="CancelButton_Click"
             >
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Dismiss24" />
                 </ui:Button.Icon>
             </ui:Button>
-            <ui:Button Content="Close" MinWidth="90" Click="CloseButton_Click">
+            <ui:Button
+                Content="Close"
+                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                Click="CloseButton_Click"
+            >
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Dismiss24" />
                 </ui:Button.Icon>

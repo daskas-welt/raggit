@@ -23,6 +23,7 @@ public partial class UploadDialog : Window
 {
     private bool _autoCloseArmed;
     private bool _closeAfterCancel;
+    private bool _cancelConfirmed;
 
     public UploadViewModel ViewModel { get; }
 
@@ -46,11 +47,62 @@ public partial class UploadDialog : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
+        if (ViewModel.IsUploading && !_cancelConfirmed)
+        {
+            ShowCancelConfirm();
+            return;
+        }
+
         Close();
     }
 
+    private void CancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_cancelConfirmed)
+        {
+            ShowCancelConfirm();
+            return;
+        }
+
+        // Confirmed: Closing cancels the in-flight upload (see OnClosing).
+        Close();
+    }
+
+    private void ConfirmCancelUploadButton_Click(object sender, RoutedEventArgs e)
+    {
+        _cancelConfirmed = true;
+        HideCancelConfirm();
+        Close();
+    }
+
+    private void KeepUploadingButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Declining resumes the upload view untouched.
+        HideCancelConfirm();
+        CancelUploadButton.Focus();
+    }
+
+    private void ShowCancelConfirm()
+    {
+        CancelConfirmPanel.Visibility = Visibility.Visible;
+        KeepUploadingButton.Focus();
+    }
+
+    private void HideCancelConfirm() => CancelConfirmPanel.Visibility = Visibility.Collapsed;
+
     private async void OnClosing(object? sender, CancelEventArgs e)
     {
+        // Closing mid-upload asks first through the in-window confirm panel:
+        // this modal window sits over the MainWindow dialog host, so the
+        // shared in-window confirm cannot appear above it (and a native
+        // message box is forbidden). Declining keeps the upload untouched.
+        if (ViewModel.IsUploading && !_closeAfterCancel && !_cancelConfirmed)
+        {
+            e.Cancel = true;
+            ShowCancelConfirm();
+            return;
+        }
+
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
 
         // Dismiss during upload cancels the in-flight operation so no
@@ -87,6 +139,13 @@ public partial class UploadDialog : Window
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(UploadViewModel.IsUploading) && !ViewModel.IsUploading)
+        {
+            // The upload settled while the cancel confirm was open: drop the
+            // panel so it never lingers over a settled view.
+            HideCancelConfirm();
+        }
+
         if (
             e.PropertyName == nameof(UploadViewModel.IsAllSucceeded)
             && ViewModel.IsAllSucceeded
