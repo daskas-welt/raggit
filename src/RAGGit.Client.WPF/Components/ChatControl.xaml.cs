@@ -34,6 +34,13 @@ public partial class ChatControl : UserControl
         new PropertyMetadata(null)
     );
 
+    public static readonly DependencyProperty IsBusyProperty = DependencyProperty.Register(
+        nameof(IsBusy),
+        typeof(bool),
+        typeof(ChatControl),
+        new PropertyMetadata(false)
+    );
+
     public IEnumerable<ChatMessage>? Messages
     {
         get => (IEnumerable<ChatMessage>?)GetValue(MessagesProperty);
@@ -50,6 +57,12 @@ public partial class ChatControl : UserControl
     {
         get => (ICommand?)GetValue(SendCommandProperty);
         set => SetValue(SendCommandProperty, value);
+    }
+
+    public bool IsBusy
+    {
+        get => (bool)GetValue(IsBusyProperty);
+        set => SetValue(IsBusyProperty, value);
     }
 
     private INotifyCollectionChanged? _trackedMessages;

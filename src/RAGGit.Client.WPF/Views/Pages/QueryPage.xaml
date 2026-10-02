@@ -46,6 +46,7 @@
                 Messages="{Binding Messages}"
                 InputText="{Binding QueryText, Mode=TwoWay}"
                 SendCommand="{Binding AskCommand}"
+                IsBusy="{Binding IsBusy}"
             />
 
             <!-- Did-you-mean suggestion chips -->
@@ -95,15 +96,5 @@
                 Message="{Binding StatusMessage, Mode=OneWay}"
             />
         </Grid>
-
-        <ui:ProgressRing
-            Width="40"
-            Height="40"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            AutomationProperties.Name="Processing question"
-            IsIndeterminate="{Binding IsBusy}"
-            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-        />
     </Grid>
 </Page>

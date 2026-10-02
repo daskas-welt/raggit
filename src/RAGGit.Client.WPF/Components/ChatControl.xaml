@@ -13,7 +13,7 @@
         <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
     </UserControl.Resources>
-    <Grid RowDefinitions="*, Auto">
+    <Grid RowDefinitions="*, Auto, Auto">
         <!-- Messages -->
         <ListBox
             Grid.Row="0"
@@ -237,11 +237,31 @@
                     Margin="8,0,0,0"
                     VerticalAlignment="Center"
                 >
-                    <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="Send24" />
-                    </ui:Button.Icon>
+                    <Grid Width="24" Height="24">
+                        <ui:SymbolIcon
+                            Symbol="Send24"
+                            Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource InvertedBoolVisibility}}"
+                        />
+                        <ui:ProgressRing
+                            Width="24"
+                            Height="24"
+                            IsIndeterminate="True"
+                            AutomationProperties.Name="Sending question"
+                            Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
+                        />
+                    </Grid>
                 </ui:Button>
             </Grid>
         </Border>
+
+        <!-- In-stream busy: the conversation above stays visible while answering. -->
+        <ui:TextBlock
+            Grid.Row="2"
+            Margin="0,8,0,0"
+            HorizontalAlignment="Center"
+            Style="{StaticResource SecondaryText}"
+            Text="Preparing answer…"
+            Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
+        />
     </Grid>
 </UserControl>
