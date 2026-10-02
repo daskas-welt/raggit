@@ -125,6 +125,7 @@ public sealed partial class App : Application
             WpfNavigationService
         >();
         services.AddSingleton<IDialogService, WpfDialogService>();
+        services.AddSingleton<INotificationService, WpfNotificationService>();
         services.AddSingleton<ISecureStorage, WpfSecureStorage>();
         services.AddSingleton<ISessionTokenStore, SessionTokenStore>();
         services.AddSingleton<IFilePicker, WpfFilePicker>();

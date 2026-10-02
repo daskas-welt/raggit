@@ -46,7 +46,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 ### Implementation
 
 - [X] T004 Implement `INotificationService` (`Show(title, message, kind)` with `NotificationKind` Success | Information | Danger) plus the in-memory test double in src/RAGGit.Client.Core/Services/INotificationService.cs (seam pattern of IDialogService/ILauncherService)
-- [ ] T005 Implement WpfNotificationService wrapping the already-wired WPF-UI `ISnackbarService` (kind → ControlAppearance mapping, ~5 s auto-dismiss) in src/RAGGit.Client.WPF/Services/WpfNotificationService.cs and register it as a singleton in src/RAGGit.Client.WPF/App.xaml.cs
+- [X] T005 Implement WpfNotificationService wrapping the already-wired WPF-UI `ISnackbarService` (kind → ControlAppearance mapping, ~5 s auto-dismiss) in src/RAGGit.Client.WPF/Services/WpfNotificationService.cs and register it as a singleton in src/RAGGit.Client.WPF/App.xaml.cs
 - [ ] T006 Add shared design-system resources to src/RAGGit.Client.WPF/App.xaml: Thickness resources on the documented 4-px scale (page padding `0,24`, header card `16,12`, card paddings, empty-state body margin `0,12,0,0`, dialog button MinWidths) and a `PageHeaderCard` style for the `ui:Card` header treatment
 - [ ] T007 Create the shared InfoBar-based StatusFooterControl (severity, wrapped message — never `TextTrimming`, optional retry command slot) in src/RAGGit.Client.WPF/Components/StatusFooterControl.xaml and StatusFooterControl.xaml.cs
 
