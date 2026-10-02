@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -11,11 +12,10 @@
 >
     <Page.Resources>
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
-        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
-    <Grid Margin="0,24" RowDefinitions="Auto, *, Auto, Auto">
+    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Padding="16,12">
+        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query History" />
@@ -27,12 +27,13 @@
                 <ui:Button
                     x:Name="RefreshButton"
                     Grid.Column="1"
+                    Width="44"
+                    Height="44"
                     AutomationProperties.AutomationId="RefreshButton"
                     AutomationProperties.Name="Refresh history"
                     ToolTip="Refresh history"
                     TabIndex="0"
                     VerticalAlignment="Center"
-                    Content="Refresh"
                     Command="{Binding RefreshCommand}"
                 >
                     <ui:Button.Icon>
@@ -62,7 +63,7 @@
                 </ui:ListView.ItemContainerStyle>
                 <ui:ListView.ItemTemplate>
                     <DataTemplate>
-                        <ui:Card Padding="12">
+                        <ui:Card Padding="{StaticResource CardPaddingSmall}">
                             <Grid RowDefinitions="Auto, Auto, Auto, Auto">
                                 <ui:TextBlock
                                     Grid.Row="0"
@@ -115,7 +116,7 @@
 
             <!-- Empty state card -->
             <ui:Card
-                Padding="24"
+                Padding="{StaticResource CardPaddingLarge}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -132,7 +133,7 @@
                         Text="No queries yet"
                     />
                     <ui:TextBlock
-                        Margin="0,12,0,0"
+                        Margin="{StaticResource EmptyStateBodyMargin}"
                         HorizontalAlignment="Center"
                         FontTypography="Body"
                         Text="Ask a question to see it here."
@@ -169,27 +170,25 @@
         </ui:Button>
 
         <!-- Footer -->
-        <Grid
+        <components:StatusFooterControl
             Grid.Row="3"
             Margin="0,12,0,0"
-            Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
-            ColumnDefinitions="Auto, *"
+            Message="{Binding ErrorMessage, Mode=OneWay}"
+            Severity="Error"
+            RetryCommand="{Binding RefreshCommand}"
+            RetryContent="Retry"
+            RetryAutomationId="HistoryRetryButton"
         >
-            <ui:SymbolIcon
-                Grid.Column="0"
-                Symbol="ErrorCircle24"
-                VerticalAlignment="Center"
-                Margin="0,0,8,0"
-                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-            />
-            <ui:TextBlock
-                Grid.Column="1"
-                FontTypography="Body"
-                VerticalAlignment="Center"
-                TextTrimming="CharacterEllipsis"
-                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                Text="{Binding ErrorMessage}"
-            />
-        </Grid>
+            <components:StatusFooterControl.Style>
+                <Style TargetType="components:StatusFooterControl">
+                    <Setter Property="IsOpen" Value="True" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                            <Setter Property="IsOpen" Value="False" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </components:StatusFooterControl.Style>
+        </components:StatusFooterControl>
     </Grid>
 </Page>
