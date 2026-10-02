@@ -231,8 +231,8 @@
                                         />
                                         <ui:Button
                                             Grid.Column="6"
-                                            Width="36"
-                                            Height="32"
+                                            Width="44"
+                                            Height="44"
                                             Margin="0,0,8,0"
                                             Padding="0"
                                             VerticalAlignment="Center"
@@ -287,8 +287,8 @@
                                         </ui:Button>
                                         <ui:Button
                                             Grid.Column="7"
-                                            Width="36"
-                                            Height="32"
+                                            Width="44"
+                                            Height="44"
                                             Padding="0"
                                             VerticalAlignment="Center"
                                             AutomationProperties.Name="Delete document"
