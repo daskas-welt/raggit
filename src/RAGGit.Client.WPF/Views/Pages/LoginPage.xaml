@@ -52,10 +52,9 @@
                     AutomationProperties.AutomationId="SignInButton"
                     Appearance="Primary"
                     Command="{Binding LoginCommand}"
-                    Content="Sign in"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 >
-                    <ui:Button.Icon>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Grid Width="24" Height="24">
                             <ui:SymbolIcon
                                 Symbol="ArrowEnterLeft24"
@@ -69,7 +68,8 @@
                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                             />
                         </Grid>
-                    </ui:Button.Icon>
+                        <ui:TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Sign in" />
+                    </StackPanel>
                 </ui:Button>
             </StackPanel>
         </ui:Card>

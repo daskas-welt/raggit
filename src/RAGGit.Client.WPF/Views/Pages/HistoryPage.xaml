@@ -173,12 +173,11 @@
             TabIndex="1"
             Margin="0,12,0,0"
             HorizontalAlignment="Center"
-            Content="Load more"
             Command="{Binding LoadMoreCommand}"
             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
             Visibility="{Binding HasMore, Converter={StaticResource BooleanToVisibilityConverter}}"
         >
-            <ui:Button.Icon>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Grid Width="24" Height="24">
                     <ui:SymbolIcon
                         Symbol="ArrowDown24"
@@ -192,7 +191,8 @@
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                     />
                 </Grid>
-            </ui:Button.Icon>
+                <ui:TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Load more" />
+            </StackPanel>
         </ui:Button>
 
         <!-- Footer -->
