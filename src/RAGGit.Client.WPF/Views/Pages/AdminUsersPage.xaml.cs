@@ -325,15 +325,31 @@ public partial class AdminUsersPage : Page
         AddPersonButton.Focus();
     }
 
-    private void OnResetPasswordClicked(object sender, RoutedEventArgs e)
+    private async void OnResetPasswordClicked(object sender, RoutedEventArgs e)
     {
         if (ViewModel.IsBusy || ViewModel.SelectedUser is not UserAccountDto user)
         {
             return;
         }
 
-        var dialog = new ResetPasswordDialog(ViewModel, user) { Owner = Window.GetWindow(this) };
-        dialog.ShowDialog();
+        // Confirm before showing the form so the in-window confirm never nests
+        // inside the form dialog.
+        var dialogs = App.Services.GetRequiredService<IDialogService>();
+        if (
+            !await dialogs.ConfirmAsync(
+                "Reset password",
+                $"Reset the password for '{user.Username}'?"
+            )
+        )
+        {
+            return;
+        }
+
+        var contentDialogs = App.Services.GetRequiredService<IContentDialogService>();
+        var form = new ResetPasswordDialog(ViewModel, user);
+        var dialog = new ContentDialog { Title = "Reset password", Content = form };
+        form.RequestClose += (_, _) => dialog.Hide();
+        await contentDialogs.ShowAsync(dialog, CancellationToken.None);
         RefreshUsersView();
     }
 }
