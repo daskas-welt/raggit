@@ -89,7 +89,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 ### Implementation for User Story 2
 
 - [X] T018 [US2] Add per-document download busy tracking and outcome notifications to `DownloadAndOpenAsync` in src/RAGGit.Client.Core/ViewModels/LibraryViewModel.cs (busy set; "Downloaded \<filename\>" success; failure keeps the existing ErrorMessage mapping + a danger notification)
-- [ ] T019 [US2] Morph the Library row download button to a ProgressRing while that row's document downloads in src/RAGGit.Client.WPF/Views/Pages/LibraryPage.xaml (bind the row's busy state; keep AutomationProperties.Name "Download document")
+- [X] T019 [US2] Morph the Library row download button to a ProgressRing while that row's document downloads in src/RAGGit.Client.WPF/Views/Pages/LibraryPage.xaml (bind the row's busy state; keep AutomationProperties.Name "Download document")
 - [ ] T020 [P] [US2] Confirm every copy affordance via INotificationService ("Copied"): chat message copy in src/RAGGit.Client.WPF/Components/ChatControl.xaml.cs and the prompt/answer/citation copies in src/RAGGit.Client.WPF/Views/Pages/QueryDetailPage.xaml.cs
 - [ ] T021 [US2] Gate sign-out behind IDialogService.ConfirmAsync before the token store is cleared in src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml.cs (declining leaves the session untouched; keep `SignOutButton`)
 - [ ] T022 [US2] Convert CreatePersonDialog from a modal Window to an in-window ContentDialog shown through the existing IContentDialogService host (keep its ViewModel and behavior), updating src/RAGGit.Client.WPF/Views/Dialogs/CreatePersonDialog.xaml/.cs and the caller in src/RAGGit.Client.WPF/Views/Pages/AdminUsersPage.xaml.cs (keep `AddPersonButton` semantics)

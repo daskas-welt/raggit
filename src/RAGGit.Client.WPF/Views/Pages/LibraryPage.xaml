@@ -18,6 +18,7 @@
         <converters:ShortDateConverter x:Key="ShortDate" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
+        <converters:DocumentDownloadingConverter x:Key="DocumentDownloading" />
     </Page.Resources>
     <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
         <!-- Header card -->
@@ -239,9 +240,50 @@
                                             Click="OnDownloadClicked"
                                             ToolTip="Download document"
                                         >
-                                            <ui:Button.Icon>
-                                                <ui:SymbolIcon Symbol="ArrowDownload24" />
-                                            </ui:Button.Icon>
+                                            <ui:Button.IsEnabled>
+                                                <MultiBinding
+                                                    Converter="{StaticResource DocumentDownloading}"
+                                                    ConverterParameter="Invert"
+                                                >
+                                                    <Binding Path="Id" />
+                                                    <Binding
+                                                        Path="DataContext.DownloadingIds"
+                                                        ElementName="DocumentsList"
+                                                    />
+                                                </MultiBinding>
+                                            </ui:Button.IsEnabled>
+                                            <Grid Width="24" Height="24">
+                                                <ui:SymbolIcon Symbol="ArrowDownload24">
+                                                    <ui:SymbolIcon.Visibility>
+                                                        <MultiBinding
+                                                            Converter="{StaticResource DocumentDownloading}"
+                                                            ConverterParameter="Invert"
+                                                        >
+                                                            <Binding Path="Id" />
+                                                            <Binding
+                                                                Path="DataContext.DownloadingIds"
+                                                                ElementName="DocumentsList"
+                                                            />
+                                                        </MultiBinding>
+                                                    </ui:SymbolIcon.Visibility>
+                                                </ui:SymbolIcon>
+                                                <ui:ProgressRing
+                                                    Width="24"
+                                                    Height="24"
+                                                    AutomationProperties.Name="Downloading document"
+                                                    IsIndeterminate="True"
+                                                >
+                                                    <ui:ProgressRing.Visibility>
+                                                        <MultiBinding Converter="{StaticResource DocumentDownloading}">
+                                                            <Binding Path="Id" />
+                                                            <Binding
+                                                                Path="DataContext.DownloadingIds"
+                                                                ElementName="DocumentsList"
+                                                            />
+                                                        </MultiBinding>
+                                                    </ui:ProgressRing.Visibility>
+                                                </ui:ProgressRing>
+                                            </Grid>
                                         </ui:Button>
                                         <ui:Button
                                             Grid.Column="7"

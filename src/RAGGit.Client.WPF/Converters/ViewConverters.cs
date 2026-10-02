@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -262,6 +263,39 @@ public sealed class NullToVisibilityConverter : IValueConverter
     public object ConvertBack(
         object value,
         Type targetType,
+        object parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+/// <summary>
+/// 028-pages-ux-polish (US2): per-row download busy. values[0] is the row
+/// document id, values[1] the ViewModel's in-flight id set. Returns whether
+/// that row is downloading — as a <see cref="bool"/> or, when the target is
+/// <see cref="Visibility"/>, as Visible/Collapsed. The "Invert" parameter
+/// flips the result (idle icon, row-button enabled state).
+/// </summary>
+public sealed class DocumentDownloadingConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        var downloading = values is [Guid id, IEnumerable<Guid> busy] && busy.Contains(id);
+        if (string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase))
+        {
+            downloading = !downloading;
+        }
+
+        if (targetType == typeof(Visibility))
+        {
+            return downloading ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        return downloading;
+    }
+
+    public object[] ConvertBack(
+        object value,
+        Type[] targetTypes,
         object parameter,
         CultureInfo culture
     ) => throw new NotSupportedException();
