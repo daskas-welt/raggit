@@ -157,14 +157,44 @@
                         VerticalAlignment="Center"
                         Margin="0,0,6,0"
                     />
-                    <ui:TextBlock
-                        x:Name="ConnectionStatusText"
-                        AutomationProperties.AutomationId="ConnectionStatusValue"
-                        MaxWidth="320"
+                    <StackPanel VerticalAlignment="Center">
+                        <ui:TextBlock
+                            x:Name="ConnectionStatusText"
+                            AutomationProperties.AutomationId="ConnectionStatusValue"
+                            MaxWidth="320"
+                            VerticalAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            Text=""
+                        />
+                        <ui:TextBlock
+                            x:Name="ConnectionLastCheckedText"
+                            Style="{StaticResource SecondaryText}"
+                            Text=""
+                        />
+                    </StackPanel>
+                    <ui:Button
+                        x:Name="SettingsRecheckConnectionButton"
+                        AutomationProperties.AutomationId="SettingsRecheckConnectionButton"
+                        AutomationProperties.Name="Re-check connection"
+                        ToolTip="Re-check connection"
+                        Width="44"
+                        Height="44"
+                        Margin="8,0,0,0"
                         VerticalAlignment="Center"
-                        TextTrimming="CharacterEllipsis"
-                        Text=""
-                    />
+                        Click="OnRecheckConnectionClicked"
+                    >
+                        <Grid Width="24" Height="24">
+                            <ui:SymbolIcon x:Name="RecheckStatusIcon" Symbol="ArrowClockwise24" />
+                            <ui:ProgressRing
+                                x:Name="RecheckStatusRing"
+                                Width="24"
+                                Height="24"
+                                AutomationProperties.Name="Re-checking connection"
+                                IsIndeterminate="True"
+                                Visibility="Collapsed"
+                            />
+                        </Grid>
+                    </ui:Button>
                 </StackPanel>
             </ui:CardControl>
 

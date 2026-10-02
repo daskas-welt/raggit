@@ -254,17 +254,3 @@ public sealed class WpfConfigErrorState
 
     public WpfConfigErrorState(string message) => Message = message;
 }
-
-public sealed class WpfConnectionState
-{
-    public string? ErrorMessage { get; set; }
-
-    public bool IsUnavailable =>
-        !string.IsNullOrWhiteSpace(ErrorMessage)
-        && (
-            ErrorMessage.Contains("AI workstation", StringComparison.OrdinalIgnoreCase)
-            || ErrorMessage.Contains("cannot reach", StringComparison.OrdinalIgnoreCase)
-        );
-
-    public Func<Task>? RetryAction { get; set; }
-}

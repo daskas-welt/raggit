@@ -1,8 +1,10 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core;
 using RAGGit.Client.Core.Services;
+using RAGGit.Client.WPF.Services;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -10,6 +12,8 @@ namespace RAGGit.Client.WPF.Views.Pages;
 
 public partial class SettingsPage : Page
 {
+    private bool _isRechecking;
+
     public SettingsPage()
     {
         InitializeComponent();
@@ -26,6 +30,19 @@ public partial class SettingsPage : Page
             ? session.IdentityType
             : session.Username;
 
+        RenderConnectionStatus();
+
+        var theme = ApplicationThemeManager.GetAppTheme();
+        LightThemeRadio.IsChecked = theme == ApplicationTheme.Light;
+        DarkThemeRadio.IsChecked = theme != ApplicationTheme.Light;
+    }
+
+    /// <summary>
+    /// Shared connection-status presentation: the same text/icon/brush mapping
+    /// on load and after every re-check, plus the last-checked moment.
+    /// </summary>
+    private void RenderConnectionStatus()
+    {
         var connection = App.Services.GetRequiredService<WpfConnectionState>();
         ConnectionStatusText.Text =
             connection.IsUnavailable ? $"Unavailable: {connection.ErrorMessage}"
@@ -40,10 +57,45 @@ public partial class SettingsPage : Page
                 ? "SystemFillColorCriticalBrush"
                 : "SystemFillColorSuccessBrush"
         );
+        ConnectionLastCheckedText.Text = connection.LastCheckedAtUtc is { } checkedAt
+            ? $"Last checked {checkedAt.ToLocalTime():g}"
+            : string.Empty;
+    }
 
-        var theme = ApplicationThemeManager.GetAppTheme();
-        LightThemeRadio.IsChecked = theme == ApplicationTheme.Light;
-        DarkThemeRadio.IsChecked = theme != ApplicationTheme.Light;
+    private async void OnRecheckConnectionClicked(object sender, RoutedEventArgs e)
+    {
+        if (_isRechecking)
+        {
+            return;
+        }
+
+        _isRechecking = true;
+        SetRecheckBusy(true);
+        try
+        {
+            // The existing GET /api/auth/me probe (also used at startup);
+            // no new API surface.
+            var auth = App.Services.GetRequiredService<AuthApiClient>();
+            var result = await auth.GetAuthMeAsync();
+            var connection = App.Services.GetRequiredService<WpfConnectionState>();
+            connection.ErrorMessage = result.IsSuccess
+                ? null
+                : result.ErrorMessage ?? "Connection check failed.";
+            connection.LastCheckedAtUtc = DateTimeOffset.UtcNow;
+            RenderConnectionStatus();
+        }
+        finally
+        {
+            SetRecheckBusy(false);
+            _isRechecking = false;
+        }
+    }
+
+    private void SetRecheckBusy(bool busy)
+    {
+        SettingsRecheckConnectionButton.IsEnabled = !busy;
+        RecheckStatusIcon.Visibility = busy ? Visibility.Collapsed : Visibility.Visible;
+        RecheckStatusRing.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnLightThemeChecked(object sender, RoutedEventArgs e) =>
