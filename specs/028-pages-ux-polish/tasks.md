@@ -161,8 +161,8 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 
 **Purpose**: Whole-feature verification (SC-012, FR-022, FR-024; quickstart.md).
 
-- [ ] T040 [P] Run the extended static audits (quickstart.md items 1–10) over every touched file — no hard-coded colours, no `Opacity=`, no ad-hoc FontSize, valid icon/theme keys, zero `MessageBox.Show`, no `TextTrimming` on status text, ≥44-DIP row targets, all frozen IDs present, spacing from shared resources — fix any misses
-- [ ] T041 Run `dotnet csharpier format .`, the full build, and all three suites from quickstart.md — everything green with zero unrelated assertion changes
+- [X] T040 [P] Run the extended static audits (quickstart.md items 1–10) over every touched file — no hard-coded colours, no `Opacity=`, no ad-hoc FontSize, valid icon/theme keys, zero `MessageBox.Show`, no `TextTrimming` on status text, ≥44-DIP row targets, all frozen IDs present, spacing from shared resources — fix any misses
+- [X] T041 Run `dotnet csharpier format .`, the full build, and all three suites from quickstart.md — everything green with zero unrelated assertion changes
 - [ ] T042 Run the full interactive walkthrough (quickstart.md parts 1–8) at a wide size and 800×600, cycling Light/Dark/High Contrast, keyboard-through every new affordance
 - [ ] T043 Record the walkthrough evidence against the quickstart.md expected-outcomes table in specs/028-pages-ux-polish/ (all U1–U8 rows pass)
 

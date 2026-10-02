@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using RAGGit.Client.Core.Services;
 using RAGGit.Client.Core.ViewModels;
 using RAGGit.Core.Models;
-using RAGGit.Core.Models;
 
 namespace RAGGit.Client.WPF.Views.Dialogs;
 

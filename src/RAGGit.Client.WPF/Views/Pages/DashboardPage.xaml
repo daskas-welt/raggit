@@ -503,7 +503,7 @@
                             Text="No documents yet"
                         />
                         <ui:TextBlock
-                            Margin="0,8,0,0"
+                            Margin="{StaticResource EmptyStateBodyMargin}"
                             HorizontalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
                             Text="Open the library to upload your first document."
@@ -630,7 +630,7 @@
                                     Text="No documents yet"
                                 />
                                 <ui:TextBlock
-                                    Margin="0,8,0,0"
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
                                     HorizontalAlignment="Center"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Open the library to upload your first document."
@@ -718,7 +718,7 @@
                                     Text="No questions yet"
                                 />
                                 <ui:TextBlock
-                                    Margin="0,8,0,0"
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
                                     HorizontalAlignment="Center"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Ask the library to find grounded answers."
