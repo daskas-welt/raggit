@@ -16,16 +16,27 @@
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </Page.Resources>
     <Grid>
-        <Grid Margin="24" RowDefinitions="Auto, *, Auto, Auto">
+        <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
             <!-- Header card -->
-            <ui:Card Grid.Row="0" Padding="12">
-                <StackPanel>
-                    <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Ask the Library" />
-                    <ui:TextBlock
-                        Style="{StaticResource PageSubtitleText}"
-                        Text="Find grounded answers with citations"
+            <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <ui:TextBlock
+                            Style="{StaticResource PageTitleText}"
+                            Text="Ask the Library"
+                        />
+                        <ui:TextBlock
+                            Style="{StaticResource PageSubtitleText}"
+                            Text="Find grounded answers with citations"
+                        />
+                    </StackPanel>
+                    <!-- Actions area (US3 adds the Clear-conversation action here). -->
+                    <StackPanel
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
                     />
-                </StackPanel>
+                </Grid>
             </ui:Card>
 
             <!-- Chat -->
@@ -45,7 +56,7 @@
                 Visibility="{Binding HasSuggestedPersons, Converter={StaticResource BoolVisibility}}"
             >
                 <StackPanel>
-                    <ui:TextBlock FontTypography="Body" Text="Μήπως εννοούσατε; / Did you mean?" />
+                    <ui:TextBlock FontTypography="Body" Text="Did you mean?" />
                     <ItemsControl
                         x:Name="SuggestionChips"
                         Margin="0,8,0,0"
