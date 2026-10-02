@@ -185,7 +185,16 @@ public sealed partial class DashboardViewModel : ObservableObject
         StatusMessage = null;
         ErrorMessage = null;
         HasStatus = false;
-        StatusSeverity = "Informational";
+
+        // Deliberately does NOT reset StatusSeverity. It carries the outcome of the last
+        // completed load, which the whole-dashboard empty state gates on
+        // (DashboardPage.xaml, StatusSeverity == "Success"). Resetting it here blanked that
+        // signal at the start of every load, so the empty state flickered off for the
+        // duration of any refresh of an empty library. SetStatus always assigns a fresh
+        // severity when the load lands, so the only consumer that sees the retained value
+        // is the empty-state trigger — which is exactly what should stay stable.
+        // StatusMessage/ErrorMessage/HasStatus still clear, so the InfoBar closes
+        // immediately while a load is in flight.
     }
 
     private void SetStatus(string message, bool isError)

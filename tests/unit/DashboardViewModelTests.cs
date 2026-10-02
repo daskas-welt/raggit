@@ -81,6 +81,35 @@ public sealed class DashboardViewModelTests
         await first;
     }
 
+    [Fact]
+    public async Task LoadAsync_RefreshOfEmptySourcesDoesNotResetSeverity()
+    {
+        // The whole-dashboard empty state is gated on StatusSeverity == "Success"
+        // (DashboardPage.xaml). ClearStatus() runs at the start of every load, so if it
+        // also reset the severity, the empty state would flicker off for the duration of
+        // every refresh of an empty library. The last completed outcome must survive
+        // ClearStatus and only change when a new outcome lands.
+        var handler = new ToggleHandler();
+        var vm = CreateViewModel(handler);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasLibraryData.Should().BeFalse();
+        vm.HasQueryData.Should().BeFalse();
+        vm.StatusSeverity.Should().Be("Success");
+
+        var refresh = vm.LoadCommand.ExecuteAsync(null);
+        await handler.Gated.Task;
+
+        vm.IsBusy.Should().BeTrue();
+        vm.StatusSeverity.Should().Be("Success");
+
+        handler.Release();
+        await refresh;
+
+        vm.StatusSeverity.Should().Be("Success");
+    }
+
     private static DashboardViewModel CreateViewModel(bool empty = false, bool fail = false) =>
         CreateViewModel(new DashboardHandler(empty, fail));
 
@@ -156,6 +185,49 @@ public sealed class DashboardViewModelTests
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("[]", Encoding.UTF8, "application/json"),
+            };
+        }
+
+        public void Release() => _release.TrySetResult(true);
+    }
+
+    /// <summary>
+    /// Returns empty-but-successful responses; lets the first load (requests 1-3) through
+    /// untouched and gates the second load (requests 4-6) so the test can inspect the
+    /// in-flight state before the next outcome lands.
+    /// </summary>
+    private sealed class ToggleHandler : HttpMessageHandler
+    {
+        private int _calls;
+
+        public TaskCompletionSource<bool> Gated { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private readonly TaskCompletionSource<bool> _release = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            var call = Interlocked.Increment(ref _calls);
+            if (call > 3)
+            {
+                Gated.TrySetResult(true);
+                await _release.Task;
+            }
+
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            var body =
+                path.EndsWith("/documents", StringComparison.Ordinal) ? "[]"
+                : path.EndsWith("/history", StringComparison.Ordinal) ? HistoryEmptyJson
+                : MineEmptyJson;
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
             };
         }
 
