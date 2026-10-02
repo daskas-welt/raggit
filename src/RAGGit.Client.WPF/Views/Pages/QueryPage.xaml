@@ -31,11 +31,20 @@
                         />
                     </StackPanel>
                     <!-- Actions area (US3 adds the Clear-conversation action here). -->
-                    <StackPanel
-                        Grid.Column="1"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                    />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                        <ui:Button
+                            x:Name="QueryClearConversationButton"
+                            AutomationProperties.AutomationId="QueryClearConversationButton"
+                            AutomationProperties.Name="Clear conversation"
+                            ToolTip="Clear conversation"
+                            Content="Clear"
+                            Command="{Binding ClearConversationCommand}"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Delete24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
                 </Grid>
             </ui:Card>
 
