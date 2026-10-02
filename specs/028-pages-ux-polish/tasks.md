@@ -151,7 +151,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 
 - [X] T037 [P] [US5] In src/RAGGit.Client.WPF/Views/Pages/LoginPage.xaml.cs and LoginPage.xaml: Enter in `UsernameBox` or `PasswordBox` submits sign-in (when not busy); replace the bare critical TextBlock with StatusFooterControl (NEW `LoginStatusMessage` id) and the inline ring below the button with the in-button busy morph (keep `UsernameBox`, `PasswordBox`, `SignInButton`)
 - [X] T038 [P] [US5] Add the connection re-check: make WpfConnectionState observable (message + last-checked moment) in src/RAGGit.Client.WPF/App.xaml.cs, add the `SettingsRecheckConnectionButton` action in src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml.cs calling the existing `AuthApiClient.GetAuthMeAsync()`, with in-control busy and the status row re-rendering from the shared presentation (no new API surface)
-- [ ] T039 [P] [US5] Add copy buttons with snackbar confirmation for the workstation URL and signed-in-as rows (`SettingsCopyWorkstationUrlButton`, `SettingsCopySignedInAsButton`) in src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml(.cs)
+- [X] T039 [P] [US5] Add copy buttons with snackbar confirmation for the workstation URL and signed-in-as rows (`SettingsCopyWorkstationUrlButton`, `SettingsCopySignedInAsButton`) in src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml(.cs)
 
 **Checkpoint**: All five user stories independently functional
 

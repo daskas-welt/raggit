@@ -98,6 +98,40 @@ public partial class SettingsPage : Page
         RecheckStatusRing.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    private void OnCopyWorkstationUrlClicked(object sender, RoutedEventArgs e)
+    {
+        // The "(not configured)" placeholder is not a value worth copying.
+        if (WorkstationUrlText.Text == "(not configured)")
+        {
+            return;
+        }
+
+        CopyValue(WorkstationUrlText.Text, "Workstation URL");
+    }
+
+    private void OnCopySignedInAsClicked(object sender, RoutedEventArgs e) =>
+        CopyValue(SignedInAsText.Text, "Signed-in account");
+
+    private static void CopyValue(string? text, string what)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(text);
+            App.Services.GetRequiredService<INotificationService>()
+                .Show("Copied", $"{what} copied to clipboard.", NotificationKind.Success);
+        }
+        catch
+        {
+            // Clipboard may be locked by another process; a failed copy
+            // stays silent rather than confirming what did not happen.
+        }
+    }
+
     private void OnLightThemeChecked(object sender, RoutedEventArgs e) =>
         ApplicationThemeManager.Apply(ApplicationTheme.Light);
 

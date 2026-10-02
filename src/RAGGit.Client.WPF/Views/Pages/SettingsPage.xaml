@@ -101,14 +101,31 @@
                         />
                     </StackPanel>
                 </ui:CardControl.Header>
-                <ui:TextBlock
-                    x:Name="WorkstationUrlText"
-                    AutomationProperties.AutomationId="WorkstationUrlValue"
-                    MaxWidth="320"
-                    VerticalAlignment="Center"
-                    TextTrimming="CharacterEllipsis"
-                    Text="(not configured)"
-                />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:TextBlock
+                        x:Name="WorkstationUrlText"
+                        AutomationProperties.AutomationId="WorkstationUrlValue"
+                        MaxWidth="320"
+                        VerticalAlignment="Center"
+                        TextTrimming="CharacterEllipsis"
+                        Text="(not configured)"
+                    />
+                    <ui:Button
+                        x:Name="SettingsCopyWorkstationUrlButton"
+                        AutomationProperties.AutomationId="SettingsCopyWorkstationUrlButton"
+                        AutomationProperties.Name="Copy workstation URL"
+                        ToolTip="Copy workstation URL"
+                        Width="44"
+                        Height="44"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="OnCopyWorkstationUrlClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Copy24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
             </ui:CardControl>
             <ui:CardControl
                 Margin="0,0,0,12"
@@ -127,14 +144,31 @@
                         />
                     </StackPanel>
                 </ui:CardControl.Header>
-                <ui:TextBlock
-                    x:Name="SignedInAsText"
-                    AutomationProperties.AutomationId="SignedInAsValue"
-                    MaxWidth="320"
-                    VerticalAlignment="Center"
-                    TextTrimming="CharacterEllipsis"
-                    Text=""
-                />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:TextBlock
+                        x:Name="SignedInAsText"
+                        AutomationProperties.AutomationId="SignedInAsValue"
+                        MaxWidth="320"
+                        VerticalAlignment="Center"
+                        TextTrimming="CharacterEllipsis"
+                        Text=""
+                    />
+                    <ui:Button
+                        x:Name="SettingsCopySignedInAsButton"
+                        AutomationProperties.AutomationId="SettingsCopySignedInAsButton"
+                        AutomationProperties.Name="Copy signed-in account"
+                        ToolTip="Copy signed-in account"
+                        Width="44"
+                        Height="44"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="OnCopySignedInAsClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Copy24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
             </ui:CardControl>
             <ui:CardControl AutomationProperties.AutomationId="SettingsRowConnectionStatus">
                 <ui:CardControl.Icon>
