@@ -4,7 +4,9 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.Models;
+using RAGGit.Client.Core.Services;
 
 namespace RAGGit.Client.WPF.Components;
 
@@ -124,7 +126,17 @@ public partial class ChatControl : UserControl
             && !string.IsNullOrEmpty(message.Text)
         )
         {
-            System.Windows.Clipboard.SetText(message.Text);
+            try
+            {
+                System.Windows.Clipboard.SetText(message.Text);
+                App.Services.GetRequiredService<INotificationService>()
+                    .Show("Copied", "Message copied to clipboard.", NotificationKind.Success);
+            }
+            catch
+            {
+                // Clipboard may be locked by another process; a failed copy
+                // stays silent rather than confirming what did not happen.
+            }
         }
     }
 }

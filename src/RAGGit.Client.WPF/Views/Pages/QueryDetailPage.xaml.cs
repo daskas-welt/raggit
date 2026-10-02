@@ -46,10 +46,10 @@ public partial class QueryDetailPage : Page
     }
 
     private void CopyPromptButton_Click(object sender, RoutedEventArgs e) =>
-        CopyText(ViewModel.Detail?.Prompt);
+        CopyText(ViewModel.Detail?.Prompt, "Prompt");
 
     private void CopyAnswerButton_Click(object sender, RoutedEventArgs e) =>
-        CopyText(ViewModel.Detail?.Answer);
+        CopyText(ViewModel.Detail?.Answer, "Answer");
 
     private void CopyCitationButton_Click(object sender, RoutedEventArgs e)
     {
@@ -58,11 +58,14 @@ public partial class QueryDetailPage : Page
             && !string.IsNullOrEmpty(citation.Text)
         )
         {
-            CopyText($"Doc: {citation.DocumentId} / Chunk: {citation.ChunkId}\n{citation.Text}");
+            CopyText(
+                $"Doc: {citation.DocumentId} / Chunk: {citation.ChunkId}\n{citation.Text}",
+                "Citation"
+            );
         }
     }
 
-    private static void CopyText(string? text)
+    private void CopyText(string? text, string what)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -72,6 +75,8 @@ public partial class QueryDetailPage : Page
         try
         {
             Clipboard.SetText(text);
+            App.Services.GetRequiredService<INotificationService>()
+                .Show("Copied", $"{what} copied to clipboard.", NotificationKind.Success);
         }
         catch
         {
