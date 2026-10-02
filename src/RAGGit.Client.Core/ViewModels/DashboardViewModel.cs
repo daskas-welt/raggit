@@ -47,6 +47,15 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
+    /// <summary>
+    /// True once a load has completed successfully; never resets. The view gates the
+    /// metric cards and the library summary on it, so the initial zeros are never
+    /// presented as loaded data (specs/027 data-model: first-load failure) — while
+    /// last-known numbers stay visible after a failed refresh.
+    /// </summary>
+    [ObservableProperty]
+    private bool _hasLoaded;
+
     [ObservableProperty]
     private string? _statusMessage;
 
@@ -140,6 +149,7 @@ public sealed partial class DashboardViewModel : ObservableObject
             );
             RecentQueries = new ObservableCollection<HistoryItem>(history.Items);
             NotifyDerivedProperties();
+            HasLoaded = true;
             SetStatus("Dashboard refreshed", isError: false);
         }
         catch (HttpRequestException ex)

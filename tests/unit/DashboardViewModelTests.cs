@@ -49,6 +49,10 @@ public sealed class DashboardViewModelTests
         vm.RecentQueries.Should().BeEmpty();
         vm.HasLibraryData.Should().BeFalse();
         vm.HasQueryData.Should().BeFalse();
+
+        // A successful load of an empty library still confirms the zeros as real
+        // data — the metric cards may show them.
+        vm.HasLoaded.Should().BeTrue();
     }
 
     [Fact]
@@ -64,6 +68,46 @@ public sealed class DashboardViewModelTests
         vm.TotalQueries.Should().Be(0);
         vm.MyDocuments.Should().Be(0);
         vm.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadAsync_FirstLoadFailureLeavesDashboardUnloaded()
+    {
+        // specs/027 data-model: on a first-load failure no numbers are presented
+        // as loaded data. HasLoaded stays false so the view can hide the metric
+        // cards and the library summary instead of rendering the initial zeros.
+        var vm = CreateViewModel(fail: true);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasLoaded.Should().BeFalse();
+        vm.ErrorMessage.Should().NotBeNullOrWhiteSpace();
+        vm.TotalDocuments.Should().Be(0);
+        vm.TotalQueries.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task LoadAsync_FailedRefreshAfterSuccessKeepsLoadedFlagAndLastKnownCounts()
+    {
+        // Last-known-good: after a successful load, a failed refresh keeps the
+        // loaded flag and the counts, so the cards keep showing real numbers
+        // rather than reverting to unloaded zeros.
+        var handler = new FailAfterFirstLoadHandler();
+        var vm = CreateViewModel(handler);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasLoaded.Should().BeTrue();
+        vm.TotalDocuments.Should().Be(2);
+        vm.TotalQueries.Should().Be(3);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.HasLoaded.Should().BeTrue();
+        vm.TotalDocuments.Should().Be(2);
+        vm.TotalQueries.Should().Be(3);
+        vm.StatusSeverity.Should().Be("Error");
+        vm.ErrorMessage.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -232,6 +276,40 @@ public sealed class DashboardViewModelTests
         }
 
         public void Release() => _release.TrySetResult(true);
+    }
+
+    /// <summary>
+    /// Serves the populated responses for the first load (requests 1-3) and fails every
+    /// request afterwards, so a second load fails after a successful first one.
+    /// </summary>
+    private sealed class FailAfterFirstLoadHandler : HttpMessageHandler
+    {
+        private int _calls;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            var call = Interlocked.Increment(ref _calls);
+            if (call > 3)
+            {
+                throw new HttpRequestException("cannot reach AI workstation: test failure");
+            }
+
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            var body =
+                path.EndsWith("/documents", StringComparison.Ordinal) ? DocumentsJson
+                : path.EndsWith("/history", StringComparison.Ordinal) ? HistoryJson
+                : MineJson;
+
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                }
+            );
+        }
     }
 
     private const string DocumentsJson = """

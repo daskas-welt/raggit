@@ -32,10 +32,20 @@
                 <WrapPanel Grid.Row="0" Orientation="Horizontal">
                     <StackPanel MinWidth="280" Margin="0,0,24,12" VerticalAlignment="Center">
                         <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Dashboard" />
-                        <ui:TextBlock
-                            Style="{StaticResource PageSubtitleText}"
-                            Text="{Binding LibrarySummary}"
-                        />
+                        <ui:TextBlock Text="{Binding LibrarySummary}">
+                            <ui:TextBlock.Style>
+                                <Style
+                                    TargetType="ui:TextBlock"
+                                    BasedOn="{StaticResource PageSubtitleText}"
+                                >
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasLoaded}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:TextBlock.Style>
+                        </ui:TextBlock>
                     </StackPanel>
                     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ui:Button
@@ -157,8 +167,19 @@
                     </WrapPanel>
                 </WrapPanel>
 
-                <!-- Metric cards: icon + count + label; wrap at narrow widths. -->
+                <!-- Metric cards: icon + count + label; wrap at narrow widths. Hidden until a
+                     load has succeeded, so a first-load failure never presents the initial
+                     zeros as loaded data. -->
                 <WrapPanel Grid.Row="1" Margin="0,4,0,0" Orientation="Horizontal">
+                    <WrapPanel.Style>
+                        <Style TargetType="WrapPanel">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasLoaded}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </WrapPanel.Style>
                     <ui:CardAction
                         Width="200"
                         Margin="0,0,12,12"
