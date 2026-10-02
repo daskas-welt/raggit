@@ -75,7 +75,7 @@ You need .NET 8 and, for the AI part, [Ollama](https://ollama.com)
 ```powershell
 git clone https://github.com/daskas-welt/raggit.git; cd raggit
 dotnet build RAGGit.sln
-ollama pull all-minilm; ollama pull phi3:mini
+ollama pull snowflake-arctic-embed2; ollama pull qwen2.5:3b
 dotnet run --project src/RAGGit.Workstation.Api --urls https://localhost:5001
 ```
 

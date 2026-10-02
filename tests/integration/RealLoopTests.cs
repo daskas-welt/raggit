@@ -82,11 +82,13 @@ public sealed class RealLoopTests : IDisposable
                     }
                 );
                 services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
-                // Real vector store on temp path (384 dev default)
-                services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lancePath, 384));
+                // Real vector store on temp path (1024 matches snowflake-arctic-embed2)
+                services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lancePath, 1024));
                 // Real Ollama embedder/llm — TimeoutMs 5000 (R7). 3-arg overload added in T014; 2-arg used until then.
-                services.AddSingleton<IEmbedder>(new OllamaEmbedder(_ollamaUrl, "all-minilm"));
-                services.AddSingleton<ILlmClient>(new OllamaLlmClient(_ollamaUrl, "phi3:mini"));
+                services.AddSingleton<IEmbedder>(
+                    new OllamaEmbedder(_ollamaUrl, "snowflake-arctic-embed2")
+                );
+                services.AddSingleton<ILlmClient>(new OllamaLlmClient(_ollamaUrl, "qwen2.5:3b"));
             });
         }
     }

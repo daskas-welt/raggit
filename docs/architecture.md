@@ -21,7 +21,7 @@ PlantUML: [`architecture.puml`](./architecture.puml).
 - **Client** `RAGGit.Client.WPF` (frontend) — WPF net10.0-windows10.0.17763.0 (Win10 1809+ / 11, x64) with WPF-UI Fluent styling, NavigationView shell + list grid (Library) + chat (Query citations) over shared `RAGGit.Client.Core` ViewModels, HttpClient only, CommunityToolkit.Mvvm, no vendor license
 - **Workstation** `RAGGit.Workstation.Api` (backend) — ASP.NET Core 8, Core plain net8.0, Ingest + Retrieval
 - **Storage** — LanceDB `./data/lancedb` HNSW m=16 + SQLite `rag.db`
-- **AI** — Ollama :11434 nomic-embed + llama3.2:3b / ONNX bge-micro-v2, cached, no pull at query
+- **AI** — Ollama :11434 snowflake-arctic-embed2 + qwen2.5:3b, cached, no pull at query
 - **Cache** — IMemoryCache + ETag, SemaphoreSlim herd guard for 200×50+ q/day, p95 <7s
 - **Placement** — `RAGGit.Client.Core` ships only in the employee desktop build, never to the workstation (the API references `RAGGit.Core`/`Ingest`/`Retrieval` only)
 
