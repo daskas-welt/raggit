@@ -134,15 +134,14 @@
             ColumnDefinitions="*, 320"
             RowDefinitions="2*, *"
         >
-            <Border
+            <ui:Card
                 x:Name="DirectoryPanel"
                 Grid.Row="0"
                 Grid.Column="0"
                 Margin="0,0,8,0"
-                Background="{DynamicResource CardBackground}"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource ControlCornerRadius}"
+                Padding="0"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
             >
                 <Grid RowDefinitions="Auto, Auto, *">
                     <Grid Margin="16,12,16,8" ColumnDefinitions="*, 145, 145">
@@ -462,18 +461,16 @@
                         </ui:Card>
                     </Grid>
                 </Grid>
-            </Border>
+            </ui:Card>
 
-            <Border
+            <ui:Card
                 x:Name="DetailPanel"
                 Grid.Row="0"
                 Grid.Column="1"
                 Margin="8,0,0,0"
                 Padding="20"
-                Background="{DynamicResource CardBackground}"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource ControlCornerRadius}"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
             >
                 <Grid>
                     <StackPanel
@@ -616,7 +613,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
-            </Border>
+            </ui:Card>
         </Grid>
     </Grid>
 </Page>

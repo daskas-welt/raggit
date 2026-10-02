@@ -70,14 +70,13 @@
              against in 4.3.0's template), floating a short table in the middle of the card. The
              Border fills the row; one horizontal scroller wraps the pinned header and the rows so
              the columns stay aligned, and the ListView owns the vertical scrolling. -->
-        <Border
+        <ui:Card
             Grid.Row="1"
             Margin="0,12,0,0"
             VerticalAlignment="Stretch"
-            Background="{DynamicResource CardBackground}"
-            BorderBrush="{DynamicResource CardBorderBrush}"
-            BorderThickness="1"
-            CornerRadius="{DynamicResource ControlCornerRadius}"
+            Padding="0"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
         >
             <ScrollViewer
                 HorizontalScrollBarVisibility="Auto"
@@ -302,7 +301,7 @@
                     </Grid>
                 </Grid>
             </ScrollViewer>
-        </Border>
+        </ui:Card>
 
         <!-- Pagination footer -->
         <components:PaginationFooterControl

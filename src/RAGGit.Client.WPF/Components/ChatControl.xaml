@@ -80,12 +80,12 @@
                                     FontTypography="Body"
                                     TextWrapping="Wrap"
                                 />
-                                <Expander
+                                <ui:CardExpander
                                     Margin="0,8,0,0"
                                     Visibility="{Binding HasCitations, Converter={StaticResource BoolVisibility}}"
                                     AutomationProperties.AutomationId="{Binding SourcesAutomationId}"
                                 >
-                                    <Expander.Header>
+                                    <ui:CardExpander.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <ui:SymbolIcon
                                                 Symbol="TextQuote24"
@@ -98,7 +98,7 @@
                                                 Style="{StaticResource SecondaryText}"
                                             />
                                         </StackPanel>
-                                    </Expander.Header>
+                                    </ui:CardExpander.Header>
                                     <ListBox
                                         ItemsSource="{Binding Citations}"
                                         SelectionMode="Single"
@@ -163,7 +163,7 @@
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
-                                </Expander>
+                                </ui:CardExpander>
                                 <ui:Button
                                     HorizontalAlignment="Right"
                                     Background="Transparent"
