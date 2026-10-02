@@ -84,7 +84,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 
 ### Tests (write first, confirm red)
 
-- [ ] T017 [P] [US2] Write unit tests for per-download busy gating and outcome notifications in tests/unit/LibraryDownloadFeedbackTests.cs: the busy set contains exactly the in-flight document id; success/failure each raise one notification; other rows stay actionable — red until implemented
+- [X] T017 [P] [US2] Write unit tests for per-download busy gating and outcome notifications in tests/unit/LibraryDownloadFeedbackTests.cs: the busy set contains exactly the in-flight document id; success/failure each raise one notification; other rows stay actionable — red until implemented
 
 ### Implementation for User Story 2
 
@@ -115,7 +115,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 
 - [ ] T027 [US3] Implement the AskNavigationState DI singleton (`string? PendingPrompt`) in src/RAGGit.Client.Core/Services/AskNavigationState.cs (mirroring QueryDetailNavigationState) and register it in src/RAGGit.Client.WPF/App.xaml.cs
 - [ ] T028 [US3] Add the `[RelayCommand] ClearConversationCommand` to src/RAGGit.Client.Core/ViewModels/QueryViewModel.cs: clears `Messages` and the conversation store's in-session messages (the store's ReplaceAll bulk-clear), no new deletion API
-- [ ] T029 [US3] Wire reliable "Ask again": HistoryPage and QueryDetailPage code-behind write `AskNavigationState.PendingPrompt` with the original question before navigating to Ask, and QueryPage's Loaded handler reads + clears it and populates `QueryText` (populate only, never auto-send) — replace the broken best-effort presets in src/RAGGit.Client.WPF/Views/Pages/HistoryPage.xaml.cs, QueryDetailPage.xaml.cs, and QueryPage.xaml.cs; keep `HistoryAskAgainButton` and `QueryDetailAskAgainButton`
+- [ ] T029 [US3] Wire reliable "Ask again": HistoryPage and QueryDetailPage code-behind write `AskNavigationState.PendingPrompt` with the original question before navigating to Ask, and QueryPage's Loaded handler reads + clears it and populates `QueryText` (populate only, never auto-send) — replace the broken best-effort presets in src/RAGGit.Client.WPF/Views/Pages/HistoryPage.xaml.cs, QueryDetailPage.xaml.cs, and QueryPage.xaml.cs; keep the pre-existing `AskAgainButton` IDs on both pages
 - [ ] T030 [US3] Auto-scroll the messages list to the newest item on every collection change already observed in src/RAGGit.Client.WPF/Components/ChatControl.xaml.cs (`ScrollIntoView` on the UI-thread marshal path)
 - [ ] T031 [US3] Remove the page-covering ProgressRing from src/RAGGit.Client.WPF/Views/Pages/QueryPage.xaml and deliver in-stream busy: send-button icon→ring morph plus a status row with the input bar in src/RAGGit.Client.WPF/Components/ChatControl.xaml (conversation stays visible while a question is in flight)
 - [ ] T032 [US3] Add the Clear-conversation header action (`QueryClearConversationButton`) invoking ClearConversationCommand in src/RAGGit.Client.WPF/Views/Pages/QueryPage.xaml
