@@ -26,151 +26,166 @@
             <Grid
                 x:Name="DashboardLayout"
                 SizeChanged="OnDashboardLayoutSizeChanged"
-                RowDefinitions="Auto, Auto, Auto, Auto, Auto"
+                RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto"
             >
-                <!-- Compact header: title + supporting line on the left, quick actions on the right. -->
-                <WrapPanel Grid.Row="0" Orientation="Horizontal">
-                    <StackPanel MinWidth="280" Margin="0,0,24,12" VerticalAlignment="Center">
-                        <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Dashboard" />
-                        <ui:TextBlock Text="{Binding LibrarySummary}">
-                            <ui:TextBlock.Style>
-                                <Style
-                                    TargetType="ui:TextBlock"
-                                    BasedOn="{StaticResource PageSubtitleText}"
-                                >
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasLoaded}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:TextBlock.Style>
-                        </ui:TextBlock>
-                    </StackPanel>
-                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ui:Button
-                            MinHeight="44"
-                            Margin="0,0,8,12"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="DashboardTileHistory"
-                            AutomationProperties.Name="Open history"
-                            Content="History"
-                            ToolTip="Open history"
-                            Click="OnHistoryClicked"
-                        >
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="History24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
-                        <ui:Button
-                            MinHeight="44"
-                            Margin="0,0,8,12"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="DashboardTileMyDocs"
-                            AutomationProperties.Name="Open my documents"
-                            Content="My Docs"
-                            ToolTip="Open my documents"
-                            Click="OnMyDocsClicked"
-                        >
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="Document24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
-                        <ui:Button
-                            MinHeight="44"
-                            Margin="0,0,8,12"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="DashboardTileAdmin"
-                            AutomationProperties.Name="Open admin"
-                            Content="Admin"
-                            ToolTip="Open admin"
-                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
-                            Click="OnAdminClicked"
-                        >
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="People24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
-                        <ui:Card
-                            Padding="14,10"
-                            Margin="0,0,12,12"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="DashboardProfileCard"
-                            AutomationProperties.Name="Logged user profile"
-                        >
-                            <Grid MinWidth="260" ColumnDefinitions="Auto, *">
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    VerticalAlignment="Center"
-                                    BorderThickness="1"
-                                    CornerRadius="20"
-                                >
+                <!-- Shared header card: title + supporting line on the left, quick actions on the right. -->
+                <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel MinWidth="280" Margin="0,0,24,12" VerticalAlignment="Center">
+                            <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Dashboard" />
+                            <ui:TextBlock
+                                Style="{StaticResource PageSubtitleText}"
+                                Text="Your library at a glance"
+                            />
+                        </StackPanel>
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:Button
+                                MinHeight="44"
+                                Margin="0,0,8,12"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="DashboardTileHistory"
+                                AutomationProperties.Name="Open history"
+                                Content="History"
+                                ToolTip="Open history"
+                                Click="OnHistoryClicked"
+                            >
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="History24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                MinHeight="44"
+                                Margin="0,0,8,12"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="DashboardTileMyDocs"
+                                AutomationProperties.Name="Open my documents"
+                                Content="My Docs"
+                                ToolTip="Open my documents"
+                                Click="OnMyDocsClicked"
+                            >
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Document24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                MinHeight="44"
+                                Margin="0,0,8,12"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="DashboardTileAdmin"
+                                AutomationProperties.Name="Open admin"
+                                Content="Admin"
+                                ToolTip="Open admin"
+                                Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                                Click="OnAdminClicked"
+                            >
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="People24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                Width="44"
+                                Height="44"
+                                Margin="0,0,0,12"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="DashboardRefreshButton"
+                                AutomationProperties.Name="Refresh dashboard"
+                                Command="{Binding LoadCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                                ToolTip="Refresh dashboard"
+                            >
+                                <Grid Width="24" Height="24">
                                     <ui:SymbolIcon
-                                        Symbol="Person24"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
+                                        Symbol="ArrowClockwise24"
+                                        Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
                                     />
-                                </Border>
-                                <StackPanel
-                                    Grid.Column="1"
-                                    Margin="10,0,0,0"
-                                    VerticalAlignment="Center"
-                                >
-                                    <ui:TextBlock
-                                        FontTypography="BodyStrong"
-                                        TextTrimming="CharacterEllipsis"
-                                        Text="{Binding UserDisplayName}"
+                                    <ui:ProgressRing
+                                        Width="24"
+                                        Height="24"
+                                        IsIndeterminate="True"
+                                        AutomationProperties.Name="Refreshing dashboard"
+                                        Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                                     />
-                                    <ui:TextBlock
-                                        Margin="0,2,0,0"
-                                        FontTypography="Caption"
-                                        Style="{StaticResource SecondaryText}"
-                                        TextTrimming="CharacterEllipsis"
-                                        Text="{Binding UserHandle}"
-                                    />
-                                    <ui:TextBlock
-                                        Margin="0,2,0,0"
-                                        FontTypography="Caption"
-                                        Style="{StaticResource SecondaryText}"
-                                        TextTrimming="CharacterEllipsis"
-                                        Text="{Binding UserDetails}"
-                                    />
-                                </StackPanel>
-                            </Grid>
-                        </ui:Card>
-                        <ui:Button
-                            Width="44"
-                            Height="44"
-                            Margin="0,0,0,12"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="DashboardRefreshButton"
-                            AutomationProperties.Name="Refresh dashboard"
-                            Command="{Binding LoadCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                            ToolTip="Refresh dashboard"
-                        >
-                            <Grid Width="24" Height="24">
-                                <ui:SymbolIcon
-                                    Symbol="ArrowClockwise24"
-                                    Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
-                                />
-                                <ui:ProgressRing
-                                    Width="24"
-                                    Height="24"
-                                    IsIndeterminate="True"
-                                    AutomationProperties.Name="Refreshing dashboard"
-                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                                />
-                            </Grid>
-                        </ui:Button>
+                                </Grid>
+                            </ui:Button>
+                        </WrapPanel>
                     </WrapPanel>
-                </WrapPanel>
+                </ui:Card>
+
+                <!-- Post-header row: library summary left, profile card right. -->
+                <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto">
+                    <ui:TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Text="{Binding LibrarySummary}"
+                    >
+                        <ui:TextBlock.Style>
+                            <Style
+                                TargetType="ui:TextBlock"
+                                BasedOn="{StaticResource PageSubtitleText}"
+                            >
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasLoaded}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:TextBlock.Style>
+                    </ui:TextBlock>
+                    <ui:Card
+                        Grid.Column="1"
+                        Margin="12,0,0,0"
+                        Padding="14,10"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DashboardProfileCard"
+                        AutomationProperties.Name="Logged user profile"
+                    >
+                        <Grid MinWidth="260" ColumnDefinitions="Auto, *">
+                            <Border
+                                Width="40"
+                                Height="40"
+                                VerticalAlignment="Center"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                            >
+                                <ui:SymbolIcon
+                                    Symbol="Person24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                            >
+                                <ui:TextBlock
+                                    FontTypography="BodyStrong"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding UserDisplayName}"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,2,0,0"
+                                    FontTypography="Caption"
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding UserHandle}"
+                                />
+                                <ui:TextBlock
+                                    Margin="0,2,0,0"
+                                    FontTypography="Caption"
+                                    Style="{StaticResource SecondaryText}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding UserDetails}"
+                                />
+                            </StackPanel>
+                        </Grid>
+                    </ui:Card>
+                </Grid>
 
                 <!-- Metric cards: icon + count + label; wrap at narrow widths. Hidden until a
                      load has succeeded, so a first-load failure never presents the initial
                      zeros as loaded data. -->
-                <WrapPanel Grid.Row="1" Margin="0,4,0,0" Orientation="Horizontal">
+                <WrapPanel Grid.Row="2" Margin="0,4,0,0" Orientation="Horizontal">
                     <WrapPanel.Style>
                         <Style TargetType="WrapPanel">
                             <Style.Triggers>
@@ -447,7 +462,7 @@
                 <!-- Whole-dashboard empty state: only after a successful load, once the library is
                      confirmed empty and no questions exist. Not shown while loading or after a failure. -->
                 <ui:Card
-                    Grid.Row="2"
+                    Grid.Row="3"
                     Margin="0,4,0,0"
                     Padding="24"
                     HorizontalContentAlignment="Stretch"
@@ -512,7 +527,7 @@
                 <!-- Content -->
                 <Grid
                     x:Name="PanelsGrid"
-                    Grid.Row="3"
+                    Grid.Row="4"
                     Margin="0,4,0,0"
                     ColumnDefinitions="1.15*, *"
                     RowDefinitions="Auto, Auto"
@@ -714,33 +729,17 @@
                 </Grid>
 
                 <!-- Status -->
-                <Grid Grid.Row="4" Margin="0,12,0,0" ColumnDefinitions="*, Auto">
-                    <ui:InfoBar
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="DashboardStatusBar"
-                        AutomationProperties.LiveSetting="Polite"
-                        AutomationProperties.Name="Dashboard status"
-                        IsClosable="False"
-                        IsOpen="{Binding HasStatus}"
-                        Message="{Binding StatusMessage}"
-                        Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
-                    />
-                    <ui:Button
-                        Grid.Column="1"
-                        Margin="8,0,0,0"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="DashboardRetryButton"
-                        AutomationProperties.Name="Retry loading dashboard"
-                        Command="{Binding RetryCommand}"
-                        Content="Retry"
-                        Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                </Grid>
+                <components:StatusFooterControl
+                    Grid.Row="5"
+                    Margin="0,12,0,0"
+                    Message="{Binding StatusMessage, Mode=OneWay}"
+                    Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+                    IsOpen="{Binding HasStatus, Mode=OneWay}"
+                    RetryCommand="{Binding RetryCommand}"
+                    RetryContent="Retry"
+                    StatusAutomationId="DashboardStatusBar"
+                    RetryAutomationId="DashboardRetryButton"
+                />
             </Grid>
         </ScrollViewer>
     </Grid>
