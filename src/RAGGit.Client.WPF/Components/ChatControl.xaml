@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
     x:Name="Root"
 >
     <UserControl.Resources>
@@ -12,6 +13,10 @@
         <converters:CitationOrdinalConverter x:Key="CitationOrdinal" />
         <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
+        <!-- Shared bubble widths (feature 028 US4): one source for every
+             realized message instead of per-instance literals. -->
+        <sys:Double x:Key="ChatUserBubbleMaxWidth">400</sys:Double>
+        <sys:Double x:Key="ChatAssistantBubbleMaxWidth">500</sys:Double>
     </UserControl.Resources>
     <Grid RowDefinitions="*, Auto, Auto">
         <!-- Messages -->
@@ -35,7 +40,7 @@
                         <!-- User message (right-aligned) -->
                         <Border
                             HorizontalAlignment="Right"
-                            MaxWidth="400"
+                            MaxWidth="{StaticResource ChatUserBubbleMaxWidth}"
                             Background="{DynamicResource AccentFillColorDefaultBrush}"
                             CornerRadius="16,16,4,16"
                             Padding="12,8"
@@ -68,7 +73,7 @@
                         <!-- Assistant message (left-aligned) -->
                         <Border
                             HorizontalAlignment="Left"
-                            MaxWidth="500"
+                            MaxWidth="{StaticResource ChatAssistantBubbleMaxWidth}"
                             BorderThickness="1"
                             CornerRadius="16,16,16,4"
                             Padding="12,8"
@@ -206,7 +211,7 @@
                 Text="Your conversation will appear here."
                 FontTypography="Body"
                 Style="{StaticResource SecondaryText}"
-                Margin="0,8,0,0"
+                Margin="{StaticResource EmptyStateBodyMargin}"
                 HorizontalAlignment="Center"
             />
         </StackPanel>
@@ -219,7 +224,6 @@
                     x:Name="InputBox"
                     Text="{Binding InputText, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="Type your question..."
-                    FontSize="14"
                     VerticalAlignment="Center"
                     BorderThickness="0"
                     KeyDown="InputBox_KeyDown"
