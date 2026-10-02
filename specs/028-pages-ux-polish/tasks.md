@@ -64,7 +64,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 
 - [X] T008 [P] [US1] Adopt the shared header card (PageHeaderCard style, Thickness resources) and StatusFooterControl in src/RAGGit.Client.WPF/Views/Pages/LibraryPage.xaml — replace the icon+text error footer, keep `LibraryRetryButton`, keep icon-only 44×44 refresh
 - [X] T009 [P] [US1] Same for src/RAGGit.Client.WPF/Views/Pages/HistoryPage.xaml: shared header, StatusFooterControl, and a NEW `HistoryRetryButton` retry (previously absent); unify refresh to the app-wide icon-only 44×44 affordance (was labeled "Refresh")
-- [ ] T010 [P] [US1] Same for src/RAGGit.Client.WPF/Views/Pages/DocumentsMinePage.xaml: shared header, StatusFooterControl, NEW `DocumentsMineRetryButton`, icon-only refresh
+- [X] T010 [P] [US1] Same for src/RAGGit.Client.WPF/Views/Pages/DocumentsMinePage.xaml: shared header, StatusFooterControl, NEW `DocumentsMineRetryButton`, icon-only refresh
 - [ ] T011 [P] [US1] Replace the hand-rolled Border status strip with StatusFooterControl plus NEW `AdminRetryButton` and apply the shared header card in src/RAGGit.Client.WPF/Views/Pages/AdminUsersPage.xaml (keep `AdminStatusBar` semantics on the new control)
 - [ ] T012 [P] [US1] Apply the shared header card to src/RAGGit.Client.WPF/Views/Pages/QueryPage.xaml (Padding `16,12`, actions area) and replace the bilingual suggestion-chip header with single-language plain copy (FR-021)
 - [ ] T013 [P] [US1] Apply the shared header card and `SectionHeaderText` section labels, give the citations empty state the standard `EmptyStateGlyph` treatment, and adopt StatusFooterControl in src/RAGGit.Client.WPF/Views/Pages/QueryDetailPage.xaml
