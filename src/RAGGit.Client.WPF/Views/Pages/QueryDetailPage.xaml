@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -12,11 +13,10 @@
     <Page.Resources>
         <converters:HistoryCitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
-        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
-    <Grid Margin="0,24" RowDefinitions="Auto, Auto, Auto, Auto, *">
+    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, Auto, Auto, Auto, *">
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Padding="16,12">
+        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query Detail" />
@@ -58,33 +58,28 @@
         </ui:Card>
 
         <!-- Error -->
-        <Grid
+        <components:StatusFooterControl
             Grid.Row="1"
             Margin="0,12,0,0"
-            Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
-            ColumnDefinitions="Auto, *"
+            Message="{Binding ErrorMessage, Mode=OneWay}"
+            Severity="Error"
         >
-            <ui:SymbolIcon
-                Grid.Column="0"
-                Symbol="ErrorCircle24"
-                VerticalAlignment="Center"
-                Margin="0,0,8,0"
-                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-            />
-            <ui:TextBlock
-                Grid.Column="1"
-                FontTypography="Body"
-                VerticalAlignment="Center"
-                TextWrapping="Wrap"
-                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                Text="{Binding ErrorMessage}"
-            />
-        </Grid>
+            <components:StatusFooterControl.Style>
+                <Style TargetType="components:StatusFooterControl">
+                    <Setter Property="IsOpen" Value="True" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                            <Setter Property="IsOpen" Value="False" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </components:StatusFooterControl.Style>
+        </components:StatusFooterControl>
 
         <!-- Prompt card -->
-        <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="12">
+        <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
             <StackPanel>
-                <ui:TextBlock FontTypography="Caption" Text="Prompt" />
+                <ui:TextBlock Style="{StaticResource SectionHeaderText}" Text="Prompt" />
                 <ui:TextBlock
                     Margin="0,6,0,0"
                     FontTypography="Body"
@@ -110,9 +105,9 @@
         </ui:Card>
 
         <!-- Answer card -->
-        <ui:Card Grid.Row="3" Margin="0,12,0,0" Padding="12">
+        <ui:Card Grid.Row="3" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
             <StackPanel>
-                <ui:TextBlock FontTypography="Caption" Text="Answer" />
+                <ui:TextBlock Style="{StaticResource SectionHeaderText}" Text="Answer" />
                 <ui:TextBlock
                     Margin="0,6,0,0"
                     FontTypography="Body"
@@ -138,9 +133,13 @@
         </ui:Card>
 
         <!-- Citations card -->
-        <ui:Card Grid.Row="4" Margin="0,12,0,0" Padding="12">
+        <ui:Card Grid.Row="4" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
             <Grid RowDefinitions="Auto, *">
-                <ui:TextBlock Grid.Row="0" FontTypography="Caption" Text="Citations" />
+                <ui:TextBlock
+                    Grid.Row="0"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Citations"
+                />
                 <Grid Grid.Row="1" Margin="0,12,0,0">
                     <ListBox
                         ItemsSource="{Binding Detail.Citations}"
@@ -188,13 +187,29 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <ui:TextBlock
+                    <StackPanel
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        FontTypography="Body"
-                        Text="No citations for this query."
                         Visibility="{Binding Detail.Citations, Converter={StaticResource EmptyListVisibility}}"
-                    />
+                    >
+                        <ui:SymbolIcon
+                            Symbol="Link24"
+                            Style="{StaticResource EmptyStateGlyph}"
+                            Margin="0,0,0,12"
+                        />
+                        <ui:TextBlock
+                            HorizontalAlignment="Center"
+                            FontTypography="Title"
+                            Text="No citations"
+                        />
+                        <ui:TextBlock
+                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            HorizontalAlignment="Center"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            Text="No citations for this query."
+                        />
+                    </StackPanel>
                 </Grid>
             </Grid>
         </ui:Card>
