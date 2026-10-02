@@ -109,7 +109,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 ### Tests (write first, confirm red)
 
 - [X] T025 [P] [US3] Write unit tests for AskNavigationState in tests/unit/AskNavigationStateTests.cs: write → single read returns the prompt and clears it (null on every later read) — red until implemented
-- [ ] T026 [P] [US3] Write unit tests for the clear-conversation command in tests/unit/QueryViewModelTests.cs (new cases, following the file's existing construction pattern): clears `Messages` and the conversation store's in-session messages; input state reset
+- [X] T026 [P] [US3] Write unit tests for the clear-conversation command in tests/unit/QueryViewModelTests.cs (new cases, following the file's existing construction pattern): clears `Messages` and the conversation store's in-session messages; input state reset
 
 ### Implementation for User Story 3
 

@@ -219,6 +219,45 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
+    public async Task ClearConversation_ClearsMessagesAndStore_AndResetsInput()
+    {
+        var store = new ConversationStore();
+        var viewModel = CreateViewModelWithHistory(
+            new HistoryStubHandler(Array.Empty<HistorySeed>()),
+            null,
+            store
+        );
+        viewModel.QueryText = "what is offline rag?";
+        await viewModel.AskCommand.ExecuteAsync(null);
+        viewModel.Messages.Should().HaveCount(2);
+        store.Messages.Should().HaveCount(2);
+        viewModel.QueryText = "half-typed draft";
+
+        viewModel.ClearConversationCommand.Execute(null);
+
+        viewModel.Messages.Should().BeEmpty();
+        store.Messages.Should().BeEmpty();
+        viewModel.QueryText.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ClearConversation_WhenEmpty_IsNoOp()
+    {
+        var store = new ConversationStore();
+        var viewModel = CreateViewModelWithHistory(
+            new HistoryStubHandler(Array.Empty<HistorySeed>()),
+            null,
+            store
+        );
+
+        Action act = () => viewModel.ClearConversationCommand.Execute(null);
+
+        act.Should().NotThrow();
+        viewModel.Messages.Should().BeEmpty();
+        store.Messages.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Ask_OfflineModelUnavailable_SurfacesStatus()
     {
         var handler = new StubHandler(_ => new HttpResponseMessage(
