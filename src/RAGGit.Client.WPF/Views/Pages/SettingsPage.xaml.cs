@@ -54,6 +54,12 @@ public partial class SettingsPage : Page
 
     private async void OnSignOutClicked(object sender, RoutedEventArgs e)
     {
+        var dialogs = App.Services.GetRequiredService<IDialogService>();
+        if (!await dialogs.ConfirmAsync("Sign out", "Sign out of this session?"))
+        {
+            return;
+        }
+
         var store = App.Services.GetRequiredService<ISessionTokenStore>();
         await store.ClearAsync();
         App.Services.GetRequiredService<INavigationService>().NavigateToLogin();
