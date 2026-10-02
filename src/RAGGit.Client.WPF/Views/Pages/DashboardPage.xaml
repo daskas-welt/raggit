@@ -506,7 +506,17 @@
                             Margin="{StaticResource EmptyStateBodyMargin}"
                             HorizontalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                             Text="Open the library to upload your first document."
+                        />
+                        <ui:TextBlock
+                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
+                            Text="Ask a question to get grounded answers, or contact an admin to add documents."
                         />
                         <ui:Button
                             Margin="0,16,0,0"
@@ -633,7 +643,17 @@
                                     Margin="{StaticResource EmptyStateBodyMargin}"
                                     HorizontalAlignment="Center"
                                     Style="{StaticResource SecondaryText}"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                                     Text="Open the library to upload your first document."
+                                />
+                                <ui:TextBlock
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource SecondaryText}"
+                                    TextWrapping="Wrap"
+                                    TextAlignment="Center"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
+                                    Text="Ask a question to get grounded answers, or contact an admin to add documents."
                                 />
                             </StackPanel>
                         </Grid>

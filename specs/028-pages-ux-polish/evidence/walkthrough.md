@@ -218,8 +218,28 @@ content stays visible:
 | Status + retry | U2 | one InfoBar idiom; retry on every async page; wrapped long errors; zero native message boxes | PASS |
 | Busy | U3 | 100% in-control; conversation visible while answering; no duplicate dispatch | PASS (load-more ring by inspection) |
 | Feedback | U4 | 100% copy confirms; download in-flight/success/failure; sign-out + cancel-upload confirm | PASS (reset-submit not executed) |
-| Conversation | U5 | auto-scroll every exchange; ask-again populates every time; clear works | PASS (focus-input follow-up) |
-| Small window | U6 | no h-scroll at 800×600; ≥44-DIP targets; role-aware empty states | PASS (Dashboard empty-state follow-up) |
+| Conversation | U5 | auto-scroll every exchange; ask-again populates every time; clear works | PASS (focus-input resolved post-walkthrough) |
+| Small window | U6 | no h-scroll at 800×600; ≥44-DIP targets; role-aware empty states | PASS (Dashboard role-awareness resolved post-walkthrough) |
 | Login & Settings | U7 | Enter submits from both boxes; re-check works; values copyable | PASS |
-| Identity/theme/spacing | U8 | frozen IDs preserved + new stable IDs; shared Thickness; tokens only; themes legible | PASS (contract ID-name drift noted) |
+| Identity/theme/spacing | U8 | frozen IDs preserved + new stable IDs; shared Thickness; tokens only; themes legible | PASS (contract ID text corrected post-walkthrough) |
 | Regression gates | U8 | CSharpier, build, unit/contract/offline-integration green | PASS per T041 + live re-verify after ba55620 |
+
+## Follow-up resolutions (2026-10-02, post-walkthrough)
+
+All four walkthrough findings were addressed after the evidence run; build
+(0 errors) and the unit suite (365/365) re-verified green after each change:
+
+1. **Dashboard role-aware empty states** — both "No documents yet" bodies
+   (whole-dashboard and recent-documents panel) now show admins the upload
+   line and viewers "Ask a question to get grounded answers, or contact an
+   admin to add documents." (same `IsAdmin` + converter pattern as Library
+   T035; FR-019/SC-010 now hold on Dashboard too).
+2. **Clear focuses the input** — the Clear action now routes through
+   `OnClearConversationClicked` (QueryPage code-behind): executes
+   `ClearConversationCommand`, then calls the new `ChatControl.FocusInput()`
+   so the input is immediately ready for the next question (U5.3).
+3. **Contract U8.1 ID text corrected** — now lists the frozen
+   `CopyPromptButton` / `CopyAnswerButton` / `CopyCitationButton` IDs
+   (pre-existing; renaming them would violate FR-022).
+4. **Theme-override observation** — left as the noted stable-machine
+   verification item (not a defect; no in-app High Contrast switch exists).

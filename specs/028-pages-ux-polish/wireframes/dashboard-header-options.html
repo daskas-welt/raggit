@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframes - Dashboard header decision (028-pages-ux-polish, FR-001)</title>
+<style>
+  :root {
+    --ink: #1b1b1f;
+    --ink-2: #5a5a64;
+    --line: #c9c9d0;
+    --line-strong: #8f8f99;
+    --fill: #f4f4f6;
+    --fill-2: #e9e9ee;
+    --accent: #2d6a4f;
+    --note: #9a6b00;
+    --note-bg: #fff7e0;
+    --ok: #2d6a4f;
+    --ok-bg: #e8f3ee;
+    --bad: #a33a3a;
+    --bad-bg: #fbeaea;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #fafafa;
+    padding: 32px 24px 64px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--ink-2); font-size: 13px; margin-bottom: 28px; }
+  h2 { font-size: 16px; margin: 36px 0 10px; }
+  h2 .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; vertical-align: 2px; margin-left: 8px; }
+  .tag.rec { background: var(--ok-bg); color: var(--ok); }
+  .tag.cur { background: var(--fill-2); color: var(--ink-2); }
+  .desc { font-size: 13px; color: var(--ink-2); margin-bottom: 12px; max-width: 860px; }
+
+  /* ---- window chrome ---- */
+  .window { border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .titlebar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; background: var(--fill); border-bottom: 1px solid var(--line); font-size: 11px; color: var(--ink-2); }
+  .titlebar .dots { display: flex; gap: 5px; }
+  .titlebar .dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; }
+  .app { display: grid; grid-template-columns: 168px 1fr; min-height: 560px; }
+
+  /* ---- nav ---- */
+  .nav { border-right: 1px solid var(--line); background: var(--fill); padding: 14px 10px; font-size: 11px; color: var(--ink-2); }
+  .nav .brand { font-weight: 700; color: var(--ink); margin: 2px 8px 14px; letter-spacing: .4px; }
+  .nav .item { padding: 7px 10px; border-radius: 5px; margin-bottom: 3px; }
+  .nav .item.active { background: #dfe7f3; color: var(--ink); font-weight: 600; }
+  .nav .spacer { height: 170px; }
+
+  /* ---- generic content primitives (wireframe) ---- */
+  .content { padding: 18px 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .wf-label { font-size: 10px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .5px; }
+
+  /* header card (the shared pattern) */
+  .headercard { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .headercard .t { font-size: 19px; font-weight: 650; }
+  .headercard .s { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+  .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .btn { border: 1px solid var(--line-strong); border-radius: 5px; padding: 6px 12px; font-size: 11px; background: #fff; white-space: nowrap; }
+  .btn.primary { background: #dfe7f3; border-color: #9db4d4; font-weight: 600; }
+  .btn.icon { padding: 6px 9px; }
+
+  /* metrics */
+  .metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .metric { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .metric .v { font-size: 20px; font-weight: 650; margin: 4px 0 2px; }
+  .metric .m { font-size: 10px; color: var(--ink-2); }
+
+  /* panels */
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+  .panel .hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .panel .hd .t { font-size: 13px; font-weight: 600; }
+  .row { display: flex; justify-content: space-between; padding: 7px 0; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-2); }
+  .row:first-of-type { border-top: none; }
+  .row .r { color: var(--ink); }
+
+  /* profile card */
+  .profile { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--fill-2); border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-2); }
+  .profile .who .n { font-size: 12px; font-weight: 600; }
+  .profile .who .m { font-size: 10px; color: var(--ink-2); }
+
+  /* free-flow header (current) */
+  .freeflow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; justify-content: space-between; }
+  .ff-title { min-width: 240px; }
+  .ff-title .t { font-size: 19px; font-weight: 650; }
+  .ff-title .s { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+
+  /* annotations */
+  .anno { position: relative; }
+  .anno::after {
+    content: attr(data-note);
+    position: absolute; top: -9px; right: 10px;
+    background: var(--note-bg); color: var(--note);
+    border: 1px solid #e3c96b; border-radius: 4px;
+    font-size: 9.5px; font-weight: 600; padding: 2px 7px; letter-spacing: .2px;
+  }
+  .callout { border: 1.5px dashed #e3c96b; border-radius: 8px; }
+
+  /* verdict blocks */
+  .verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 12px; }
+  .verdict div { border-radius: 6px; padding: 10px 12px; line-height: 1.55; }
+  .verdict .good { background: var(--ok-bg); color: var(--ok); }
+  .verdict .bad { background: var(--bad-bg); color: var(--bad); }
+  .verdict b { display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-bottom: 20px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .chip .box { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  .chip .shared { background: #dfe7f3; border: 1px solid #9db4d4; }
+  .chip .note { background: var(--note-bg); border: 1px solid #e3c96b; }
+  .chip .plain { background: #fff; border: 1px solid var(--line-strong); }
+
+  /* reference strip */
+  .refgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .refgrid .card { padding: 10px 14px; }
+  .refgrid .refnote { font-size: 10.5px; color: var(--ink-2); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Dashboard header — wireframe options</h1>
+<p class="sub">Feature 028-pages-ux-polish &middot; FR-001 (one shared header treatment on every content page) &middot; Decision: what happens to the Dashboard's header, which feature 027 just redesigned</p>
+
+<div class="legend">
+  <span class="chip"><span class="box shared"></span> shared header pattern (title + supporting line + actions area)</span>
+  <span class="chip"><span class="box note"></span> annotated difference / decision point</span>
+  <span class="chip"><span class="box plain"></span> unchanged by this decision (027 content)</span>
+</div>
+
+<h2>Reference — the shared header pattern every other list page already uses</h2>
+<p class="desc">Library, History, My Documents, the saved-answer page, and Admin all open with this structure: one card containing the page title, a one-line supporting description on the left, and page actions on the right. This is what FR-001 means by "one shared header treatment."</p>
+<div class="refgrid">
+  <div class="card">
+    <div class="headercard">
+      <div><div class="t">Library</div><div class="s">All documents indexed on this workstation</div></div>
+      <div class="actions"><span class="btn primary">Upload</span><span class="btn icon">&#8635;</span></div>
+    </div>
+    <div class="refnote">Library page header (today)</div>
+  </div>
+  <div class="card">
+    <div class="headercard">
+      <div><div class="t">History</div><div class="s">Your past questions and answers</div></div>
+      <div class="actions"><span class="btn">Refresh</span></div>
+    </div>
+    <div class="refnote">History page header (today)</div>
+  </div>
+  <div class="card">
+    <div class="headercard">
+      <div><div class="t">Settings</div><div class="s">Preferences and workstation connection</div></div>
+      <div class="actions"><span class="btn icon">&#8635;</span></div>
+    </div>
+    <div class="refnote">Settings header — FR-001 adds this one too (it has none today)</div>
+  </div>
+</div>
+
+<h2>Option B — Current state <span class="tag cur">baseline (keep as exception)</span></h2>
+<p class="desc">Today's Dashboard: a free-flowing row with no header card — title and subtitle share a wrapping row with the quick-action buttons and the profile card. This is the only content page shaped like this. If you pick B, FR-001 explicitly exempts the Dashboard and this layout stays.</p>
+<div class="window">
+  <div class="titlebar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> RAGGit</div>
+  <div class="app">
+    <div class="nav">
+      <div class="brand">RAGGit</div>
+      <div class="item active">Dashboard</div>
+      <div class="item">Library</div>
+      <div class="item">Ask</div>
+      <div class="item">History</div>
+      <div class="item">My Documents</div>
+      <div class="item">Admin</div>
+      <div class="item">Settings</div>
+      <div class="spacer"></div>
+    </div>
+    <div class="content">
+      <div class="callout anno" data-note="no header card — free row">
+        <div class="freeflow">
+          <div class="ff-title">
+            <div class="t">Dashboard</div>
+            <div class="s">Library activity and answers at a glance</div>
+          </div>
+          <div class="actions">
+            <span class="btn primary">Upload</span>
+            <span class="btn">Ask a question</span>
+            <span class="btn icon">&#8635;</span>
+          </div>
+          <div class="card profile">
+            <span class="avatar">AM</span>
+            <span class="who"><span class="n">Alex Morgan</span><br><span class="m">Admin</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="wf-label">Documents</span><div class="v">128</div><div class="m">total</div></div>
+        <div class="metric"><span class="wf-label">Ready</span><div class="v">121</div><div class="m">indexed</div></div>
+        <div class="metric"><span class="wf-label">Failed</span><div class="v">3</div><div class="m">needs retry</div></div>
+        <div class="metric"><span class="wf-label">Questions</span><div class="v">42</div><div class="m">last 7 days</div></div>
+        <div class="metric"><span class="wf-label">People</span><div class="v">8</div><div class="m">registered</div></div>
+        <div class="metric"><span class="wf-label">Storage</span><div class="v">6.4</div><div class="m">GB used</div></div>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="hd"><span class="t">Recent documents</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>Q3-policy.pdf</span><span class="r">Ready</span></div>
+          <div class="row"><span>Onboarding.docx</span><span class="r">Ready</span></div>
+          <div class="row"><span>handbook-v2.pdf</span><span class="r">Failed</span></div>
+        </div>
+        <div class="panel">
+          <div class="hd"><span class="t">Recent questions</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>What is the leave policy?</span><span class="r">2 citations</span></div>
+          <div class="row"><span>Who owns onboarding?</span><span class="r">1 citation</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="verdict">
+  <div class="good"><b>Pros</b>Zero rework of the 027 redesign; the landing page keeps its distinctive, information-dense first row.</div>
+  <div class="bad"><b>Cons</b>The "every page reads as one app" story keeps a visible exception; quick actions, title, and profile still compete for one row and reflow unpredictably at narrow widths.</div>
+</div>
+
+<h2>Option A — Shared header card, 027 content untouched <span class="tag rec">Recommended</span></h2>
+<p class="desc">The Dashboard gains the same header card as every other page — title, supporting line, actions on the right. The profile card moves out of the header row into the content (it sits with the metrics here, but its exact placement stays 027's call). Everything below the header — metrics, recent documents, recent questions — is untouched.</p>
+<div class="window">
+  <div class="titlebar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> RAGGit</div>
+  <div class="app">
+    <div class="nav">
+      <div class="brand">RAGGit</div>
+      <div class="item active">Dashboard</div>
+      <div class="item">Library</div>
+      <div class="item">Ask</div>
+      <div class="item">History</div>
+      <div class="item">My Documents</div>
+      <div class="item">Admin</div>
+      <div class="item">Settings</div>
+      <div class="spacer"></div>
+    </div>
+    <div class="content">
+      <div class="card callout anno" data-note="same card as Library / History">
+        <div class="headercard">
+          <div><div class="t">Dashboard</div><div class="s">Library activity and answers at a glance</div></div>
+          <div class="actions">
+            <span class="btn primary">Upload</span>
+            <span class="btn">Ask a question</span>
+            <span class="btn icon">&#8635;</span>
+          </div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="wf-label">Documents</span><div class="v">128</div><div class="m">total</div></div>
+        <div class="metric"><span class="wf-label">Ready</span><div class="v">121</div><div class="m">indexed</div></div>
+        <div class="metric"><span class="wf-label">Failed</span><div class="v">3</div><div class="m">needs retry</div></div>
+        <div class="metric"><span class="wf-label">Questions</span><div class="v">42</div><div class="m">last 7 days</div></div>
+        <div class="metric"><span class="wf-label">People</span><div class="v">8</div><div class="m">registered</div></div>
+        <div class="metric"><span class="wf-label">Storage</span><div class="v">6.4</div><div class="m">GB used</div></div>
+      </div>
+      <div class="panels" style="grid-template-columns: 1fr 1fr;">
+        <div class="panel">
+          <div class="hd"><span class="t">Recent documents</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>Q3-policy.pdf</span><span class="r">Ready</span></div>
+          <div class="row"><span>Onboarding.docx</span><span class="r">Ready</span></div>
+          <div class="row"><span>handbook-v2.pdf</span><span class="r">Failed</span></div>
+        </div>
+        <div class="panel">
+          <div class="hd"><span class="t">Recent questions</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>What is the leave policy?</span><span class="r">2 citations</span></div>
+          <div class="row"><span>Who owns onboarding?</span><span class="r">1 citation</span></div>
+        </div>
+      </div>
+      <div class="card profile" style="align-self: flex-start;">
+        <span class="avatar">AM</span>
+        <span class="who"><span class="n">Alex Morgan</span><br><span class="m">Admin &middot; signed in</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="verdict">
+  <div class="good"><b>Pros</b>Full consistency — the Dashboard opens exactly like every other page; header stops reflowing at narrow widths; only the header row changes, so 027's work below survives; profile card gets room to breathe as its own card.</div>
+  <div class="bad"><b>Cons</b>One row of the 027 redesign is reworked; the page loses its "landing page" first impression; profile placement needs a decision during planning (shown here at the bottom, alternatives possible).</div>
+</div>
+
+<h2>Option C — Shared header card absorbs quick actions <em>and</em> profile</h2>
+<p class="desc">Like A, but the header's actions area absorbs everything from the old free row: quick actions on the right, and the profile compressed into an avatar chip. The content below starts directly with metrics — the tidiest, most "one app" reading of FR-001, and the most rework.</p>
+<div class="window">
+  <div class="titlebar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> RAGGit</div>
+  <div class="app">
+    <div class="nav">
+      <div class="brand">RAGGit</div>
+      <div class="item active">Dashboard</div>
+      <div class="item">Library</div>
+      <div class="item">Ask</div>
+      <div class="item">History</div>
+      <div class="item">My Documents</div>
+      <div class="item">Admin</div>
+      <div class="item">Settings</div>
+      <div class="spacer"></div>
+    </div>
+    <div class="content">
+      <div class="card callout anno" data-note="profile + actions all in header">
+        <div class="headercard">
+          <div><div class="t">Dashboard</div><div class="s">Library activity and answers at a glance</div></div>
+          <div class="actions">
+            <span class="btn primary">Upload</span>
+            <span class="btn">Ask a question</span>
+            <span class="btn icon">&#8635;</span>
+            <span class="card profile" style="padding: 4px 10px 4px 4px; border-radius: 20px; margin-left: 6px;">
+              <span class="avatar" style="width: 26px; height: 26px;">AM</span>
+              <span class="who"><span class="n">Alex</span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="wf-label">Documents</span><div class="v">128</div><div class="m">total</div></div>
+        <div class="metric"><span class="wf-label">Ready</span><div class="v">121</div><div class="m">indexed</div></div>
+        <div class="metric"><span class="wf-label">Failed</span><div class="v">3</div><div class="m">needs retry</div></div>
+        <div class="metric"><span class="wf-label">Questions</span><div class="v">42</div><div class="m">last 7 days</div></div>
+        <div class="metric"><span class="wf-label">People</span><div class="v">8</div><div class="m">registered</div></div>
+        <div class="metric"><span class="wf-label">Storage</span><div class="v">6.4</div><div class="m">GB used</div></div>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="hd"><span class="t">Recent documents</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>Q3-policy.pdf</span><span class="r">Ready</span></div>
+          <div class="row"><span>Onboarding.docx</span><span class="r">Ready</span></div>
+          <div class="row"><span>handbook-v2.pdf</span><span class="r">Failed</span></div>
+        </div>
+        <div class="panel">
+          <div class="hd"><span class="t">Recent questions</span><span class="btn icon">&#8635;</span></div>
+          <div class="row"><span>What is the leave policy?</span><span class="r">2 citations</span></div>
+          <div class="row"><span>Who owns onboarding?</span><span class="r">1 citation</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="verdict">
+  <div class="good"><b>Pros</b>Strictest consistency; densest, calmest first screen; content starts immediately with what matters (metrics).</div>
+  <div class="bad"><b>Cons</b>Most 027 rework (header row <i>and</i> profile card both change); a compressed avatar chip shows less identity info than the card; header gets crowded on narrow windows unless actions collapse.</div>
+</div>
+
+<p class="sub" style="margin-top: 36px; font-size: 12px;">Wireframes are structural only — real spacing, colors, and Fluent controls come from the app's design system (features 022/023). Metrics and copy shown are placeholders.</p>
+
+</body>
+</html>

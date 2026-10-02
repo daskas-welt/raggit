@@ -38,7 +38,7 @@
                             AutomationProperties.Name="Clear conversation"
                             ToolTip="Clear conversation"
                             Content="Clear"
-                            Command="{Binding ClearConversationCommand}"
+                            Click="OnClearConversationClicked"
                         >
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="Delete24" />
@@ -50,6 +50,7 @@
 
             <!-- Chat -->
             <components:ChatControl
+                x:Name="Chat"
                 Grid.Row="1"
                 Margin="0,12,0,0"
                 Messages="{Binding Messages}"

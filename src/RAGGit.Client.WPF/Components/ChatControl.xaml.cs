@@ -65,6 +65,12 @@ public partial class ChatControl : UserControl
         set => SetValue(IsBusyProperty, value);
     }
 
+    /// <summary>
+    /// Focuses the message input — used after clearing the conversation so the
+    /// input is immediately ready for the next question (feature 028, U5.3).
+    /// </summary>
+    public void FocusInput() => InputBox.Focus();
+
     private INotifyCollectionChanged? _trackedMessages;
 
     public ChatControl()

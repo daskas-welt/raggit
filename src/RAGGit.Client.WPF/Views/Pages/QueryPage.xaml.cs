@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.Services;
@@ -27,5 +28,17 @@ public partial class QueryPage : Page
                 ViewModel.QueryText = prompt;
             }
         };
+    }
+
+    private void OnClearConversationClicked(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.ClearConversationCommand.CanExecute(null))
+        {
+            ViewModel.ClearConversationCommand.Execute(null);
+        }
+
+        // U5.3: the emptied conversation leaves the input ready for the
+        // next question.
+        Chat.FocusInput();
     }
 }
