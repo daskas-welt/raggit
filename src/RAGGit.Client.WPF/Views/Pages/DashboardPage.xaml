@@ -735,6 +735,7 @@
                     Message="{Binding StatusMessage, Mode=OneWay}"
                     Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
                     IsOpen="{Binding HasStatus, Mode=OneWay}"
+                    IsBusy="{Binding IsBusy, Mode=OneWay}"
                     RetryCommand="{Binding RetryCommand}"
                     RetryContent="Retry"
                     StatusAutomationId="DashboardStatusBar"

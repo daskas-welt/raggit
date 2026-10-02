@@ -30,7 +30,49 @@
             ToolTip="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
         >
             <ui:Button.Icon>
-                <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                <Grid Width="24" Height="24">
+                    <ui:SymbolIcon Symbol="ArrowClockwise24">
+                        <ui:SymbolIcon.Style>
+                            <Style
+                                TargetType="ui:SymbolIcon"
+                                BasedOn="{StaticResource {x:Type ui:SymbolIcon}}"
+                            >
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding IsBusy, ElementName=Root}"
+                                        Value="True"
+                                    >
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:SymbolIcon.Style>
+                    </ui:SymbolIcon>
+                    <ui:ProgressRing
+                        Width="24"
+                        Height="24"
+                        AutomationProperties.Name="Retrying"
+                        IsIndeterminate="True"
+                    >
+                        <ui:ProgressRing.Style>
+                            <Style
+                                TargetType="ui:ProgressRing"
+                                BasedOn="{StaticResource {x:Type ui:ProgressRing}}"
+                            >
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding IsBusy, ElementName=Root}"
+                                        Value="True"
+                                    >
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:ProgressRing.Style>
+                    </ui:ProgressRing>
+                </Grid>
             </ui:Button.Icon>
             <ui:Button.Style>
                 <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -44,6 +86,9 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsOpen, ElementName=Root}" Value="False">
                             <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsBusy, ElementName=Root}" Value="True">
+                            <Setter Property="IsEnabled" Value="False" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

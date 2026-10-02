@@ -12,6 +12,8 @@
 >
     <Page.Resources>
         <converters:MineMetaConverter x:Key="MineMeta" />
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
     <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
         <!-- Header card -->
@@ -35,10 +37,21 @@
                     TabIndex="0"
                     VerticalAlignment="Center"
                     Command="{Binding RefreshCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 >
-                    <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                    </ui:Button.Icon>
+                    <Grid Width="24" Height="24">
+                        <ui:SymbolIcon
+                            Symbol="ArrowClockwise24"
+                            Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                        />
+                        <ui:ProgressRing
+                            Width="24"
+                            Height="24"
+                            AutomationProperties.Name="Refreshing documents"
+                            IsIndeterminate="True"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                        />
+                    </Grid>
                 </ui:Button>
             </Grid>
         </ui:Card>
@@ -135,10 +148,23 @@
             HorizontalAlignment="Center"
             Content="Load more"
             Command="{Binding LoadMoreCommand}"
+            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
             Visibility="{Binding HasMore, Converter={StaticResource BooleanToVisibilityConverter}}"
         >
             <ui:Button.Icon>
-                <ui:SymbolIcon Symbol="ArrowDown24" />
+                <Grid Width="24" Height="24">
+                    <ui:SymbolIcon
+                        Symbol="ArrowDown24"
+                        Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                    />
+                    <ui:ProgressRing
+                        Width="24"
+                        Height="24"
+                        AutomationProperties.Name="Loading more documents"
+                        IsIndeterminate="True"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                    />
+                </Grid>
             </ui:Button.Icon>
         </ui:Button>
 
@@ -148,6 +174,7 @@
             Margin="0,12,0,0"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"
+            IsBusy="{Binding IsBusy, Mode=OneWay}"
             RetryCommand="{Binding RefreshCommand}"
             RetryContent="Retry"
             RetryAutomationId="DocumentsMineRetryButton"

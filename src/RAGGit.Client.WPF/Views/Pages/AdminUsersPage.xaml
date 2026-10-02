@@ -14,6 +14,8 @@
     <Page.Resources>
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
         <converters:NullToVisibilityConverter x:Key="NullVisibility" />
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
         <converters:SelectedUserLabelConverter x:Key="SelectedUserLabel" />
         <converters:RoleActionLabelConverter x:Key="RoleActionLabel" />
@@ -67,9 +69,19 @@
                         Command="{Binding LoadUsersCommand}"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                     >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                        </ui:Button.Icon>
+                        <Grid Width="24" Height="24">
+                            <ui:SymbolIcon
+                                Symbol="ArrowClockwise24"
+                                Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                            />
+                            <ui:ProgressRing
+                                Width="24"
+                                Height="24"
+                                AutomationProperties.Name="Refreshing users"
+                                IsIndeterminate="True"
+                                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                            />
+                        </Grid>
                     </ui:Button>
                 </StackPanel>
             </Grid>
@@ -81,6 +93,7 @@
             Message="{Binding StatusMessage, Mode=OneWay}"
             Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
             IsOpen="{Binding HasStatus, Mode=OneWay}"
+            IsBusy="{Binding IsBusy, Mode=OneWay}"
             RetryCommand="{Binding LoadUsersCommand}"
             RetryContent="Retry"
             StatusAutomationId="AdminStatusBar"

@@ -34,6 +34,13 @@ public partial class StatusFooterControl : UserControl
         new PropertyMetadata(false)
     );
 
+    public static readonly DependencyProperty IsBusyProperty = DependencyProperty.Register(
+        nameof(IsBusy),
+        typeof(bool),
+        typeof(StatusFooterControl),
+        new PropertyMetadata(false)
+    );
+
     public static readonly DependencyProperty RetryCommandProperty = DependencyProperty.Register(
         nameof(RetryCommand),
         typeof(ICommand),
@@ -80,6 +87,16 @@ public partial class StatusFooterControl : UserControl
     {
         get => (bool)GetValue(IsOpenProperty);
         set => SetValue(IsOpenProperty, value);
+    }
+
+    /// <summary>
+    /// While true the retry button morphs to a ring and is disabled
+    /// (in-control busy); pages bind their load <c>IsBusy</c>.
+    /// </summary>
+    public bool IsBusy
+    {
+        get => (bool)GetValue(IsBusyProperty);
+        set => SetValue(IsBusyProperty, value);
     }
 
     public ICommand? RetryCommand

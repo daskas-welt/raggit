@@ -17,6 +17,7 @@
         <converters:CreatorLabelConverter x:Key="CreatorLabel" />
         <converters:ShortDateConverter x:Key="ShortDate" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
+        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
     <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
         <!-- Header card -->
@@ -37,11 +38,22 @@
                         AutomationProperties.AutomationId="RefreshButton"
                         AutomationProperties.Name="Refresh documents"
                         Command="{Binding LoadDocumentsCommand}"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                         ToolTip="Refresh documents"
                     >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                        </ui:Button.Icon>
+                        <Grid Width="24" Height="24">
+                            <ui:SymbolIcon
+                                Symbol="ArrowClockwise24"
+                                Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                            />
+                            <ui:ProgressRing
+                                Width="24"
+                                Height="24"
+                                AutomationProperties.Name="Refreshing documents"
+                                IsIndeterminate="True"
+                                Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                            />
+                        </Grid>
                     </ui:Button>
                     <ui:Button
                         x:Name="UploadButton"
@@ -327,6 +339,7 @@
             Margin="0,12,0,0"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"
+            IsBusy="{Binding IsBusy, Mode=OneWay}"
             RetryCommand="{Binding RetryCommand}"
             RetryContent="Retry"
             RetryAutomationId="LibraryRetryButton"
