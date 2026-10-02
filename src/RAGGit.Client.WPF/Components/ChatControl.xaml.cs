@@ -83,6 +83,7 @@ public partial class ChatControl : UserControl
         }
 
         RefreshEmptyState();
+        ScrollToNewest();
     }
 
     private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -91,10 +92,15 @@ public partial class ChatControl : UserControl
         if (Dispatcher.CheckAccess())
         {
             RefreshEmptyState();
+            ScrollToNewest();
         }
         else
         {
-            Dispatcher.Invoke(RefreshEmptyState);
+            Dispatcher.Invoke(() =>
+            {
+                RefreshEmptyState();
+                ScrollToNewest();
+            });
         }
     }
 
@@ -107,6 +113,19 @@ public partial class ChatControl : UserControl
             _ => 1,
         };
         EmptyState.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ScrollToNewest()
+    {
+        // Public ListBox API only — no template-part lookup. Newest item is
+        // last; no-op while empty or before the template is applied.
+        if (MessagesList.Items.Count == 0)
+        {
+            return;
+        }
+
+        var newest = MessagesList.Items[MessagesList.Items.Count - 1];
+        MessagesList.ScrollIntoView(newest);
     }
 
     private void InputBox_KeyDown(object sender, KeyEventArgs e)
