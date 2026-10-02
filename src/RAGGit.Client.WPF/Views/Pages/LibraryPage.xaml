@@ -17,11 +17,10 @@
         <converters:CreatorLabelConverter x:Key="CreatorLabel" />
         <converters:ShortDateConverter x:Key="ShortDate" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
-        <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
-    <Grid Margin="0,24" RowDefinitions="Auto, *, Auto, Auto">
+    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Padding="16,12">
+        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Document Library" />
@@ -264,7 +263,7 @@
                              pinned header. Gated on IsEmpty (set only by a successful load) so it never
                              shows while loading — overlapping the ProgressRing — or after a failed load. -->
                         <ui:Card
-                            Padding="24"
+                            Padding="{StaticResource CardPaddingLarge}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
@@ -281,7 +280,7 @@
                                     Text="No documents yet"
                                 />
                                 <ui:TextBlock
-                                    Margin="0,12,0,0"
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
                                     HorizontalAlignment="Center"
                                     FontTypography="Body"
                                     Style="{StaticResource SecondaryText}"
@@ -323,44 +322,25 @@
         />
 
         <!-- Footer -->
-        <Grid Grid.Row="3" Margin="0,12,0,0" ColumnDefinitions="*, Auto">
-            <Grid
-                Grid.Column="0"
-                VerticalAlignment="Center"
-                Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
-                ColumnDefinitions="Auto, *"
-            >
-                <ui:SymbolIcon
-                    Grid.Column="0"
-                    Symbol="ErrorCircle24"
-                    VerticalAlignment="Center"
-                    Margin="0,0,8,0"
-                    Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                />
-                <ui:TextBlock
-                    Grid.Column="1"
-                    FontTypography="Body"
-                    VerticalAlignment="Center"
-                    Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                    TextTrimming="CharacterEllipsis"
-                    TextWrapping="Wrap"
-                    Text="{Binding ErrorMessage}"
-                />
-            </Grid>
-            <ui:Button
-                Grid.Column="1"
-                Margin="8,0,0,0"
-                VerticalAlignment="Center"
-                AutomationProperties.AutomationId="LibraryRetryButton"
-                AutomationProperties.Name="Retry loading library"
-                Command="{Binding RetryCommand}"
-                Content="Retry"
-                Visibility="{Binding ErrorMessage, Converter={StaticResource NullVisibility}}"
-            >
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowClockwise24" />
-                </ui:Button.Icon>
-            </ui:Button>
-        </Grid>
+        <components:StatusFooterControl
+            Grid.Row="3"
+            Margin="0,12,0,0"
+            Message="{Binding ErrorMessage, Mode=OneWay}"
+            Severity="Error"
+            RetryCommand="{Binding RetryCommand}"
+            RetryContent="Retry"
+            RetryAutomationId="LibraryRetryButton"
+        >
+            <components:StatusFooterControl.Style>
+                <Style TargetType="components:StatusFooterControl">
+                    <Setter Property="IsOpen" Value="True" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                            <Setter Property="IsOpen" Value="False" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </components:StatusFooterControl.Style>
+        </components:StatusFooterControl>
     </Grid>
 </Page>
