@@ -1,4 +1,6 @@
+using System;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.ViewModels;
 
@@ -22,6 +24,27 @@ public partial class LoginPage : Page
         if (ViewModel.Password != PasswordBox.Password)
         {
             ViewModel.Password = PasswordBox.Password;
+        }
+    }
+
+    // Enter in either credential box submits sign-in when no sign-in is in flight.
+    private void OnCredentialKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || ViewModel.IsBusy)
+        {
+            return;
+        }
+
+        // Same manual sync care as OnPasswordChanged: the box is the source of truth.
+        if (!string.Equals(ViewModel.Password, PasswordBox.Password, StringComparison.Ordinal))
+        {
+            ViewModel.Password = PasswordBox.Password;
+        }
+
+        if (ViewModel.LoginCommand.CanExecute(null))
+        {
+            ViewModel.LoginCommand.Execute(null);
+            e.Handled = true;
         }
     }
 }
