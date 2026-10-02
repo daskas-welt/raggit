@@ -10,6 +10,8 @@ namespace RAGGit.Client.WPF.Views.Pages;
 
 public partial class LibraryPage : Page
 {
+    private bool _compactTable;
+
     public LibraryViewModel ViewModel { get; }
 
     public LibraryPage()
@@ -25,9 +27,46 @@ public partial class LibraryPage : Page
         // Refresh on every visit so newly uploaded documents appear.
         // Guarded by IsBusy to avoid overlap (mirrors the WinUI OnNavigatedTo).
         ViewModel.RefreshRole();
+        ApplyResponsiveLayout(LibraryLayout.ActualWidth);
         if (!ViewModel.IsBusy)
         {
             await ViewModel.LoadDocumentsCommand.ExecuteAsync(null);
+        }
+    }
+
+    private void OnLibraryLayoutSizeChanged(object sender, SizeChangedEventArgs e) =>
+        ApplyResponsiveLayout(e.NewSize.Width);
+
+    /// <summary>
+    /// Page-owned responsive switch (Dashboard/Admin pattern): at content widths
+    /// ≤720 DIPs the secondary table columns (Creator, Created) collapse and the
+    /// 880-DIP floor is removed, so Filename, Status, and the row actions fit
+    /// without horizontal scrolling; wider widths restore every column and the
+    /// floor. The header row and the row template share the same resource keys,
+    /// so both states stay consistent per state.
+    /// </summary>
+    private void ApplyResponsiveLayout(double width)
+    {
+        var compact = width <= 720;
+        if (compact == _compactTable)
+        {
+            return;
+        }
+
+        _compactTable = compact;
+        if (compact)
+        {
+            Resources["LibraryCreatorColumnWidth"] = new GridLength(0);
+            Resources["LibraryCreatedColumnWidth"] = new GridLength(0);
+            Resources["LibrarySecondaryColumnVisibility"] = Visibility.Collapsed;
+            TableGrid.MinWidth = 0;
+        }
+        else
+        {
+            Resources["LibraryCreatorColumnWidth"] = new GridLength(130);
+            Resources["LibraryCreatedColumnWidth"] = new GridLength(150);
+            Resources["LibrarySecondaryColumnVisibility"] = Visibility.Visible;
+            TableGrid.MinWidth = 880;
         }
     }
 

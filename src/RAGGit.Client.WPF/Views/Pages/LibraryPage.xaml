@@ -19,8 +19,21 @@
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:DocumentDownloadingConverter x:Key="DocumentDownloading" />
+        <!-- Responsive table state (feature 028 US4): the page-owned SizeChanged
+             switch in the code-behind replaces these values at content widths
+             ≤720 DIPs, so the header row and every realized data row collapse
+             and restore together (DynamicResource propagates to template
+             instances, including rows realized after the switch). -->
+        <GridLength x:Key="LibraryCreatorColumnWidth">130</GridLength>
+        <GridLength x:Key="LibraryCreatedColumnWidth">150</GridLength>
+        <Visibility x:Key="LibrarySecondaryColumnVisibility">Visible</Visibility>
     </Page.Resources>
-    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
+    <Grid
+        x:Name="LibraryLayout"
+        Margin="{StaticResource PagePadding}"
+        RowDefinitions="Auto, *, Auto, Auto"
+        SizeChanged="OnLibraryLayoutSizeChanged"
+    >
         <!-- Header card -->
         <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
@@ -93,12 +106,18 @@
                 HorizontalScrollBarVisibility="Auto"
                 VerticalScrollBarVisibility="Disabled"
             >
-                <Grid MinWidth="880" RowDefinitions="Auto, *">
-                    <Grid
-                        Grid.Row="0"
-                        Margin="16,12"
-                        ColumnDefinitions="*, 70, 90, 120, 130, 150, 44, 44"
-                    >
+                <Grid x:Name="TableGrid" MinWidth="880" RowDefinitions="Auto, *">
+                    <Grid Grid.Row="0" Margin="16,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="70" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
+                            <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
+                            <ColumnDefinition Width="44" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock
                             Grid.Column="0"
                             Margin="0,0,12,0"
@@ -137,6 +156,7 @@
                             FontTypography="Caption"
                             VerticalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
+                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                             Text="Creator"
                         />
                         <ui:TextBlock
@@ -145,6 +165,7 @@
                             FontTypography="Caption"
                             VerticalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
+                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                             Text="Created"
                         />
                         <Border
@@ -176,10 +197,17 @@
                             </ui:ListView.ItemContainerStyle>
                             <ui:ListView.ItemTemplate>
                                 <DataTemplate DataType="{x:Type models:Document}">
-                                    <Grid
-                                        Margin="16,12"
-                                        ColumnDefinitions="*, 70, 90, 120, 130, 150, 44, 44"
-                                    >
+                                    <Grid Margin="16,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
+                                            <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
+                                            <ColumnDefinition Width="44" />
+                                            <ColumnDefinition Width="44" />
+                                        </Grid.ColumnDefinitions>
                                         <ui:TextBlock
                                             Grid.Column="0"
                                             Margin="0,0,12,0"
@@ -218,6 +246,7 @@
                                             FontTypography="Body"
                                             VerticalAlignment="Center"
                                             Style="{StaticResource SecondaryText}"
+                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                                             TextTrimming="CharacterEllipsis"
                                             Text="{Binding Converter={StaticResource CreatorLabel}}"
                                         />
@@ -227,6 +256,7 @@
                                             FontTypography="Body"
                                             VerticalAlignment="Center"
                                             Style="{StaticResource SecondaryText}"
+                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                                             Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
                                         />
                                         <ui:Button
