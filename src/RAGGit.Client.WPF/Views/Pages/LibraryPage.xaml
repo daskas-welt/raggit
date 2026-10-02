@@ -368,7 +368,18 @@
                                     HorizontalAlignment="Center"
                                     FontTypography="Body"
                                     Style="{StaticResource SecondaryText}"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                                     Text="Upload a document to see it here."
+                                />
+                                <ui:TextBlock
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
+                                    HorizontalAlignment="Center"
+                                    FontTypography="Body"
+                                    Style="{StaticResource SecondaryText}"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
+                                    TextWrapping="Wrap"
+                                    TextAlignment="Center"
+                                    Text="Ask a question to get started, or contact an admin to add documents."
                                 />
                             </StackPanel>
                         </ui:Card>
