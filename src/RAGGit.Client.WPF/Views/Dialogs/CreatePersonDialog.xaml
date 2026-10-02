@@ -1,106 +1,94 @@
-<Window
+<UserControl
     x:Class="RAGGit.Client.WPF.Views.Dialogs.CreatePersonDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
-    Title="Add person"
-    Width="480"
-    MinWidth="420"
-    SizeToContent="Height"
-    ResizeMode="NoResize"
-    WindowStartupLocation="CenterOwner"
-    ShowInTaskbar="False"
 >
-    <Window.Resources>
+    <UserControl.Resources>
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
-    </Window.Resources>
-    <Grid Margin="16">
-        <ui:Card Padding="20">
-            <StackPanel>
-                <ui:TextBlock FontTypography="Title" Text="Add person" />
-                <ui:TextBlock
-                    Margin="0,4,0,16"
-                    Style="{StaticResource SecondaryText}"
-                    Text="Create an account for someone who needs workstation access."
-                    TextWrapping="Wrap"
-                />
+    </UserControl.Resources>
+    <StackPanel>
+        <ui:TextBlock
+            Style="{StaticResource SecondaryText}"
+            Text="Create an account for someone who needs workstation access."
+            TextWrapping="Wrap"
+            Margin="0,0,0,16"
+        />
 
-                <ui:TextBlock FontTypography="Body" Text="Username" />
-                <ui:TextBox
-                    x:Name="NewUsernameBox"
-                    AutomationProperties.AutomationId="NewUsernameBox"
-                    Margin="0,4,0,12"
-                    PlaceholderText="Unique login name"
-                    Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                />
+        <ui:TextBlock FontTypography="Body" Text="Username" />
+        <ui:TextBox
+            x:Name="NewUsernameBox"
+            AutomationProperties.AutomationId="NewUsernameBox"
+            Margin="0,4,0,12"
+            PlaceholderText="Unique login name"
+            Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        />
 
-                <ui:TextBlock FontTypography="Body" Text="Display name" />
-                <ui:TextBox
-                    x:Name="NewDisplayNameBox"
-                    AutomationProperties.AutomationId="NewDisplayNameBox"
-                    Margin="0,4,0,12"
-                    PlaceholderText="Name shown in the directory"
-                    Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                />
+        <ui:TextBlock FontTypography="Body" Text="Display name" />
+        <ui:TextBox
+            x:Name="NewDisplayNameBox"
+            AutomationProperties.AutomationId="NewDisplayNameBox"
+            Margin="0,4,0,12"
+            PlaceholderText="Name shown in the directory"
+            Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        />
 
-                <ui:TextBlock FontTypography="Body" Text="Role" />
-                <ComboBox
-                    x:Name="NewRoleCombo"
-                    AutomationProperties.AutomationId="NewRoleCombo"
-                    Margin="0,4,0,12"
-                    ItemsSource="{Binding Roles}"
-                    SelectedItem="{Binding NewRole, Mode=TwoWay}"
-                />
+        <ui:TextBlock FontTypography="Body" Text="Role" />
+        <ComboBox
+            x:Name="NewRoleCombo"
+            AutomationProperties.AutomationId="NewRoleCombo"
+            Margin="0,4,0,12"
+            ItemsSource="{Binding Roles}"
+            SelectedItem="{Binding NewRole, Mode=TwoWay}"
+        />
 
-                <ui:TextBlock FontTypography="Body" Text="Initial password" />
-                <ui:PasswordBox
-                    x:Name="NewPasswordBox"
-                    AutomationProperties.AutomationId="NewPasswordBox"
-                    Margin="0,4,0,12"
-                    PlaceholderText="At least 10 characters"
-                    Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                />
+        <ui:TextBlock FontTypography="Body" Text="Initial password" />
+        <ui:PasswordBox
+            x:Name="NewPasswordBox"
+            AutomationProperties.AutomationId="NewPasswordBox"
+            Margin="0,4,0,12"
+            PlaceholderText="At least 10 characters"
+            Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        />
 
-                <ui:InfoBar
-                    Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
-                    IsOpen="{Binding HasStatus}"
-                    IsClosable="False"
-                    Message="{Binding StatusMessage}"
-                    Margin="0,0,0,12"
-                />
+        <ui:InfoBar
+            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
+            IsOpen="{Binding HasStatus}"
+            IsClosable="False"
+            Message="{Binding StatusMessage}"
+            Margin="0,0,0,12"
+        />
 
-                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                    <ui:Button
-                        x:Name="CancelCreateButton"
-                        AutomationProperties.AutomationId="CancelCreateButton"
-                        AutomationProperties.Name="Cancel adding person"
-                        Content="Cancel"
-                        MinWidth="96"
-                        Margin="0,0,8,0"
-                        Click="OnCancelClicked"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="Dismiss24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                    <ui:Button
-                        x:Name="CreateUserButton"
-                        AutomationProperties.AutomationId="CreateUserButton"
-                        AutomationProperties.Name="Create user"
-                        ToolTip="Create user"
-                        Appearance="Primary"
-                        Content="Create person"
-                        MinWidth="128"
-                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                        Click="OnCreateClicked"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="PersonAdd24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                </StackPanel>
-            </StackPanel>
-        </ui:Card>
-    </Grid>
-</Window>
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <ui:Button
+                x:Name="CancelCreateButton"
+                AutomationProperties.AutomationId="CancelCreateButton"
+                AutomationProperties.Name="Cancel adding person"
+                Content="Cancel"
+                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                Margin="0,0,8,0"
+                Click="OnCancelClicked"
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button
+                x:Name="CreateUserButton"
+                AutomationProperties.AutomationId="CreateUserButton"
+                AutomationProperties.Name="Create user"
+                ToolTip="Create user"
+                Appearance="Primary"
+                Content="Create person"
+                MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                Click="OnCreateClicked"
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="PersonAdd24" />
+                </ui:Button.Icon>
+            </ui:Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -9,6 +10,8 @@ using RAGGit.Client.Core.Services;
 using RAGGit.Client.Core.ViewModels;
 using RAGGit.Client.WPF.Views.Dialogs;
 using RAGGit.Core.Models;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
 
 namespace RAGGit.Client.WPF.Views.Pages;
 
@@ -306,16 +309,20 @@ public partial class AdminUsersPage : Page
         }
     }
 
-    private void OnAddPersonClicked(object sender, RoutedEventArgs e)
+    private async void OnAddPersonClicked(object sender, RoutedEventArgs e)
     {
         if (ViewModel.IsBusy)
         {
             return;
         }
 
-        var dialog = new CreatePersonDialog(ViewModel) { Owner = Window.GetWindow(this) };
-        dialog.ShowDialog();
+        var contentDialogs = App.Services.GetRequiredService<IContentDialogService>();
+        var form = new CreatePersonDialog(ViewModel);
+        var dialog = new ContentDialog { Title = "Add person", Content = form };
+        form.RequestClose += (_, _) => dialog.Hide();
+        await contentDialogs.ShowAsync(dialog, CancellationToken.None);
         RefreshUsersView();
+        AddPersonButton.Focus();
     }
 
     private void OnResetPasswordClicked(object sender, RoutedEventArgs e)
