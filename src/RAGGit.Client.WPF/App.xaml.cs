@@ -136,6 +136,7 @@ public sealed partial class App : Application
         // Connection/error state
         services.AddSingleton(new WpfConnectionState());
         services.AddSingleton<QueryDetailNavigationState>();
+        services.AddSingleton<AskNavigationState>();
 
         // Handlers
         services.AddTransient<ApiKeyDelegatingHandler>(_ => new ApiKeyDelegatingHandler(
