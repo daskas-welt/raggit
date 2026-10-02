@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
+    xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
     xmlns:models="clr-namespace:RAGGit.Core.Models;assembly=RAGGit.Core"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -13,6 +14,7 @@
     <Page.Resources>
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
         <converters:NullToVisibilityConverter x:Key="NullVisibility" />
+        <converters:StatusSeverityConverter x:Key="StatusSeverity" />
         <converters:SelectedUserLabelConverter x:Key="SelectedUserLabel" />
         <converters:RoleActionLabelConverter x:Key="RoleActionLabel" />
         <converters:ActiveVerbConverter x:Key="ActiveVerb" />
@@ -26,11 +28,11 @@
 
     <Grid
         x:Name="AdminLayout"
-        Margin="0,24"
+        Margin="{StaticResource PagePadding}"
         SizeChanged="OnAdminLayoutSizeChanged"
         RowDefinitions="Auto, Auto, *"
     >
-        <ui:Card Grid.Row="0" Padding="16,12">
+        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
                 <StackPanel VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="People Management" />
@@ -73,59 +75,17 @@
             </Grid>
         </ui:Card>
 
-        <Border
+        <components:StatusFooterControl
             Grid.Row="1"
             Margin="0,12,0,0"
-            Padding="12,8"
-            BorderThickness="1"
-            CornerRadius="8"
-            AutomationProperties.AutomationId="AdminStatusBar"
-            AutomationProperties.LiveSetting="Polite"
-            Visibility="{Binding HasStatus, Converter={StaticResource BooleanToVisibilityConverter}}"
-        >
-            <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon VerticalAlignment="Center" Margin="0,0,8,0">
-                    <ui:SymbolIcon.Style>
-                        <Style TargetType="ui:SymbolIcon">
-                            <Setter Property="Symbol" Value="Info24" />
-                            <Setter
-                                Property="Foreground"
-                                Value="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                            />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding StatusSeverity}" Value="Success">
-                                    <Setter Property="Symbol" Value="CheckmarkCircle24" />
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="{ui:ThemeResource SystemFillColorSuccessBrush}"
-                                    />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusSeverity}" Value="Warning">
-                                    <Setter Property="Symbol" Value="Warning24" />
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="{ui:ThemeResource SystemFillColorCautionBrush}"
-                                    />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusSeverity}" Value="Error">
-                                    <Setter Property="Symbol" Value="ErrorCircle24" />
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                                    />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ui:SymbolIcon.Style>
-                </ui:SymbolIcon>
-                <ui:TextBlock
-                    FontTypography="Body"
-                    TextWrapping="Wrap"
-                    VerticalAlignment="Center"
-                    Text="{Binding StatusMessage}"
-                />
-            </StackPanel>
-        </Border>
+            Message="{Binding StatusMessage, Mode=OneWay}"
+            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+            IsOpen="{Binding HasStatus, Mode=OneWay}"
+            RetryCommand="{Binding LoadUsersCommand}"
+            RetryContent="Retry"
+            StatusAutomationId="AdminStatusBar"
+            RetryAutomationId="AdminRetryButton"
+        />
 
         <Grid
             x:Name="PeopleLayout"
