@@ -20,6 +20,8 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly ClientSession _session;
     private readonly ILibraryPreferences _preferences;
     private readonly ILauncherService _launcher;
+    private readonly INotificationService _notifications;
+    private readonly HashSet<Guid> _downloadingIds = new();
     private Task? _statusPollingTask;
 
     [ObservableProperty]
@@ -53,7 +55,8 @@ public sealed partial class LibraryViewModel : ObservableObject
         DocumentsApiClient apiClient,
         ClientSession session,
         ILauncherService launcher,
-        ILibraryPreferences? preferences = null
+        ILibraryPreferences? preferences = null,
+        INotificationService? notifications = null
     )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
@@ -62,7 +65,19 @@ public sealed partial class LibraryViewModel : ObservableObject
         _preferences = preferences ?? new InMemoryLibraryPreferences();
         _pageSize = _preferences.GetPageSize();
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
+        _notifications = notifications ?? new NullNotificationService();
     }
+
+    /// <summary>
+    /// Ids of the documents whose download is currently in flight. Bound by
+    /// the Library rows so only the downloading row morphs to a ring; every
+    /// other row stays actionable. Page-level <see cref="IsBusy"/> is
+    /// untouched by downloads.
+    /// </summary>
+    public IReadOnlyCollection<Guid> DownloadingIds => _downloadingIds;
+
+    /// <summary>True while <paramref name="documentId"/> is downloading.</summary>
+    public bool IsDownloading(Guid documentId) => _downloadingIds.Contains(documentId);
 
     /// <summary>
     /// Refresh IsAdmin from current session (call after role discovery).
@@ -331,15 +346,26 @@ public sealed partial class LibraryViewModel : ObservableObject
             return;
         }
 
+        // Duplicate dispatch guard: an in-flight row is disabled in the view,
+        // but the command stays executable so other rows remain actionable.
+        if (!_downloadingIds.Add(document.Id))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(DownloadingIds));
+
         try
         {
             var (bytes, filename) = await _apiClient.GetContentAsync(document.Id);
             await _launcher.OpenAsync(filename, bytes, document.Mime.GetContentType());
+            _notifications.Show("Downloaded", filename, NotificationKind.Success);
         }
         catch (HttpRequestException ex)
             when (ex.Message.Contains("original unavailable", StringComparison.OrdinalIgnoreCase))
         {
             ErrorMessage = "Original unavailable for this document.";
+            _notifications.Show("Download failed", ErrorMessage, NotificationKind.Danger);
         }
         catch (HttpRequestException ex)
             when (ex.Message.Contains(
@@ -349,18 +375,27 @@ public sealed partial class LibraryViewModel : ObservableObject
             )
         {
             ErrorMessage = ClientErrorText.CannotReach(ex.Message);
+            _notifications.Show("Download failed", ErrorMessage, NotificationKind.Danger);
         }
         catch (HttpRequestException ex)
         {
             ErrorMessage = $"Failed to download {document.Filename}: {ex.Message}";
+            _notifications.Show("Download failed", ErrorMessage, NotificationKind.Danger);
         }
         catch (TaskCanceledException ex)
         {
             ErrorMessage = ClientErrorText.Unavailable(ex.Message);
+            _notifications.Show("Download failed", ErrorMessage, NotificationKind.Danger);
         }
         catch (Exception exception)
         {
             ErrorMessage = $"Failed to download {document.Filename}: {exception.Message}";
+            _notifications.Show("Download failed", ErrorMessage, NotificationKind.Danger);
+        }
+        finally
+        {
+            _downloadingIds.Remove(document.Id);
+            OnPropertyChanged(nameof(DownloadingIds));
         }
     }
 }

@@ -130,6 +130,7 @@ public sealed class ClientRoleGatingTests
                     : p.ParameterType == typeof(RAGGit.Client.Core.Services.ILibraryPreferences)
                         ? (object?)null
                     : p.ParameterType == typeof(ILauncherService) ? new InMemoryLauncherService()
+                    : p.ParameterType == typeof(INotificationService) ? (object?)null
                     : throw new InvalidOperationException($"Unexpected param {p.ParameterType}")
                 )
                 .ToArray();

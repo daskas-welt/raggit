@@ -40,3 +40,12 @@ public sealed class InMemoryNotificationService : INotificationService
         Shown.Add(new ShownNotification(title, message, kind));
     }
 }
+
+/// <summary>
+/// No-op notification sink for ViewModels constructed without an explicit
+/// <see cref="INotificationService"/> (production DI always supplies one).
+/// </summary>
+public sealed class NullNotificationService : INotificationService
+{
+    public void Show(string title, string message, NotificationKind kind) { }
+}
