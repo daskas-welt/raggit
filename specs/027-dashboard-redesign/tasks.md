@@ -255,6 +255,35 @@ screen reader in Light/Dark/High Contrast at 800×600 and a wide size.
 - Diagram status: no PlantUML set exists for this feature (presentation-only
   page re-bind; no topology/flow change) — nothing to update.
 
+### Post-review corrections (2026-10-02)
+
+A design review of the committed feature flagged two behavioral gaps; both required
+touching `RAGGit.Client.Core`, which the original plan had scoped out ("no
+`RAGGit.Client.Core` change"). The scope change is recorded here and reflected in
+[data-model.md](data-model.md).
+
+1. **Empty-state flicker** — `ClearStatus()` reset `StatusSeverity` to
+   "Informational" at the start of every load, so the whole-dashboard empty state's
+   `StatusSeverity == "Success"` gate dropped out for the duration of any refresh of
+   an empty library. `ClearStatus()` no longer resets it; the severity now carries the
+   outcome of the last completed load. Regression test:
+   `LoadAsync_RefreshOfEmptySourcesDoesNotResetSeverity`.
+2. **Unloaded zeros presented as data** — on a first-load failure the six metric cards
+   and the (new-in-027) `LibrarySummary` subtitle rendered the initial zeros and
+   "No documents in the library" as if loaded, violating the first-load-failure rule;
+   a first-load failure and a confirmed empty library are indistinguishable from the
+   counts alone. Added `HasLoaded` (true once a load has completed successfully, never
+   resets); the subtitle and the metric row hide while it is false, and last-known
+   numbers still show after a failed refresh. Tests:
+   `LoadAsync_EmptySourcesExposeIntentionalEmptyState` (extended),
+   `LoadAsync_FirstLoadFailureLeavesDashboardUnloaded`,
+   `LoadAsync_FailedRefreshAfterSuccessKeepsLoadedFlagAndLastKnownCounts`.
+
+Gates after both corrections: `dotnet csharpier check .` clean; build 0 errors;
+unit 349/349, contract 89/89, offline integration 12/12; 023 static audits and the
+frozen-ID superset unchanged. The `winapp ui` walkthrough items above remain the
+outstanding manual verification, and now also cover the gated first-load appearance.
+
 ---
 
 ## Dependencies & Execution Order

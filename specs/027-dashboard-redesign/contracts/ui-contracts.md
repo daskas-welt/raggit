@@ -29,6 +29,9 @@ action; an Admin action visible to non-administrators.
    non-empty; a zero card still renders and still navigates.
 4. On a failed refresh after a successful load, the last-known numbers stay visible
    next to the error status instead of clearing.
+5. Until a load has completed successfully (`HasLoaded` false), the metric cards and
+   the library summary stay hidden — an unloaded dashboard presents no numbers,
+   including its initial zeros, as loaded data.
 
 **Prohibited**: a card with no destination; a read-only metric strip; hiding the
 ingestion states; clearing numbers when a refresh fails.
