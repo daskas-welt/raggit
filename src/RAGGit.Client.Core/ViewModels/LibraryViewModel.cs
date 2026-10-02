@@ -28,6 +28,15 @@ public sealed partial class LibraryViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
+    /// <summary>
+    /// True only after a successful load of an empty library; never set on a failure.
+    /// The page gates its "No documents yet" empty state on it (History and My Docs use
+    /// the same pattern) so an initial or failed load never claims the library is
+    /// empty — and never overlaps the centered loading ProgressRing.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isEmpty;
+
     [ObservableProperty]
     private bool _isAdmin;
 
@@ -157,6 +166,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             var documents = await _apiClient.GetDocumentsAsync();
             Documents = new ObservableCollection<Document>(documents);
+            IsEmpty = Documents.Count == 0;
             StartStatusPolling();
         }
         catch (HttpRequestException ex)

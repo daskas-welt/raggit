@@ -31,6 +31,53 @@ public sealed class LibraryViewModelTests
         vm.Documents[0].Filename.Should().Be("doc 0.pdf");
         vm.ErrorMessage.Should().BeNull();
         vm.IsBusy.Should().BeFalse();
+        vm.IsEmpty.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Load_EmptyLibrary_MarksEmptyForEmptyState()
+    {
+        var vm = CreateViewModel(_ => DocumentsResponse(0));
+
+        await vm.LoadDocumentsCommand.ExecuteAsync(null);
+
+        vm.Documents.Should().BeEmpty();
+        vm.IsEmpty.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Load_FirstLoadFailure_DoesNotMarkEmpty()
+    {
+        // The empty state must not claim "No documents yet" when nothing has
+        // loaded: IsEmpty stays false until a load succeeds, matching the
+        // History and My Docs view models.
+        var vm = CreateViewModel(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        await vm.LoadDocumentsCommand.ExecuteAsync(null);
+
+        vm.IsEmpty.Should().BeFalse();
+        vm.Documents.Should().BeEmpty();
+        vm.ErrorMessage.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Load_FailedRefreshAfterEmpty_RetainsEmptyFlag()
+    {
+        var calls = 0;
+        var vm = CreateViewModel(_ =>
+            ++calls == 1
+                ? DocumentsResponse(0)
+                : new HttpResponseMessage(HttpStatusCode.InternalServerError)
+        );
+
+        await vm.LoadDocumentsCommand.ExecuteAsync(null);
+        vm.IsEmpty.Should().BeTrue();
+
+        await vm.LoadDocumentsCommand.ExecuteAsync(null);
+
+        // Last-known-good: the confirmed-empty outcome survives the failed refresh.
+        vm.IsEmpty.Should().BeTrue();
+        vm.ErrorMessage.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]

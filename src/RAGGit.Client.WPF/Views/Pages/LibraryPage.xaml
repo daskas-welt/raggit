@@ -17,7 +17,6 @@
         <converters:CreatorLabelConverter x:Key="CreatorLabel" />
         <converters:ShortDateConverter x:Key="ShortDate" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
-        <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
         <converters:NullToVisibilityConverter x:Key="NullVisibility" />
     </Page.Resources>
     <Grid Margin="0,24" RowDefinitions="Auto, *, Auto, Auto">
@@ -261,12 +260,14 @@
                             </ui:ListView.ItemTemplate>
                         </ui:ListView>
 
-                        <!-- Empty state (ListView has no empty view): sits in the list area, below the pinned header -->
+                        <!-- Empty state (ListView has no empty view): sits in the list area, below the
+                             pinned header. Gated on IsEmpty (set only by a successful load) so it never
+                             shows while loading — overlapping the ProgressRing — or after a failed load. -->
                         <ui:Card
                             Padding="24"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Visibility="{Binding PageItems, Converter={StaticResource EmptyListVisibility}}"
+                            Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
                         >
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <ui:SymbolIcon
