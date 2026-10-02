@@ -9,16 +9,28 @@
     Title="Settings"
 >
     <ScrollViewer
-        Margin="0,24"
+        Margin="{StaticResource PagePadding}"
         HorizontalScrollBarVisibility="Disabled"
         VerticalScrollBarVisibility="Auto"
     >
         <StackPanel MaxWidth="760">
-            <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Settings" />
-            <ui:TextBlock
-                Style="{StaticResource PageSubtitleText}"
-                Text="Preferences for this client"
-            />
+            <!-- Standard header card (US5 adds re-check/copy actions to the actions area). -->
+            <ui:Card Style="{StaticResource PageHeaderCard}">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Settings" />
+                        <ui:TextBlock
+                            Style="{StaticResource PageSubtitleText}"
+                            Text="Preferences for this client"
+                        />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                    />
+                </Grid>
+            </ui:Card>
 
             <!-- Appearance & behavior -->
             <ui:TextBlock

@@ -69,7 +69,7 @@ Single solution: `src/RAGGit.Client.Core/`, `src/RAGGit.Client.WPF/`, `tests/uni
 - [X] T012 [P] [US1] Apply the shared header card to src/RAGGit.Client.WPF/Views/Pages/QueryPage.xaml (Padding `16,12`, actions area) and replace the bilingual suggestion-chip header with single-language plain copy (FR-021)
 - [X] T013 [P] [US1] Apply the shared header card and `SectionHeaderText` section labels, give the citations empty state the standard `EmptyStateGlyph` treatment, and adopt StatusFooterControl in src/RAGGit.Client.WPF/Views/Pages/QueryDetailPage.xaml
 - [X] T014 [P] [US1] Wrap the 027 compact header in the shared header-card structure and move `DashboardProfileCard` to a post-header row (library summary left, profile right) in src/RAGGit.Client.WPF/Views/Pages/DashboardPage.xaml — 027 metric/panel/empty-state content below unchanged; all 16 frozen Dashboard IDs preserved; InfoBar → StatusFooterControl (keep `DashboardStatusBar`, `DashboardRetryButton`)
-- [ ] T015 [P] [US1] Add the standard header card to src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml (title, supporting line, actions area)
+- [X] T015 [P] [US1] Add the standard header card to src/RAGGit.Client.WPF/Views/Pages/SettingsPage.xaml (title, supporting line, actions area)
 - [ ] T016 [US1] Unify action-initiated busy to the in-control idiom (icon→ProgressRing morph, control disabled) on refresh/load-more/retry buttons across src/RAGGit.Client.WPF/Views/Pages/{LibraryPage,HistoryPage,DocumentsMinePage,AdminUsersPage,DashboardPage}.xaml(.cs); initial page loads keep the centered treatment; remove any page-covering busy overlay on non-chat pages
 
 **Checkpoint**: User Story 1 fully functional and independently testable (MVP deliverable)
