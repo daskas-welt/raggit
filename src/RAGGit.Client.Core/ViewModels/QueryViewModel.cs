@@ -483,6 +483,20 @@ public sealed partial class QueryViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Clears the current conversation view: the bound <see cref="Messages"/>
+    /// and the shared conversation store's in-session messages (via the
+    /// store's bulk-clear), and resets the input. A no-op when the
+    /// conversation is already empty. Persisted server history is untouched.
+    /// </summary>
+    [RelayCommand]
+    private void ClearConversation()
+    {
+        Messages.Clear();
+        _conversation.ReplaceAll(Array.Empty<ChatMessage>());
+        QueryText = string.Empty;
+    }
+
+    /// <summary>
     /// Re-runs a prompt from query history (or any caller). Sets the input
     /// to <paramref name="prompt"/> and asks it as a fresh question.
     /// </summary>
