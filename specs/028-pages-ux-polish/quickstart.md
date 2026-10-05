@@ -82,9 +82,14 @@ winapp ui click "NavSettings"  -a $Pid; winapp ui wait-for "SettingsRecheckConne
 winapp ui click "NavHistory"   -a $Pid; winapp ui click "ViewQueryButton" -a $Pid
 winapp ui wait-for "AskAgainButton" -a $Pid -t 8000
 
-# Dialogs: open each and wait for its primary content (exact field IDs: read the dialog XAML)
+# Dialogs: open each and wait for its primary content (exact field IDs: read the dialog XAML).
+# NOTE: wait for AddFilesButton, NOT UploadDropArea — the latter ID sits on a
+# Border, which gets no UIA peer, so no automation client can ever match it
+# (verified 2026-10-05: dialog inspect shows only the inner hint text plus
+# AddFilesButton/Upload/Close). AddFilesButton gives the same crash-class
+# coverage (dialog instantiated and interactive).
 winapp ui click "NavLibrary"   -a $Pid; winapp ui click "UploadButton" -a $Pid   # UploadDialog window
-winapp ui wait-for "UploadDropArea" -a $Pid -t 8000        # then close it (decline any confirm)
+winapp ui wait-for "AddFilesButton" -a $Pid -t 8000      # then close it (decline any confirm)
 winapp ui click "NavAdmin"     -a $Pid; winapp ui click "AddPersonButton" -a $Pid  # CreatePerson in-window
 winapp ui wait-for "NewDisplayNameBox" -a $Pid -t 8000  # then close/cancel the dialog
 ```
