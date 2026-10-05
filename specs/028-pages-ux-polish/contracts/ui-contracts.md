@@ -127,7 +127,9 @@ with no re-check; an uncopyable displayed value where a copy control exists.
 2. New stable automation IDs: `HistoryRetryButton`, `DocumentsMineRetryButton`,
    `AdminRetryButton`, `QueryClearConversationButton`, `SettingsRecheckConnectionButton`,
    `SettingsCopyWorkstationUrlButton`, `SettingsCopySignedInAsButton`,
-   `LoginStatusMessage`, and the shared status component on every adopting page.
+   `LoginStatusMessage`, `ConfirmCancelUploadButton`, `KeepUploadingButton`
+   (the UploadDialog cancel-mid-upload confirmation pair), and the shared status
+   component on every adopting page.
 3. Spacing, padding, and sizing values on affected surfaces resolve to shared
    Thickness resources on the documented 4-px scale (header card `16,12`, page paddings,
    empty-state body margin `0,12,0,0`, dialog button minimum widths) — no ad-hoc

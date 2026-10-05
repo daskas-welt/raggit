@@ -49,11 +49,49 @@ Run from the repo root under PowerShell 7 (`pwsh`). Each check must return no ou
 8. **Row-action targets** — Library row download/delete buttons are ≥44 DIPs
    (`Width`/`Height` ≥44 or equivalent shared style).
 9. **Frozen IDs** — every ID listed in contract U8.1 is present in its page's XAML;
-   the new IDs in U8.2 exist exactly once.
+   the new IDs in U8.2 exist exactly once, including the UploadDialog cancel-confirm
+   pair `ConfirmCancelUploadButton` / `KeepUploadingButton`
+   (`src/RAGGit.Client.WPF/Views/Dialogs/UploadDialog.xaml`).
 10. **Spacing tokens** — the affected header cards, empty-state bodies, and dialog
     footer buttons resolve Padding/Margin/MinWidth from the shared Thickness
     resources (spot-check: no `Padding="12"` header card, no `0,8,0,0` empty-state
     body margin, no 90/128/136 dialog button drift).
+
+## Page-load smoke gate
+
+XAML-runtime crashes (e.g. `XamlParseException` from an invalid `ui:Button.Icon` child,
+fixed in `ba55620`) pass the build, CSharpier, and every suite — only live
+instantiation catches them. This gate drives every page and dialog once, at the
+default size and theme, and fails if any primary element is not found within the
+timeout (a crashed page shows a blank shell or missing elements).
+
+Start the API and the client per Prerequisites, sign in, then run with the client
+process id (`winapp ui … -a $Pid`, timeout `-t` per command, 8 s is enough locally):
+
+```powershell
+# Pages via the nav pane (wait-for a control that is always present on each page)
+winapp ui click "NavDashboard" -a $Pid; winapp ui wait-for "DashboardRefreshButton" -a $Pid -t 8000
+winapp ui click "NavLibrary"   -a $Pid; winapp ui wait-for "RefreshButton"        -a $Pid -t 8000
+winapp ui click "NavAsk"       -a $Pid; winapp ui wait-for "ChatInputBox"         -a $Pid -t 8000
+winapp ui click "NavHistory"   -a $Pid; winapp ui wait-for "RefreshButton"        -a $Pid -t 8000
+winapp ui click "NavMyDocs"    -a $Pid; winapp ui wait-for "RefreshButton"        -a $Pid -t 8000
+winapp ui click "NavAdmin"     -a $Pid; winapp ui wait-for "RefreshUsersButton"   -a $Pid -t 8000
+winapp ui click "NavSettings"  -a $Pid; winapp ui wait-for "SettingsRecheckConnectionButton" -a $Pid -t 8000
+
+# Saved-answer page: from History, open the newest saved question
+winapp ui click "NavHistory"   -a $Pid; winapp ui click "ViewQueryButton" -a $Pid
+winapp ui wait-for "AskAgainButton" -a $Pid -t 8000
+
+# Dialogs: open each and wait for its primary content (exact field IDs: read the dialog XAML)
+winapp ui click "NavLibrary"   -a $Pid; winapp ui click "UploadButton" -a $Pid   # UploadDialog window
+winapp ui wait-for "UploadDropArea" -a $Pid -t 8000        # then close it (decline any confirm)
+winapp ui click "NavAdmin"     -a $Pid; winapp ui click "AddPersonButton" -a $Pid  # CreatePerson in-window
+winapp ui wait-for "NewDisplayNameBox" -a $Pid -t 8000  # then close/cancel the dialog
+```
+
+**Pass condition**: every `wait-for` succeeds; the app never shows a blank/unclickable
+shell. Run this gate after any XAML change to a page, component, or dialog — it is
+the only automated check that catches the crash class the build cannot.
 
 ## Interactive UI walkthrough
 
