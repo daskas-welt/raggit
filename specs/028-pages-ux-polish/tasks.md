@@ -255,3 +255,9 @@ Task T015: "Standard header card in src/RAGGit.Client.WPF/Views/Pages/SettingsPa
 - Every touched XAML file must be re-checked with `dotnet csharpier format .` (CSharpier formats XAML too)
 - All 25 FRs are covered by T006–T039; the frozen-ID inventory and prohibited clauses live in specs/028-pages-ux-polish/contracts/ui-contracts.md (U8) — consult it while editing any page
 - No task may change the workstation API, any contract, any persisted store, or any frozen automation ID (FR-022/FR-023)
+
+## Phase 9: Convergence
+
+- [ ] T044 Document the two UploadDialog cancel-confirm automation IDs (`ConfirmCancelUploadButton`, `KeepUploadingButton`) in the contracts' new-ID inventory (specs/028-pages-ux-polish/contracts/ui-contracts.md §U8.2) and add them to the frozen-ID audit check (specs/028-pages-ux-polish/quickstart.md item 9) per FR-022 (partial)
+- [ ] T045 Add a repeatable page-load smoke gate to specs/028-pages-ux-polish/quickstart.md that instantiates or drives every page and dialog and catches the XAML-runtime-crash class found in `ba55620` (e.g. a `winapp ui` wait-for pass over each page's primary element after sign-in) — build and all suites stay green through that defect class, so no current gate covers it — per Constitution VI (partial)
+- [ ] T046 Re-verify and record in specs/028-pages-ux-polish/evidence/walkthrough.md the residual items the first walkthrough pass could not exercise: the two post-walkthrough fixes (viewer Dashboard empty state per FR-019/SC-010; clear-then-input-focus per U5.3), High Contrast legibility on the affected surfaces per FR-024, the load-more busy morph per FR-004/U3.3, and the theme-stickiness observation (partial)
