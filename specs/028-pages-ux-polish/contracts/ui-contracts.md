@@ -27,10 +27,14 @@ quick action competing with the title row on any content page.
 
 1. Persistent status/error messages on every page and dialog use one severity-styled
    presentation (InfoBar-based shared component): severity (information/success/warning/
-   danger), message, and — on every asynchronously loading page — a retry action.
+   danger), message, and — on every asynchronously loading primary content page — a
+   retry action (the saved-answer page's exemption is named in 3).
 2. Status text wraps; it is never trimmed or ellipsized on any page.
 3. Load failure on History, My Documents, Admin, Login, Dashboard, Library, and Ask
-   pairs the shared status treatment with a retry action that re-runs the failed load.
+   pairs the shared status treatment with a retry action that re-runs the failed
+   load. The saved-answer detail page is the one exemption (FR-003): its failure
+   recovery is its navigation affordances (Back / "Ask again"), not an in-place
+   retry.
 4. No operating-system-native message box appears anywhere in the client.
 
 **Prohibited**: the hand-rolled Admin status strip; the bare critical TextBlock on Login;
@@ -81,7 +85,10 @@ messages in the store's session view.
 ## U6 — Data surfaces at any window size (FR-014, FR-016, FR-019, SC-005, SC-009, SC-010)
 
 1. Row-level action controls meet the 44-DIP target on every data surface (Library
-   rows rise from 36×32; the standard elsewhere is unchanged).
+   rows rise from 36×32; the standard elsewhere is unchanged). Inline icon controls
+   that live inside content items rather than data-surface rows (chat message copy
+   buttons, the send button) keep their pre-existing compact targets and sit outside
+   this requirement (SC-005's scope).
 2. At content widths ≤720 DIPs, the Library table hides its secondary columns
    (Creator, Created) so Filename, Status, and row actions are usable without horizontal
    scrolling at 800×600; wider widths restore all columns. Dashboard/Admin keep their

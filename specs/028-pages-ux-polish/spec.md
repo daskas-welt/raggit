@@ -19,6 +19,15 @@
 - Q: Should the three task dialogs (Upload, Create Person, Reset Password) become in-window dialogs like the app's confirmation prompts, or stay as separate windows? → A: Create Person and Reset Password convert to the in-window dialog pattern; the Upload dialog stays a separate window with its chrome (title bar, icon, window flags, button widths) aligned to the application standard.
 - Q: Which busy indication should become the app-wide standard when an operation is in flight? → A: In-control busy — the control that started the operation shows the busy state while page content stays visible; initial page content loads keep the shared centered loading treatment.
 
+### Session 2026-10-05
+
+Resolutions of the four spec-level ambiguities surfaced by the requirements-quality review (`checklists/ux.md` CHK011, CHK016, CHK019, CHK026):
+
+- Q: Does FR-001's "every content page" include the Login page? → A: No — Login is the one explicit exemption (centered sign-in card; shared busy/status idioms only, per Story 5). FR-001 now defines "content page" for the header requirement accordingly, matching Contracts U1.3.
+- Q: Does FR-003's retry requirement cover the saved-answer detail page? → A: No — explicitly exempt: its failure recovery is its navigation affordances (Back / "Ask again"), not an in-place retry of a parameterized detail load. FR-003 and Contracts U2.3 now name the exemption.
+- Q: Does SC-005's "100% of interactive controls" target every control, including inline chat controls? → A: No — scoped to row-level action controls on data surfaces; inline icon controls inside content items (chat copy buttons, send button) keep their pre-existing compact targets per the established inline-icon precedent. SC-005 now matches FR-014 and Contracts U6.1.
+- Q: Does clarification Q1's "027 content below the header stays untouched" waive FR-019's role-aware empty states on the Dashboard? → A: No — "untouched" fixes layout and structure ownership only; FR-019 governs empty-state guidance copy on every page, including the Dashboard's. FR-019 now states this precedence explicitly.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Every page reads as one app (Priority: P1)
@@ -27,12 +36,12 @@ A user moving between Dashboard, Library, Ask, the saved-answer page, History, M
 
 **Why this priority**: Consistency debt is the most visible UI problem in the current client; it touches every user on every visit, and unifying it raises the perceived quality of the entire product in one pass.
 
-**Independent Test**: Walk every page and dialog; confirm header, status/error, busy, and refresh treatments are structurally identical, and that every asynchronously loaded page pairs its failures with a retry action.
+**Independent Test**: Walk every page and dialog; confirm header, status/error, busy, and refresh treatments are structurally identical, and that every asynchronously loaded primary content page pairs its failures with a retry action (the saved-answer page recovers via Back / "Ask again" — FR-003's exemption).
 
 **Acceptance Scenarios**:
 
 1. **Given** any two content pages, **When** their headers are compared, **Then** both present a title, a supporting line, and an actions area in the same structure and visual treatment.
-2. **Given** a load failure on any asynchronously loaded page, **When** the failure renders, **Then** it uses the shared status presentation and offers a retry action.
+2. **Given** a load failure on any asynchronously loaded primary content page, **When** the failure renders, **Then** it uses the shared status presentation and offers a retry action (the saved-answer page recovers via Back / "Ask again" instead — FR-003's exemption).
 3. **Given** any in-flight operation, **When** the busy state shows, **Then** it follows the same pattern on every page (no page-specific busy variant).
 4. **Given** the refresh affordance, **When** compared across the pages that offer it, **Then** it is presented the same way everywhere.
 5. **Given** the Settings page, **When** it opens, **Then** it carries the same header treatment as every other content page (baseline: it is the only content page without one).
@@ -126,9 +135,9 @@ A user signing in can press Enter in either credential field to submit, and sees
 
 ### Functional Requirements
 
-- **FR-001**: Every content page MUST present one shared header treatment — page title, supporting line, and actions area — structurally identical across all pages, including the Dashboard (whose header adopts the shared treatment while its existing metric/panel content below stays untouched, and whose profile card moves out of the header row into the content area).
+- **FR-001**: Every content page MUST present one shared header treatment — page title, supporting line, and actions area — structurally identical across all pages, including the Dashboard (whose header adopts the shared treatment while its existing metric/panel content below stays untouched, and whose profile card moves out of the header row into the content area). The Login page is the one explicit exemption: it keeps its centered sign-in card and adopts only the shared busy and status idioms (Story 5); for this requirement, "content page" means every page above except Login.
 - **FR-002**: Persistent status and error messages MUST use one shared severity-styled presentation on every page and dialog (replacing the current four variants).
-- **FR-003**: Every page whose content loads asynchronously MUST pair a load failure with a retry affordance.
+- **FR-003**: Every page whose content loads asynchronously MUST pair a load failure with a retry affordance, with one explicit exemption: the saved-answer detail page, whose failure recovery is its navigation affordances (Back to return to where the question came from, "Ask again" to re-run the question from a populated Ask page) rather than an in-place retry of a parameterized detail load.
 - **FR-004**: Busy indication MUST follow one consistent rule on all pages: an action-initiated operation shows its busy state in the control that started it (page content stays visible), and an initial page content load uses the shared centered loading treatment — no page-specific busy variants.
 - **FR-005**: The refresh affordance MUST be presented identically on every page that offers it.
 - **FR-006**: Every copy affordance MUST confirm success with a brief, non-blocking, self-dismissing notification.
@@ -144,7 +153,7 @@ A user signing in can press Enter in either credential field to submit, and sees
 - **FR-016**: Table-bearing pages MUST degrade gracefully at the minimum supported window size (columns compress or collapse) rather than permanently forcing horizontal scrolling of primary content.
 - **FR-017**: The Login page MUST submit on Enter from either credential field.
 - **FR-018**: The Settings page MUST adopt the standard header treatment, offer an on-demand connection re-check, and make displayed identity values copyable.
-- **FR-019**: Empty-state guidance MUST reference only actions available to the current user (role-aware).
+- **FR-019**: Empty-state guidance MUST reference only actions available to the current user (role-aware) — on every page's empty states, including the Dashboard's; a "content below stays untouched" statement (clarification Q1 / FR-001) fixes layout and structure ownership only and never waives this copy-level requirement.
 - **FR-020**: Spacing, padding, and sizing values on affected surfaces MUST resolve to the documented design-system scale; ad-hoc per-page values MUST be eliminated.
 - **FR-021**: All user-visible micro-copy MUST be single-language, plain, and consistent in tone.
 - **FR-022**: Existing automation identifiers on affected surfaces MUST be preserved; new interactive elements MUST receive stable identifiers.
@@ -159,8 +168,8 @@ A user signing in can press Enter in either credential field to submit, and sees
 - **SC-001**: 100% of content pages use the single shared header treatment (baseline: 4 variants, with Settings lacking a header entirely).
 - **SC-002**: Exactly one status/error presentation idiom exists app-wide (baseline: 4), and zero operating-system-native message boxes (baseline: 1).
 - **SC-003**: 100% of copy affordances show a transient confirmation (baseline: 0%).
-- **SC-004**: 100% of asynchronously loaded pages pair load failure with a retry affordance (baseline: 2 of 7).
-- **SC-005**: 100% of interactive controls meet the application's standard interactive target size (baseline: row and copy buttons on three surfaces below it).
+- **SC-004**: 100% of asynchronously loaded primary content pages pair load failure with a retry affordance (baseline: 2 of 7; the saved-answer detail page is exempt per FR-003).
+- **SC-005**: 100% of row-level action controls on data surfaces meet the application's standard interactive target size (baseline: Library row download/delete buttons at 36×32). Inline icon controls that live inside content items rather than data-surface rows (chat message copy buttons, the send button) keep their pre-existing compact targets and are outside this criterion's scope.
 - **SC-006**: In a 10+ exchange conversation, the newest message is visible without manual scrolling after every exchange.
 - **SC-007**: "Ask again" populates the Ask page with the original question on every attempt, from both History and the saved-answer page (baseline: intermittently empty).
 - **SC-008**: Long error messages remain fully readable on every page (baseline: silently truncated on two pages).

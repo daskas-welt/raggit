@@ -101,7 +101,7 @@ capture pitfall).
 | Check | Contract | Pass condition |
 |-------|----------|----------------|
 | Header parity | U1 | 8/8 content pages share one header structure; Dashboard profile on post-header row; single-language copy |
-| Status + retry | U2 | one InfoBar-based idiom app-wide; retry on every async page; wrapped long errors; zero native message boxes |
+| Status + retry | U2 | one InfoBar-based idiom app-wide; retry on every async primary content page (saved-answer page exempt); wrapped long errors; zero native message boxes |
 | Busy | U3 | 100% in-control for action-initiated busy; conversation visible while answering; no duplicate dispatch |
 | Feedback | U4 | 100% copy affordances confirm; download in-flight/success/failure all signaled; sign-out and cancel-mid-upload confirm |
 | Conversation | U5 | auto-scroll after every exchange; ask-again populated on every attempt; clear works |
