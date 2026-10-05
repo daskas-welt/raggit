@@ -243,3 +243,164 @@ All four walkthrough findings were addressed after the evidence run; build
    (pre-existing; renaming them would violate FR-022).
 4. **Theme-override observation** — left as the noted stable-machine
    verification item (not a defect; no in-app High Contrast switch exists).
+
+## Convergence verification (2026-10-05, T046)
+
+Second walkthrough pass covering the T045 smoke gate plus every residual
+item from "Not exercised" / "Follow-up resolutions" above. Verdict: **all
+items PASS except High Contrast, which remains honestly not-exercised**
+(reason below). The earlier "PASS (…follow-up)" rows are now fully PASS
+with no caveats, except where noted.
+
+### Environment (same shape as the first pass)
+
+- **API**: same exe/CWD/ports as above (PID 19132); rebuilt client only —
+  `RAGGit.Client.WPF` rebuilt 2026-10-05 from current source (includes
+  `edea5f4` post-walkthrough fixes; the 10-02 binary predated them by
+  ~1 min). Full-solution rebuild otherwise clean; the only build errors
+  were MSB3021/3027 copy-locks on the *running API's* DLLs (known
+  gotcha: stop the API before building it — the client DLL built fine).
+- **Client**: PID 6416, output `appsettings.json` still carries
+  `walk-admin-key` (rebuild did not overwrite it). Accounts `walker`
+  (Admin) / `viewer` (Employee), `Passw0rd!` — both re-verified via
+  `POST /api/auth/login` (HTTP 200) before driving the UI.
+- **Seed data**: library EMPTY (0/0 entries, admin copy "Upload a document
+  to see it here." confirmed for walker in `76`-era Library shot);
+  walker history seeded to **26 items** for the load-more check (21 via
+  `POST /api/queries` as walker — empty-library asks answer in
+  ~111–151 ms with `no relevant content found`, no generation — plus 5
+  from UI/previous runs). Dev-DB-only side effect; integration suites use
+  their own output-dir DBs.
+- **Driver friction (shared console session)**: the app window was
+  repeatedly minimized to 160×28 by session dynamics (5+ restores via
+  ShowWindow/SetForegroundWindow) and `send-input`/screen-capture refuse
+  when not foreground. UIA `search`/`wait-for`/`invoke`/`set-value` work
+  backgrounded; all gates below re-ran green after restores. The first
+  pass's "theme revert" observation was NOT reproduced (see F).
+
+### A. Page-load smoke gate (T045) — PASS with one gate-text fix
+
+Page gates 8/8 PASS as walker (`smoke-pages.ps1`: Dashboard, Library,
+Ask, History, MyDocs, Admin, Settings, plus History → ViewQueryButton →
+saved-answer `AskAgainButton` — walker's prior history made this
+runnable with no extra setup):
+
+- **Dialogs**: CreatePerson opens (`AddPersonButton` → `NewDisplayNameBox`
+  found in 202 ms), renders fully in-window (`77-t046-create-person.png`),
+  Escape dismisses it (`NewDisplayNameBox --gone`), single window remains
+  — PASS. UploadDialog opens as its own window ("Upload Documents"),
+  renders drop zone + queue empty state + Upload/Close footer
+  (`75-t046-upload-dialog.png`), Close dismisses with no confirm (nothing
+  in flight — correct), single window remains — PASS. The
+  cancel-mid-upload confirm path stays covered by the first pass
+  (`50/51/52-…`); it was not re-run (no in-flight upload staged).
+- **Gate-text defect (docs, fixed separately)**: the quickstart line
+  `wait-for "UploadDropArea"` can never succeed — the AutomationId sits
+  on a `Border`, which gets no UIA peer (full-tree inspect of the dialog
+  shows only the inner "Drop files here or browse…" text, the
+  `AddFilesButton`, Upload and Close buttons). The gate now waits for
+  `AddFilesButton` instead (same crash-class coverage: dialog
+  instantiated and interactive). Static frozen-ID audit still passes
+  (the ID exists in XAML).
+- Sign-in itself exercised the keyboard path: transient UIA flakiness at
+  cold start (`wait-for UsernameBox` passed, then `set-value` failed) —
+  after the tree settled, `set-value` + `invoke SignInButton` signed in
+  cleanly (`70-t046-login-start.png`).
+
+### B. Viewer Dashboard empty state (FR-019/SC-010 fix) — PASS
+
+- As viewer on the empty library: whole-dashboard state reads "No
+  documents yet / Ask a question to get grounded answers, or contact an
+  admin to add documents." (`81-t046-viewer-dashboard.png`); UIA search
+  for `pload` (Upload/upload) returns **0 matches** — the word never
+  appears. (Panels collapse when fully empty, so only this state shows.)
+- After asking one question as viewer (`no relevant content found`,
+  ~15 s via UI): "Recent documents" panel appears with its own "No
+  documents yet" + the same viewer copy (`83-t046-viewer-dashboard-queried.png`),
+  and "Recent questions" lists the asked question — both panel-level
+  empty-state bodies verified live.
+- Contrast as walker (Admin): recent-documents panel reads "Open the
+  library to upload your first document." (`84-t046-walker-dashboard.png`).
+
+### C. Clear-then-input-focus (U5.3 fix) — PASS
+
+In Ask with one exchange (`86-t046-ask-before-clear.png`), clicking
+`QueryClearConversationButton` empties to the empty state with Dark
+applied (`87-t046-ask-after-clear.png`, caret visible in the input);
+untargeted `send-keys "focusprobe"` then lands **directly** in
+`ChatInputBox` (`get-value` → `"focusprobe"`, `88-t046-ask-focus-proof.png`).
+Probe text removed afterwards (input verified empty).
+
+### D. Load-more busy morph (FR-004/U3.3) — PASS, exercised live
+
+History/MyDocs page size is 20 (`HistoryViewModel._limit = 20`,
+`DocumentsMineViewModel._limit = 20`; Library default 25). With 26
+walker questions, `LoadMoreButton` is present (`89-…-before.png`,
+Q21–Q17). Scrolling needed workarounds: wheel over the header scrolls
+the nav/content unreliably, `scroll-into-view` reports no scrollable
+ancestor — `focus "LoadMoreButton"` scrolls it into view
+(`95-t046-history-focused.png`, idle ↓ arrow visible).
+
+- With the API process suspended (frozen mid-request, same technique as
+  the first pass's upload test), invoking LoadMore holds `IsBusy`: the
+  header refresh morphs to a spinning ring with content visible
+  (`92-t046-history-loadmore-busy.png`), AND the Load More button itself
+  morphs ↓-arrow → blue ProgressRing, label intact
+  (`96-t046-history-loadmore-ring.png`) — the exact shared-pattern morph
+  from `HistoryPage.xaml:180-193`. Content never blanks.
+- API resumed → 6 remaining items append (Q1 visible), `HasMore=false`,
+  `LoadMoreButton --gone` (`97-t046-history-loadmore-done.png`).
+
+### E. High Contrast legibility (FR-024) — still not exercised (reason)
+
+No in-app HC switch exists (Settings offers Light/Dark radios only —
+`79/80/98-…`); OS High Contrast is OFF (`SPI_GETHIGHCONTRAST dwFlags=126`,
+bit 0 clear; no HC scheme in the registry). Enabling it would flip the
+display of this **shared, owner-active console session** for everyone
+and require an app restart + full re-walk to be meaningful — not
+imposed. Structural risk stays low: T040 audit bans hard-coded colours
+(token-only rendering) and Dark/Light are both verified legible
+(`25/26/27-…`, `87/88/96/97/98-…`).
+
+### F. Theme stickiness — PASS (earlier observation not reproduced)
+
+Dark selected in Settings at 11:43:02. Still Dark at 11:52+ across
+Dashboard → Library → Ask → History → Settings navigation, repeated
+minimize/restore cycles, and API suspend/resume (`98-t046-dark-persist.png`
+shows the Dark radio selected on a fully Dark Settings page; every
+screenshot since 11:43 renders Dark). The first pass's Light-revert is
+attributed to the same session dynamics that minimize background
+windows here — no product defect indicated.
+
+### Defects / follow-ups from this pass
+
+1. **Fixed (docs, separate commit)** — smoke-gate `UploadDropArea`
+   wait-for replaced with `AddFilesButton` (Border has no UIA peer; see A).
+2. **Follow-up (pre-existing, not 028)** — `LoadMoreButton`
+   (History/DocumentsMine) exposes an AutomationId but no
+   `AutomationProperties.Name` (UIA shows a nameless Button + a separate
+   "Load more" text). Screen-reader users get the text, but the button
+   itself is unnamed. Consider adding `Name="Load more"` if those pages
+   are ever touched again. [Priority: Low]
+   (Ref: `src/RAGGit.Client.WPF/Views/Pages/HistoryPage.xaml:169-179`,
+   `DocumentsMinePage.xaml:143-151`)
+
+## Not exercised (updated 2026-10-05 — items now covered struck through)
+
+- ~~Load-more busy ring: needs >25 documents (`HasMore` false here).~~
+  Exercised live (D): 26 seeded questions, History limit 20, ring
+  captured on the button itself.
+- ~~Viewer Dashboard empty state / clear-then-input-focus: post-walkthrough
+  fixes.~~ Both verified live (B, C).
+- Full password-reset submission: would invalidate the walkthrough account;
+  confirm/decline paths verified.
+- 10-exchange conversation: 5 exchanges verified (4 first pass + 1 this
+  pass); per-exchange auto-scroll identical, ~25 s Ollama latency each.
+- High Contrast theme: no in-app switch (Light/Dark only); OS-level toggle
+  requires changing the shared console session's display — not imposed (E).
+- Ask-again from a cold Ask page (Ask never visited): History path verified;
+  same singleton read-on-Loaded mechanism.
+- Re-check/sign-in ring captures: sub-second locally; morph XAML is the
+  shared verified pattern.
+- ~~Theme stickiness:~~ Dark persisted ~9+ min across pages (F); earlier
+  revert attributed to session dynamics.
