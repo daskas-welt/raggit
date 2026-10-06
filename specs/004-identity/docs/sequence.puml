@@ -13,7 +13,7 @@ sequenceDiagram {
 }
 </style>
 actor Operator as op
-participant "WinUI client" as client
+participant "WPF client" as client
 participant "workstation-api" as api
 database "users-db" as users
 participant "jwt-auth" as jwt

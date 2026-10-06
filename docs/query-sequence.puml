@@ -15,7 +15,7 @@ skinparam defaultFontSize 16
 skinparam sequenceArrowThickness 2
 
 actor Employee as employee
-participant "WinUI app" as app
+participant "WPF app" as app
 participant "workstation-api" as api
 participant "Retrieval\ntopK=5 + MinScore" as retrieval
 database "LanceDB" as lancedb
@@ -24,7 +24,7 @@ participant "Ollama :11434" as ollama
 employee -> app : asks in plain language
 app -> api : POST /api/queries\n(X-Api-Key or Bearer)
 api -> retrieval : embed question
-retrieval -> ollama : embed (nomic-embed)
+retrieval -> ollama : embed (arctic-embed2)
 ollama --> retrieval : query vector
 retrieval -> lancedb : vector search topK=5
 lancedb --> retrieval : chunks + scores

@@ -1,7 +1,7 @@
 # Security & Distribution Policy
 
 RAGGit is a **single-tenant, on-premises** RAG system. This document describes
-how deployments stay proprietary and how secrets are handled.
+how deployments stay secure and how secrets are handled.
 
 ## Single-Tenant Model
 
@@ -22,15 +22,13 @@ how deployments stay proprietary and how secrets are handled.
 
 ## Distribution
 
-- **Windows 11 desktop**: packaged as a signed MSIX using a company-owned code
-  signing certificate. Publish with:
+- **Windows desktop (10 1809+ / 11)**: published as a self-contained executable
+  from `src/RAGGit.Client.WPF` (`net10.0-windows10.0.17763.0`) and distributed
+  privately inside the single-tenant environment — no Store/MSIX step. Publish
+  with:
   ```powershell
-  dotnet publish src/RAGGit.Client.Maui -c Release -f net8.0-windows10.0.19041.0
+  dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
   ```
-- **Android**: sideloaded or distributed via private MDM; never via public app
-  stores.
-- **iOS**: enterprise or Ad-Hoc distribution; requires a Mac build host and
-  company Apple Developer Enterprise certificate.
 
 ## Data Exclusion
 

@@ -1,5 +1,5 @@
 @startuml RAGGit Architecture
-' RAGGit - single-tenant offline RAG (WinUI 3 + Workstation API)
+' RAGGit - single-tenant offline RAG (WPF + Workstation API)
 ' Presentation SVG: docs/images/architecture.svg via PlantUML tooling
 ' (Official JS engine dialect: rectangle/actor/package/database + arrows
 '  + notes. Avoid [bracket] components and : trailing labels on
@@ -25,7 +25,7 @@ actor Employee as employee
 actor Admin as admin
 
 package "Employee PCs\nordinary office PCs" {
-  rectangle "WinUI app\nNavigationView + chat" as winui
+  rectangle "WPF app\nNavigationView + chat" as app
   rectangle "Client.Core\nViewModels + HttpClient" as core
 }
 
@@ -38,9 +38,9 @@ package "AI workstation PC\ncompany network" {
   rectangle "Ollama :11434\nembed + generate" as ollama
 }
 
-employee --> winui : asks
-admin --> winui : uploads (<100MB)
-winui --> core : binds
+employee --> app : asks
+admin --> app : uploads (<100MB)
+app --> core : binds
 core --> api : HTTPS over LAN/VPN
 api --> retrieval : query path
 api --> ingest : ingest path

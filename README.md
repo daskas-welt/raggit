@@ -1,106 +1,102 @@
-# RAGGit — Your Company's Private AI Library
+# RAGGit
 
-RAGGit turns your company's documents into a private library your people can
-search and ask questions about — in plain language, with answers that always
-show their sources.
+A private, on-premises retrieval-augmented generation (RAG) system: it turns a
+company's documents into a searchable library people can ask questions of in
+plain language — every answer shows the passages it came from.
 
-**The short version for decision-makers:**
+Everything runs on hardware you control. Documents never leave your network,
+and answers are grounded in cited passages instead of being guessed.
 
-- **Private by design.** Everything runs on computers your company owns. Your
-  documents are never sent to the cloud, not even to answer a question.
-- **One company, one library.** Each installation serves exactly one company.
-  There is no sharing between companies and no outside access.
-- **Answers with proof.** Every answer names the documents and passages it
-  came from. If nothing relevant exists, it says so instead of guessing.
-- **Everyone gets their own account.** Admins manage documents and people;
-  employees search and ask. People only ever see what they are allowed to see.
+## Features
+
+- **Private by design** — runs fully on-premises; no cloud, no query-time internet.
+- **Single-tenant** — one installation serves one company; no cross-company sharing.
+- **Grounded answers** — every answer cites its source chunks, or returns
+  exactly "no relevant content found" instead of hallucinating.
+- **Per-user access** — admins manage documents and accounts; employees search
+  and ask, and only ever see what they are allowed to see.
 
 ## How it works
 
-1. **One powerful AI workstation** — a separate, capable machine on your
-   company network (good CPU, 16GB+ RAM, a GPU helps, 10GB free disk) —
-   stores your documents and runs the AI. No internet needed once it is set
-   up. This machine does all the heavy work, so nothing else needs to be
-   powerful.
-2. **Ordinary Windows PCs** run a simple desktop app that talks to the
-   workstation over your office network or VPN. Any modest office PC works —
-   no AI hardware needed on desks.
-3. **Admins upload documents** (PDF, Word, Excel, text...) from their PC.
-   The workstation reads and indexes them automatically.
-4. **Employees ask questions** in everyday language and get answers with
-   citations they can click through to verify.
+An **AI workstation** — a capable machine on your network running
+[Ollama](https://ollama.com) — stores documents, builds the vector index, and
+answers queries. **Ordinary Windows PCs** run the desktop client, which talks
+to the workstation over the LAN or VPN.
 
 ![RAGGit system architecture](docs/images/architecture.svg)
-*Where everything lives: the desktop app talks to one AI workstation on
-your network — documents, accounts, and answers never leave it.*
+*System topology: the WPF desktop client talks to one workstation over the
+LAN/VPN; documents, accounts, and answers stay on that machine.*
 
 ![Asking with citations](docs/images/query-sequence.svg)
-*What happens when someone asks: the workstation finds the relevant
-passages and answers with named sources — or says nothing relevant
-exists instead of guessing.*
+*What happens on a query: the workstation retrieves the relevant passages and
+answers with named sources — or says nothing relevant exists instead of
+guessing.*
 
 ![Accounts and sessions](docs/images/identity-sequence.svg)
-*How people get in: an operator creates accounts, staff sign in for
-8-hour sessions, admins manage access.*
+*How people get in: an operator creates accounts, staff sign in for 8-hour
+sessions, admins manage access.*
 
-Sources: [architecture](docs/architecture.puml) ·
-[query flow](docs/query-sequence.puml) ·
-[identity flow](specs/004-identity/docs/sequence.puml)
-(rendered with PlantUML tooling).
+## Running it (developers)
 
-## Key promises
-
-- **Works offline.** Pull the internet plug and searching still works —
-  this is tested automatically on every change.
-- **No guessing.** No relevant documents means a clear "no relevant content
-  found", never a made-up answer.
-- **No vendor lock-in on your data.** Documents and the library live in
-  standard files on your own machines.
-
-## Getting the app
-
-- **Employees**: install from the company intranet page (link from IT),
-  then sign in — full walkthrough: [Installing the RAGGit App](docs/install.md).
-  The app updates itself; releases are signed with the company certificate
-  and served internally (never downloaded from GitHub).
-- **Operators**: release steps (sign → publish to intranet → version care):
-  [Publishing guide](docs/publish.md). Note the manifest `Publisher` must
-  match the release signing certificate.
-
-## Trying it (developers)
-
-You need .NET 8 and, for the AI part, [Ollama](https://ollama.com)
-(free, runs locally). Roughly:
+Requirements: **.NET 10** (pinned by `global.json`) and
+[Ollama](https://ollama.com) for the AI part.
 
 ```powershell
-git clone https://github.com/daskas-welt/raggit.git; cd raggit
-dotnet build RAGGit.sln
-ollama pull snowflake-arctic-embed2; ollama pull qwen2.5:3b
+git clone https://github.com/daskas-welt/raggit.git
+cd raggit
+dotnet build RAGGit.sln -c Release -p:Platform=x64
+ollama pull snowflake-arctic-embed2
+ollama pull qwen2.5:3b
 dotnet run --project src/RAGGit.Workstation.Api --urls https://localhost:5001
 ```
 
-Full step-by-step (accounts, desktop app, offline check, MSIX install):
-[Quickstart](specs/001-offline-mode/quickstart.md) ·
-[Workstation runbook](docs/workstation.md) ·
-[Publishing guide](docs/publish.md) ·
-[Operator guide](docs/operator-cli.md)
+The API listens on `https://localhost:5001` by default. Building the full
+solution needs Windows (it includes the WPF client); without the client, build
+the server filter instead: `dotnet build RAGGit.Server.slnf -c Release`.
 
-Inspect a populated vector index read-only in your browser:
-[Lance data viewer](docs/workstation.md#inspecting-the-vector-index-read-only).
+The desktop client (`src/RAGGit.Client.WPF`) needs both `Workstation:Url` and
+`Workstation:ApiKey` in its `appsettings.json` before it will connect.
 
-## Project map (for contributors)
+Run the tests with:
+
+```powershell
+dotnet test tests/unit/RAGGit.Tests.Unit.csproj -c Release
+dotnet test tests/contract/RAGGit.Tests.Contract.csproj -c Release
+dotnet test tests/integration/RAGGit.Tests.Integration.csproj -c Release
+```
+
+`RequiresOllama` tests are skipped automatically when Ollama is not running, so
+the suite stays green offline.
+
+More: [workstation runbook](docs/workstation.md) ·
+[operator CLI](docs/operator-cli.md) ·
+[publishing guide](docs/publish.md) ·
+[architecture notes](docs/architecture.md).
+
+## Installing the app (end users)
+
+The desktop client is built, signed, and distributed **per deployment by each
+company's IT** — there is no public binary download, because the app is only
+useful against a running workstation (it needs that workstation's URL and API
+key to connect).
+
+- **Employees**: see the [install guide](docs/install.md). IT sends you a link;
+  installing takes about two minutes.
+- **IT / operators**: see the [publishing guide](docs/publish.md) for building
+  and distributing the client.
+
+## Project structure
 
 - `src/RAGGit.Workstation.Api` — the workstation web service
-- `src/RAGGit.Client.WPF` — the Windows desktop app (WPF + WPF-UI)
-- `src/RAGGit.Core`, `RAGGit.Ingest`, `RAGGit.Retrieval`, `RAGGit.Client.Core` — shared libraries
-- `specs/` — feature specifications, plans, and verification records
-- `docs/` — architecture diagrams, performance and publishing guides
-- `.specify/memory/constitution.md` — the project's governing principles (v1.3.0)
-
-Current release: `1.4.0`. Full version history and API details live in the
-[specs](specs/) and [docs](docs/) folders, not in this file.
+- `src/RAGGit.Client.WPF` — the Windows desktop client (WPF + WPF-UI)
+- `src/RAGGit.Client.Core` — shared client logic (view models, API clients)
+- `src/RAGGit.Core` — shared domain types
+- `src/RAGGit.Ingest` — document ingestion and chunking
+- `src/RAGGit.Retrieval` — vector search and grounded prompt assembly
+- `tests/` — unit, contract, and integration tests
+- `docs/` — architecture, workstation, publishing, and operator guides
 
 ## License
 
-Proprietary — all rights reserved. AI models stay on customer-owned
-workstations and are never redistributed.
+[MIT](LICENSE) © 2026 Andreas Daskalopoulos. AI models stay on customer-owned
+workstations and are never redistributed by this project.
