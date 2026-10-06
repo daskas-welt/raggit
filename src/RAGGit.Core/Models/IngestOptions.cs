@@ -49,4 +49,22 @@ public sealed class IngestOptions
     /// Absolute expiration for chunk-cache entries.
     /// </summary>
     public TimeSpan ChunkCacheTtl { get; set; } = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// How often the maintenance worker checks whether the vector store needs
+    /// compaction/indexing once ingest has drained. Default: 30 seconds.
+    /// </summary>
+    public TimeSpan MaintenanceInterval { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// LanceDB <c>Optimize</c> retention: fragments and versions older than
+    /// this are compacted and pruned. Default: 7 days.
+    /// </summary>
+    public TimeSpan MaintenanceCleanupOlderThan { get; set; } = TimeSpan.FromDays(7);
+
+    /// <summary>
+    /// Row count below which maintenance skips building the vector index
+    /// (brute-force search is faster on small tables). Default: 10,000.
+    /// </summary>
+    public int VectorIndexThresholdRows { get; set; } = 10_000;
 }

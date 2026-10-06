@@ -15,6 +15,8 @@ public sealed class IngestWorkQueue
     private readonly Channel<Guid> _queue = Channel.CreateUnbounded<Guid>();
     private readonly IngestService _ingestService;
     private readonly ILogger<IngestWorkQueue> _logger;
+    private int _outstanding;
+    private int _dirty;
 
     public IngestWorkQueue(IngestService ingestService, ILogger<IngestWorkQueue> logger)
     {
@@ -49,10 +51,33 @@ public sealed class IngestWorkQueue
         }
 
         await _queue.Writer.WriteAsync(documentId, cancellationToken);
+        Interlocked.Increment(ref _outstanding);
+        MarkDirty();
     }
 
     public IAsyncEnumerable<Guid> ReadAllAsync(CancellationToken cancellationToken) =>
         _queue.Reader.ReadAllAsync(cancellationToken);
+
+    /// <summary>
+    /// Documents published but not yet finished (success or failure). Zero
+    /// means ingest has drained — the trigger for maintenance.
+    /// </summary>
+    public int OutstandingCount => Volatile.Read(ref _outstanding);
+
+    /// <summary>Called by a worker once a document is settled.</summary>
+    public void MarkProcessed() => Interlocked.Decrement(ref _outstanding);
+
+    /// <summary>
+    /// Flags that ingest happened since the last maintenance pass. Set on
+    /// enqueue and again on maintenance failure so the work is not lost.
+    /// </summary>
+    public void MarkDirty() => Interlocked.Exchange(ref _dirty, 1);
+
+    /// <summary>
+    /// Returns whether ingest happened since the last call, clearing the flag.
+    /// The maintenance worker consumes this only when the queue has drained.
+    /// </summary>
+    public bool ConsumeDirty() => Interlocked.Exchange(ref _dirty, 0) == 1;
 }
 
 public sealed class IngestWorker : BackgroundService
@@ -127,6 +152,10 @@ public sealed class IngestWorker : BackgroundService
                     "Document ingest worker failed for {DocumentId}",
                     documentId
                 );
+            }
+            finally
+            {
+                _queue.MarkProcessed();
             }
         }
     }

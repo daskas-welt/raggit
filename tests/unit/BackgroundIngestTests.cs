@@ -182,6 +182,37 @@ public sealed class BackgroundIngestTests
         (await ReadPublishedAsync(queue)).Should().ContainSingle().Which.Should().Be(staged.Id);
     }
 
+    [Fact]
+    public async Task Queue_TracksOutstandingAndDirty_UntilProcessed()
+    {
+        using var fixture = new IngestFixture();
+        var bytes = Encoding.UTF8.GetBytes("tracked content");
+        var (staged, _) = await fixture.Service.StageAsync(
+            new MemoryStream(bytes),
+            "tracked.txt",
+            DocumentMimeType.Txt,
+            bytes.Length,
+            "tester"
+        );
+        var queue = new IngestWorkQueue(fixture.Service, NullLogger<IngestWorkQueue>.Instance);
+
+        queue.OutstandingCount.Should().Be(0);
+        queue.ConsumeDirty().Should().BeFalse("nothing has been ingested yet");
+
+        await queue.EnqueueAsync(staged.Id);
+
+        queue.OutstandingCount.Should().Be(1);
+        queue.ConsumeDirty().Should().BeTrue();
+        queue.ConsumeDirty().Should().BeFalse("the dirty flag is consumed once");
+
+        queue.MarkProcessed();
+        queue.OutstandingCount.Should().Be(0);
+
+        // A failed maintenance pass re-arms the flag so the next drained tick retries.
+        queue.MarkDirty();
+        queue.ConsumeDirty().Should().BeTrue();
+    }
+
     private static async Task<IReadOnlyList<Guid>> ReadPublishedAsync(IngestWorkQueue queue)
     {
         var published = new List<Guid>();

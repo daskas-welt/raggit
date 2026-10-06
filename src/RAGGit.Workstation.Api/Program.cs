@@ -313,6 +313,7 @@ builder.Services.Configure<RetrievalOptions>(builder.Configuration.GetSection("R
 builder.Services.Configure<GenerationOptions>(builder.Configuration.GetSection("Generation"));
 builder.Services.AddSingleton<IngestWorkQueue>();
 builder.Services.AddHostedService<IngestWorker>();
+builder.Services.AddHostedService<LanceDbMaintenanceWorker>();
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<RAGGit.Ingest.IngestService>();

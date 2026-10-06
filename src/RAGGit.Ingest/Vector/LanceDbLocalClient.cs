@@ -84,25 +84,10 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 new CreateTableOptions { Schema = schema, ExistOk = true }
             );
 
-            // Best-effort HNSW index creation. Already indexed or empty tables are ignored.
-            try
-            {
-                await _table.CreateIndex(
-                    new[] { "vector" },
-                    new HnswFlatIndex
-                    {
-                        DistanceType = DistanceType.Cosine,
-                        NumEdges = 16,
-                        EfConstruction = 128,
-                    },
-                    waitTimeout: TimeSpan.FromSeconds(30)
-                );
-            }
-            catch
-            {
-                // Index may already exist or the table may be too small to index.
-            }
-
+            // No index here: LanceDB cannot build a vector index on an empty
+            // table ("cannot be created without training"), and creating one at
+            // table-creation time silently always failed. Indexing is owned by
+            // the maintenance pass (EnsureVectorIndexAsync) once data exists.
             _initialized = true;
             return _table;
         }
@@ -197,6 +182,79 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         {
             _writeLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Compacts fragments and prunes versions older than
+    /// <paramref name="cleanupOlderThan"/>. Serialized against writes so it
+    /// never races ingest. Safe to call when idle.
+    /// </summary>
+    public async Task<lancedb.OptimizeStats> OptimizeAsync(
+        TimeSpan cleanupOlderThan,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var table = await EnsureTableAsync(cancellationToken);
+            return await table.Optimize(cleanupOlderThan: cleanupOlderThan);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Builds the HNSW vector index when the table has no vector index and
+    /// holds at least <paramref name="thresholdRows"/> rows. Returns
+    /// <c>true</c> when a vector index (already) exists, <c>false</c> when the
+    /// table is still below the threshold.
+    /// </summary>
+    public async Task<bool> EnsureVectorIndexAsync(
+        int thresholdRows,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var table = await EnsureTableAsync(cancellationToken);
+
+            if (await HasVectorIndexAsync(table))
+            {
+                return true;
+            }
+
+            var rows = await table.CountRows();
+            if (rows < thresholdRows)
+            {
+                return false;
+            }
+
+            await table.CreateIndex(
+                new[] { "vector" },
+                new HnswFlatIndex
+                {
+                    DistanceType = DistanceType.Cosine,
+                    NumEdges = 16,
+                    EfConstruction = 128,
+                },
+                waitTimeout: TimeSpan.FromMinutes(5)
+            );
+            return true;
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    private static async Task<bool> HasVectorIndexAsync(lancedb.Table table)
+    {
+        var indices = await table.ListIndices();
+        return indices.Any(index => index.Columns?.Contains("vector") == true);
     }
 
     /// <summary>
