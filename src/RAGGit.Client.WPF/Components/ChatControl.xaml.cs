@@ -145,6 +145,23 @@ public partial class ChatControl : UserControl
 
         var newest = MessagesList.Items[MessagesList.Items.Count - 1];
         MessagesList.ScrollIntoView(newest);
+        // ScrollIntoView brings the item into view, which for a long answer
+        // lands on its tail. A long answer should arrive with its opening
+        // visible (029, FR-014), so align the newest item to the top of the
+        // viewport once it has been realized.
+        Dispatcher.BeginInvoke(
+            () =>
+            {
+                if (
+                    MessagesList.ItemContainerGenerator.ContainerFromItem(newest)
+                    is FrameworkElement container
+                )
+                {
+                    container.BringIntoView(new Rect(0, 0, container.ActualWidth, 1));
+                }
+            },
+            System.Windows.Threading.DispatcherPriority.Loaded
+        );
     }
 
     private void InputBox_KeyDown(object sender, KeyEventArgs e)

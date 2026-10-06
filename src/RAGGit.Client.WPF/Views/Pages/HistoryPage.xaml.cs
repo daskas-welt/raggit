@@ -26,6 +26,9 @@ public partial class HistoryPage : Page
         };
     }
 
+    private void OnClearSearchClicked(object sender, RoutedEventArgs e) =>
+        ViewModel.SearchText = string.Empty;
+
     private void OnListDoubleClicked(object sender, MouseButtonEventArgs e)
     {
         if ((sender as ListView)?.SelectedItem is HistoryItem item)

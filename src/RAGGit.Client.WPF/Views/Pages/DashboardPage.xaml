@@ -182,6 +182,62 @@
                     </ui:Card>
                 </Grid>
 
+                <!-- Loading placeholders (feature 029, FR-007): the final layout with em dashes
+                     instead of numbers, so a first load never shows a blank area or a fabricated
+                     count. Em dashes are visibly not data. -->
+                <WrapPanel Grid.Row="2" Margin="0,4,0,0" Orientation="Horizontal">
+                    <WrapPanel.Style>
+                        <Style TargetType="WrapPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding HasLoaded}" Value="False" />
+                                        <Condition Binding="{Binding IsBusy}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </WrapPanel.Style>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Documents" />
+                        </StackPanel>
+                    </ui:Card>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Ready" />
+                        </StackPanel>
+                    </ui:Card>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Indexing" />
+                        </StackPanel>
+                    </ui:Card>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Failed" />
+                        </StackPanel>
+                    </ui:Card>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Questions" />
+                        </StackPanel>
+                    </ui:Card>
+                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                        <StackPanel Margin="14,12" VerticalAlignment="Center">
+                            <ui:TextBlock FontTypography="Title" Text="—" />
+                            <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Mine" />
+                        </StackPanel>
+                    </ui:Card>
+                </WrapPanel>
+
                 <!-- Metric cards: icon + count + label; wrap at narrow widths. Hidden until a
                      load has succeeded, so a first-load failure never presents the initial
                      zeros as loaded data. -->
@@ -233,6 +289,7 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Documents"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Open library" />
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -274,6 +331,7 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Ready"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Open library" />
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -315,6 +373,7 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Indexing"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Open library" />
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -344,20 +403,27 @@
                                 >
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
+                                            <!-- Neutral unless the latest load succeeded with failures.
+                                                 A failed refresh must not keep the error glyph up over
+                                                 the error status (029, FR-007). -->
                                             <Setter Property="FontSize" Value="24" />
-                                            <Setter Property="Symbol" Value="ErrorCircle24" />
+                                            <Setter Property="Symbol" Value="CheckmarkCircle24" />
                                             <Setter
                                                 Property="Foreground"
-                                                Value="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                                Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
                                             />
                                             <Style.Triggers>
                                                 <DataTrigger
-                                                    Binding="{Binding FailedDocuments}"
-                                                    Value="0"
+                                                    Binding="{Binding HasFailedDocuments}"
+                                                    Value="True"
                                                 >
                                                     <Setter
+                                                        Property="Symbol"
+                                                        Value="ErrorCircle24"
+                                                    />
+                                                    <Setter
                                                         Property="Foreground"
-                                                        Value="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                                                        Value="{ui:ThemeResource SystemFillColorCriticalBrush}"
                                                     />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -375,6 +441,37 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Failed"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Open library" />
+                                <!-- Shown only when a load succeeded and failures exist, so attention
+                                     styling can never paint over an error state (FR-007). -->
+                                <ui:TextBlock
+                                    x:Name="DashboardMetricFailedAttention"
+                                    AutomationProperties.AutomationId="DashboardMetricFailedAttention"
+                                    FontTypography="Caption"
+                                    Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                    Text="Needs attention"
+                                >
+                                    <ui:TextBlock.Style>
+                                        <Style TargetType="ui:TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition
+                                                            Binding="{Binding HasLoaded}"
+                                                            Value="True"
+                                                        />
+                                                        <Condition
+                                                            Binding="{Binding HasFailedDocuments}"
+                                                            Value="True"
+                                                        />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:TextBlock.Style>
+                                </ui:TextBlock>
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -416,6 +513,7 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Questions"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Ask the library" />
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -454,6 +552,7 @@
                                     TextTrimming="CharacterEllipsis"
                                     Text="Mine"
                                 />
+                                <ui:TextBlock FontTypography="Caption" Text="Open my documents" />
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
@@ -669,22 +768,25 @@
                         VerticalContentAlignment="Stretch"
                     >
                         <Grid RowDefinitions="Auto, *">
-                            <Grid Margin="0,0,0,12" ColumnDefinitions="*, Auto">
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="47*"/>
+                                    <ColumnDefinition Width="226*"/>
+                                </Grid.ColumnDefinitions>
                                 <ui:TextBlock
                                     Grid.Column="0"
                                     FontTypography="Title"
                                     VerticalAlignment="Center"
-                                    Text="Recent questions"
+                                    Text="Recent questions" Grid.ColumnSpan="2" Margin="0,0,44,0"
                                 />
                                 <ui:Button
                                     Grid.Column="1"
                                     Width="44"
                                     Height="44"
-                                    VerticalAlignment="Center"
                                     AutomationProperties.AutomationId="DashboardAskButton"
                                     AutomationProperties.Name="Ask the library"
                                     Click="OnAskClicked"
-                                    ToolTip="Ask the library"
+                                    ToolTip="Ask the library" Margin="408,0,0,0"
                                 >
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Chat24" />

@@ -22,12 +22,15 @@ public partial class AdminUsersPage : Page
     private ListSortDirection _sortDirection = ListSortDirection.Ascending;
     private bool _compactLayout;
     private bool _restoringRoleSelection;
+    private readonly SearchSessionState _searchSession;
+    private bool _searchReady;
 
     public AdminUsersViewModel ViewModel { get; }
 
     public AdminUsersPage()
     {
         ViewModel = App.Services.GetRequiredService<AdminUsersViewModel>();
+        _searchSession = App.Services.GetRequiredService<SearchSessionState>();
         DataContext = ViewModel;
         InitializeComponent();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -37,6 +40,16 @@ public partial class AdminUsersPage : Page
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         BindUsersView();
+        var savedSearch = _searchSession.Get(SearchSurface.People);
+        if (!string.IsNullOrEmpty(savedSearch))
+        {
+            UserSearchBox.Text = savedSearch;
+        }
+
+        // Combo selection during InitializeComponent also raises OnFiltersChanged.
+        // Ignore those writes so they cannot blank a saved search before it is restored.
+        _searchReady = true;
+        UpdateSortIndicator();
         ApplyResponsiveLayout(AdminLayout.ActualWidth);
         if (ViewModel.Users.Count == 0 && !ViewModel.IsBusy)
         {
@@ -108,7 +121,15 @@ public partial class AdminUsersPage : Page
     private static string SelectedTag(ComboBox combo) =>
         (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? "All";
 
-    private void OnFiltersChanged(object sender, RoutedEventArgs e) => RefreshUsersView();
+    private void OnFiltersChanged(object sender, RoutedEventArgs e)
+    {
+        if (_searchReady)
+        {
+            _searchSession.Set(SearchSurface.People, UserSearchBox.Text);
+        }
+
+        RefreshUsersView();
+    }
 
     private void RefreshUsersView()
     {
@@ -118,10 +139,29 @@ public partial class AdminUsersPage : Page
         }
 
         _usersView.Refresh();
-        if (ViewModel.SelectedUser is { } selected && !_usersView.Contains(selected))
+        var matches = _usersView.Cast<UserAccountDto>().ToList();
+        if (string.IsNullOrWhiteSpace(UserSearchBox.Text))
         {
-            ViewModel.SelectedUser = null;
+            // No search: a person the role/status filters removed must clear the
+            // details panel, as before 029.
+            if (ViewModel.SelectedUser is { } selected && !matches.Contains(selected))
+            {
+                ViewModel.SelectedUser = null;
+            }
         }
+        else
+        {
+            // While a search is active, highlight the first match so the details
+            // panel offers that person's actions without a row click (029, FR-011).
+            // A person the user already highlighted stays highlighted while they
+            // remain visible.
+            ViewModel.SelectedUser = PeopleSearchHighlight.Resolve(
+                UserSearchBox.Text,
+                ViewModel.SelectedUser,
+                matches
+            );
+        }
+
         UpdateDirectorySummary();
     }
 
@@ -164,8 +204,36 @@ public partial class AdminUsersPage : Page
         }
 
         var direction = _sortDirection == ListSortDirection.Ascending ? "ascending" : "descending";
-        SortStatusText.Text = $"Sorted by {header.Content}, {direction}";
+        SortStatusText.Text = $"Sorted by {ColumnLabel(property)}, {direction}";
+        UpdateSortIndicator();
     }
+
+    /// <summary>
+    /// The pinned header shows the active sort from first load, not only after a click (FR-008).
+    /// </summary>
+    private void UpdateSortIndicator()
+    {
+        var arrow = _sortDirection == ListSortDirection.Ascending ? "\u2191" : "\u2193";
+        foreach (var column in PeopleHeader.Children.OfType<GridViewColumnHeader>())
+        {
+            var label = ColumnLabel(column.Tag as string);
+            if (string.IsNullOrEmpty(label))
+            {
+                continue;
+            }
+
+            column.Content = column.Tag as string == _sortProperty ? $"{label} {arrow}" : label;
+        }
+    }
+
+    private static string ColumnLabel(string? tag) =>
+        tag switch
+        {
+            "DisplayName" => "Person",
+            "Role" => "Role",
+            "IsActive" => "Account status",
+            _ => string.Empty,
+        };
 
     private void UpdateDirectorySummary()
     {
@@ -182,6 +250,24 @@ public partial class AdminUsersPage : Page
                 : Visibility.Collapsed;
     }
 
+    private void ApplyPeopleColumnWidths(bool compact)
+    {
+        if (
+            UsersList.View is not System.Windows.Controls.GridView gridView
+            || gridView.Columns.Count < 4
+        )
+        {
+            return;
+        }
+
+        gridView.Columns[1].Width = compact ? 0 : 135;
+        gridView.Columns[2].Width = compact ? 0 : 190;
+        gridView.Columns[3].Width = compact ? 0 : 132;
+        PeopleHeader.ColumnDefinitions[1].Width = new GridLength(compact ? 0 : 135);
+        PeopleHeader.ColumnDefinitions[2].Width = new GridLength(compact ? 0 : 190);
+        PeopleHeader.ColumnDefinitions[3].Width = new GridLength(compact ? 0 : 132);
+    }
+
     private void OnAdminLayoutSizeChanged(object sender, SizeChangedEventArgs e) =>
         ApplyResponsiveLayout(e.NewSize.Width);
 
@@ -194,6 +280,10 @@ public partial class AdminUsersPage : Page
         }
 
         _compactLayout = compact;
+        // Role, status, and the row action collapse at narrow widths; the Person
+        // column stays, and the details panel keeps the collapsed information
+        // reachable (029, FR-009, FR-010).
+        ApplyPeopleColumnWidths(compact);
         if (compact)
         {
             PeopleLayout.ColumnDefinitions[1].Width = new GridLength(0);

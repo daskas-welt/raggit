@@ -137,6 +137,7 @@ public sealed partial class App : Application
         services.AddSingleton(new WpfConnectionState());
         services.AddSingleton<QueryDetailNavigationState>();
         services.AddSingleton<AskNavigationState>();
+        services.AddSingleton<SearchSessionState>();
 
         // Handlers
         services.AddTransient<ApiKeyDelegatingHandler>(_ => new ApiKeyDelegatingHandler(
@@ -152,7 +153,7 @@ public sealed partial class App : Application
             services.AddSingleton(new WpfConnectionState { ErrorMessage = startupConfig.Error });
 
             RegisterInvalidConfigClients(services, session);
-            RegisterViewModels(services);
+            RegisterViewModels(services, configuration);
             RegisterPages(services);
             return services.BuildServiceProvider();
         }
@@ -191,7 +192,7 @@ public sealed partial class App : Application
             })
             .AddHttpMessageHandler<BearerDelegatingHandler>();
 
-        RegisterViewModels(services);
+        RegisterViewModels(services, configuration);
         RegisterPages(services);
 
         return services.BuildServiceProvider();
@@ -219,7 +220,10 @@ public sealed partial class App : Application
         ));
     }
 
-    private static void RegisterViewModels(IServiceCollection services)
+    private static void RegisterViewModels(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
     {
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LibraryViewModel>();
@@ -228,7 +232,22 @@ public sealed partial class App : Application
         services.AddTransient<QueryDetailViewModel>();
         services.AddTransient<DocumentsMineViewModel>();
         services.AddTransient<DashboardViewModel>();
-        services.AddTransient<UploadViewModel>();
+        // Bounded parallel upload: the throttle comes from configuration so a
+        // slow-disk box can dial it down without a rebuild.
+        var uploadConcurrency = int.TryParse(
+            configuration["Workstation:UploadConcurrency"],
+            out var configuredConcurrency
+        )
+            ? configuredConcurrency
+            : UploadViewModel.DefaultMaxConcurrentUploads;
+        services.AddTransient(sp => new UploadViewModel(
+            sp.GetRequiredService<DocumentsApiClient>(),
+            sp.GetRequiredService<IFilePicker>(),
+            sp.GetRequiredService<ClientSession>()
+        )
+        {
+            MaxConcurrentUploads = UploadViewModel.ClampConcurrency(uploadConcurrency),
+        });
         services.AddTransient<AdminUsersViewModel>();
         services.AddTransient<MainWindowViewModel>();
     }

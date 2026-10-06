@@ -61,19 +61,7 @@
         />
 
         <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-            <ui:Button
-                x:Name="CancelCreateButton"
-                AutomationProperties.AutomationId="CancelCreateButton"
-                AutomationProperties.Name="Cancel adding person"
-                Content="Cancel"
-                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
-                Margin="0,0,8,0"
-                Click="OnCancelClicked"
-            >
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Dismiss24" />
-                </ui:Button.Icon>
-            </ui:Button>
+            <!-- Confirming action first, dismissing action last (029, FR-012). -->
             <ui:Button
                 x:Name="CreateUserButton"
                 AutomationProperties.AutomationId="CreateUserButton"
@@ -82,11 +70,24 @@
                 Appearance="Primary"
                 Content="Create person"
                 MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
+                Margin="0,0,8,0"
                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 Click="OnCreateClicked"
             >
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="PersonAdd24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button
+                x:Name="CancelCreateButton"
+                AutomationProperties.AutomationId="CancelCreateButton"
+                AutomationProperties.Name="Cancel adding person"
+                Content="Cancel"
+                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                Click="OnCancelClicked"
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
                 </ui:Button.Icon>
             </ui:Button>
         </StackPanel>

@@ -519,5 +519,5 @@ public sealed partial class QueryViewModel : ObservableObject
         await AskQuestionAsync(question);
     }
 
-    private bool CanAsk => IsAskEnabled && !string.IsNullOrWhiteSpace(QueryText);
+    private bool CanAsk => IsAskEnabled && !IsBusy && !string.IsNullOrWhiteSpace(QueryText);
 }

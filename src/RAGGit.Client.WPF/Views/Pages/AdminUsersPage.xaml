@@ -169,8 +169,52 @@
                             Text="Sorted by name, ascending"
                         />
                     </Grid>
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="2" RowDefinitions="Auto, *">
+                        <!-- Pinned header (feature 029, FR-008): the GridView header scrolls away
+                             with its rows, so it is suppressed and this sibling row carries the
+                             sort affordances. It stays put while the list below scrolls, and the
+                             sort indicator is rewritten by the click handler. -->
+                        <Grid
+                            x:Name="PeopleHeader"
+                            Grid.Row="0"
+                            Margin="0,0,0,4"
+                            ColumnDefinitions="235, 135, 190, 132"
+                        >
+                            <GridViewColumnHeader
+                                Content="Person"
+                                Tag="DisplayName"
+                                AutomationProperties.AutomationId="SortPeopleHeader"
+                                AutomationProperties.Name="Sort by person name"
+                                Click="OnUserColumnHeaderClick"
+                            />
+                            <GridViewColumnHeader
+                                Grid.Column="1"
+                                Content="Role"
+                                Tag="Role"
+                                AutomationProperties.AutomationId="SortRoleHeader"
+                                AutomationProperties.Name="Sort by role"
+                                Click="OnUserColumnHeaderClick"
+                            />
+                            <GridViewColumnHeader
+                                Grid.Column="2"
+                                Content="Account status"
+                                Tag="IsActive"
+                                AutomationProperties.AutomationId="SortStatusHeader"
+                                AutomationProperties.Name="Sort by account status"
+                                Click="OnUserColumnHeaderClick"
+                            />
+                            <GridViewColumnHeader Grid.Column="3" Content="Action" />
+                            <Border
+                                Grid.ColumnSpan="4"
+                                Height="1"
+                                IsHitTestVisible="False"
+                                VerticalAlignment="Bottom"
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                            />
+                        </Grid>
                         <ui:ListView
+                            Grid.Row="1"
                             x:Name="UsersList"
                             SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
                             SelectionMode="Single"
@@ -182,7 +226,6 @@
                             ScrollViewer.CanContentScroll="True"
                             VirtualizingStackPanel.IsVirtualizing="True"
                             VirtualizingStackPanel.VirtualizationMode="Recycling"
-                            GridViewColumnHeader.Click="OnUserColumnHeaderClick"
                             AutomationProperties.AutomationId="UsersList"
                             AutomationProperties.Name="People directory"
                         >
@@ -195,15 +238,12 @@
                             </ui:ListView.ItemContainerStyle>
                             <ui:ListView.View>
                                 <GridView AllowsColumnReorder="False">
+                                    <GridView.ColumnHeaderContainerStyle>
+                                        <Style TargetType="GridViewColumnHeader">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </Style>
+                                    </GridView.ColumnHeaderContainerStyle>
                                     <GridViewColumn Width="235">
-                                        <GridViewColumn.Header>
-                                            <GridViewColumnHeader
-                                                Content="Person"
-                                                Tag="DisplayName"
-                                                AutomationProperties.AutomationId="SortPeopleHeader"
-                                                AutomationProperties.Name="Sort by person name"
-                                            />
-                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel VerticalAlignment="Center" Margin="8,4">
@@ -223,14 +263,6 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Width="135">
-                                        <GridViewColumn.Header>
-                                            <GridViewColumnHeader
-                                                Content="Role"
-                                                Tag="Role"
-                                                AutomationProperties.AutomationId="SortRoleHeader"
-                                                AutomationProperties.Name="Sort by role"
-                                            />
-                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <ComboBox
@@ -248,14 +280,6 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Width="190">
-                                        <GridViewColumn.Header>
-                                            <GridViewColumnHeader
-                                                Content="Account status"
-                                                Tag="IsActive"
-                                                AutomationProperties.AutomationId="SortStatusHeader"
-                                                AutomationProperties.Name="Sort by account status"
-                                            />
-                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel
@@ -321,9 +345,6 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Width="132">
-                                        <GridViewColumn.Header>
-                                            <GridViewColumnHeader Content="Action" />
-                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <ui:Button

@@ -15,7 +15,7 @@
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
-    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
+    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, Auto, *, Auto, Auto">
         <!-- Header card -->
         <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
             <Grid ColumnDefinitions="*, Auto">
@@ -56,11 +56,50 @@
             </Grid>
         </ui:Card>
 
+        <!-- Search (feature 029): filters the loaded questions as the user types. -->
+        <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto, Auto">
+            <ui:TextBox
+                x:Name="HistorySearchBox"
+                Grid.Column="0"
+                AutomationProperties.AutomationId="HistorySearchBox"
+                AutomationProperties.Name="Search questions"
+                PlaceholderText="Search questions"
+                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+            />
+            <ui:Button
+                x:Name="HistorySearchClearButton"
+                Grid.Column="1"
+                Width="44"
+                Height="44"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="HistorySearchClearButton"
+                AutomationProperties.Name="Clear question search"
+                ToolTip="Clear search"
+                Visibility="{Binding IsSearchActive, Converter={StaticResource BoolVisibility}}"
+                Click="OnClearSearchClicked"
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:TextBlock
+                x:Name="HistoryMatchCount"
+                Grid.Column="2"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource SecondaryText}"
+                AutomationProperties.AutomationId="HistoryMatchCount"
+                Visibility="{Binding IsSearchActive, Converter={StaticResource BoolVisibility}}"
+                Text="{Binding MatchCaption}"
+            />
+        </Grid>
+
         <!-- History list -->
-        <Grid Grid.Row="1" Margin="0,12,0,0">
+        <Grid Grid.Row="2" Margin="0,12,0,0">
             <ui:ListView
                 x:Name="HistoryList"
-                ItemsSource="{Binding Items}"
+                ItemsSource="{Binding FilteredItems}"
                 SelectionMode="Single"
                 Background="Transparent"
                 BorderThickness="0"
@@ -163,12 +202,70 @@
                 IsIndeterminate="True"
                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
             />
+
+            <!-- No-match state: distinct from the no-records state above, which wins when
+                 there are genuinely no questions (clearing the search would not help). -->
+            <ui:Card
+                x:Name="HistoryNoMatchState"
+                Padding="{StaticResource CardPaddingLarge}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="HistoryNoMatchState"
+            >
+                <ui:Card.Style>
+                    <Style TargetType="ui:Card">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSearchActive}" Value="True" />
+                                    <Condition Binding="{Binding HasMatch}" Value="False" />
+                                    <Condition Binding="{Binding IsEmpty}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Card.Style>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ui:SymbolIcon
+                        Symbol="Search24"
+                        Style="{StaticResource EmptyStateGlyph}"
+                        Margin="0,0,0,12"
+                    />
+                    <ui:TextBlock
+                        HorizontalAlignment="Center"
+                        FontTypography="Title"
+                        Text="No matching questions"
+                    />
+                    <ui:TextBlock
+                        Margin="{StaticResource EmptyStateBodyMargin}"
+                        HorizontalAlignment="Center"
+                        FontTypography="Body"
+                        Style="{StaticResource SecondaryText}"
+                        TextWrapping="Wrap"
+                        TextAlignment="Center"
+                        Text="Nothing loaded matches your search. Load more to search further back."
+                    />
+                    <ui:Button
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center"
+                        AutomationProperties.Name="Clear question search"
+                        Content="Clear search"
+                        Click="OnClearSearchClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </ui:Card>
         </Grid>
 
         <!-- Load more -->
         <ui:Button
             x:Name="LoadMoreButton"
-            Grid.Row="2"
+            Grid.Row="3"
             AutomationProperties.AutomationId="LoadMoreButton"
             TabIndex="1"
             Margin="0,12,0,0"
@@ -197,7 +294,7 @@
 
         <!-- Footer -->
         <components:StatusFooterControl
-            Grid.Row="3"
+            Grid.Row="4"
             Margin="0,12,0,0"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"

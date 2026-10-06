@@ -17,6 +17,7 @@ namespace RAGGit.Client.Core.ViewModels;
 public sealed partial class HistoryViewModel : ObservableObject
 {
     private readonly QueryHistoryApiClient _apiClient;
+    private readonly SearchSessionState? _searchSession;
 
     [ObservableProperty]
     private ObservableCollection<HistoryItem> _items = new();
@@ -42,9 +43,69 @@ public sealed partial class HistoryViewModel : ObservableObject
     [ObservableProperty]
     private string? _errorMessage;
 
-    public HistoryViewModel(QueryHistoryApiClient apiClient)
+    public HistoryViewModel(
+        QueryHistoryApiClient apiClient,
+        SearchSessionState? searchSession = null
+    )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        // Pages are transient, so the typed search lives in the session singleton
+        // and is re-applied to whatever this instance loads (029, FR-003).
+        _searchSession = searchSession;
+        _searchText = searchSession?.Get(SearchSurface.History) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// The current search text. Matching is a case-insensitive substring over
+    /// the question and answer text of the records loaded so far.
+    /// </summary>
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        _searchSession?.Set(SearchSurface.History, value);
+        NotifySearch();
+    }
+
+    private string SearchTerm => SearchText.Trim();
+
+    /// <summary>True while a non-blank search is narrowing the loaded items.</summary>
+    public bool IsSearchActive => SearchTerm.Length > 0;
+
+    /// <summary>The loaded items whose question or answer contains the search text.</summary>
+    public IReadOnlyList<HistoryItem> FilteredItems =>
+        IsSearchActive
+            ? Items
+                .Where(i =>
+                    i.PromptPreview.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)
+                    || i.AnswerPreview.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)
+                )
+                .ToList()
+            : Items;
+
+    /// <summary>
+    /// How many loaded items match. This is never the server total — only the
+    /// loaded page is searchable, and "Load more" extends it.
+    /// </summary>
+    public int MatchCount => FilteredItems.Count;
+
+    /// <summary>False only when an active search matches nothing loaded.</summary>
+    public bool HasMatch => MatchCount > 0;
+
+    /// <summary>
+    /// Match caption for the incremental surface: counts loaded matches, never
+    /// the server total, so it cannot imply a search it did not perform.
+    /// </summary>
+    public string MatchCaption => $"{MatchCount} matching of {Items.Count} loaded";
+
+    private void NotifySearch()
+    {
+        OnPropertyChanged(nameof(FilteredItems));
+        OnPropertyChanged(nameof(MatchCount));
+        OnPropertyChanged(nameof(HasMatch));
+        OnPropertyChanged(nameof(IsSearchActive));
+        OnPropertyChanged(nameof(MatchCaption));
     }
 
     [RelayCommand]
@@ -96,6 +157,9 @@ public sealed partial class HistoryViewModel : ObservableObject
 
             IsEmpty = Total == 0;
             HasMore = Items.Count < Total;
+            // The search survives the reload and re-applies to the fresh data,
+            // so a refresh never flashes the unfiltered list.
+            NotifySearch();
         }
         catch (HttpRequestException ex)
             when (ex.Message.Contains(

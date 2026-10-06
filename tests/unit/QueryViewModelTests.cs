@@ -170,6 +170,23 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
+    public void Ask_WhileBusy_CannotExecute()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+        viewModel.QueryText = "a question";
+
+        viewModel.AskCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.IsBusy = true;
+
+        viewModel.AskCommand.CanExecute(null).Should().BeFalse();
+
+        viewModel.IsBusy = false;
+
+        viewModel.AskCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
     public void BuildFollowUpQuestion_NoHistory_FallsBackToTemplate()
     {
         var viewModel = CreateViewModel(answer: "a", citationCount: 0);

@@ -20,6 +20,9 @@ public partial class LibraryPage : Page
         DataContext = ViewModel;
         InitializeComponent();
         Loaded += OnLoaded;
+        // Stop the status loop when this transient page is navigated away from,
+        // so it never keeps polling the workstation for a discarded view.
+        Unloaded += (_, _) => ViewModel.StopStatusPolling();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -56,6 +59,10 @@ public partial class LibraryPage : Page
         _compactTable = compact;
         if (compact)
         {
+            // Type and Size join Creator and Created below 720 DIPs, leaving
+            // Filename, Status, and the row actions (029, FR-009).
+            Resources["LibraryTypeColumnWidth"] = new GridLength(0);
+            Resources["LibrarySizeColumnWidth"] = new GridLength(0);
             Resources["LibraryCreatorColumnWidth"] = new GridLength(0);
             Resources["LibraryCreatedColumnWidth"] = new GridLength(0);
             Resources["LibrarySecondaryColumnVisibility"] = Visibility.Collapsed;
@@ -63,12 +70,17 @@ public partial class LibraryPage : Page
         }
         else
         {
+            Resources["LibraryTypeColumnWidth"] = new GridLength(70);
+            Resources["LibrarySizeColumnWidth"] = new GridLength(90);
             Resources["LibraryCreatorColumnWidth"] = new GridLength(130);
             Resources["LibraryCreatedColumnWidth"] = new GridLength(150);
             Resources["LibrarySecondaryColumnVisibility"] = Visibility.Visible;
             TableGrid.MinWidth = 880;
         }
     }
+
+    private void OnClearSearchClicked(object sender, RoutedEventArgs e) =>
+        ViewModel.SearchText = string.Empty;
 
     private async void OnUploadClicked(object sender, RoutedEventArgs e)
     {

@@ -106,6 +106,16 @@ public sealed partial class DashboardViewModel : ObservableObject
             ? "No documents in the library"
             : $"{TotalDocuments} documents in the library";
 
+    /// <summary>True after the latest load failed. Attention styling stays off until a load succeeds (FR-007).</summary>
+    private bool _loadFailed;
+
+    /// <summary>
+    /// True when the latest load succeeded and found documents that failed to
+    /// index. A failed refresh suppresses this even if the previous counts
+    /// remain, so attention never paints over an error state (029, FR-005, FR-007).
+    /// </summary>
+    public bool HasFailedDocuments => HasLoaded && !_loadFailed && FailedDocuments > 0;
+
     public string QuerySummary =>
         TotalQueries == 0 ? "No saved questions yet" : $"{TotalQueries} saved questions";
 
@@ -148,21 +158,22 @@ public sealed partial class DashboardViewModel : ObservableObject
                 documents.OrderByDescending(d => d.CreatedAt).Take(5)
             );
             RecentQueries = new ObservableCollection<HistoryItem>(history.Items);
-            NotifyDerivedProperties();
+            _loadFailed = false;
             HasLoaded = true;
+            NotifyDerivedProperties();
             SetStatus("Dashboard refreshed", isError: false);
         }
         catch (HttpRequestException ex)
         {
-            SetStatus(MapRequestError(ex), isError: true);
+            MarkLoadFailed(MapRequestError(ex));
         }
         catch (TaskCanceledException ex)
         {
-            SetStatus(ClientErrorText.Unavailable(ex.Message), isError: true);
+            MarkLoadFailed(ClientErrorText.Unavailable(ex.Message));
         }
         catch (Exception ex)
         {
-            SetStatus($"Failed to load dashboard: {ex.Message}", isError: true);
+            MarkLoadFailed($"Failed to load dashboard: {ex.Message}");
         }
         finally
         {
@@ -186,6 +197,7 @@ public sealed partial class DashboardViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasLibraryData));
         OnPropertyChanged(nameof(HasQueryData));
+        OnPropertyChanged(nameof(HasFailedDocuments));
         OnPropertyChanged(nameof(LibrarySummary));
         OnPropertyChanged(nameof(QuerySummary));
     }
@@ -205,6 +217,13 @@ public sealed partial class DashboardViewModel : ObservableObject
         // is the empty-state trigger — which is exactly what should stay stable.
         // StatusMessage/ErrorMessage/HasStatus still clear, so the InfoBar closes
         // immediately while a load is in flight.
+    }
+
+    private void MarkLoadFailed(string message)
+    {
+        _loadFailed = true;
+        SetStatus(message, isError: true);
+        OnPropertyChanged(nameof(HasFailedDocuments));
     }
 
     private void SetStatus(string message, bool isError)

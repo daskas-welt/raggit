@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -18,8 +19,10 @@ namespace RAGGit.Client.Core.ViewModels;
 /// Single-file state is preserved as a compatibility surface
 /// (<see cref="SelectedFileName"/>, <see cref="UploadProgress"/>,
 /// <see cref="PickFileCommand"/> adds one entry), backed by a multi-file
-/// <see cref="Queue"/> uploaded sequentially with per-file progress and an
-/// overall completed count. Admin gating and session handling are unchanged.
+/// <see cref="Queue"/> uploaded with bounded concurrency
+/// (<see cref="MaxConcurrentUploads"/> files in flight) with per-file progress
+/// and an overall completed count. Admin gating and session handling are
+/// unchanged.
 /// </summary>
 public sealed partial class UploadViewModel : ObservableObject, IDisposable
 {
@@ -180,6 +183,41 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
     private readonly ClientSession? _session;
 
     private CancellationTokenSource? _uploadCts;
+
+    /// <summary>
+    /// Default bounded fan-out for a batch: at most this many files upload at
+    /// once. Each upload costs the workstation a SQLite writer slot plus a
+    /// hash and a disk write, so an unbounded <c>Task.WhenAll</c> would just
+    /// queue on the writer lock while holding every stream open. Raise it for
+    /// fast local storage; lower it on slow disks or links.
+    /// </summary>
+    public const int DefaultMaxConcurrentUploads = 4;
+
+    /// <summary>Lower bound accepted by <see cref="ClampConcurrency"/>.</summary>
+    public const int MinMaxConcurrentUploads = 1;
+
+    /// <summary>Upper bound accepted by <see cref="ClampConcurrency"/>.</summary>
+    public const int MaxMaxConcurrentUploads = 8;
+
+    private int _maxConcurrentUploads = DefaultMaxConcurrentUploads;
+
+    /// <summary>
+    /// Maximum number of files uploaded concurrently. Values outside
+    /// [<see cref="MinMaxConcurrentUploads"/>, <see cref="MaxMaxConcurrentUploads"/>]
+    /// are clamped when a run starts; composition sets it from configuration.
+    /// </summary>
+    public int MaxConcurrentUploads
+    {
+        get => _maxConcurrentUploads;
+        set => _maxConcurrentUploads = value;
+    }
+
+    /// <summary>
+    /// Clamps a configured concurrency into the supported range. Public so
+    /// composition normalizes a config value the same way a run does.
+    /// </summary>
+    public static int ClampConcurrency(int value) =>
+        Math.Clamp(value, MinMaxConcurrentUploads, MaxMaxConcurrentUploads);
 
     /// <summary>
     /// The in-flight upload run, if any. The hosting dialog awaits this
@@ -683,75 +721,31 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
         IsAllSucceeded = false;
         StatusMessage = null;
         StatusSeverity = "Informational";
+        UploadProgress = 0;
 
         _uploadCts?.Dispose();
         var cts = new CancellationTokenSource();
         _uploadCts = cts;
 
-        RAGGit.Core.Models.Document? lastDocument = null;
         try
         {
+            // Bounded fan-out: at most MaxConcurrentUploads files in flight.
+            // Task.WhenAll drives the whole batch, but each file waits for a
+            // free slot first, so a large queue never opens every stream at
+            // once and never floods the workstation's single SQLite writer.
+            var maxConcurrency = ClampConcurrency(MaxConcurrentUploads);
+            using var gate = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+
+            var uploads = new List<Task<Document?>>(pending.Count);
             foreach (var item in pending)
             {
-                if (cts.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                var current = item;
-                current.State = UploadItemState.Uploading;
-                UploadProgress = 0;
-                var progress = new Progress<double>(p =>
-                {
-                    current.Progress = p;
-                    UploadProgress = p;
-                });
-
-                try
-                {
-                    var document = await _apiClient.UploadAsync(
-                        current.Stream,
-                        current.FileName,
-                        current.ContentType,
-                        progress,
-                        cts.Token
-                    );
-
-                    lastDocument = document;
-                    current.Progress = 1;
-                    current.ResultStatus = document.Status.ToString();
-                    current.ErrorMessage = null;
-                    current.State = UploadItemState.Succeeded;
-                    UploadProgress = 1;
-                }
-                catch (OperationCanceledException) when (cts.IsCancellationRequested)
-                {
-                    current.ErrorMessage = "Upload cancelled.";
-                    current.State = UploadItemState.Cancelled;
-                    break;
-                }
-                catch (ObjectDisposedException) when (cts.IsCancellationRequested)
-                {
-                    // Teardown race: the host disposed queued streams (or the
-                    // HTTP stack aborted the TLS connection) after cancel was
-                    // requested but before the request finished unwinding.
-                    // This is a cancel, not a failure.
-                    current.ErrorMessage = "Upload cancelled.";
-                    current.State = UploadItemState.Cancelled;
-                    break;
-                }
-                catch (Exception exception)
-                {
-                    current.ErrorMessage = MapUploadError(exception);
-                    current.State = UploadItemState.Failed;
-                }
-                finally
-                {
-                    // Rewind so a retry without re-picking resends the full
-                    // content instead of 0 bytes (ProgressStream consumes to EOF).
-                    TryRewind(current.Stream);
-                }
+                uploads.Add(UploadOneAsync(item, gate, cts));
             }
+
+            var documents = await Task.WhenAll(uploads);
+            var lastDocument = documents.LastOrDefault(d => d is not null);
+
+            RefreshUploadProgress();
 
             var total = Queue.Count;
             var succeeded = SuccessCount;
@@ -798,6 +792,110 @@ public sealed partial class UploadViewModel : ObservableObject, IDisposable
             }
             cts.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Uploads one queued file under the shared concurrency gate. The slot is
+    /// acquired before the row flips to Uploading, so a file that never starts
+    /// (cancel, or a batch still ahead of it) keeps its Queued state and stays
+    /// resumable. Returns the created document on success, otherwise null.
+    /// </summary>
+    private async Task<Document?> UploadOneAsync(
+        UploadQueueItem current,
+        SemaphoreSlim gate,
+        CancellationTokenSource cts
+    )
+    {
+        try
+        {
+            await gate.WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Never got a slot; leave Queued so the next Upload resumes it.
+            return null;
+        }
+
+        try
+        {
+            if (cts.IsCancellationRequested)
+            {
+                return null;
+            }
+
+            current.State = UploadItemState.Uploading;
+            var progress = new Progress<double>(p =>
+            {
+                // Late ticks can arrive after the row already settled; never
+                // let one drag a completed row backwards.
+                if (current.State != UploadItemState.Uploading)
+                {
+                    return;
+                }
+                current.Progress = p;
+                RefreshUploadProgress();
+            });
+
+            try
+            {
+                var document = await _apiClient.UploadAsync(
+                    current.Stream,
+                    current.FileName,
+                    current.ContentType,
+                    progress,
+                    cts.Token
+                );
+
+                current.Progress = 1;
+                current.ResultStatus = document.Status.ToString();
+                current.ErrorMessage = null;
+                current.State = UploadItemState.Succeeded;
+                RefreshUploadProgress();
+                return document;
+            }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested)
+            {
+                current.ErrorMessage = "Upload cancelled.";
+                current.State = UploadItemState.Cancelled;
+                return null;
+            }
+            catch (ObjectDisposedException) when (cts.IsCancellationRequested)
+            {
+                // Teardown race: the host disposed queued streams (or the HTTP
+                // stack aborted the TLS connection) after cancel was requested
+                // but before the request finished unwinding.
+                // This is a cancel, not a failure.
+                current.ErrorMessage = "Upload cancelled.";
+                current.State = UploadItemState.Cancelled;
+                return null;
+            }
+            catch (Exception exception)
+            {
+                current.ErrorMessage = MapUploadError(exception);
+                current.State = UploadItemState.Failed;
+                return null;
+            }
+            finally
+            {
+                // Rewind so a retry without re-picking resends the full
+                // content instead of 0 bytes (ProgressStream consumes to EOF).
+                TryRewind(current.Stream);
+            }
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Overall footer progress: the mean of every row's progress. Replaces the
+    /// old single-file value now that several rows advance at once.
+    /// </summary>
+    private void RefreshUploadProgress()
+    {
+        var count = Queue.Count;
+        UploadProgress = count == 0 ? 0 : Queue.Sum(i => i.Progress) / count;
     }
 
     [RelayCommand]

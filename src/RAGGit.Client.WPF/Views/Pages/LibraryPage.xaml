@@ -24,6 +24,8 @@
              ≤720 DIPs, so the header row and every realized data row collapse
              and restore together (DynamicResource propagates to template
              instances, including rows realized after the switch). -->
+        <GridLength x:Key="LibraryTypeColumnWidth">70</GridLength>
+        <GridLength x:Key="LibrarySizeColumnWidth">90</GridLength>
         <GridLength x:Key="LibraryCreatorColumnWidth">130</GridLength>
         <GridLength x:Key="LibraryCreatedColumnWidth">150</GridLength>
         <Visibility x:Key="LibrarySecondaryColumnVisibility">Visible</Visibility>
@@ -31,7 +33,7 @@
     <Grid
         x:Name="LibraryLayout"
         Margin="{StaticResource PagePadding}"
-        RowDefinitions="Auto, *, Auto, Auto"
+        RowDefinitions="Auto, Auto, *, Auto, Auto"
         SizeChanged="OnLibraryLayoutSizeChanged"
     >
         <!-- Header card -->
@@ -89,13 +91,52 @@
             </Grid>
         </ui:Card>
 
+        <!-- Search (feature 029): filters the loaded list as the user types. -->
+        <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto, Auto">
+            <ui:TextBox
+                x:Name="LibrarySearchBox"
+                Grid.Column="0"
+                AutomationProperties.AutomationId="LibrarySearchBox"
+                AutomationProperties.Name="Search documents"
+                PlaceholderText="Search documents"
+                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+            />
+            <ui:Button
+                x:Name="LibrarySearchClearButton"
+                Grid.Column="1"
+                Width="44"
+                Height="44"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="LibrarySearchClearButton"
+                AutomationProperties.Name="Clear document search"
+                ToolTip="Clear search"
+                Visibility="{Binding IsSearchActive, Converter={StaticResource BoolVisibility}}"
+                Click="OnClearSearchClicked"
+            >
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:TextBlock
+                x:Name="LibraryMatchCount"
+                Grid.Column="2"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource SecondaryText}"
+                AutomationProperties.AutomationId="LibraryMatchCount"
+                Visibility="{Binding IsSearchActive, Converter={StaticResource BoolVisibility}}"
+                Text="{Binding MatchCaption}"
+            />
+        </Grid>
+
         <!-- Document list surface. A Border rather than the library's Card: the Card style centres
              its content (VerticalContentAlignment=Center, which a local override does not win
              against in 4.3.0's template), floating a short table in the middle of the card. The
              Border fills the row; one horizontal scroller wraps the pinned header and the rows so
              the columns stay aligned, and the ListView owns the vertical scrolling. -->
         <ui:Card
-            Grid.Row="1"
+            Grid.Row="2"
             Margin="0,12,0,0"
             VerticalAlignment="Stretch"
             Padding="0"
@@ -110,8 +151,8 @@
                     <Grid Grid.Row="0" Margin="16,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="70" />
-                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="{DynamicResource LibraryTypeColumnWidth}" />
+                            <ColumnDefinition Width="{DynamicResource LibrarySizeColumnWidth}" />
                             <ColumnDefinition Width="120" />
                             <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
                             <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
@@ -132,6 +173,7 @@
                             FontTypography="Caption"
                             VerticalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
+                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                             Text="Type"
                         />
                         <ui:TextBlock
@@ -140,6 +182,7 @@
                             FontTypography="Caption"
                             VerticalAlignment="Center"
                             Style="{StaticResource SecondaryText}"
+                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                             Text="Size"
                         />
                         <ui:TextBlock
@@ -200,8 +243,8 @@
                                     <Grid Margin="16,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="70" />
-                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="{DynamicResource LibraryTypeColumnWidth}" />
+                                            <ColumnDefinition Width="{DynamicResource LibrarySizeColumnWidth}" />
                                             <ColumnDefinition Width="120" />
                                             <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
                                             <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
@@ -222,6 +265,7 @@
                                             FontTypography="Body"
                                             VerticalAlignment="Center"
                                             Style="{StaticResource SecondaryText}"
+                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                                             Text="{Binding Converter={StaticResource MimeLabel}}"
                                         />
                                         <ui:TextBlock
@@ -230,6 +274,7 @@
                                             FontTypography="Body"
                                             VerticalAlignment="Center"
                                             Style="{StaticResource SecondaryText}"
+                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
                                             Text="{Binding Converter={StaticResource SizeMb}}"
                                         />
                                         <components:StatusChip
@@ -393,6 +438,73 @@
                             IsIndeterminate="True"
                             Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                         />
+
+                        <!-- No-match state: distinct from the no-records state above, which wins
+                             when the library is genuinely empty (clearing the search would not help). -->
+                        <ui:Card
+                            x:Name="LibraryNoMatchState"
+                            Padding="{StaticResource CardPaddingLarge}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            AutomationProperties.AutomationId="LibraryNoMatchState"
+                        >
+                            <ui:Card.Style>
+                                <Style TargetType="ui:Card">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition
+                                                    Binding="{Binding IsSearchActive}"
+                                                    Value="True"
+                                                />
+                                                <Condition
+                                                    Binding="{Binding HasMatch}"
+                                                    Value="False"
+                                                />
+                                                <Condition
+                                                    Binding="{Binding IsEmpty}"
+                                                    Value="False"
+                                                />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Card.Style>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ui:SymbolIcon
+                                    Symbol="Search24"
+                                    Style="{StaticResource EmptyStateGlyph}"
+                                    Margin="0,0,0,12"
+                                />
+                                <ui:TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontTypography="Title"
+                                    Text="No matching documents"
+                                />
+                                <ui:TextBlock
+                                    Margin="{StaticResource EmptyStateBodyMargin}"
+                                    HorizontalAlignment="Center"
+                                    FontTypography="Body"
+                                    Style="{StaticResource SecondaryText}"
+                                    TextWrapping="Wrap"
+                                    TextAlignment="Center"
+                                    Text="Nothing matches your search."
+                                />
+                                <ui:Button
+                                    Margin="0,12,0,0"
+                                    HorizontalAlignment="Center"
+                                    AutomationProperties.Name="Clear document search"
+                                    Content="Clear search"
+                                    Click="OnClearSearchClicked"
+                                >
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Dismiss24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </StackPanel>
+                        </ui:Card>
                     </Grid>
                 </Grid>
             </ScrollViewer>
@@ -400,7 +512,7 @@
 
         <!-- Pagination footer -->
         <components:PaginationFooterControl
-            Grid.Row="2"
+            Grid.Row="3"
             Margin="0,12,0,0"
             VerticalAlignment="Center"
             PageSizeOptions="{Binding PageSizeOptions}"
@@ -418,7 +530,7 @@
 
         <!-- Footer -->
         <components:StatusFooterControl
-            Grid.Row="3"
+            Grid.Row="4"
             Margin="0,12,0,0"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"

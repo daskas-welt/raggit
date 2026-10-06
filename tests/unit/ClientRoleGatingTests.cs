@@ -131,6 +131,8 @@ public sealed class ClientRoleGatingTests
                         ? (object?)null
                     : p.ParameterType == typeof(ILauncherService) ? new InMemoryLauncherService()
                     : p.ParameterType == typeof(INotificationService) ? (object?)null
+                    : p.ParameterType == typeof(SearchSessionState) ? (object?)null
+                    : p.HasDefaultValue ? p.DefaultValue
                     : throw new InvalidOperationException($"Unexpected param {p.ParameterType}")
                 )
                 .ToArray();

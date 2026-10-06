@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,15 +15,18 @@ namespace RAGGit.Client.Core.ViewModels;
 /// <summary>
 /// ViewModel for the library list view.
 /// </summary>
-public sealed partial class LibraryViewModel : ObservableObject
+public sealed partial class LibraryViewModel : ObservableObject, IDisposable
 {
+    private static readonly TimeSpan DefaultStatusPollInterval = TimeSpan.FromSeconds(2);
+
     private readonly DocumentsApiClient _apiClient;
     private readonly ClientSession _session;
     private readonly ILibraryPreferences _preferences;
     private readonly ILauncherService _launcher;
     private readonly INotificationService _notifications;
+    private readonly SearchSessionState? _searchSession;
     private readonly HashSet<Guid> _downloadingIds = new();
-    private Task? _statusPollingTask;
+    private readonly DocumentStatusPoller _statusPoller;
 
     [ObservableProperty]
     private ObservableCollection<Document> _documents = new();
@@ -56,7 +60,9 @@ public sealed partial class LibraryViewModel : ObservableObject
         ClientSession session,
         ILauncherService launcher,
         ILibraryPreferences? preferences = null,
-        INotificationService? notifications = null
+        INotificationService? notifications = null,
+        SearchSessionState? searchSession = null,
+        TimeSpan? statusPollInterval = null
     )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
@@ -66,7 +72,70 @@ public sealed partial class LibraryViewModel : ObservableObject
         _pageSize = _preferences.GetPageSize();
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _notifications = notifications ?? new NullNotificationService();
+        _statusPoller = new DocumentStatusPoller(statusPollInterval ?? DefaultStatusPollInterval);
+        // Pages are transient, so the typed search lives in the session singleton
+        // and is re-applied to whatever this instance loads (029, FR-003).
+        _searchSession = searchSession;
+        _searchText = searchSession?.Get(SearchSurface.Library) ?? string.Empty;
     }
+
+    /// <summary>
+    /// The current search text. Whitespace-only text matches everything;
+    /// matching itself is a case-insensitive substring over the filename.
+    /// </summary>
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    /// <summary>Page the user was on before the current search started, restored when it is cleared.</summary>
+    private int _pageBeforeSearch = 1;
+
+    private bool _searchWasActive;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        _searchSession?.Set(SearchSurface.Library, value);
+        var active = !string.IsNullOrWhiteSpace(value);
+        if (active && !_searchWasActive)
+        {
+            _pageBeforeSearch = PageNumber;
+            PageNumber = 1;
+        }
+        else if (active)
+        {
+            // A new query must not strand the user on a page the narrower set no longer has.
+            PageNumber = 1;
+        }
+        else if (_searchWasActive)
+        {
+            // Clearing restores the prior page, clamped to the unfiltered list.
+            PageNumber = LibraryPage.Create(Documents, _pageBeforeSearch, PageSize).PageNumber;
+        }
+
+        _searchWasActive = active;
+        RefreshPaging();
+    }
+
+    private string SearchTerm => SearchText.Trim();
+
+    /// <summary>True while a non-blank search is narrowing the list.</summary>
+    public bool IsSearchActive => SearchTerm.Length > 0;
+
+    /// <summary>The loaded documents whose filename contains the search text.</summary>
+    public IReadOnlyList<Document> FilteredDocuments =>
+        IsSearchActive
+            ? Documents
+                .Where(d => d.Filename.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList()
+            : Documents;
+
+    /// <summary>How many loaded documents match; equals the full count when no search is active.</summary>
+    public int MatchCount => FilteredDocuments.Count;
+
+    /// <summary>Filtered count against the full library, so a search never looks like a server total.</summary>
+    public string MatchCaption => $"{MatchCount} of {TotalCount} documents";
+
+    /// <summary>False only when an active search matches nothing.</summary>
+    public bool HasMatch => MatchCount > 0;
 
     /// <summary>
     /// Ids of the documents whose download is currently in flight. Bound by
@@ -84,13 +153,13 @@ public sealed partial class LibraryViewModel : ObservableObject
     /// </summary>
     public void RefreshRole() => IsAdmin = _session.IsAdmin;
 
-    /// <summary>Full-list count; the page slice below derives from it.</summary>
+    /// <summary>Full-list count, before any search narrowing.</summary>
     public int TotalCount => Documents.Count;
 
-    /// <summary>Always ≥ 1, even for an empty library.</summary>
-    public int TotalPages => LibraryPage.Create(Documents, PageNumber, PageSize).TotalPages;
+    /// <summary>Always ≥ 1, even for an empty library. Counts pages of the filtered set.</summary>
+    public int TotalPages => CurrentPage.TotalPages;
 
-    /// <summary>Current slice in server order; empty only when the library is empty.</summary>
+    /// <summary>Current slice of the filtered set, in server order.</summary>
     public IReadOnlyList<Document> PageItems => CurrentPage.Items;
 
     /// <summary>"Showing X–Y of Z entries" (or the zero state).</summary>
@@ -106,7 +175,7 @@ public sealed partial class LibraryViewModel : ObservableObject
     /// <summary>Selectable page sizes for the footer Picker.</summary>
     public int[] PageSizeOptions => LibraryPageSizes.Valid;
 
-    private LibraryPage CurrentPage => LibraryPage.Create(Documents, PageNumber, PageSize);
+    private LibraryPage CurrentPage => LibraryPage.Create(FilteredDocuments, PageNumber, PageSize);
 
     partial void OnPageSizeChanged(int value)
     {
@@ -131,6 +200,11 @@ public sealed partial class LibraryViewModel : ObservableObject
         OnPropertyChanged(nameof(HasPrevious));
         OnPropertyChanged(nameof(HasNext));
         OnPropertyChanged(nameof(VisibleSequence));
+        OnPropertyChanged(nameof(FilteredDocuments));
+        OnPropertyChanged(nameof(MatchCount));
+        OnPropertyChanged(nameof(MatchCaption));
+        OnPropertyChanged(nameof(HasMatch));
+        OnPropertyChanged(nameof(IsSearchActive));
     }
 
     [RelayCommand]
@@ -229,32 +303,56 @@ public sealed partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private void StartStatusPolling()
+    private void StartStatusPolling() =>
+        _statusPoller.Start(
+            keepPolling: () => Documents.Any(IsActiveStatus),
+            pollOnce: PollDocumentStatusesAsync,
+            onError: exception =>
+                ErrorMessage = $"Could not refresh document status: {exception.Message}"
+        );
+
+    private async Task PollDocumentStatusesAsync(CancellationToken cancellationToken)
     {
-        if (_statusPollingTask is { IsCompleted: false } || !Documents.Any(IsActiveStatus))
+        var documents = await _apiClient.GetDocumentsAsync(cancellationToken);
+
+        // The list is the only repaint path (Document has no change
+        // notification), but replacing it on every 2 s tick resets selection
+        // and rebinds rows for nothing. Only replace when a status actually
+        // moved.
+        if (!StatusSetChanged(documents))
         {
             return;
         }
 
-        _statusPollingTask = PollDocumentStatusesAsync();
+        Documents = new ObservableCollection<Document>(documents);
+        IsEmpty = Documents.Count == 0;
     }
 
-    private async Task PollDocumentStatusesAsync()
+    private bool StatusSetChanged(IReadOnlyList<Document> incoming)
     {
-        try
+        if (incoming.Count != Documents.Count)
         {
-            while (Documents.Any(IsActiveStatus))
+            return true;
+        }
+
+        for (var i = 0; i < incoming.Count; i++)
+        {
+            if (incoming[i].Id != Documents[i].Id || incoming[i].Status != Documents[i].Status)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2));
-                var documents = await _apiClient.GetDocumentsAsync();
-                Documents = new ObservableCollection<Document>(documents);
+                return true;
             }
         }
-        catch (Exception exception)
-        {
-            ErrorMessage = $"Could not refresh document status: {exception.Message}";
-        }
+
+        return false;
     }
+
+    /// <summary>
+    /// Stops the status loop. The page calls this on unload so a navigated-away
+    /// view never keeps polling the workstation.
+    /// </summary>
+    public void StopStatusPolling() => _statusPoller.Stop();
+
+    public void Dispose() => _statusPoller.Dispose();
 
     private static bool IsActiveStatus(Document document) =>
         document.Status

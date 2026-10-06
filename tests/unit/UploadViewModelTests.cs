@@ -419,6 +419,9 @@ public sealed class UploadViewModelTests
             _ => responses.Dequeue(),
             new SequenceFilePicker(Picked("a.pdf"), Picked("b.pdf"))
         );
+        // This responder hands out responses in arrival order, so keep the run
+        // sequential: parallel uploads make request order nondeterministic.
+        vm.MaxConcurrentUploads = 1;
         await vm.PickFileCommand.ExecuteAsync(null);
         await vm.PickFileCommand.ExecuteAsync(null);
 
@@ -501,6 +504,49 @@ public sealed class UploadViewModelTests
         vm.Queue.Should().BeEmpty();
         vm.UploadCommand.CanExecute(null).Should().BeFalse();
         vm.SelectedFileName.Should().BeNull();
+    }
+
+    [Fact]
+    public void MaxConcurrentUploads_DefaultsToFour() =>
+        CreateViewModel(_ => DocumentsResponse(), new DummyFilePicker())
+            .MaxConcurrentUploads.Should()
+            .Be(UploadViewModel.DefaultMaxConcurrentUploads);
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-3, 1)]
+    [InlineData(1, 1)]
+    [InlineData(4, 4)]
+    [InlineData(8, 8)]
+    [InlineData(99, 8)]
+    public void ClampConcurrency_BoundsToSupportedRange(int input, int expected) =>
+        UploadViewModel.ClampConcurrency(input).Should().Be(expected);
+
+    [Fact]
+    public async Task Upload_ManyFiles_NeverExceedsMaxConcurrency()
+    {
+        var tracker = new ConcurrencyTracker();
+        var vm = CreateViewModel(
+            new ConcurrencyHandler(tracker),
+            new ListFilePicker(
+                Picked("a.pdf"),
+                Picked("b.pdf"),
+                Picked("c.pdf"),
+                Picked("d.pdf"),
+                Picked("e.pdf"),
+                Picked("f.pdf")
+            )
+        );
+        vm.MaxConcurrentUploads = 2;
+        await vm.PickFileCommand.ExecuteAsync(null);
+
+        await vm.UploadCommand.ExecuteAsync(null);
+
+        // Six files, two slots, each held open ~50ms: both slots must overlap
+        // and a third must never start.
+        tracker.Peak.Should().Be(2);
+        vm.Queue.Should().OnlyContain(i => i.State == UploadViewModel.UploadItemState.Succeeded);
+        vm.IsAllSucceeded.Should().BeTrue();
     }
 
     private static UploadViewModel CreateViewModel(IFilePicker picker)
@@ -736,7 +782,12 @@ public sealed class UploadViewModelTests
                 BaseAddress = new Uri("https://w.local/"),
             }
         );
-        var vm = new UploadViewModel(api, new SequenceFilePicker(Picked("a.pdf"), Picked("b.pdf")));
+        var vm = new UploadViewModel(api, new SequenceFilePicker(Picked("a.pdf"), Picked("b.pdf")))
+        {
+            // Arrival-ordered responder: keep the run sequential so the queued
+            // 200/OK responses map to a.pdf/b.pdf deterministically.
+            MaxConcurrentUploads = 1,
+        };
         await vm.PickFileCommand.ExecuteAsync(null);
         await vm.PickFileCommand.ExecuteAsync(null);
 
@@ -1036,5 +1087,60 @@ public sealed class UploadViewModelTests
             HttpRequestMessage request,
             CancellationToken cancellationToken
         ) => Task.FromResult(_responder(request));
+    }
+
+    /// <summary>
+    /// Holds each request open briefly so overlapping uploads are observable.
+    /// </summary>
+    private sealed class ConcurrencyHandler : HttpMessageHandler
+    {
+        private readonly ConcurrencyTracker _tracker;
+
+        public ConcurrencyHandler(ConcurrencyTracker tracker) => _tracker = tracker;
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            _tracker.Enter();
+            try
+            {
+                await Task.Delay(50, cancellationToken);
+                return DocumentsResponse();
+            }
+            finally
+            {
+                _tracker.Exit();
+            }
+        }
+    }
+
+    private sealed class ConcurrencyTracker
+    {
+        private readonly object _lock = new();
+        private int _current;
+
+        public int Peak { get; private set; }
+
+        public void Enter()
+        {
+            lock (_lock)
+            {
+                _current++;
+                if (_current > Peak)
+                {
+                    Peak = _current;
+                }
+            }
+        }
+
+        public void Exit()
+        {
+            lock (_lock)
+            {
+                _current--;
+            }
+        }
     }
 }

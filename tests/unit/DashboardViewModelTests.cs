@@ -154,6 +154,21 @@ public sealed class DashboardViewModelTests
         vm.StatusSeverity.Should().Be("Success");
     }
 
+    [Fact]
+    public async Task Refresh_Failure_HidesAttentionEvenWhenEarlierLoadHadFailures()
+    {
+        var vm = CreateViewModel(new FailOnRefreshHandler());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.HasFailedDocuments.Should().BeTrue();
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.StatusSeverity.Should().Be("Error");
+        vm.HasFailedDocuments.Should().BeFalse();
+        vm.FailedDocuments.Should().Be(1);
+    }
+
     private static DashboardViewModel CreateViewModel(bool empty = false, bool fail = false) =>
         CreateViewModel(new DashboardHandler(empty, fail));
 
@@ -170,6 +185,38 @@ public sealed class DashboardViewModelTests
             history,
             new ClientSession { WorkstationUrl = "https://workstation", ApiKey = "key" }
         );
+    }
+
+    /// <summary>First load returns one failed document; the refresh cannot reach the workstation.</summary>
+    private sealed class FailOnRefreshHandler : HttpMessageHandler
+    {
+        private int _calls;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            if (path.EndsWith("/documents", StringComparison.Ordinal) && ++_calls > 1)
+            {
+                throw new HttpRequestException("cannot reach AI workstation: refresh failed");
+            }
+
+            var body =
+                path.EndsWith("/documents", StringComparison.Ordinal)
+                    ? """
+                        [{"id":"00000000-0000-0000-0000-000000000009","filename":"bad.pdf","mime":"application/pdf","size":1,"hash":"c","status":"Failed","createdBy":"u","createdAt":"2026-09-22T00:00:00Z"}]
+                        """
+                : path.EndsWith("/history", StringComparison.Ordinal) ? HistoryEmptyJson
+                : MineEmptyJson;
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                }
+            );
+        }
     }
 
     private sealed class DashboardHandler : HttpMessageHandler

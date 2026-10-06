@@ -264,7 +264,7 @@
             Margin="0,8,0,0"
             HorizontalAlignment="Center"
             Style="{StaticResource SecondaryText}"
-            Text="Preparing answer…"
+            Text="Searching the library and writing your answer…"
             Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
         />
     </Grid>

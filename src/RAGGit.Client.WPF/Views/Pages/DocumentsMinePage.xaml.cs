@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.ViewModels;
@@ -20,5 +21,11 @@ public partial class DocumentsMinePage : Page
                 _ = ViewModel.LoadCommand.ExecuteAsync(null);
             }
         };
+        // Stop the status loop when this transient page is navigated away from,
+        // so it never keeps polling the workstation for a discarded view.
+        Unloaded += (_, _) => ViewModel.StopStatusPolling();
     }
+
+    private void OnClearSearchClicked(object sender, RoutedEventArgs e) =>
+        ViewModel.SearchText = string.Empty;
 }

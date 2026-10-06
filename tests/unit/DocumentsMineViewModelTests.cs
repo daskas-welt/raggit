@@ -59,6 +59,28 @@ public sealed class DocumentsMineViewModelTests
     }
 
     [Fact]
+    public async Task LoadMore_AfterOffsetReset_AppendsAfterLoadedCount()
+    {
+        // The status poll refetches from offset 0 and rewrites Offset. LoadMore
+        // must still append after the loaded items, not re-request the page at
+        // Offset + Limit (which would duplicate rows).
+        var offsets = new List<int>();
+        var viewModel = BuildViewModel(total: 100, pageSize: 20, requestOffsets: offsets);
+        viewModel.Limit = 20;
+
+        await viewModel.LoadCommand.ExecuteAsync(null); // offset 0 -> 20 items
+        await viewModel.LoadMoreCommand.ExecuteAsync(null); // offset 20 -> 40 items
+
+        // Simulate the status poll refetching from 0 (it rewrites Offset).
+        viewModel.Offset = 0;
+
+        await viewModel.LoadMoreCommand.ExecuteAsync(null);
+
+        offsets.Should().Equal(0, 20, 40);
+        viewModel.Items.Select(i => i.Filename).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
     public async Task Load_NoDocuments_SetsEmpty()
     {
         var viewModel = CreateViewModel(total: 0, pageSize: 2);
@@ -77,12 +99,17 @@ public sealed class DocumentsMineViewModelTests
         return viewModel;
     }
 
-    private static DocumentsMineViewModel BuildViewModel(int total, int pageSize)
+    private static DocumentsMineViewModel BuildViewModel(
+        int total,
+        int pageSize,
+        List<int>? requestOffsets = null
+    )
     {
         var handler = new TestMessageHandler(request =>
         {
             request.RequestUri!.PathAndQuery.Should().StartWith("/api/documents/mine");
             var (limit, offset) = ParsePaging(request.RequestUri!.Query, pageSize);
+            requestOffsets?.Add(offset);
             var items = Enumerable
                 .Range(offset, Math.Max(0, Math.Min(limit, total - offset)))
                 .Select(i => new

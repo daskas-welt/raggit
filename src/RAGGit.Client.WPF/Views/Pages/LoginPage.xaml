@@ -47,6 +47,16 @@
                     StatusAutomationId="LoginStatusMessage"
                 />
 
+                <ui:TextBlock
+                    x:Name="LoginProgressText"
+                    Margin="0,0,0,12"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource SecondaryText}"
+                    AutomationProperties.AutomationId="LoginProgressText"
+                    Text="Signing in…"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                />
+
                 <ui:Button
                     x:Name="SignInButton"
                     AutomationProperties.AutomationId="SignInButton"
