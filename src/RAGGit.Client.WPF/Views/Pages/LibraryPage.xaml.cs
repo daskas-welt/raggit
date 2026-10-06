@@ -42,11 +42,9 @@ public partial class LibraryPage : Page
 
     /// <summary>
     /// Page-owned responsive switch (Dashboard/Admin pattern): at content widths
-    /// ≤720 DIPs the secondary table columns (Creator, Created) collapse and the
-    /// 880-DIP floor is removed, so Filename, Status, and the row actions fit
-    /// without horizontal scrolling; wider widths restore every column and the
-    /// floor. The header row and the row template share the same resource keys,
-    /// so both states stay consistent per state.
+    /// ≤720 DIPs the secondary table columns (Type, Size, Creator, Created) collapse
+    /// so Filename, Status, and the row actions fit without horizontal scrolling;
+    /// wider widths restore every column.
     /// </summary>
     private void ApplyResponsiveLayout(double width)
     {
@@ -57,26 +55,13 @@ public partial class LibraryPage : Page
         }
 
         _compactTable = compact;
-        if (compact)
-        {
-            // Type and Size join Creator and Created below 720 DIPs, leaving
-            // Filename, Status, and the row actions (029, FR-009).
-            Resources["LibraryTypeColumnWidth"] = new GridLength(0);
-            Resources["LibrarySizeColumnWidth"] = new GridLength(0);
-            Resources["LibraryCreatorColumnWidth"] = new GridLength(0);
-            Resources["LibraryCreatedColumnWidth"] = new GridLength(0);
-            Resources["LibrarySecondaryColumnVisibility"] = Visibility.Collapsed;
-            TableGrid.MinWidth = 0;
-        }
-        else
-        {
-            Resources["LibraryTypeColumnWidth"] = new GridLength(70);
-            Resources["LibrarySizeColumnWidth"] = new GridLength(90);
-            Resources["LibraryCreatorColumnWidth"] = new GridLength(130);
-            Resources["LibraryCreatedColumnWidth"] = new GridLength(150);
-            Resources["LibrarySecondaryColumnVisibility"] = Visibility.Visible;
-            TableGrid.MinWidth = 880;
-        }
+        // Type and Size join Creator and Created below 720 DIPs, leaving
+        // Filename, Status, and the row actions (029, FR-009).
+        var secondaryVisibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        TypeColumn.Visibility = secondaryVisibility;
+        SizeColumn.Visibility = secondaryVisibility;
+        CreatorColumn.Visibility = secondaryVisibility;
+        CreatedColumn.Visibility = secondaryVisibility;
     }
 
     private void OnClearSearchClicked(object sender, RoutedEventArgs e) =>

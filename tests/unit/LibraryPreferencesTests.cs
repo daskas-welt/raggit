@@ -6,14 +6,14 @@ namespace RAGGit.Tests.Unit;
 
 /// <summary>
 /// 007-library-pagination (red-first): the page-size preference round-trips
-/// through the seam, defaults to 25, and clamps invalid stored values.
+/// through the seam, defaults to 10, and clamps invalid stored values.
 /// </summary>
 public sealed class LibraryPreferencesTests
 {
     [Fact]
-    public void FreshStore_ReturnsDefault25()
+    public void FreshStore_ReturnsDefault10()
     {
-        new InMemoryLibraryPreferences().GetPageSize().Should().Be(25);
+        new InMemoryLibraryPreferences().GetPageSize().Should().Be(10);
     }
 
     [Theory]
@@ -40,6 +40,6 @@ public sealed class LibraryPreferencesTests
         ILibraryPreferences preferences = new InMemoryLibraryPreferences();
         preferences.SetPageSize(stored);
 
-        preferences.GetPageSize().Should().Be(25);
+        preferences.GetPageSize().Should().Be(10);
     }
 }

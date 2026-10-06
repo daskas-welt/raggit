@@ -41,6 +41,11 @@ public partial class DashboardPage : Page
         }
 
         _compactPanels = compact;
+
+        // Collapse the account chip's secondary lines on narrow layouts so the header
+        // (title + refresh + chip) never crowds or overflows.
+        ProfileChipDetails.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+
         if (compact)
         {
             PanelsGrid.ColumnDefinitions[1].Width = new GridLength(0);
@@ -64,11 +69,6 @@ public partial class DashboardPage : Page
 
     private void OnAskClicked(object sender, RoutedEventArgs e) => _navigation.NavigateToAsk();
 
-    private void OnHistoryClicked(object sender, RoutedEventArgs e) =>
-        _navigation.NavigateToHistory();
-
     private void OnMyDocsClicked(object sender, RoutedEventArgs e) =>
         _navigation.NavigateToMyDocs();
-
-    private void OnAdminClicked(object sender, RoutedEventArgs e) => _navigation.NavigateToAdmin();
 }

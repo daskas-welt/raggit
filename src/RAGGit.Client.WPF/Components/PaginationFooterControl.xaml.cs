@@ -46,7 +46,7 @@ public partial class PaginationFooterControl : UserControl
             nameof(SelectedPageSize),
             typeof(int),
             typeof(PaginationFooterControl),
-            new PropertyMetadata(25)
+            new PropertyMetadata(10)
         );
 
     public static readonly DependencyProperty StatusTextProperty = DependencyProperty.Register(

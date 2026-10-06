@@ -16,6 +16,8 @@
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:ShortDateConverter x:Key="ShortDate" />
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
+        <converters:ResponsiveColumnCountConverter x:Key="DashboardMetricColumns" />
+        <converters:ResponsiveColumnCountConverter x:Key="DashboardRecentColumns" />
     </Page.Resources>
     <Grid>
         <ScrollViewer
@@ -26,168 +28,143 @@
             <Grid
                 x:Name="DashboardLayout"
                 SizeChanged="OnDashboardLayoutSizeChanged"
-                RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto"
+                RowDefinitions="Auto, Auto, Auto, Auto, Auto"
             >
-                <!-- Shared header card: title + supporting line on the left, quick actions on the right. -->
+                <!-- Shared header card: title + supporting line on the left, the refresh
+                     affordance and the signed-in account chip on the right. -->
                 <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-                    <WrapPanel Orientation="Horizontal">
-                        <StackPanel MinWidth="280" Margin="0,0,24,12" VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="*, Auto, Auto">
+                        <StackPanel
+                            Grid.Column="0"
+                            MinWidth="280"
+                            Margin="0,0,24,0"
+                            VerticalAlignment="Center"
+                        >
                             <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Dashboard" />
                             <ui:TextBlock
                                 Style="{StaticResource PageSubtitleText}"
                                 Text="Your library at a glance"
                             />
                         </StackPanel>
-                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:Button
-                                MinHeight="44"
-                                Margin="0,0,8,12"
-                                VerticalAlignment="Center"
-                                AutomationProperties.AutomationId="DashboardTileHistory"
-                                AutomationProperties.Name="Open history"
-                                Content="History"
-                                ToolTip="Open history"
-                                Click="OnHistoryClicked"
-                            >
-                                <ui:Button.Icon>
-                                    <ui:SymbolIcon Symbol="History24" />
-                                </ui:Button.Icon>
-                            </ui:Button>
-                            <ui:Button
-                                MinHeight="44"
-                                Margin="0,0,8,12"
-                                VerticalAlignment="Center"
-                                AutomationProperties.AutomationId="DashboardTileMyDocs"
-                                AutomationProperties.Name="Open my documents"
-                                Content="My Docs"
-                                ToolTip="Open my documents"
-                                Click="OnMyDocsClicked"
-                            >
-                                <ui:Button.Icon>
-                                    <ui:SymbolIcon Symbol="Document24" />
-                                </ui:Button.Icon>
-                            </ui:Button>
-                            <ui:Button
-                                MinHeight="44"
-                                Margin="0,0,8,12"
-                                VerticalAlignment="Center"
-                                AutomationProperties.AutomationId="DashboardTileAdmin"
-                                AutomationProperties.Name="Open admin"
-                                Content="Admin"
-                                ToolTip="Open admin"
-                                Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
-                                Click="OnAdminClicked"
-                            >
-                                <ui:Button.Icon>
-                                    <ui:SymbolIcon Symbol="People24" />
-                                </ui:Button.Icon>
-                            </ui:Button>
-                            <ui:Button
-                                Width="44"
-                                Height="44"
-                                Margin="0,0,0,12"
-                                VerticalAlignment="Center"
-                                AutomationProperties.AutomationId="DashboardRefreshButton"
-                                AutomationProperties.Name="Refresh dashboard"
-                                Command="{Binding LoadCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                                ToolTip="Refresh dashboard"
-                            >
-                                <Grid Width="24" Height="24">
+                        <ui:Button
+                            Grid.Column="2"
+                            Width="44"
+                            Height="44"
+                            VerticalAlignment="Top"
+                            AutomationProperties.AutomationId="DashboardRefreshButton"
+                            AutomationProperties.Name="Refresh dashboard"
+                            Command="{Binding LoadCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                            ToolTip="Refresh dashboard"
+                        >
+                            <Grid Width="24" Height="24">
+                                <ui:SymbolIcon
+                                    Symbol="ArrowClockwise24"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                                />
+                                <ui:ProgressRing
+                                    Width="24"
+                                    Height="24"
+                                    IsIndeterminate="True"
+                                    AutomationProperties.Name="Refreshing dashboard"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                                />
+                            </Grid>
+                        </ui:Button>
+                        <Border
+                            Grid.Column="1"
+                            Margin="0,0,12,0"
+                            Padding="14,10"
+                            VerticalAlignment="Center"
+                            CornerRadius="8"
+                            Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
+                            BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            AutomationProperties.AutomationId="DashboardProfileCard"
+                            AutomationProperties.Name="Logged user profile"
+                        >
+                            <Grid MinWidth="260" ColumnDefinitions="Auto, *">
+                                <Border
+                                    Width="40"
+                                    Height="40"
+                                    VerticalAlignment="Center"
+                                    BorderThickness="1"
+                                    CornerRadius="20"
+                                >
                                     <ui:SymbolIcon
-                                        Symbol="ArrowClockwise24"
-                                        Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
+                                        Symbol="Person24"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
                                     />
-                                    <ui:ProgressRing
-                                        Width="24"
-                                        Height="24"
-                                        IsIndeterminate="True"
-                                        AutomationProperties.Name="Refreshing dashboard"
-                                        Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                                </Border>
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                >
+                                    <ui:TextBlock
+                                        FontTypography="BodyStrong"
+                                        TextTrimming="CharacterEllipsis"
+                                        Text="{Binding UserDisplayName}"
                                     />
-                                </Grid>
-                            </ui:Button>
-                        </WrapPanel>
-                    </WrapPanel>
+                                    <StackPanel x:Name="ProfileChipDetails" Margin="0,2,0,0">
+                                        <ui:TextBlock
+                                            FontTypography="Caption"
+                                            Style="{StaticResource SecondaryText}"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding UserHandle}"
+                                        />
+                                        <ui:TextBlock
+                                            Margin="0,2,0,0"
+                                            FontTypography="Caption"
+                                            Style="{StaticResource SecondaryText}"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding UserDetails}"
+                                        />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </ui:Card>
 
-                <!-- Post-header row: library summary left, profile card right. -->
-                <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto">
-                    <ui:TextBlock
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        Text="{Binding LibrarySummary}"
-                    >
-                        <ui:TextBlock.Style>
-                            <Style
-                                TargetType="ui:TextBlock"
-                                BasedOn="{StaticResource PageSubtitleText}"
-                            >
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasLoaded}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ui:TextBlock.Style>
-                    </ui:TextBlock>
-                    <ui:Card
-                        Grid.Column="1"
-                        Margin="12,0,0,0"
-                        Padding="14,10"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="DashboardProfileCard"
-                        AutomationProperties.Name="Logged user profile"
-                    >
-                        <Grid MinWidth="260" ColumnDefinitions="Auto, *">
-                            <Border
-                                Width="40"
-                                Height="40"
-                                VerticalAlignment="Center"
-                                BorderThickness="1"
-                                CornerRadius="20"
-                            >
-                                <ui:SymbolIcon
-                                    Symbol="Person24"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                />
-                            </Border>
-                            <StackPanel
-                                Grid.Column="1"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Center"
-                            >
-                                <ui:TextBlock
-                                    FontTypography="BodyStrong"
-                                    TextTrimming="CharacterEllipsis"
-                                    Text="{Binding UserDisplayName}"
-                                />
-                                <ui:TextBlock
-                                    Margin="0,2,0,0"
-                                    FontTypography="Caption"
-                                    Style="{StaticResource SecondaryText}"
-                                    TextTrimming="CharacterEllipsis"
-                                    Text="{Binding UserHandle}"
-                                />
-                                <ui:TextBlock
-                                    Margin="0,2,0,0"
-                                    FontTypography="Caption"
-                                    Style="{StaticResource SecondaryText}"
-                                    TextTrimming="CharacterEllipsis"
-                                    Text="{Binding UserDetails}"
-                                />
-                            </StackPanel>
-                        </Grid>
-                    </ui:Card>
-                </Grid>
+                <!-- Status: directly under the header, matching the People Management page so
+                     "Dashboard refreshed" / load errors are seen without scrolling. -->
+                <components:StatusFooterControl
+                    Grid.Row="1"
+                    Margin="0,12,0,12"
+                    Message="{Binding StatusMessage, Mode=OneWay}"
+                    Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+                    IsOpen="{Binding HasStatus, Mode=OneWay}"
+                    IsBusy="{Binding IsBusy, Mode=OneWay}"
+                    RetryContent="Retry"
+                    StatusAutomationId="DashboardStatusBar"
+                    RetryAutomationId="DashboardRetryButton"
+                >
+                    <components:StatusFooterControl.Style>
+                        <Style TargetType="components:StatusFooterControl">
+                            <!-- The header carries the page-wide refresh; the status
+                                 bar keeps its Retry only for a failed load. -->
+                            <Setter Property="RetryCommand" Value="{Binding RetryCommand}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StatusSeverity}" Value="Success">
+                                    <Setter Property="RetryCommand" Value="{x:Null}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </components:StatusFooterControl.Style>
+                </components:StatusFooterControl>
 
                 <!-- Loading placeholders (feature 029, FR-007): the final layout with em dashes
                      instead of numbers, so a first load never shows a blank area or a fabricated
                      count. Em dashes are visibly not data. -->
-                <WrapPanel Grid.Row="2" Margin="0,4,0,0" Orientation="Horizontal">
-                    <WrapPanel.Style>
-                        <Style TargetType="WrapPanel">
+                <UniformGrid
+                    Grid.Row="2"
+                    Margin="0,4,0,0"
+                    Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource DashboardMetricColumns}, ConverterParameter=6, FallbackValue=6}"
+                >
+                    <UniformGrid.Style>
+                        <Style TargetType="UniformGrid">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
                                 <MultiDataTrigger>
@@ -199,60 +176,65 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </WrapPanel.Style>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    </UniformGrid.Style>
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Documents" />
                         </StackPanel>
                     </ui:Card>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Ready" />
                         </StackPanel>
                     </ui:Card>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Indexing" />
                         </StackPanel>
                     </ui:Card>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Failed" />
                         </StackPanel>
                     </ui:Card>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Questions" />
                         </StackPanel>
                     </ui:Card>
-                    <ui:Card Width="200" Margin="0,0,12,12" Padding="0">
+                    <ui:Card Margin="0,0,12,12" Padding="0" VerticalAlignment="Stretch">
                         <StackPanel Margin="14,12" VerticalAlignment="Center">
                             <ui:TextBlock FontTypography="Title" Text="—" />
                             <ui:TextBlock Style="{StaticResource SecondaryText}" Text="Mine" />
                         </StackPanel>
                     </ui:Card>
-                </WrapPanel>
+                </UniformGrid>
 
-                <!-- Metric cards: icon + count + label; wrap at narrow widths. Hidden until a
+                <!-- Metric cards: icon + count + label, stretching to span the full width on
+                     desktop and reflowing to fewer columns at narrow widths. Hidden until a
                      load has succeeded, so a first-load failure never presents the initial
                      zeros as loaded data. -->
-                <WrapPanel Grid.Row="2" Margin="0,4,0,0" Orientation="Horizontal">
-                    <WrapPanel.Style>
-                        <Style TargetType="WrapPanel">
+                <UniformGrid
+                    Grid.Row="2"
+                    Margin="0,4,0,0"
+                    Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource DashboardMetricColumns}, ConverterParameter=6, FallbackValue=6}"
+                >
+                    <UniformGrid.Style>
+                        <Style TargetType="UniformGrid">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasLoaded}" Value="False">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </WrapPanel.Style>
+                    </UniformGrid.Style>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -294,7 +276,7 @@
                         </Grid>
                     </ui:CardAction>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -336,7 +318,7 @@
                         </Grid>
                     </ui:CardAction>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -378,7 +360,7 @@
                         </Grid>
                     </ui:CardAction>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -476,7 +458,7 @@
                         </Grid>
                     </ui:CardAction>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -518,7 +500,7 @@
                         </Grid>
                     </ui:CardAction>
                     <ui:CardAction
-                        Width="200"
+                        VerticalAlignment="Stretch"
                         Margin="0,0,12,12"
                         Padding="0"
                         IsChevronVisible="False"
@@ -556,7 +538,7 @@
                             </StackPanel>
                         </Grid>
                     </ui:CardAction>
-                </WrapPanel>
+                </UniformGrid>
 
                 <!-- Whole-dashboard empty state: only after a successful load, once the library is
                      confirmed empty and no questions exist. Not shown while loading or after a failure. -->
@@ -665,6 +647,7 @@
                         Margin="0,0,8,0"
                         Padding="18"
                         HorizontalContentAlignment="Stretch"
+                        VerticalAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
                     >
                         <Grid RowDefinitions="Auto, *">
@@ -695,29 +678,53 @@
                                 ItemsSource="{Binding RecentDocuments}"
                                 Visibility="{Binding HasLibraryData, Converter={StaticResource BoolVisibility}}"
                             >
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid
+                                            VerticalAlignment="Top"
+                                            Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource DashboardRecentColumns}, ConverterParameter=2, FallbackValue=2}"
+                                        />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models:Document}">
-                                        <Grid Margin="0,10" ColumnDefinitions="*, Auto, Auto">
-                                            <ui:TextBlock
-                                                Grid.Column="0"
-                                                Margin="0,0,12,0"
-                                                VerticalAlignment="Center"
-                                                TextTrimming="CharacterEllipsis"
-                                                Text="{Binding Filename}"
-                                            />
-                                            <components:StatusChip
-                                                Grid.Column="1"
-                                                Margin="0,0,12,0"
-                                                VerticalAlignment="Center"
-                                                Status="{Binding Status}"
-                                            />
-                                            <ui:TextBlock
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                Style="{StaticResource SecondaryText}"
-                                                Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
-                                            />
-                                        </Grid>
+                                        <ui:Card
+                                            Margin="0,0,12,12"
+                                            Padding="{StaticResource CardPaddingSmall}"
+                                            VerticalAlignment="Stretch"
+                                        >
+                                            <Grid RowDefinitions="Auto, Auto">
+                                                <ui:TextBlock
+                                                    Grid.Row="0"
+                                                    FontTypography="BodyStrong"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding Filename}"
+                                                />
+                                                <StackPanel
+                                                    Grid.Row="1"
+                                                    Margin="0,8,0,0"
+                                                    Orientation="Horizontal"
+                                                >
+                                                    <components:StatusChip
+                                                        Status="{Binding Status}"
+                                                        VerticalAlignment="Center"
+                                                    />
+                                                    <ui:TextBlock
+                                                        Margin="8,0,0,0"
+                                                        FontTypography="Caption"
+                                                        Style="{StaticResource SecondaryText}"
+                                                        VerticalAlignment="Center"
+                                                        Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                                    />
+                                                </StackPanel>
+                                            </Grid>
+                                        </ui:Card>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -765,28 +772,27 @@
                         Margin="8,0,0,0"
                         Padding="18"
                         HorizontalContentAlignment="Stretch"
+                        VerticalAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
                     >
                         <Grid RowDefinitions="Auto, *">
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="47*"/>
-                                    <ColumnDefinition Width="226*"/>
-                                </Grid.ColumnDefinitions>
+                            <Grid Margin="0,0,0,12" ColumnDefinitions="*, Auto">
                                 <ui:TextBlock
                                     Grid.Column="0"
                                     FontTypography="Title"
                                     VerticalAlignment="Center"
-                                    Text="Recent questions" Grid.ColumnSpan="2" Margin="0,0,44,0"
+                                    Text="Recent questions"
                                 />
                                 <ui:Button
                                     Grid.Column="1"
                                     Width="44"
                                     Height="44"
+                                    VerticalAlignment="Top"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.AutomationId="DashboardAskButton"
                                     AutomationProperties.Name="Ask the library"
                                     Click="OnAskClicked"
-                                    ToolTip="Ask the library" Margin="408,0,0,0"
+                                    ToolTip="Ask the library"
                                 >
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Chat24" />
@@ -798,27 +804,53 @@
                                 ItemsSource="{Binding RecentQueries}"
                                 Visibility="{Binding HasQueryData, Converter={StaticResource BoolVisibility}}"
                             >
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid
+                                            VerticalAlignment="Top"
+                                            Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource DashboardRecentColumns}, ConverterParameter=2, FallbackValue=2}"
+                                        />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models:HistoryItem}">
-                                        <StackPanel Margin="0,10">
-                                            <ui:TextBlock
-                                                TextTrimming="CharacterEllipsis"
-                                                Text="{Binding PromptPreview}"
-                                            />
-                                            <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                        <ui:Card
+                                            Margin="0,0,12,12"
+                                            Padding="{StaticResource CardPaddingSmall}"
+                                            VerticalAlignment="Stretch"
+                                        >
+                                            <Grid RowDefinitions="Auto, Auto">
                                                 <ui:TextBlock
-                                                    FontTypography="Caption"
-                                                    Style="{StaticResource SecondaryText}"
-                                                    Text="{Binding CitationCount}"
+                                                    Grid.Row="0"
+                                                    FontTypography="BodyStrong"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding PromptPreview}"
                                                 />
-                                                <ui:TextBlock
-                                                    Margin="4,0,0,0"
-                                                    FontTypography="Caption"
-                                                    Style="{StaticResource SecondaryText}"
-                                                    Text="citations"
-                                                />
-                                            </StackPanel>
-                                        </StackPanel>
+                                                <StackPanel
+                                                    Grid.Row="1"
+                                                    Margin="0,8,0,0"
+                                                    Orientation="Horizontal"
+                                                >
+                                                    <ui:TextBlock
+                                                        FontTypography="Caption"
+                                                        Style="{StaticResource SecondaryText}"
+                                                        Text="{Binding CitationCount}"
+                                                    />
+                                                    <ui:TextBlock
+                                                        Margin="4,0,0,0"
+                                                        FontTypography="Caption"
+                                                        Style="{StaticResource SecondaryText}"
+                                                        Text="citations"
+                                                    />
+                                                </StackPanel>
+                                            </Grid>
+                                        </ui:Card>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -849,20 +881,6 @@
                         </Grid>
                     </ui:Card>
                 </Grid>
-
-                <!-- Status -->
-                <components:StatusFooterControl
-                    Grid.Row="5"
-                    Margin="0,12,0,0"
-                    Message="{Binding StatusMessage, Mode=OneWay}"
-                    Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
-                    IsOpen="{Binding HasStatus, Mode=OneWay}"
-                    IsBusy="{Binding IsBusy, Mode=OneWay}"
-                    RetryCommand="{Binding RetryCommand}"
-                    RetryContent="Retry"
-                    StatusAutomationId="DashboardStatusBar"
-                    RetryAutomationId="DashboardRetryButton"
-                />
             </Grid>
         </ScrollViewer>
     </Grid>

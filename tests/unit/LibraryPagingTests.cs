@@ -15,23 +15,23 @@ namespace RAGGit.Tests.Unit;
 
 /// <summary>
 /// 007-library-pagination US1 (red-first): the library pages client-side with a
-/// 25-row default, status text, first/previous/numbered/next/last navigation,
+/// 10-row default, status text, first/previous/numbered/next/last navigation,
 /// clamping, and an empty zero-state — all without extra HTTP.
 /// </summary>
 public sealed class LibraryPagingTests
 {
     [Fact]
-    public async Task FirstPage_Shows25AndStatus()
+    public async Task FirstPage_Shows10AndStatus()
     {
         var vm = CreateViewModel(30);
         await vm.LoadDocumentsCommand.ExecuteAsync(null);
 
-        vm.PageSize.Should().Be(25);
+        vm.PageSize.Should().Be(10);
         vm.PageNumber.Should().Be(1);
         vm.TotalCount.Should().Be(30);
-        vm.TotalPages.Should().Be(2);
-        vm.PageItems.Should().HaveCount(25);
-        vm.StatusText.Should().Be("Showing 1–25 of 30 entries");
+        vm.TotalPages.Should().Be(3);
+        vm.PageItems.Should().HaveCount(10);
+        vm.StatusText.Should().Be("Showing 1–10 of 30 entries");
         vm.HasPrevious.Should().BeFalse();
         vm.HasNext.Should().BeTrue();
     }
@@ -45,10 +45,10 @@ public sealed class LibraryPagingTests
         vm.NextPageCommand.Execute(null);
 
         vm.PageNumber.Should().Be(2);
-        vm.PageItems.Should().HaveCount(5);
-        vm.StatusText.Should().Be("Showing 26–30 of 30 entries");
+        vm.PageItems.Should().HaveCount(10);
+        vm.StatusText.Should().Be("Showing 11–20 of 30 entries");
         vm.HasPrevious.Should().BeTrue();
-        vm.HasNext.Should().BeFalse();
+        vm.HasNext.Should().BeTrue();
     }
 
     [Fact]
@@ -58,11 +58,11 @@ public sealed class LibraryPagingTests
         await vm.LoadDocumentsCommand.ExecuteAsync(null);
 
         vm.LastPageCommand.Execute(null);
-        vm.PageNumber.Should().Be(2);
+        vm.PageNumber.Should().Be(3);
 
         vm.FirstPageCommand.Execute(null);
         vm.PageNumber.Should().Be(1);
-        vm.StatusText.Should().Be("Showing 1–25 of 30 entries");
+        vm.StatusText.Should().Be("Showing 1–10 of 30 entries");
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class LibraryPagingTests
         vm.GoToPageCommand.Execute(3);
 
         vm.PageNumber.Should().Be(3);
-        vm.StatusText.Should().Be("Showing 51–55 of 55 entries");
+        vm.StatusText.Should().Be("Showing 21–30 of 55 entries");
     }
 
     [Fact]
@@ -85,8 +85,8 @@ public sealed class LibraryPagingTests
 
         vm.GoToPageCommand.Execute(99);
 
-        vm.PageNumber.Should().Be(2);
-        vm.PageItems.Should().HaveCount(5);
+        vm.PageNumber.Should().Be(3);
+        vm.PageItems.Should().HaveCount(10);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public sealed class LibraryPagingTests
         var vm = CreateViewModel(() => count);
         await vm.LoadDocumentsCommand.ExecuteAsync(null);
         vm.LastPageCommand.Execute(null);
-        vm.PageNumber.Should().Be(2);
+        vm.PageNumber.Should().Be(3);
 
         count = 10;
         await vm.LoadDocumentsCommand.ExecuteAsync(null);
@@ -155,7 +155,7 @@ public sealed class LibraryPagingTests
 
         var vm = CreateViewModel(10, preferences);
 
-        vm.PageSize.Should().Be(25);
+        vm.PageSize.Should().Be(10);
     }
 
     private static LibraryViewModel CreateViewModel(int total) => CreateViewModel(() => total);

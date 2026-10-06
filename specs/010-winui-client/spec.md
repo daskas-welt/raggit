@@ -60,7 +60,7 @@ File upload uses `FileOpenPicker`; per-row download stages bytes and opens exter
 
 1. **Given** the Upload page, **When** a file is picked, **Then** the OS picker opens and the selected file uploads (formats pdf/docx/xlsx/txt/md).
 2. **Given** a library row with stored original, **When** download is tapped, **Then** bytes round-trip and the OS opens the file externally.
-3. **Given** a changed library page size, **When** the app restarts, **Then** the size persists (invalid values fall back to 25).
+3. **Given** a changed library page size, **When** the app restarts, **Then** the size persists (invalid values fall back to 10).
 4. **Given** an expired session mid-browse, **When** the next request returns 401, **Then** the token is cleared and the person is returned to sign-in.
 
 ---
@@ -101,7 +101,7 @@ File upload uses `FileOpenPicker`; per-row download stages bytes and opens exter
 - **FR-004**: Navigation MUST be a persistent `NavigationView` pane listing Library, Ask, History, My Docs, Upload, Admin (admin-only).
 - **FR-005**: Credential storage MUST use Credential Locker (`PasswordVault`); tokens MUST NOT touch plain files or logs.
 - **FR-006**: File pick MUST use `FileOpenPicker` (HWND-initialized); external open MUST stage to app-local storage first.
-- **FR-007**: Library page size MUST persist in LocalSettings with 25 default and valid-option fallback (10/25/50/100).
+- **FR-007**: Library page size MUST persist in LocalSettings with 10 default and valid-option fallback (10/25/50/100).
 - **FR-008**: Session expiry (401) MUST clear the token and return to sign-in on the UI thread.
 - **FR-009**: Debug builds run unpackaged (F5 loop); Release builds package as signed MSIX for sideload.
 - **FR-010**: The client MUST stay thin (no models/embeddings/vectors); all retrieval/generation stays on the workstation.

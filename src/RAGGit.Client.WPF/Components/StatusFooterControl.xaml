@@ -34,6 +34,11 @@
             ToolTip="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
         >
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:TextBlock
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"
+                    Text="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
+                />
                 <Grid Width="24" Height="24">
                     <ui:SymbolIcon
                         Symbol="ArrowClockwise24"
@@ -47,11 +52,6 @@
                         Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
                     />
                 </Grid>
-                <ui:TextBlock
-                    Margin="8,0,0,0"
-                    VerticalAlignment="Center"
-                    Text="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
-                />
             </StackPanel>
             <ui:Button.Style>
                 <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">

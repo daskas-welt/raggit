@@ -20,7 +20,7 @@ public partial class AdminUsersPage : Page
     private ICollectionView? _usersView;
     private string _sortProperty = nameof(UserAccountDto.DisplayName);
     private ListSortDirection _sortDirection = ListSortDirection.Ascending;
-    private bool _compactLayout;
+    private bool? _compactLayout;
     private bool _restoringRoleSelection;
     private readonly SearchSessionState _searchSession;
     private bool _searchReady;
@@ -274,6 +274,8 @@ public partial class AdminUsersPage : Page
     private void ApplyResponsiveLayout(double width)
     {
         var compact = width <= 720;
+        // Null until the first call, so the initial layout is always applied
+        // (the XAML carries the wide default, but the first measurement wins).
         if (compact == _compactLayout)
         {
             return;

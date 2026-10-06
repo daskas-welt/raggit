@@ -20,6 +20,9 @@ public sealed partial class DashboardViewModel : ObservableObject
     private readonly QueryHistoryApiClient _historyClient;
     private readonly ClientSession _session;
 
+    /// <summary>How many recent items each dashboard panel shows.</summary>
+    private const int RecentItemLimit = 10;
+
     [ObservableProperty]
     private ObservableCollection<Document> _recentDocuments = new();
 
@@ -101,11 +104,6 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public string UserDetails => $"{RoleContext} | {_session.IdentityType}";
 
-    public string LibrarySummary =>
-        TotalDocuments == 0
-            ? "No documents in the library"
-            : $"{TotalDocuments} documents in the library";
-
     /// <summary>True after the latest load failed. Attention styling stays off until a load succeeds (FR-007).</summary>
     private bool _loadFailed;
 
@@ -115,9 +113,6 @@ public sealed partial class DashboardViewModel : ObservableObject
     /// remain, so attention never paints over an error state (029, FR-005, FR-007).
     /// </summary>
     public bool HasFailedDocuments => HasLoaded && !_loadFailed && FailedDocuments > 0;
-
-    public string QuerySummary =>
-        TotalQueries == 0 ? "No saved questions yet" : $"{TotalQueries} saved questions";
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -133,7 +128,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         try
         {
             var documentsTask = _documentsClient.GetDocumentsAsync();
-            var historyTask = _historyClient.GetHistoryAsync(limit: 5, offset: 0);
+            var historyTask = _historyClient.GetHistoryAsync(limit: RecentItemLimit, offset: 0);
             var mineTask = _documentsClient.GetMineAsync(limit: 1, offset: 0);
 
             await Task.WhenAll(documentsTask, historyTask, mineTask);
@@ -155,9 +150,11 @@ public sealed partial class DashboardViewModel : ObservableObject
             MyDocuments = mine.Total;
 
             RecentDocuments = new ObservableCollection<Document>(
-                documents.OrderByDescending(d => d.CreatedAt).Take(5)
+                documents.OrderByDescending(d => d.CreatedAt).Take(RecentItemLimit)
             );
-            RecentQueries = new ObservableCollection<HistoryItem>(history.Items);
+            RecentQueries = new ObservableCollection<HistoryItem>(
+                history.Items.Take(RecentItemLimit)
+            );
             _loadFailed = false;
             HasLoaded = true;
             NotifyDerivedProperties();
@@ -198,8 +195,6 @@ public sealed partial class DashboardViewModel : ObservableObject
         OnPropertyChanged(nameof(HasLibraryData));
         OnPropertyChanged(nameof(HasQueryData));
         OnPropertyChanged(nameof(HasFailedDocuments));
-        OnPropertyChanged(nameof(LibrarySummary));
-        OnPropertyChanged(nameof(QuerySummary));
     }
 
     private void ClearStatus()

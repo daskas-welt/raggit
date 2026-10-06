@@ -232,6 +232,40 @@ public sealed class InvertedBoolToVisibilityConverter : IValueConverter
 }
 
 /// <summary>
+/// 029-history-grid: maps a container width to a 1–N column count for a
+/// responsive tile grid. The max column count comes from
+/// <c>ConverterParameter</c> (default three). All breakpoint logic lives in
+/// <see cref="ResponsiveGridLayout"/> so it can be unit-tested without WPF.
+/// </summary>
+public sealed class ResponsiveColumnCountConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var maxColumns =
+            parameter is string text
+            && int.TryParse(
+                text,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var parsed
+            )
+                ? parsed
+                : 3;
+        return ResponsiveGridLayout.ColumnsFor(
+            value is double width ? width : double.NaN,
+            maxColumns
+        );
+    }
+
+    public object ConvertBack(
+        object value,
+        Type targetType,
+        object parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+/// <summary>
 /// Visible when a bound list is empty (mirrors the WinUI version).
 /// </summary>
 public sealed class EmptyListToVisibilityConverter : IValueConverter

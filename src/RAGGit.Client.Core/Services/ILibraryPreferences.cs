@@ -7,7 +7,7 @@ namespace RAGGit.Client.Core.Services;
 /// </summary>
 public static class LibraryPageSizes
 {
-    public const int Default = 25;
+    public const int Default = 10;
 
     public static readonly int[] Valid = { 10, 25, 50, 100 };
 
@@ -26,7 +26,7 @@ public static class LibraryPageSizes
 public interface ILibraryPreferences
 {
     /// <summary>
-    /// Stored size if valid, else the 25 default (missing or corrupt values
+    /// Stored size if valid, else the 10 default (missing or corrupt values
     /// fall back; see spec edge cases).
     /// </summary>
     int GetPageSize();

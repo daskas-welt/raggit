@@ -10,7 +10,7 @@
         <DataTemplate x:Key="CurrentPageTemplate">
             <ui:Button
                 Content="{Binding Page}"
-                Command="{Binding DataContext.GoToCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                Command="{Binding GoToCommand, ElementName=Root}"
                 CommandParameter="{Binding Page}"
                 Appearance="Primary"
                 FontWeight="SemiBold"
@@ -23,7 +23,7 @@
         <DataTemplate x:Key="PageNumberTemplate">
             <ui:Button
                 Content="{Binding Page}"
-                Command="{Binding DataContext.GoToCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                Command="{Binding GoToCommand, ElementName=Root}"
                 CommandParameter="{Binding Page}"
                 Appearance="Transparent"
                 Padding="8,4"

@@ -12,6 +12,7 @@
 >
     <Page.Resources>
         <converters:HistoryMetaConverter x:Key="HistoryMeta" />
+        <converters:ResponsiveColumnCountConverter x:Key="HistoryColumns" />
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
@@ -35,7 +36,7 @@
                     AutomationProperties.Name="Refresh history"
                     ToolTip="Refresh history"
                     TabIndex="0"
-                    VerticalAlignment="Center"
+                    VerticalAlignment="Top"
                     Command="{Binding RefreshCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 >
@@ -103,14 +104,26 @@
                 SelectionMode="Single"
                 Background="Transparent"
                 BorderThickness="0"
+                ScrollViewer.CanContentScroll="False"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 MouseDoubleClick="OnListDoubleClicked"
             >
+                <ui:ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <!-- UniformGrid splits whatever height it is arranged into evenly across
+                             its rows. Pinning it to the top keeps it at its content height so rows
+                             hug the cards instead of spanning the whole viewport. -->
+                        <UniformGrid
+                            VerticalAlignment="Top"
+                            Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListView}, Converter={StaticResource HistoryColumns}, FallbackValue=3}"
+                        />
+                    </ItemsPanelTemplate>
+                </ui:ListView.ItemsPanel>
                 <ui:ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,6" />
+                        <Setter Property="Margin" Value="0,0,12,12" />
                     </Style>
                 </ui:ListView.ItemContainerStyle>
                 <ui:ListView.ItemTemplate>

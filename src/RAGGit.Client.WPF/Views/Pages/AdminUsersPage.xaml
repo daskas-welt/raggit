@@ -43,7 +43,7 @@
                         Text="Manage accounts and access"
                     />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                     <ui:Button
                         x:Name="AddPersonButton"
                         AutomationProperties.AutomationId="AddPersonButton"
@@ -105,7 +105,7 @@
             Grid.Row="2"
             Margin="0,12,0,0"
             ColumnDefinitions="*, 320"
-            RowDefinitions="2*, *"
+            RowDefinitions="*, 0"
         >
             <ui:Card
                 x:Name="DirectoryPanel"
@@ -114,6 +114,7 @@
                 Margin="0,0,8,0"
                 Padding="0"
                 HorizontalContentAlignment="Stretch"
+                VerticalAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
             >
                 <Grid RowDefinitions="Auto, Auto, *">
@@ -464,6 +465,7 @@
                 Margin="8,0,0,0"
                 Padding="20"
                 HorizontalContentAlignment="Stretch"
+                VerticalAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
             >
                 <Grid>

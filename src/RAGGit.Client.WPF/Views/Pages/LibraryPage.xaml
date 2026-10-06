@@ -19,16 +19,6 @@
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:DocumentDownloadingConverter x:Key="DocumentDownloading" />
-        <!-- Responsive table state (feature 028 US4): the page-owned SizeChanged
-             switch in the code-behind replaces these values at content widths
-             ≤720 DIPs, so the header row and every realized data row collapse
-             and restore together (DynamicResource propagates to template
-             instances, including rows realized after the switch). -->
-        <GridLength x:Key="LibraryTypeColumnWidth">70</GridLength>
-        <GridLength x:Key="LibrarySizeColumnWidth">90</GridLength>
-        <GridLength x:Key="LibraryCreatorColumnWidth">130</GridLength>
-        <GridLength x:Key="LibraryCreatedColumnWidth">150</GridLength>
-        <Visibility x:Key="LibrarySecondaryColumnVisibility">Visible</Visibility>
     </Page.Resources>
     <Grid
         x:Name="LibraryLayout"
@@ -46,10 +36,26 @@
                         Text="Documents available to everyone"
                     />
                 </StackPanel>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                <StackPanel Grid.Column="1" VerticalAlignment="Top" Orientation="Horizontal">
+                    <ui:Button
+                        x:Name="UploadButton"
+                        Width="44"
+                        Height="44"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="UploadButton"
+                        AutomationProperties.Name="Upload documents"
+                        Click="OnUploadClicked"
+                        ToolTip="Upload documents"
+                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowUpload24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                     <ui:Button
                         Width="44"
                         Height="44"
+                        Margin="12,0,0,0"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="RefreshButton"
                         AutomationProperties.Name="Refresh documents"
@@ -70,22 +76,6 @@
                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                             />
                         </Grid>
-                    </ui:Button>
-                    <ui:Button
-                        x:Name="UploadButton"
-                        Width="44"
-                        Height="44"
-                        Margin="12,0,0,0"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="UploadButton"
-                        AutomationProperties.Name="Upload documents"
-                        Click="OnUploadClicked"
-                        ToolTip="Upload documents"
-                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="ArrowUpload24" />
-                        </ui:Button.Icon>
                     </ui:Button>
                 </StackPanel>
             </Grid>
@@ -130,11 +120,12 @@
             />
         </Grid>
 
-        <!-- Document list surface. A Border rather than the library's Card: the Card style centres
-             its content (VerticalContentAlignment=Center, which a local override does not win
-             against in 4.3.0's template), floating a short table in the middle of the card. The
-             Border fills the row; one horizontal scroller wraps the pinned header and the rows so
-             the columns stay aligned, and the ListView owns the vertical scrolling. -->
+        <!-- Document list surface. A WPF-UI DataGrid owns the column headers, row
+             painting and both scrollbars, replacing the hand-rolled pinned-header
+             ListView. The grid scrolls horizontally when the fixed columns plus the
+             Filename minimum no longer fit; at content widths ≤720 DIPs the page
+             hides the secondary columns (see ApplyResponsiveLayout) so Filename,
+             Status and the row actions fit without horizontal scrolling. -->
         <ui:Card
             Grid.Row="2"
             Margin="0,12,0,0"
@@ -143,371 +134,309 @@
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
         >
-            <ScrollViewer
-                HorizontalScrollBarVisibility="Auto"
-                VerticalScrollBarVisibility="Disabled"
-            >
-                <Grid x:Name="TableGrid" MinWidth="880" RowDefinitions="Auto, *">
-                    <Grid Grid.Row="0" Margin="16,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="{DynamicResource LibraryTypeColumnWidth}" />
-                            <ColumnDefinition Width="{DynamicResource LibrarySizeColumnWidth}" />
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
-                            <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
-                            <ColumnDefinition Width="44" />
-                            <ColumnDefinition Width="44" />
-                        </Grid.ColumnDefinitions>
-                        <ui:TextBlock
-                            Grid.Column="0"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Text="Filename"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="1"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                            Text="Type"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="2"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                            Text="Size"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="3"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Text="Status"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="4"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                            Text="Creator"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="5"
-                            Margin="0,0,12,0"
-                            FontTypography="Caption"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                            Text="Created"
-                        />
-                        <Border
-                            Grid.ColumnSpan="8"
-                            Height="1"
-                            IsHitTestVisible="False"
-                            VerticalAlignment="Bottom"
-                            BorderThickness="0,0,0,1"
-                            BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
-                        />
-                    </Grid>
-                    <Grid Grid.Row="1">
-                        <ui:ListView
-                            x:Name="DocumentsList"
-                            ItemsSource="{Binding PageItems}"
-                            SelectionMode="Single"
-                            BorderThickness="0"
-                            Background="Transparent"
-                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            AutomationProperties.AutomationId="DocumentsList"
-                            AutomationProperties.Name="Documents"
-                        >
-                            <ui:ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Setter Property="Padding" Value="0" />
-                                </Style>
-                            </ui:ListView.ItemContainerStyle>
-                            <ui:ListView.ItemTemplate>
+            <Grid x:Name="TableGrid">
+                <ui:DataGrid
+                    x:Name="DocumentsGrid"
+                    ItemsSource="{Binding PageItems}"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    CanUserDeleteRows="False"
+                    CanUserReorderColumns="False"
+                    CanUserResizeRows="False"
+                    CanUserSortColumns="False"
+                    IsReadOnly="True"
+                    SelectionMode="Single"
+                    HeadersVisibility="Column"
+                    GridLinesVisibility="Horizontal"
+                    HorizontalGridLinesBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0"
+                    Background="Transparent"
+                    RowHeight="68"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    AutomationProperties.AutomationId="DocumentsList"
+                    AutomationProperties.Name="Documents"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Filename" Width="*" MinWidth="220">
+                            <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate DataType="{x:Type models:Document}">
-                                    <Grid Margin="16,12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="{DynamicResource LibraryTypeColumnWidth}" />
-                                            <ColumnDefinition Width="{DynamicResource LibrarySizeColumnWidth}" />
-                                            <ColumnDefinition Width="120" />
-                                            <ColumnDefinition Width="{DynamicResource LibraryCreatorColumnWidth}" />
-                                            <ColumnDefinition Width="{DynamicResource LibraryCreatedColumnWidth}" />
-                                            <ColumnDefinition Width="44" />
-                                            <ColumnDefinition Width="44" />
-                                        </Grid.ColumnDefinitions>
-                                        <ui:TextBlock
-                                            Grid.Column="0"
-                                            Margin="0,0,12,0"
-                                            FontTypography="Body"
-                                            VerticalAlignment="Center"
-                                            TextTrimming="CharacterEllipsis"
-                                            Text="{Binding Filename}"
-                                        />
-                                        <ui:TextBlock
-                                            Grid.Column="1"
-                                            Margin="0,0,12,0"
-                                            FontTypography="Body"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource SecondaryText}"
-                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                                            Text="{Binding Converter={StaticResource MimeLabel}}"
-                                        />
-                                        <ui:TextBlock
-                                            Grid.Column="2"
-                                            Margin="0,0,12,0"
-                                            FontTypography="Body"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource SecondaryText}"
-                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                                            Text="{Binding Converter={StaticResource SizeMb}}"
-                                        />
-                                        <components:StatusChip
-                                            Grid.Column="3"
-                                            Margin="0,0,12,0"
-                                            VerticalAlignment="Center"
-                                            AutomationProperties.HelpText="{Binding FailureReason}"
-                                            Status="{Binding Status}"
-                                            ToolTip="{Binding FailureReason}"
-                                        />
-                                        <ui:TextBlock
-                                            Grid.Column="4"
-                                            Margin="0,0,12,0"
-                                            FontTypography="Body"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource SecondaryText}"
-                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                                            TextTrimming="CharacterEllipsis"
-                                            Text="{Binding Converter={StaticResource CreatorLabel}}"
-                                        />
-                                        <ui:TextBlock
-                                            Grid.Column="5"
-                                            Margin="0,0,12,0"
-                                            FontTypography="Body"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource SecondaryText}"
-                                            Visibility="{DynamicResource LibrarySecondaryColumnVisibility}"
-                                            Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
-                                        />
-                                        <ui:Button
-                                            Grid.Column="6"
-                                            Width="44"
-                                            Height="44"
-                                            Margin="0,0,8,0"
-                                            Padding="0"
-                                            VerticalAlignment="Center"
-                                            AutomationProperties.Name="Download document"
-                                            Click="OnDownloadClicked"
-                                            ToolTip="Download document"
-                                        >
-                                            <ui:Button.IsEnabled>
-                                                <MultiBinding
-                                                    Converter="{StaticResource DocumentDownloading}"
-                                                    ConverterParameter="Invert"
-                                                >
-                                                    <Binding Path="Id" />
-                                                    <Binding
-                                                        Path="DataContext.DownloadingIds"
-                                                        ElementName="DocumentsList"
-                                                    />
-                                                </MultiBinding>
-                                            </ui:Button.IsEnabled>
-                                            <Grid Width="24" Height="24">
-                                                <ui:SymbolIcon Symbol="ArrowDownload24">
-                                                    <ui:SymbolIcon.Visibility>
-                                                        <MultiBinding
-                                                            Converter="{StaticResource DocumentDownloading}"
-                                                            ConverterParameter="Invert"
-                                                        >
-                                                            <Binding Path="Id" />
-                                                            <Binding
-                                                                Path="DataContext.DownloadingIds"
-                                                                ElementName="DocumentsList"
-                                                            />
-                                                        </MultiBinding>
-                                                    </ui:SymbolIcon.Visibility>
-                                                </ui:SymbolIcon>
-                                                <ui:ProgressRing
-                                                    Width="24"
-                                                    Height="24"
-                                                    AutomationProperties.Name="Downloading document"
-                                                    IsIndeterminate="True"
-                                                >
-                                                    <ui:ProgressRing.Visibility>
-                                                        <MultiBinding Converter="{StaticResource DocumentDownloading}">
-                                                            <Binding Path="Id" />
-                                                            <Binding
-                                                                Path="DataContext.DownloadingIds"
-                                                                ElementName="DocumentsList"
-                                                            />
-                                                        </MultiBinding>
-                                                    </ui:ProgressRing.Visibility>
-                                                </ui:ProgressRing>
-                                            </Grid>
-                                        </ui:Button>
-                                        <ui:Button
-                                            Grid.Column="7"
-                                            Width="44"
-                                            Height="44"
-                                            Padding="0"
-                                            VerticalAlignment="Center"
-                                            AutomationProperties.Name="Delete document"
-                                            Click="OnDeleteClicked"
-                                            ToolTip="Delete document"
-                                            Visibility="{Binding DataContext.IsAdmin, ElementName=DocumentsList, Converter={StaticResource BoolVisibility}}"
-                                        >
-                                            <ui:Button.Icon>
-                                                <ui:SymbolIcon Symbol="Delete24" />
-                                            </ui:Button.Icon>
-                                        </ui:Button>
-                                        <Border
-                                            Grid.ColumnSpan="8"
-                                            Height="1"
-                                            IsHitTestVisible="False"
-                                            VerticalAlignment="Bottom"
-                                            BorderThickness="0,0,0,1"
-                                            BorderBrush="{ui:ThemeResource DividerStrokeColorDefaultBrush}"
-                                        />
-                                    </Grid>
+                                    <ui:TextBlock
+                                        Margin="16,0,8,0"
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        TextTrimming="CharacterEllipsis"
+                                        Text="{Binding Filename}"
+                                    />
                                 </DataTemplate>
-                            </ui:ListView.ItemTemplate>
-                        </ui:ListView>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
-                        <!-- Empty state (ListView has no empty view): sits in the list area, below the
-                             pinned header. Gated on IsEmpty (set only by a successful load) so it never
-                             shows while loading — overlapping the ProgressRing — or after a failed load. -->
-                        <ui:Card
-                            Padding="{StaticResource CardPaddingLarge}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
-                        >
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon
-                                    Symbol="Document24"
-                                    Style="{StaticResource EmptyStateGlyph}"
-                                    Margin="0,0,0,12"
-                                />
-                                <ui:TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Title"
-                                    Text="No documents yet"
-                                />
-                                <ui:TextBlock
-                                    Margin="{StaticResource EmptyStateBodyMargin}"
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Body"
-                                    Style="{StaticResource SecondaryText}"
-                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
-                                    Text="Upload a document to see it here."
-                                />
-                                <ui:TextBlock
-                                    Margin="{StaticResource EmptyStateBodyMargin}"
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Body"
-                                    Style="{StaticResource SecondaryText}"
-                                    Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
-                                    TextWrapping="Wrap"
-                                    TextAlignment="Center"
-                                    Text="Ask a question to get started, or contact an admin to add documents."
-                                />
-                            </StackPanel>
-                        </ui:Card>
+                        <DataGridTemplateColumn x:Name="TypeColumn" Header="Type" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:TextBlock
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SecondaryText}"
+                                        Text="{Binding Converter={StaticResource MimeLabel}}"
+                                    />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
-                        <ui:ProgressRing
-                            Width="40"
-                            Height="40"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            AutomationProperties.Name="Loading documents"
-                            IsIndeterminate="True"
-                            Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                        <DataGridTemplateColumn x:Name="SizeColumn" Header="Size" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:TextBlock
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SecondaryText}"
+                                        Text="{Binding Converter={StaticResource SizeMb}}"
+                                    />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Status" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <components:StatusChip
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.HelpText="{Binding FailureReason}"
+                                        Status="{Binding Status}"
+                                        ToolTip="{Binding FailureReason}"
+                                    />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn x:Name="CreatorColumn" Header="Creator" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:TextBlock
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SecondaryText}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Text="{Binding Converter={StaticResource CreatorLabel}}"
+                                    />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn x:Name="CreatedColumn" Header="Created" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:TextBlock
+                                        FontTypography="Body"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SecondaryText}"
+                                        Text="{Binding CreatedAt, Converter={StaticResource ShortDate}}"
+                                    />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="" Width="56">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:Button
+                                        Width="44"
+                                        Height="44"
+                                        Padding="0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.Name="Download document"
+                                        Click="OnDownloadClicked"
+                                        ToolTip="Download document"
+                                    >
+                                        <ui:Button.IsEnabled>
+                                            <MultiBinding
+                                                Converter="{StaticResource DocumentDownloading}"
+                                                ConverterParameter="Invert"
+                                            >
+                                                <Binding Path="Id" />
+                                                <Binding
+                                                    Path="DataContext.DownloadingIds"
+                                                    RelativeSource="{RelativeSource AncestorType=DataGrid}"
+                                                />
+                                            </MultiBinding>
+                                        </ui:Button.IsEnabled>
+                                        <Grid Width="24" Height="24">
+                                            <ui:SymbolIcon Symbol="ArrowDownload24">
+                                                <ui:SymbolIcon.Visibility>
+                                                    <MultiBinding
+                                                        Converter="{StaticResource DocumentDownloading}"
+                                                        ConverterParameter="Invert"
+                                                    >
+                                                        <Binding Path="Id" />
+                                                        <Binding
+                                                            Path="DataContext.DownloadingIds"
+                                                            RelativeSource="{RelativeSource AncestorType=DataGrid}"
+                                                        />
+                                                    </MultiBinding>
+                                                </ui:SymbolIcon.Visibility>
+                                            </ui:SymbolIcon>
+                                            <ui:ProgressRing
+                                                Width="24"
+                                                Height="24"
+                                                AutomationProperties.Name="Downloading document"
+                                                IsIndeterminate="True"
+                                            >
+                                                <ui:ProgressRing.Visibility>
+                                                    <MultiBinding Converter="{StaticResource DocumentDownloading}">
+                                                        <Binding Path="Id" />
+                                                        <Binding
+                                                            Path="DataContext.DownloadingIds"
+                                                            RelativeSource="{RelativeSource AncestorType=DataGrid}"
+                                                        />
+                                                    </MultiBinding>
+                                                </ui:ProgressRing.Visibility>
+                                            </ui:ProgressRing>
+                                        </Grid>
+                                    </ui:Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="" Width="56">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type models:Document}">
+                                    <ui:Button
+                                        Width="44"
+                                        Height="44"
+                                        Padding="0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.Name="Delete document"
+                                        Click="OnDeleteClicked"
+                                        ToolTip="Delete document"
+                                        Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolVisibility}}"
+                                    >
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Delete24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </ui:DataGrid>
+
+                <!-- Empty state (DataGrid has no empty view): sits in the list area,
+                     below the headers. Gated on IsEmpty (set only by a successful
+                     load) so it never shows while loading — overlapping the
+                     ProgressRing — or after a failed load. -->
+                <ui:Card
+                    Padding="{StaticResource CardPaddingLarge}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
+                >
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon
+                            Symbol="Document24"
+                            Style="{StaticResource EmptyStateGlyph}"
+                            Margin="0,0,0,12"
                         />
-
-                        <!-- No-match state: distinct from the no-records state above, which wins
-                             when the library is genuinely empty (clearing the search would not help). -->
-                        <ui:Card
-                            x:Name="LibraryNoMatchState"
-                            Padding="{StaticResource CardPaddingLarge}"
+                        <ui:TextBlock
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="LibraryNoMatchState"
+                            FontTypography="Title"
+                            Text="No documents yet"
+                        />
+                        <ui:TextBlock
+                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            HorizontalAlignment="Center"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                            Text="Upload a document to see it here."
+                        />
+                        <ui:TextBlock
+                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            HorizontalAlignment="Center"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            Text="Ask a question to get started, or contact an admin to add documents."
+                        />
+                    </StackPanel>
+                </ui:Card>
+
+                <ui:ProgressRing
+                    Width="40"
+                    Height="40"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Loading documents"
+                    IsIndeterminate="True"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
+                />
+
+                <!-- No-match state: distinct from the no-records state above, which wins
+                     when the library is genuinely empty (clearing the search would not help). -->
+                <ui:Card
+                    x:Name="LibraryNoMatchState"
+                    Padding="{StaticResource CardPaddingLarge}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="LibraryNoMatchState"
+                >
+                    <ui:Card.Style>
+                        <Style TargetType="ui:Card">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition
+                                            Binding="{Binding IsSearchActive}"
+                                            Value="True"
+                                        />
+                                        <Condition Binding="{Binding HasMatch}" Value="False" />
+                                        <Condition Binding="{Binding IsEmpty}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Card.Style>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon
+                            Symbol="Search24"
+                            Style="{StaticResource EmptyStateGlyph}"
+                            Margin="0,0,0,12"
+                        />
+                        <ui:TextBlock
+                            HorizontalAlignment="Center"
+                            FontTypography="Title"
+                            Text="No matching documents"
+                        />
+                        <ui:TextBlock
+                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            HorizontalAlignment="Center"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            Text="Nothing matches your search."
+                        />
+                        <ui:Button
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            AutomationProperties.Name="Clear document search"
+                            Content="Clear search"
+                            Click="OnClearSearchClicked"
                         >
-                            <ui:Card.Style>
-                                <Style TargetType="ui:Card">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition
-                                                    Binding="{Binding IsSearchActive}"
-                                                    Value="True"
-                                                />
-                                                <Condition
-                                                    Binding="{Binding HasMatch}"
-                                                    Value="False"
-                                                />
-                                                <Condition
-                                                    Binding="{Binding IsEmpty}"
-                                                    Value="False"
-                                                />
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:Card.Style>
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon
-                                    Symbol="Search24"
-                                    Style="{StaticResource EmptyStateGlyph}"
-                                    Margin="0,0,0,12"
-                                />
-                                <ui:TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Title"
-                                    Text="No matching documents"
-                                />
-                                <ui:TextBlock
-                                    Margin="{StaticResource EmptyStateBodyMargin}"
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Body"
-                                    Style="{StaticResource SecondaryText}"
-                                    TextWrapping="Wrap"
-                                    TextAlignment="Center"
-                                    Text="Nothing matches your search."
-                                />
-                                <ui:Button
-                                    Margin="0,12,0,0"
-                                    HorizontalAlignment="Center"
-                                    AutomationProperties.Name="Clear document search"
-                                    Content="Clear search"
-                                    Click="OnClearSearchClicked"
-                                >
-                                    <ui:Button.Icon>
-                                        <ui:SymbolIcon Symbol="Dismiss24" />
-                                    </ui:Button.Icon>
-                                </ui:Button>
-                            </StackPanel>
-                        </ui:Card>
-                    </Grid>
-                </Grid>
-            </ScrollViewer>
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Dismiss24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </ui:Card>
+            </Grid>
         </ui:Card>
 
         <!-- Pagination footer -->

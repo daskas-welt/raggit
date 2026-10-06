@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -167,6 +168,19 @@ public sealed class DashboardViewModelTests
         vm.StatusSeverity.Should().Be("Error");
         vm.HasFailedDocuments.Should().BeFalse();
         vm.FailedDocuments.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task LoadAsync_CapsRecentItemsAtTen()
+    {
+        var vm = CreateViewModel(new ManyItemsHandler());
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.TotalDocuments.Should().Be(12);
+        vm.TotalQueries.Should().Be(12);
+        vm.RecentDocuments.Should().HaveCount(10);
+        vm.RecentQueries.Should().HaveCount(10);
     }
 
     private static DashboardViewModel CreateViewModel(bool empty = false, bool fail = false) =>
@@ -358,6 +372,53 @@ public sealed class DashboardViewModelTests
             );
         }
     }
+
+    /// <summary>Serves 12 documents and 12 history items so the 10-item panel cap is observable.</summary>
+    private sealed class ManyItemsHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            var body =
+                path.EndsWith("/documents", StringComparison.Ordinal) ? DocumentsManyJson
+                : path.EndsWith("/history", StringComparison.Ordinal) ? HistoryManyJson
+                : MineEmptyJson;
+
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                }
+            );
+        }
+    }
+
+    private static readonly string DocumentsManyJson =
+        "["
+        + string.Join(
+            ",",
+            Enumerable
+                .Range(1, 12)
+                .Select(i =>
+                    $$"""{"id":"00000000-0000-0000-0000-{{i:D12}}","filename":"doc-{{i}}.pdf","mime":"application/pdf","size":{{i}},"hash":"h{{i}}","status":"Ready","createdBy":"u","createdAt":"2026-09-{{i:D2}}T00:00:00Z"}"""
+                )
+        )
+        + "]";
+
+    private static readonly string HistoryManyJson =
+        "{\"items\":["
+        + string.Join(
+            ",",
+            Enumerable
+                .Range(1, 12)
+                .Select(i =>
+                    $$"""{"id":"00000000-0000-0000-0000-{{i:D12}}","promptPreview":"Question {{i}}","answerPreview":"Answer {{i}}","citationCount":1,"latencyMs":20,"createdAt":"2026-09-{{i:D2}}T00:00:00Z"}"""
+                )
+        )
+        + "],\"total\":12,\"limit\":10,\"offset\":0}";
 
     private const string DocumentsJson = """
         [
