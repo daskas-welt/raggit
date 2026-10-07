@@ -52,6 +52,29 @@ public interface IDocumentRepository
     Task AddChunksAsync(IEnumerable<Chunk> chunks, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Deletes every chunk row of a document (030 re-process replaces stale
+    /// single-level rows before persisting the two-level set).
+    /// </summary>
+    Task DeleteChunksAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads chunks by id (030 broad retrieval resolves distinct parent rows
+    /// through this read). Missing ids are skipped.
+    /// </summary>
+    Task<IReadOnlyList<Chunk>> GetChunksByIdsAsync(
+        IEnumerable<Guid> chunkIds,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Lists <see cref="DocumentStatus.Ready"/> documents that have no
+    /// <see cref="ChunkLevel.Parent"/> row yet (030 backfill detection).
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ListReadyDocumentIdsWithoutParentChunkAsync(
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// Updates a document's processing status and its failure explanation.
     /// <paramref name="failureReason"/> is written together with the status —
     /// null clears any previous reason, so a retried document does not keep a

@@ -215,6 +215,7 @@ public class SqliteDocumentRepository : IDocumentRepository
 
     /// <summary>
     /// Inserts chunk rows for a document in a single transaction (Unit of Work).
+    /// Persists the two-level (030) <c>Level</c>/<c>ParentId</c> columns.
     /// </summary>
     public async Task AddChunksAsync(
         IEnumerable<Chunk> chunks,
@@ -235,14 +236,19 @@ public class SqliteDocumentRepository : IDocumentRepository
                 command.Transaction = (SqliteTransaction)transaction;
                 command.CommandText =
                     @"
-                    INSERT INTO Chunks (Id, DocumentId, Ordinal, Text, TokenCount)
-                    VALUES (@id, @documentId, @ordinal, @text, @tokenCount);";
+                    INSERT INTO Chunks (Id, DocumentId, Ordinal, Text, TokenCount, Level, ParentId)
+                    VALUES (@id, @documentId, @ordinal, @text, @tokenCount, @level, @parentId);";
 
                 command.Parameters.AddWithValue("@id", chunk.Id.ToString());
                 command.Parameters.AddWithValue("@documentId", chunk.DocumentId.ToString());
                 command.Parameters.AddWithValue("@ordinal", chunk.Ordinal);
                 command.Parameters.AddWithValue("@text", chunk.Text);
                 command.Parameters.AddWithValue("@tokenCount", chunk.TokenCount);
+                command.Parameters.AddWithValue("@level", (int)chunk.Level);
+                command.Parameters.AddWithValue(
+                    "@parentId",
+                    chunk.ParentId.HasValue ? chunk.ParentId.Value.ToString() : DBNull.Value
+                );
 
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
@@ -254,6 +260,120 @@ public class SqliteDocumentRepository : IDocumentRepository
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Deletes every chunk row of a document. Used by the 030 re-process
+    /// path so a re-ingested document never keeps stale single-level rows.
+    /// </summary>
+    public async Task DeleteChunksAsync(
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM Chunks WHERE DocumentId = @id;";
+        command.Parameters.AddWithValue("@id", documentId.ToString());
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Loads chunks by id, skipping missing ids. Returns the two-level
+    /// (030) <c>Level</c>/<c>ParentId</c> fields for parent resolution.
+    /// </summary>
+    public async Task<IReadOnlyList<Chunk>> GetChunksByIdsAsync(
+        IEnumerable<Guid> chunkIds,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(chunkIds);
+
+        var ids = chunkIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Chunk>();
+        }
+
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        var placeholders = new List<string>(ids.Count);
+        for (var i = 0; i < ids.Count; i++)
+        {
+            placeholders.Add($"@c{i}");
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT Id, DocumentId, Ordinal, Text, TokenCount, Level, ParentId FROM Chunks WHERE Id IN ("
+            + string.Join(",", placeholders)
+            + ");";
+        for (var i = 0; i < ids.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@c{i}", ids[i].ToString());
+        }
+
+        var chunks = new List<Chunk>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            chunks.Add(MapChunk(reader));
+        }
+
+        return chunks;
+    }
+
+    /// <summary>
+    /// Lists <see cref="DocumentStatus.Ready"/> documents that have no
+    /// <see cref="ChunkLevel.Parent"/> row yet — the 030 backfill set.
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> ListReadyDocumentIdsWithoutParentChunkAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        await using var connection = _dbContext.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            @"
+            SELECT d.Id FROM Documents d
+            WHERE d.Status = @ready
+              AND NOT EXISTS (
+                  SELECT 1 FROM Chunks c
+                  WHERE c.DocumentId = d.Id AND c.Level = @parentLevel
+              );";
+        command.Parameters.AddWithValue("@ready", DocumentStatus.Ready.ToString());
+        command.Parameters.AddWithValue("@parentLevel", (int)ChunkLevel.Parent);
+
+        var ids = new List<Guid>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            ids.Add(Guid.Parse(reader.GetString(0)));
+        }
+
+        return ids;
+    }
+
+    internal static Chunk MapChunk(SqliteDataReader reader)
+    {
+        var chunk = new Chunk
+        {
+            Id = Guid.Parse(reader.GetString(0)),
+            DocumentId = Guid.Parse(reader.GetString(1)),
+            Ordinal = reader.GetInt32(2),
+            Text = reader.GetString(3),
+            TokenCount = reader.GetInt32(4),
+            Level = (ChunkLevel)reader.GetInt32(5),
+            ParentId = reader.IsDBNull(6) ? null : Guid.Parse(reader.GetString(6)),
+        };
+
+        return chunk;
     }
 
     /// <summary>
