@@ -40,7 +40,7 @@ description: "Task list for Intent-Aware Chunking"
 
 **⚠️ CRITICAL**: No user-story work can begin until this phase is complete.
 
-- [ ] T003 [P] Add enums in `src/RAGGit.Core/Models/ChunkLevel.cs` (`Child = 0, Parent = 1`) and `src/RAGGit.Core/Models/QueryIntent.cs` (`QueryMode { Auto, Broad, Specific }`, `QueryIntent { Granular, Broad }`).
+- [x] T003 [P] Add enums in `src/RAGGit.Core/Models/ChunkLevel.cs` (`Child = 0, Parent = 1`) and `src/RAGGit.Core/Models/QueryIntent.cs` (`QueryMode { Auto, Broad, Specific }`, `QueryIntent { Granular, Broad }`).
 - [ ] T004 [P] Extend `src/RAGGit.Core/Models/Chunk.cs` with `public ChunkLevel Level { get; set; }` and `public Guid? ParentId { get; set; }` (child ⇒ parent's id; parent ⇒ `null`).
 - [ ] T005 [P] Extend `src/RAGGit.Core/Abstractions/SearchResult.cs` (positional record) with an **optional trailing** `string? ParentId = null` so existing constructor calls keep compiling.
 - [ ] T006 [P] Extend `src/RAGGit.Core/Models/IngestOptions.cs` with `int ParentGroupSize { get; set; } = 4` (must be ≥ 1) and `src/RAGGit.Core/Models/RetrievalOptions.cs` with `int BroadCandidateMultiplier { get; set; } = 4` and `int MaxCandidates { get; set; } = 50`.
