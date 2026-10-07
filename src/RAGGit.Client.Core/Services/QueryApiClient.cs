@@ -26,17 +26,24 @@ public sealed class QueryApiClient
     }
 
     /// <summary>
-    /// POST /api/queries
+    /// POST /api/queries with the selected intent mode (030). The server
+    /// echoes the effective intent on the returned <see cref="QueryResponse"/>.
     /// </summary>
     public async Task<QueryResponse> QueryAsync(
         string query,
         int topK = 5,
+        QueryMode mode = QueryMode.Auto,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        var request = new QueryRequest { Query = query, TopK = topK };
+        var request = new QueryRequest
+        {
+            Query = query,
+            TopK = topK,
+            Mode = mode,
+        };
 
         try
         {
