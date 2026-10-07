@@ -67,8 +67,12 @@ public sealed class RetrievalService
         };
 
     /// <summary>
-    /// Retrieves up to <paramref name="topK"/> relevant chunks for <paramref name="query"/>.
-    /// Pre-feature compatibility shim: behaves as <see cref="QueryMode.Auto"/>.
+    /// Retrieves up to <paramref name="topK"/> relevant chunks for
+    /// <paramref name="query"/> using <see cref="QueryMode.Auto"/> intent
+    /// detection (the classifier, defaulting to granular). Callers that want
+    /// to force a granularity, or to read back the effective intent, use the
+    /// <see cref="RetrieveAsync(string,int,QueryMode,CancellationToken)"/> or
+    /// <see cref="RetrieveWithIntentAsync"/> overloads.
     /// </summary>
     public Task<IReadOnlyList<SearchResult>> RetrieveAsync(
         string query,
@@ -217,6 +221,11 @@ public sealed class RetrievalService
                 || !parentsById.TryGetValue(parentId, out var parent)
             )
             {
+                // The child points at a parent row that could not be resolved
+                // (partial migration/corruption). Keep its best hit as a child
+                // result so the answer degrades to granular instead of the
+                // child silently vanishing from the broad result set.
+                scored.Add(group.OrderByDescending(c => c.Score).First());
                 continue;
             }
 

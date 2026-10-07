@@ -67,8 +67,10 @@ public interface IDocumentRepository
     );
 
     /// <summary>
-    /// Lists <see cref="DocumentStatus.Ready"/> documents that have no
-    /// <see cref="ChunkLevel.Parent"/> row yet (030 backfill detection).
+    /// Lists <see cref="DocumentStatus.Ready"/> documents that have
+    /// <see cref="ChunkLevel.Child"/> rows but no <see cref="ChunkLevel.Parent"/>
+    /// row yet (030 backfill detection). Documents that produced no chunks at
+    /// all are excluded, so they are not re-queued on every startup.
     /// </summary>
     Task<IReadOnlyList<Guid>> ListReadyDocumentIdsWithoutParentChunkAsync(
         CancellationToken cancellationToken = default

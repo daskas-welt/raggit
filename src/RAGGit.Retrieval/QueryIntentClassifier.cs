@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Retrieval;
@@ -13,14 +15,31 @@ namespace RAGGit.Retrieval;
 /// </summary>
 public static class QueryIntentClassifier
 {
+    /// <summary>
+    /// Broad cue phrases. Matched on word boundaries (see
+    /// <see cref="BroadPattern"/>) so a short cue such as <c>guide</c> does
+    /// not fire inside an unrelated word (<c>guideline</c>). The list carries
+    /// the common inflections explicitly, because word-boundary matching does
+    /// not match a longer form of a shorter cue.
+    /// </summary>
     private static readonly string[] BroadTriggers = new[]
     {
         "summarize",
+        "summarizes",
+        "summarized",
+        "summarizing",
         "summary",
+        "summaries",
         "overview",
+        "overviews",
         "compare",
+        "compares",
+        "compared",
+        "comparing",
         "comparison",
+        "comparisons",
         "contrast",
+        "contrasts",
         "difference between",
         "differences between",
         "list all",
@@ -31,7 +50,13 @@ public static class QueryIntentClassifier
         "pros and cons",
         "high-level",
         "guide",
+        "guides",
     };
+
+    private static readonly Regex BroadPattern = new(
+        @"\b(?:" + string.Join("|", BroadTriggers.Select(Regex.Escape)) + @")\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled
+    );
 
     /// <summary>
     /// Classifies <paramref name="query"/> as broad or granular.
@@ -44,14 +69,6 @@ public static class QueryIntentClassifier
             return QueryIntent.Granular;
         }
 
-        foreach (var trigger in BroadTriggers)
-        {
-            if (query.Contains(trigger, StringComparison.OrdinalIgnoreCase))
-            {
-                return QueryIntent.Broad;
-            }
-        }
-
-        return QueryIntent.Granular;
+        return BroadPattern.IsMatch(query) ? QueryIntent.Broad : QueryIntent.Granular;
     }
 }

@@ -29,9 +29,21 @@ public sealed class QueryIntentClassifierTests
     [InlineData("What are the pros and cons?")]
     [InlineData("Give me the high-level picture")]
     [InlineData("Show me the onboarding guide")]
+    [InlineData("Summarizes the leave policy")]
+    [InlineData("Compared the two plans")]
     public void Classify_BroadTrigger_ReturnsBroad(string query)
     {
         QueryIntentClassifier.Classify(query).Should().Be(QueryIntent.Broad);
+    }
+
+    [Fact]
+    public void Classify_ShortTrigger_DoesNotMatchInsideLongerWord()
+    {
+        // Word-boundary matching: "guide" must not fire inside "guideline".
+        QueryIntentClassifier
+            .Classify("What does the travel guideline say?")
+            .Should()
+            .Be(QueryIntent.Granular);
     }
 
     [Theory]

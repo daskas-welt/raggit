@@ -207,6 +207,29 @@ public sealed class RetrievalRoutingTests
         results.Should().ContainSingle().Which.ChunkId.Should().Be(orphan.ChunkId);
     }
 
+    [Fact]
+    public async Task Retrieve_Broad_ChildWithUnresolvableParent_FallsBackToChildResult()
+    {
+        // The child carries a ParentId, but the repository knows no such parent
+        // row (partial migration / corruption). The hit must not vanish.
+        var documentId = Guid.NewGuid();
+        var missingParent = Guid.NewGuid();
+        var child = ChildHit(
+            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            documentId,
+            missingParent,
+            0.90f
+        );
+        var retrieval = BroadRetrieval(
+            new ScoringStore(new[] { child }),
+            new FakeDocumentRepository()
+        );
+
+        var results = await retrieval.RetrieveAsync("Summarize everything", 5, QueryMode.Broad);
+
+        results.Should().ContainSingle().Which.ChunkId.Should().Be(child.ChunkId);
+    }
+
     internal static SearchResult MakeChild(string chunkId, float score, string text = "child text")
     {
         return new SearchResult(

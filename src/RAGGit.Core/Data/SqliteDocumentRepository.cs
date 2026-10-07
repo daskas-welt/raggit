@@ -328,8 +328,11 @@ public class SqliteDocumentRepository : IDocumentRepository
     }
 
     /// <summary>
-    /// Lists <see cref="DocumentStatus.Ready"/> documents that have no
-    /// <see cref="ChunkLevel.Parent"/> row yet — the 030 backfill set.
+    /// Lists <see cref="DocumentStatus.Ready"/> documents that have
+    /// <see cref="ChunkLevel.Child"/> rows but no <see cref="ChunkLevel.Parent"/>
+    /// row yet — the 030 backfill set. The child-row requirement excludes
+    /// Ready documents that legitimately produced zero chunks (e.g. an
+    /// image-only PDF), which would otherwise be re-queued on every startup.
     /// </summary>
     public async Task<IReadOnlyList<Guid>> ListReadyDocumentIdsWithoutParentChunkAsync(
         CancellationToken cancellationToken = default
@@ -343,11 +346,16 @@ public class SqliteDocumentRepository : IDocumentRepository
             @"
             SELECT d.Id FROM Documents d
             WHERE d.Status = @ready
+              AND EXISTS (
+                  SELECT 1 FROM Chunks c
+                  WHERE c.DocumentId = d.Id AND c.Level = @childLevel
+              )
               AND NOT EXISTS (
                   SELECT 1 FROM Chunks c
                   WHERE c.DocumentId = d.Id AND c.Level = @parentLevel
               );";
         command.Parameters.AddWithValue("@ready", DocumentStatus.Ready.ToString());
+        command.Parameters.AddWithValue("@childLevel", (int)ChunkLevel.Child);
         command.Parameters.AddWithValue("@parentLevel", (int)ChunkLevel.Parent);
 
         var ids = new List<Guid>();

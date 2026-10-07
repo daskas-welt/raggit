@@ -198,6 +198,11 @@ public sealed class ChunkPersistenceTests : IAsyncLifetime
 
         var indexing = await AddDocumentAsync(DocumentStatus.Indexing);
 
+        // A Ready document that produced zero chunks (e.g. an image-only PDF)
+        // must NOT be treated as stale, or the backfill would re-queue it on
+        // every startup.
+        await AddDocumentAsync(DocumentStatus.Ready);
+
         var staleIds = await _repository.ListReadyDocumentIdsWithoutParentChunkAsync();
         staleIds.Should().Equal(stale.Id);
     }
