@@ -41,7 +41,7 @@ description: "Task list for Intent-Aware Chunking"
 **⚠️ CRITICAL**: No user-story work can begin until this phase is complete.
 
 - [x] T003 [P] Add enums in `src/RAGGit.Core/Models/ChunkLevel.cs` (`Child = 0, Parent = 1`) and `src/RAGGit.Core/Models/QueryIntent.cs` (`QueryMode { Auto, Broad, Specific }`, `QueryIntent { Granular, Broad }`).
-- [ ] T004 [P] Extend `src/RAGGit.Core/Models/Chunk.cs` with `public ChunkLevel Level { get; set; }` and `public Guid? ParentId { get; set; }` (child ⇒ parent's id; parent ⇒ `null`).
+- [x] T004 [P] Extend `src/RAGGit.Core/Models/Chunk.cs` with `public ChunkLevel Level { get; set; }` and `public Guid? ParentId { get; set; }` (child ⇒ parent's id; parent ⇒ `null`).
 - [ ] T005 [P] Extend `src/RAGGit.Core/Abstractions/SearchResult.cs` (positional record) with an **optional trailing** `string? ParentId = null` so existing constructor calls keep compiling.
 - [ ] T006 [P] Extend `src/RAGGit.Core/Models/IngestOptions.cs` with `int ParentGroupSize { get; set; } = 4` (must be ≥ 1) and `src/RAGGit.Core/Models/RetrievalOptions.cs` with `int BroadCandidateMultiplier { get; set; } = 4` and `int MaxCandidates { get; set; } = 50`.
 - [ ] T007 Extend `src/RAGGit.Core/Data/RagDbContext.cs`: add `Chunks.Level INTEGER NOT NULL DEFAULT 0`, `Chunks.ParentId TEXT`, `Queries.Mode TEXT` to the fresh-schema commands **and** via the existing probe-then-`ALTER TABLE` pattern (SQLite lacks `ADD COLUMN IF NOT EXISTS`); create `IX_Chunks_Document_Level (DocumentId, Level)` and `IX_Chunks_Parent (ParentId)`.

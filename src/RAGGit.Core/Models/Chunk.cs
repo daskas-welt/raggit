@@ -21,4 +21,17 @@ public sealed class Chunk
 
     [Range(0, int.MaxValue)]
     public int TokenCount { get; set; }
+
+    /// <summary>
+    /// Two-level granularity (030): <see cref="ChunkLevel.Child"/> chunks are
+    /// embedded and searched; <see cref="ChunkLevel.Parent"/> chunks group
+    /// several children for broad-context retrieval and citations.
+    /// </summary>
+    public ChunkLevel Level { get; set; } = ChunkLevel.Child;
+
+    /// <summary>
+    /// The owning parent chunk's id for a child chunk; always <c>null</c>
+    /// for a parent chunk.
+    /// </summary>
+    public Guid? ParentId { get; set; }
 }
