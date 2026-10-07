@@ -37,7 +37,7 @@ public sealed class RagDbContext : IAsyncDisposable
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        foreach (var sql in GetSchemaCommands())
+        foreach (var sql in GetTableCommands())
         {
             using var command = connection.CreateCommand();
             command.CommandText = sql;
@@ -64,7 +64,10 @@ public sealed class RagDbContext : IAsyncDisposable
         // 030-intent-aware-chunking: two-level chunk columns plus the
         // persisted effective query intent. SQLite has no
         // ADD COLUMN IF NOT EXISTS on all supported versions, so probe
-        // first and alter only when absent.
+        // first and alter only when absent. These migrations MUST run
+        // before the index commands below: creating
+        // IX_Chunks_Document_Level against a pre-feature table whose
+        // Level column has not been added yet fails the whole bootstrap.
         await EnsureColumnAsync(
             connection,
             transaction,
@@ -91,6 +94,14 @@ public sealed class RagDbContext : IAsyncDisposable
             "TEXT",
             cancellationToken
         );
+
+        foreach (var sql in GetIndexCommands())
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.Transaction = (SqliteTransaction)transaction;
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
 
         using var seedCommand = connection.CreateCommand();
         seedCommand.Transaction = (SqliteTransaction)transaction;
@@ -161,7 +172,7 @@ public sealed class RagDbContext : IAsyncDisposable
         await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static IEnumerable<string> GetSchemaCommands()
+    private static IEnumerable<string> GetTableCommands()
     {
         yield return @"
             CREATE TABLE IF NOT EXISTS Library (
@@ -223,7 +234,10 @@ public sealed class RagDbContext : IAsyncDisposable
                 LastPasswordChangedAt TEXT NOT NULL,
                 CreatedAt TEXT NOT NULL
             );";
+    }
 
+    private static IEnumerable<string> GetIndexCommands()
+    {
         yield return @"
             CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Username
             ON Users (Username);";
