@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RAGGit.Core;
 using RAGGit.Core.Abstractions;
+using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 
 namespace RAGGit.Retrieval;
@@ -23,6 +24,7 @@ public sealed class RetrievalService
     private readonly IVectorStore _vectorStore;
     private readonly RetrievalOptions _options;
     private readonly ILogger<RetrievalService> _logger;
+    private readonly IDocumentRepository? _documents;
 
     /// <summary>
     /// Creates a retrieval service with default options and no-op logging.
@@ -37,7 +39,8 @@ public sealed class RetrievalService
         IEmbedder embedder,
         IVectorStore vectorStore,
         IOptions<RetrievalOptions>? options,
-        ILogger<RetrievalService>? logger
+        ILogger<RetrievalService>? logger,
+        IDocumentRepository? documents = null
     )
     {
         ArgumentNullException.ThrowIfNull(embedder);
@@ -46,19 +49,88 @@ public sealed class RetrievalService
         _vectorStore = vectorStore;
         _options = options?.Value ?? new RetrievalOptions();
         _logger = logger ?? NullLogger<RetrievalService>.Instance;
+        _documents = documents;
     }
 
     /// <summary>
+    /// Resolves the effective intent for <paramref name="query"/>: an
+    /// explicit <see cref="QueryMode.Broad"/>/<see cref="QueryMode.Specific"/>
+    /// override wins; <see cref="QueryMode.Auto"/> runs the rule-based
+    /// classifier (safe default granular).
+    /// </summary>
+    public static QueryIntent ResolveIntent(string query, QueryMode mode) =>
+        mode switch
+        {
+            QueryMode.Broad => QueryIntent.Broad,
+            QueryMode.Specific => QueryIntent.Granular,
+            _ => QueryIntentClassifier.Classify(query),
+        };
+
+    /// <summary>
     /// Retrieves up to <paramref name="topK"/> relevant chunks for <paramref name="query"/>.
+    /// Pre-feature compatibility shim: behaves as <see cref="QueryMode.Auto"/>.
+    /// </summary>
+    public Task<IReadOnlyList<SearchResult>> RetrieveAsync(
+        string query,
+        int topK = 5,
+        CancellationToken cancellationToken = default
+    ) => RetrieveAsync(query, topK, QueryMode.Auto, cancellationToken);
+
+    /// <summary>
+    /// Retrieves up to <paramref name="topK"/> relevant chunks for <paramref name="query"/>
+    /// at the granularity selected by <paramref name="mode"/>.
     /// </summary>
     public async Task<IReadOnlyList<SearchResult>> RetrieveAsync(
         string query,
-        int topK = 5,
+        int topK,
+        QueryMode mode,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var (results, _) = await RetrieveWithIntentAsync(query, topK, mode, cancellationToken);
+        return results;
+    }
+
+    /// <summary>
+    /// Retrieves plus reports the effective intent actually used, so the
+    /// controller can echo and persist it.
+    /// </summary>
+    public async Task<(IReadOnlyList<SearchResult> Results, QueryIntent Intent)> RetrieveWithIntentAsync(
+        string query,
+        int topK,
+        QueryMode mode,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
+        var intent = ResolveIntent(query, mode);
+        if (intent == QueryIntent.Broad)
+        {
+            // US2 (T023) implements parent-context retrieval. Until then a
+            // broad request safely falls back to the granular child path
+            // rather than failing.
+            _logger.LogInformation(
+                "Broad intent for query {QueryPreview}: granular fallback until parent retrieval lands (T023)",
+                TextPreview.Truncate(query)
+            );
+        }
+
+        var results = await RetrieveGranularAsync(query, topK, cancellationToken);
+        return (results, intent);
+    }
+
+    /// <summary>
+    /// Granular child path — exactly the pre-feature retrieval: embed the
+    /// query, search child vectors, order by score, apply
+    /// <see cref="RetrievalOptions.MinScore"/>, take <paramref name="topK"/>.
+    /// </summary>
+    private async Task<IReadOnlyList<SearchResult>> RetrieveGranularAsync(
+        string query,
+        int topK,
+        CancellationToken cancellationToken
+    )
+    {
         topK = Math.Clamp(topK, 1, 5);
 
         var embeddings = await _embedder.GetEmbeddingsAsync(new[] { query }, cancellationToken);

@@ -66,7 +66,7 @@ description: "Task list for Intent-Aware Chunking"
 ### Implementation for User Story 1
 
 - [x] T012 [US1] Implement `QueryIntentClassifier` (rule-based, `QueryIntent Classify(string query)`; broad phrase lexicon, granular default) in `src/RAGGit.Retrieval/QueryIntentClassifier.cs` per [research.md](research.md) R2 — no LLM, no I/O.
-- [ ] T013 [US1] Change `RetrievalService.RetrieveAsync` to `RetrieveAsync(string query, int topK, QueryMode mode, CancellationToken ct)` in `src/RAGGit.Retrieval/RetrievalService.cs`: resolve intent (explicit `Broad`/`Specific` wins; `Auto` ⇒ classifier), and keep the granular child path exactly as today (embed → child search → order → `MinScore` → `topK`).
+- [x] T013 [US1] Change `RetrievalService.RetrieveAsync` to `RetrieveAsync(string query, int topK, QueryMode mode, CancellationToken ct)` in `src/RAGGit.Retrieval/RetrievalService.cs`: resolve intent (explicit `Broad`/`Specific` wins; `Auto` ⇒ classifier), and keep the granular child path exactly as today (embed → child search → order → `MinScore` → `topK`).
 - [ ] T014 [US1] Update `QueryController.Post` in `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` to pass `request.Mode` (default `Auto`) into retrieval and keep the existing no-content branch and error mapping.
 - [ ] T015 [US1] Integration test in `tests/integration/IntentRetrievalTests.cs`: a granular fact query returns the exact fact with a child-chunk citation; an absent fact returns exactly `no relevant content found` with empty citations.
 
