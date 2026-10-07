@@ -83,10 +83,15 @@ public sealed class QueryModeClientTests
         json.RootElement.GetProperty("mode").GetString().Should().Be("specific");
     }
 
-    private static QueryViewModel CreateViewModel(Func<HttpRequestMessage, HttpResponseMessage> respond)
+    private static QueryViewModel CreateViewModel(
+        Func<HttpRequestMessage, HttpResponseMessage> respond
+    )
     {
         var apiClient = new QueryApiClient(
-            new HttpClient(new CapturingHandler(respond)) { BaseAddress = new Uri("https://w.local/") }
+            new HttpClient(new CapturingHandler(respond))
+            {
+                BaseAddress = new Uri("https://w.local/"),
+            }
         );
         var historyHandler = new CapturingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {

@@ -44,10 +44,7 @@ public sealed class IntentRetrievalTests
             $"{fact} This paragraph carries surrounding context so the fact sits mid-text, exactly as a real policy document would read in production."
         );
         var settled = await factory.WaitForSettledAsync(adminClient);
-        settled
-            .Single(d => d.Id == staged.Id)
-            .Status.Should()
-            .Be(DocumentStatus.Ready);
+        settled.Single(d => d.Id == staged.Id).Status.Should().Be(DocumentStatus.Ready);
 
         var llm = GetLlmClient(factory);
         llm.Healthy = true;
@@ -89,10 +86,7 @@ public sealed class IntentRetrievalTests
         var embedder = GetEmbedder(factory);
         var noMatch = new float[384];
         noMatch[30] = 1.0f;
-        embedder.VectorOverrides = new Dictionary<string, float[]>
-        {
-            ["unrelated"] = noMatch,
-        };
+        embedder.VectorOverrides = new Dictionary<string, float[]> { ["unrelated"] = noMatch };
 
         var response = await employeeClient.PostAsJsonAsync(
             "/api/queries",
@@ -122,10 +116,7 @@ public sealed class IntentRetrievalTests
             );
         var staged = await UploadTextAsync(adminClient, string.Join(" ", sections));
         var settled = await factory.WaitForSettledAsync(adminClient);
-        settled
-            .Single(d => d.Id == staged.Id)
-            .Status.Should()
-            .Be(DocumentStatus.Ready);
+        settled.Single(d => d.Id == staged.Id).Status.Should().Be(DocumentStatus.Ready);
 
         var llm = GetLlmClient(factory);
         llm.Healthy = true;
@@ -139,8 +130,7 @@ public sealed class IntentRetrievalTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
-        json
-            .GetProperty("answer")
+        json.GetProperty("answer")
             .GetString()
             .Should()
             .Be("The onboarding process has eight steps, from step 1 to step 8.");

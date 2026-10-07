@@ -369,9 +369,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         {
             schemaBuilder.Field(new Field("parentId", StringType.Default, nullable: true));
         }
-        var schema = schemaBuilder
-            .Field(new Field("vector", vectorType, nullable: false))
-            .Build();
+        var schema = schemaBuilder.Field(new Field("vector", vectorType, nullable: false)).Build();
 
         var idBuilder = new StringArray.Builder();
         var documentIdBuilder = new StringArray.Builder();
@@ -441,8 +439,9 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         // 030: the parent link rides the vector payload. Pre-feature rows
         // (and pre-feature tables) carry no parentId key — absent or blank
         // means null so callers fall back to the SQLite child rows.
-        var parentId =
-            row.TryGetValue("parentId", out var parentValue) ? parentValue?.ToString() : null;
+        var parentId = row.TryGetValue("parentId", out var parentValue)
+            ? parentValue?.ToString()
+            : null;
         if (string.IsNullOrWhiteSpace(parentId))
         {
             parentId = null;

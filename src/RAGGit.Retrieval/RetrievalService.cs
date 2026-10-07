@@ -95,7 +95,10 @@ public sealed class RetrievalService
     /// Retrieves plus reports the effective intent actually used, so the
     /// controller can echo and persist it.
     /// </summary>
-    public async Task<(IReadOnlyList<SearchResult> Results, QueryIntent Intent)> RetrieveWithIntentAsync(
+    public async Task<(
+        IReadOnlyList<SearchResult> Results,
+        QueryIntent Intent
+    )> RetrieveWithIntentAsync(
         string query,
         int topK,
         QueryMode mode,

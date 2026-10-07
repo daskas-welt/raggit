@@ -31,11 +31,7 @@ public sealed class RetrievalRoutingTests
         var childB = MakeChild("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 0.80f);
         var retrieval = GranularRetrieval(new[] { childA, childB });
 
-        var results = await retrieval.RetrieveAsync(
-            "What is the renewal term?",
-            5,
-            QueryMode.Auto
-        );
+        var results = await retrieval.RetrieveAsync("What is the renewal term?", 5, QueryMode.Auto);
 
         results.Select(r => r.ChunkId).Should().Equal(childA.ChunkId, childB.ChunkId);
     }
@@ -137,11 +133,7 @@ public sealed class RetrievalRoutingTests
 
         // Parent C's best score (0.10) is below MinScore (0.25) → dropped.
         // topK = 1 → only the best parent.
-        var results = await retrieval.RetrieveAsync(
-            "Give me an overview",
-            1,
-            QueryMode.Broad
-        );
+        var results = await retrieval.RetrieveAsync("Give me an overview", 1, QueryMode.Broad);
 
         results.Should().ContainSingle().Which.ChunkId.Should().Be(parentA);
     }
@@ -243,8 +235,10 @@ public sealed class RetrievalRoutingTests
 
         public ScoringStore(IReadOnlyList<SearchResult> results) => _results = results;
 
-        public Task UpsertAsync(IEnumerable<VectorRecord> vectors, CancellationToken ct = default) =>
-            Task.CompletedTask;
+        public Task UpsertAsync(
+            IEnumerable<VectorRecord> vectors,
+            CancellationToken ct = default
+        ) => Task.CompletedTask;
 
         public Task<IReadOnlyList<SearchResult>> SearchAsync(
             float[] q,
@@ -322,8 +316,10 @@ public sealed class RetrievalRoutingTests
 
         public CapturingStore(IReadOnlyList<SearchResult> results) => _results = results;
 
-        public Task UpsertAsync(IEnumerable<VectorRecord> vectors, CancellationToken ct = default) =>
-            Task.CompletedTask;
+        public Task UpsertAsync(
+            IEnumerable<VectorRecord> vectors,
+            CancellationToken ct = default
+        ) => Task.CompletedTask;
 
         public Task<IReadOnlyList<SearchResult>> SearchAsync(
             float[] q,

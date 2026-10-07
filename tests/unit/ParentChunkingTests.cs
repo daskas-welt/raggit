@@ -99,7 +99,8 @@ public sealed class ParentChunkingTests
         var children = Chunker.ChunkText(string.Empty, Guid.NewGuid(), ChunkSize, Overlap);
         children.Should().BeEmpty();
 
-        Chunker.GroupIntoParents(children, parentGroupSize: 4, chunkOverlap: Overlap)
+        Chunker
+            .GroupIntoParents(children, parentGroupSize: 4, chunkOverlap: Overlap)
             .Should()
             .BeEmpty();
     }
@@ -109,7 +110,8 @@ public sealed class ParentChunkingTests
     {
         var children = Chunker.ChunkText(Tokens(100), Guid.NewGuid(), ChunkSize, Overlap);
 
-        Action act = () => Chunker.GroupIntoParents(children, parentGroupSize: 0, chunkOverlap: Overlap);
+        Action act = () =>
+            Chunker.GroupIntoParents(children, parentGroupSize: 0, chunkOverlap: Overlap);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 

@@ -39,12 +39,12 @@ public sealed class ReindexBackfillTests
         using var factory = new IntegrationTestFactory();
         var adminClient = CreateAdminClient(factory);
 
-        var staged = await UploadTextAsync(adminClient, "The refund policy allows returns within 30 days.");
+        var staged = await UploadTextAsync(
+            adminClient,
+            "The refund policy allows returns within 30 days."
+        );
         var settled = await factory.WaitForSettledAsync(adminClient);
-        settled
-            .Single(d => d.Id == staged.Id)
-            .Status.Should()
-            .Be(DocumentStatus.Ready);
+        settled.Single(d => d.Id == staged.Id).Status.Should().Be(DocumentStatus.Ready);
         var beforeIds = settled.Select(d => d.Id).OrderBy(id => id).ToList();
 
         // Simulate a pre-feature library: drop every parent row.

@@ -54,9 +54,7 @@ public sealed class ReindexBackfillService : BackgroundService
     /// </summary>
     public async Task<int> BackfillAsync(CancellationToken cancellationToken = default)
     {
-        var stale = await _documents.ListReadyDocumentIdsWithoutParentChunkAsync(
-            cancellationToken
-        );
+        var stale = await _documents.ListReadyDocumentIdsWithoutParentChunkAsync(cancellationToken);
 
         foreach (var documentId in stale)
         {

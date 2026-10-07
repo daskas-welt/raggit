@@ -480,7 +480,10 @@ public static class Chunker
         var parents = new List<Chunk>();
         for (var group = 0; group * parentGroupSize < children.Count; group++)
         {
-            var groupChildren = children.Skip(group * parentGroupSize).Take(parentGroupSize).ToList();
+            var groupChildren = children
+                .Skip(group * parentGroupSize)
+                .Take(parentGroupSize)
+                .ToList();
             var parentId = Guid.NewGuid();
             var documentId = groupChildren[0].DocumentId;
             var text = BuildParentText(groupChildren, chunkOverlap);

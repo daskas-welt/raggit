@@ -167,8 +167,7 @@ public sealed class RagDbContext : IAsyncDisposable
 
         using var alterCommand = connection.CreateCommand();
         alterCommand.Transaction = (SqliteTransaction)transaction;
-        alterCommand.CommandText =
-            $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType};";
+        alterCommand.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType};";
         await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 

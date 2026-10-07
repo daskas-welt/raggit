@@ -109,9 +109,7 @@ public sealed class ChunkPersistenceTests : IAsyncLifetime
         await _db.EnsureCreatedAsync();
         await _db.EnsureCreatedAsync();
 
-        var loaded = await _repository.GetChunksByIdsAsync(
-            (await ListChunkIdsAsync()).ToList()
-        );
+        var loaded = await _repository.GetChunksByIdsAsync((await ListChunkIdsAsync()).ToList());
         loaded.Should().HaveCount(1);
         loaded[0].Text.Should().Be("kept");
     }

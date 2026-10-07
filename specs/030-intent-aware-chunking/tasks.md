@@ -118,7 +118,7 @@ description: "Task list for Intent-Aware Chunking"
 - [x] T030 [P] [US3] Extend `QueryApiClient.QueryAsync` in `src/RAGGit.Client.Core/Services/QueryApiClient.cs` to accept a `QueryMode` (default `Auto`), send it, and surface the echoed mode.
 - [x] T031 [P] [US3] Add a `QueryMode` observable property (default `Auto`) to `src/RAGGit.Client.Core/ViewModels/QueryViewModel.cs` and pass it to `QueryApiClient`.
 - [x] T032 [US3] Add the three-way selector to `src/RAGGit.Client.WPF/Views/Pages/QueryPage.xaml` (+ code-behind if required) per [contracts/ui-contracts.md](contracts/ui-contracts.md): a stock `ComboBox` (matching the `PageSizeCombo` idiom, since WPF-UI exposes no ComboBox equivalent), options Auto/Broad/Specific, default Auto, a stable `AutomationProperties.AutomationId`, keyboard operable, no colour-only state.
-- [ ] T033 [US3] Run `dotnet csharpier format .` after the XAML change (CSharpier formats XAML) and confirm `dotnet csharpier check .` is clean.
+- [x] T033 [US3] Run `dotnet csharpier format .` after the XAML change (CSharpier formats XAML) and confirm `dotnet csharpier check .` is clean.
 
 **Checkpoint**: The override works end-to-end; US1, US2, US3 all function independently.
 
