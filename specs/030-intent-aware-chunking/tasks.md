@@ -60,7 +60,7 @@ description: "Task list for Intent-Aware Chunking"
 
 ### Tests for User Story 1 (write first, confirm they fail)
 
-- [ ] T010 [P] [US1] Unit tests `QueryIntentClassifier` in `tests/unit/QueryIntentClassifierTests.cs`: each broad trigger ⇒ `Broad`; a plain fact question ⇒ `Granular`; whitespace/empty ⇒ `Granular` (safe default, FR-008); determinism (same input ⇒ same output).
+- [x] T010 [P] [US1] Unit tests `QueryIntentClassifier` in `tests/unit/QueryIntentClassifierTests.cs`: each broad trigger ⇒ `Broad`; a plain fact question ⇒ `Granular`; whitespace/empty ⇒ `Granular` (safe default, FR-008); determinism (same input ⇒ same output).
 - [ ] T011 [P] [US1] Unit tests granular routing in `tests/unit/RetrievalRoutingTests.cs` using the existing fake embedder/vector store: `Auto` + non-trigger ⇒ child results; `Specific` ⇒ child results; ordering, `RetrievalOptions.MinScore` filtering, and the `topK` cap are unchanged.
 
 ### Implementation for User Story 1
