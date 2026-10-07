@@ -93,7 +93,7 @@ description: "Task list for Intent-Aware Chunking"
 - [x] T021 [US2] Wire two-level ingest in `src/RAGGit.Ingest/IngestService.cs` (both `IngestAsync` and `ProcessStagedAsync`): persist children **and** parents, and add `["parentId"] = chunk.ParentId` to each **child** `VectorRecord` payload. Only children are embedded.
 - [x] T022 [US2] Read the payload in `src/RAGGit.Ingest/Vector/LanceDbLocalClient.cs`: `MapRow` populates `SearchResult.ParentId` from the `"parentId"` payload key (absent ⇒ `null`).
 - [x] T023 [US2] Implement the broad path in `src/RAGGit.Retrieval/RetrievalService.cs`: child search with the wide candidate limit, group by `ParentId`, resolve distinct parents via `IDocumentRepository.GetChunksByIdsAsync`, keep the best child score per parent, apply `MinScore`, take `topK` parents, and return them as `SearchResult`s (`ChunkId` = parent id, `Text` = parent text, `Ordinal` = parent ordinal).
-- [ ] T024 [US2] Add `src/RAGGit.Workstation.Api/ReindexBackfillService.cs`: a hosted service that, after the schema exists, calls `ListReadyDocumentIdsWithoutParentChunkAsync()` and enqueues each stale document through `IngestWorkQueue`; idempotent and safe when the queue is busy. Register it in `src/RAGGit.Workstation.Api/Program.cs`.
+- [x] T024 [US2] Add `src/RAGGit.Workstation.Api/ReindexBackfillService.cs`: a hosted service that, after the schema exists, calls `ListReadyDocumentIdsWithoutParentChunkAsync()` and enqueues each stale document through `IngestWorkQueue`; idempotent and safe when the queue is busy. Register it in `src/RAGGit.Workstation.Api/Program.cs`.
 
 **Checkpoint**: US1 and US2 both work independently.
 

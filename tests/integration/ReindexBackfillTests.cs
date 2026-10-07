@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Data;
 using RAGGit.Core.Models;
@@ -53,7 +54,10 @@ public sealed class ReindexBackfillTests
         var stale = await repository.ListReadyDocumentIdsWithoutParentChunkAsync();
         stale.Should().Contain(staged.Id);
 
-        var backfill = factory.Services.GetRequiredService<ReindexBackfillService>();
+        var backfill = factory
+            .Services.GetServices<IHostedService>()
+            .OfType<ReindexBackfillService>()
+            .Single();
         var requeued = await backfill.BackfillAsync();
         requeued.Should().Be(1);
 

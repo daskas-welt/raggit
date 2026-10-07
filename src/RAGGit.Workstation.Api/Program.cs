@@ -203,6 +203,7 @@ builder.Services.Configure<GenerationOptions>(builder.Configuration.GetSection("
 builder.Services.AddSingleton<IngestWorkQueue>();
 builder.Services.AddHostedService<IngestWorker>();
 builder.Services.AddHostedService<LanceDbMaintenanceWorker>();
+builder.Services.AddHostedService<ReindexBackfillService>();
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<IngestService>();
