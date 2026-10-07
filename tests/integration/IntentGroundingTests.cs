@@ -50,10 +50,7 @@ public sealed class IntentGroundingTests
         var embedder = GetEmbedder(factory);
         var noMatch = new float[384];
         noMatch[30] = 1.0f;
-        embedder.VectorOverrides = new Dictionary<string, float[]>
-        {
-            ["unrelated"] = noMatch,
-        };
+        embedder.VectorOverrides = new Dictionary<string, float[]> { ["unrelated"] = noMatch };
 
         object payload = mode is null
             ? new { query = "unrelated topic quasar" }

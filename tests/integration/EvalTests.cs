@@ -341,9 +341,8 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", factory.EmployeeKey);
 
-        var documents = factory.Services.GetRequiredService<
-            RAGGit.Core.Abstractions.Repositories.IDocumentRepository
-        >();
+        var documents =
+            factory.Services.GetRequiredService<RAGGit.Core.Abstractions.Repositories.IDocumentRepository>();
         var store = factory.Services.GetRequiredService<IVectorStore>();
 
         var documentId = Guid.NewGuid();
@@ -366,7 +365,13 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         var parentB = Guid.NewGuid();
         var shared = new float[VectorSize];
         shared[0] = 1.0f;
-        var points = new[] { "onboarding point 1", "onboarding point 2", "onboarding point 3", "onboarding point 4" };
+        var points = new[]
+        {
+            "onboarding point 1",
+            "onboarding point 2",
+            "onboarding point 3",
+            "onboarding point 4",
+        };
         var childIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
         var chunks = new List<Chunk>
         {
@@ -422,8 +427,7 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
         json.GetProperty("mode").GetString().Should().Be("broad");
 
-        var citedIds = json
-            .GetProperty("citations")
+        var citedIds = json.GetProperty("citations")
             .EnumerateArray()
             .Select(c => Guid.Parse(c.GetProperty("chunkId").GetString()!))
             .ToList();
@@ -431,11 +435,15 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
 
         var citedText = string.Join(
             " ",
-            json.GetProperty("citations").EnumerateArray().Select(c => c.GetProperty("text").GetString())
+            json.GetProperty("citations")
+                .EnumerateArray()
+                .Select(c => c.GetProperty("text").GetString())
         );
         foreach (var point in points)
         {
-            citedText.Should().Contain(point, "SC-002 requires no omission across passage boundaries");
+            citedText
+                .Should()
+                .Contain(point, "SC-002 requires no omission across passage boundaries");
         }
     }
 

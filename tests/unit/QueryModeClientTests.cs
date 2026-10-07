@@ -94,10 +94,9 @@ public sealed class QueryModeClientTests
             }
         );
         var historyHandler = new CapturingHandler(_ =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("{}"),
-            })
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") }
+            )
         );
         return new QueryViewModel(
             apiClient,

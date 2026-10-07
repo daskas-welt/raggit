@@ -158,10 +158,7 @@ public sealed class IntentRetrievalTests
         var adminClient = CreateAdminClient(factory);
 
         // Two child chunks: "alpha" lands in the first, "omega" in the last.
-        var text = string.Join(
-            " ",
-            Enumerable.Range(1, 600).Select(i => $"filler-{i}")
-        );
+        var text = string.Join(" ", Enumerable.Range(1, 600).Select(i => $"filler-{i}"));
         var staged = await UploadTextAsync(adminClient, $"alpha marker {text} omega marker");
         var settled = await factory.WaitForSettledAsync(adminClient);
         settled.Single(d => d.Id == staged.Id).Status.Should().Be(DocumentStatus.Ready);
@@ -241,9 +238,11 @@ public sealed class IntentRetrievalTests
         return chunks.SingleOrDefault();
     }
 
-    private static async Task<
-        (IReadOnlyList<Guid> RetrievedIds, IReadOnlyList<Guid> CitationIds, string? Mode)
-    > LoadLatestQueryRowAsync(IntegrationTestFactory factory)
+    private static async Task<(
+        IReadOnlyList<Guid> RetrievedIds,
+        IReadOnlyList<Guid> CitationIds,
+        string? Mode
+    )> LoadLatestQueryRowAsync(IntegrationTestFactory factory)
     {
         var db = factory.Services.GetRequiredService<RagDbContext>();
         await using var connection = db.CreateConnection();
