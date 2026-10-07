@@ -25,6 +25,13 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   leaves `Ready`/in-flight ones untouched. Cell-cap and no-extractable-content uploads are no longer
   `413`/`400` — they are accepted and fail in the background, so `specs/001…005/contracts/api.yaml`
   (400-corrupt, status enum) is stale for them.
+- **Two-level chunks (030):** ingest persists child chunks (512/50, embedded, vector payload
+  carries `parentId`) plus parent chunks (groups of `Ingest:ParentGroupSize` = 4 children,
+  not embedded) in `Chunks(Level, ParentId)`; broad queries resolve parents at retrieval time.
+  `ReindexBackfillService` runs once per startup and re-enqueues `Ready` documents with no parent
+  row through the normal background path (idempotent), so after upgrading, expect stale documents
+  to cycle `Queued → Indexing → Ready` on first boot. `POST /api/queries` accepts optional
+  `mode: auto|broad|specific` (default `auto`) and echoes the effective `mode: broad|granular`.
 - Unit 339 / contract 86 / integration 62 pass on 2026-09-29 (Release, Ollama up). Confirm before
   treating a failure as pre-existing.
 - CI (`.github/workflows/ci.yml`) triggers only on `main` and the hard-coded branches `001-*`…`005-*`
