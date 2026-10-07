@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant) — 030-intent-aware-chunking delta
+  version: 1.5.0
+  description: >
+    ADDITIVE MINOR 1.4.0 → 1.5.0 for 030-intent-aware-chunking (FR-007): POST
+    /api/queries accepts an OPTIONAL `mode` (auto|broad|specific, default auto)
+    that overrides the automatically-detected query intent, and its 200 response
+    gains an OPTIONAL `mode` echoing the effective intent (broad|granular). When
+    `mode` is omitted the endpoint behaves exactly as 1.4.0. Retrieval
+    granularity (child chunks for granular, parent chunks for broad) is an
+    implementation detail; the citation shape is unchanged. All 1.4.0
+    paths/schemas/required fields are preserved; clients MUST ignore unknown
+    fields. Offline/LAN-only and citation-grounding guarantees are unchanged.
+    Empty answers remain exactly "no relevant content found".
+
+servers:
+  - url: https://ai-workstation.local:5001
+    description: LAN HTTPS (no WAN at query time)
+  - url: http://localhost:5001
+    description: Development / in-memory host only
+
+security:
+  - ApiKey: []
+  - Bearer: []
+
+paths:
+  /api/queries:
+    post:
+      summary: Query library with citations (LAN-only, no cloud egress)
+      description: >
+        1.5.0 ADDITIVE — `mode` optionally overrides the detected intent:
+        `specific` forces child-chunk (granular) retrieval, `broad` forces
+        parent-chunk (synthesis) retrieval, `auto` (default) lets the server
+        classify. The response echoes the effective intent. Behavior with no
+        `mode` is identical to 1.4.0. When nothing relevant exists at the
+        selected granularity, the response is the 1.4.0 `NoRelevantContent`
+        shape (answer exactly "no relevant content found", citations empty).
+      operationId: query
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, minLength: 1 }
+                topK: { type: integer, default: 5, minimum: 1, maximum: 5 }
+                mode:
+                  type: string
+                  enum: [auto, broad, specific]
+                  default: auto
+                  description: >
+                    ADDED 1.5.0 (optional). Intent override. Omitted ⇒ auto.
+                  x-nullable: true
+              required: [query]
+            examples:
+              autoDefault:
+                summary: Omitted mode (server classifies)
+                value: { "query": "What is the renewal term?" }
+              overrideBroad:
+                summary: Force synthesis over granular
+                value: { "query": "renewal term", "mode": "broad" }
+      responses:
+        '200':
+          description: Grounded answer with citations or no relevant content
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/QueryAnswer'
+                  - $ref: '#/components/schemas/NoRelevantContent'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { description: AI workstation unavailable or model unavailable offline }
+
+components:
+  schemas:
+    QueryAnswer:
+      type: object
+      properties:
+        answer: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              documentId: { type: string, format: uuid }
+              documentName: { type: string, nullable: true, description: Original uploaded filename when available }
+              chunkId:
+                type: string
+                format: uuid
+                description: >
+                  Child-chunk id for granular answers; parent-chunk id for broad
+                  answers. Shape unchanged from 1.4.0.
+              text: { type: string }
+              ordinal: { type: integer }
+            required: [documentId, chunkId, text]
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+        mode:
+          type: string
+          enum: [broad, granular]
+          description: >
+            ADDED 1.5.0 (optional). Effective intent used for this answer —
+            equal to the override when supplied, else the classifier result.
+      required: [answer, citations]
+
+    NoRelevantContent:
+      type: object
+      properties:
+        answer: { type: string, enum: [no relevant content found] }
+        citations: { type: array, maxItems: 0 }
+        mode:
+          type: string
+          enum: [broad, granular]
+          description: >
+            ADDED 1.5.0 (optional). Effective intent, echoed on no-content
+            responses exactly as on answers. No-content answers share the
+            QueryResponse envelope, so `retrievedChunkIds` (empty) and
+            `latencyMs` may also be present; clients MUST ignore them as
+            with any unknown field.
+      required: [answer]
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: unauthorized }
+
+  responses:
+    BadRequest:
+      description: Bad request — e.g. unknown `mode` value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing/invalid/expired credential, or inactive account (generic)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
