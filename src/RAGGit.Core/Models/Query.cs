@@ -27,5 +27,12 @@ public sealed class Query
     [Range(0, int.MaxValue)]
     public int LatencyMs { get; set; }
 
+    /// <summary>
+    /// Effective retrieval intent used for this query (030): stored as
+    /// <c>"Broad"</c>/<c>"Granular"</c> text, null for pre-feature rows.
+    /// Audit/history only.
+    /// </summary>
+    public QueryIntent? Mode { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

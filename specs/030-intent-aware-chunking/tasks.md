@@ -113,7 +113,7 @@ description: "Task list for Intent-Aware Chunking"
 ### Implementation for User Story 3
 
 - [x] T027 [US3] Add `public QueryMode Mode { get; set; } = QueryMode.Auto;` to `QueryRequest` and an optional effective-intent field (e.g. `QueryIntent? Mode`) to `QueryResponse` in `src/RAGGit.Core/Models/QueryRequest.cs`.
-- [ ] T028 [US3] Persist the effective intent: add `Mode` to `src/RAGGit.Core/Models/Query.cs` and include it in the `AddAsync` INSERT in `src/RAGGit.Core/Data/SqliteQueryRepository.cs` (column added in T007).
+- [x] T028 [US3] Persist the effective intent: add `Mode` to `src/RAGGit.Core/Models/Query.cs` and include it in the `AddAsync` INSERT in `src/RAGGit.Core/Data/SqliteQueryRepository.cs` (column added in T007).
 - [ ] T029 [US3] Echo the resolved effective intent in the `QueryResponse` built by `src/RAGGit.Workstation.Api/Controllers/QueryController.cs` (both the answered and the no-content branches).
 - [ ] T030 [P] [US3] Extend `QueryApiClient.QueryAsync` in `src/RAGGit.Client.Core/Services/QueryApiClient.cs` to accept a `QueryMode` (default `Auto`), send it, and surface the echoed mode.
 - [ ] T031 [P] [US3] Add a `QueryMode` observable property (default `Auto`) to `src/RAGGit.Client.Core/ViewModels/QueryViewModel.cs` and pass it to `QueryApiClient`.

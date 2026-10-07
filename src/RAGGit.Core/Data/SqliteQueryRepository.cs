@@ -262,8 +262,8 @@ public class SqliteQueryRepository : IQueryRepository
         using var command = connection.CreateCommand();
         command.CommandText =
             @"
-            INSERT INTO Queries (Id, UserId, Prompt, RetrievedChunkIds, Answer, CitationIds, LatencyMs, CreatedAt)
-            VALUES (@id, @userId, @prompt, @retrievedChunkIds, @answer, @citationIds, @latencyMs, @createdAt);";
+            INSERT INTO Queries (Id, UserId, Prompt, RetrievedChunkIds, Answer, CitationIds, LatencyMs, CreatedAt, Mode)
+            VALUES (@id, @userId, @prompt, @retrievedChunkIds, @answer, @citationIds, @latencyMs, @createdAt, @mode);";
 
         command.Parameters.AddWithValue("@id", query.Id.ToString());
         command.Parameters.AddWithValue("@userId", query.UserId);
@@ -276,6 +276,10 @@ public class SqliteQueryRepository : IQueryRepository
         command.Parameters.AddWithValue("@citationIds", SerializeGuids(query.CitationIds));
         command.Parameters.AddWithValue("@latencyMs", query.LatencyMs);
         command.Parameters.AddWithValue("@createdAt", query.CreatedAt.ToString("O"));
+        command.Parameters.AddWithValue(
+            "@mode",
+            query.Mode.HasValue ? query.Mode.Value.ToString() : (object)DBNull.Value
+        );
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
