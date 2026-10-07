@@ -32,6 +32,15 @@ public sealed partial class QueryViewModel : ObservableObject
     [ObservableProperty]
     private string _queryText = string.Empty;
 
+    /// <summary>
+    /// Intent override for the next question (030, US3): <c>Auto</c> lets the
+    /// server classify; <c>Broad</c> forces synthesis retrieval;
+    /// <c>Specific</c> forces granular retrieval. Retained while on the Ask
+    /// surface; a fresh ViewModel (app restart) starts at <c>Auto</c>.
+    /// </summary>
+    [ObservableProperty]
+    private QueryMode _queryMode = QueryMode.Auto;
+
     [ObservableProperty]
     private string _answer = string.Empty;
 
@@ -398,7 +407,7 @@ public sealed partial class QueryViewModel : ObservableObject
 
         try
         {
-            var response = await _apiClient.QueryAsync(question);
+            var response = await _apiClient.QueryAsync(question, mode: QueryMode);
             Answer = response.Answer;
             Citations = new ObservableCollection<Citation>(response.Citations);
             HasCitations = response.Citations.Count > 0;
