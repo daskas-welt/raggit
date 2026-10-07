@@ -61,6 +61,37 @@ public sealed class RagDbContext : IAsyncDisposable
             cancellationToken
         );
 
+        // 030-intent-aware-chunking: two-level chunk columns plus the
+        // persisted effective query intent. SQLite has no
+        // ADD COLUMN IF NOT EXISTS on all supported versions, so probe
+        // first and alter only when absent.
+        await EnsureColumnAsync(
+            connection,
+            transaction,
+            "Chunks",
+            "Level",
+            "INTEGER NOT NULL DEFAULT 0",
+            cancellationToken
+        );
+
+        await EnsureColumnAsync(
+            connection,
+            transaction,
+            "Chunks",
+            "ParentId",
+            "TEXT",
+            cancellationToken
+        );
+
+        await EnsureColumnAsync(
+            connection,
+            transaction,
+            "Queries",
+            "Mode",
+            "TEXT",
+            cancellationToken
+        );
+
         using var seedCommand = connection.CreateCommand();
         seedCommand.Transaction = (SqliteTransaction)transaction;
         seedCommand.CommandText =
@@ -87,11 +118,33 @@ public sealed class RagDbContext : IAsyncDisposable
         string columnName,
         string columnType,
         CancellationToken cancellationToken
+    ) =>
+        await EnsureColumnAsync(
+            connection,
+            transaction,
+            "Documents",
+            columnName,
+            columnType,
+            cancellationToken
+        );
+
+    /// <summary>
+    /// Adds a nullable column to <paramref name="tableName"/> when it does
+    /// not exist yet (probe-then-<c>ALTER TABLE</c>, since SQLite has no
+    /// portable <c>ADD COLUMN IF NOT EXISTS</c>).
+    /// </summary>
+    private static async Task EnsureColumnAsync(
+        SqliteConnection connection,
+        System.Data.Common.DbTransaction transaction,
+        string tableName,
+        string columnName,
+        string columnType,
+        CancellationToken cancellationToken
     )
     {
         using var pragmaCommand = connection.CreateCommand();
         pragmaCommand.Transaction = (SqliteTransaction)transaction;
-        pragmaCommand.CommandText = "SELECT name FROM pragma_table_info('Documents');";
+        pragmaCommand.CommandText = $"SELECT name FROM pragma_table_info('{tableName}');";
         await using var reader = await pragmaCommand.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -103,7 +156,8 @@ public sealed class RagDbContext : IAsyncDisposable
 
         using var alterCommand = connection.CreateCommand();
         alterCommand.Transaction = (SqliteTransaction)transaction;
-        alterCommand.CommandText = $"ALTER TABLE Documents ADD COLUMN {columnName} {columnType};";
+        alterCommand.CommandText =
+            $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType};";
         await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -136,7 +190,9 @@ public sealed class RagDbContext : IAsyncDisposable
                 DocumentId TEXT NOT NULL REFERENCES Documents(Id) ON DELETE CASCADE,
                 Ordinal INTEGER NOT NULL,
                 Text TEXT NOT NULL,
-                TokenCount INTEGER NOT NULL
+                TokenCount INTEGER NOT NULL,
+                Level INTEGER NOT NULL DEFAULT 0,
+                ParentId TEXT
             );";
 
         yield return @"
@@ -148,7 +204,8 @@ public sealed class RagDbContext : IAsyncDisposable
                 Answer TEXT,
                 CitationIds TEXT,
                 LatencyMs INTEGER,
-                CreatedAt TEXT NOT NULL
+                CreatedAt TEXT NOT NULL,
+                Mode TEXT
             );";
 
         yield return @"
@@ -174,6 +231,14 @@ public sealed class RagDbContext : IAsyncDisposable
         yield return @"
             CREATE INDEX IF NOT EXISTS IX_Users_Active
             ON Users (IsActive);";
+
+        yield return @"
+            CREATE INDEX IF NOT EXISTS IX_Chunks_Document_Level
+            ON Chunks (DocumentId, Level);";
+
+        yield return @"
+            CREATE INDEX IF NOT EXISTS IX_Chunks_Parent
+            ON Chunks (ParentId);";
     }
 
     public ValueTask DisposeAsync()
