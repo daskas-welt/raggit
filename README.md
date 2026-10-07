@@ -102,6 +102,20 @@ dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
 - `tests/` — unit, contract, and integration tests
 - `docs/` — PlantUML diagram sources and the rendered SVGs used above
 
+## Security
+
+- **Single-tenant** — one workstation serves exactly one company. There is no
+  `company_id`, no shared tenancy, and no cross-company data flow.
+- **Secrets stay out of source** — API keys, model paths, and certificates come
+  from `dotnet user-secrets` (development), environment variables (production),
+  or a company secret manager. `appsettings.json` ships only empty placeholders.
+- **Data stays local** — the SQLite database and vector index live under
+  `./data/`, and model weights under `./models/`. Both are gitignored and never
+  committed.
+
+To report a security issue, contact the project owner directly rather than
+opening a public issue.
+
 ## License
 
 [MIT](LICENSE) © 2026 Andreas Daskalopoulos. AI models stay on customer-owned
