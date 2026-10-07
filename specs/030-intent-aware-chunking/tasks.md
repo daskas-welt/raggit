@@ -84,7 +84,7 @@ description: "Task list for Intent-Aware Chunking"
 
 - [x] T016 [P] [US2] Unit tests parent grouping in `tests/unit/ParentChunkingTests.cs`: groups of `ParentGroupSize`; parent text trims the inter-child overlap (no duplicated sentence); trailing short group; `ParentGroupSize = 1` ⇒ parent == child; empty text ⇒ no chunks.
 - [x] T017 [P] [US2] Unit tests broad routing in `tests/unit/RetrievalRoutingTests.cs`: children grouped by `ParentId`; duplicates de-duplicated; each parent keeps its best child score; `MinScore` and the `topK` parent cap applied; candidate limit = `min(topK × BroadCandidateMultiplier, MaxCandidates)`.
-- [ ] T018 [US2] Integration test broad synthesis in `tests/integration/IntentRetrievalTests.cs`: a summary/compare query returns parent-context citations covering content split across adjacent child chunks.
+- [x] T018 [US2] Integration test broad synthesis in `tests/integration/IntentRetrievalTests.cs`: a summary/compare query returns parent-context citations covering content split across adjacent child chunks.
 - [ ] T019 [US2] Integration test re-ingestion in `tests/integration/ReindexBackfillTests.cs`: a pre-feature DB (chunks only) is upgraded so every `Ready` document has parent rows; no document lost or duplicated; a second run processes none (idempotent).
 
 ### Implementation for User Story 2

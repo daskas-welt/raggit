@@ -106,6 +106,60 @@ public sealed class IntentRetrievalTests
         json.GetProperty("citations").GetArrayLength().Should().Be(0);
     }
 
+    [Fact]
+    public async Task BroadSynthesisQuery_ReturnsParentContextCoveringAdjacentChildren()
+    {
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
+        var adminClient = CreateAdminClient(factory);
+
+        // ~1100 tokens: three child chunks, so the steps span adjacent units.
+        var sections = Enumerable
+            .Range(1, 8)
+            .Select(step =>
+                $"Step {step}: complete the onboarding task number {step} with care. "
+                + string.Join(" ", Enumerable.Repeat($"onboarding-detail-{step}", 22))
+            );
+        var staged = await UploadTextAsync(adminClient, string.Join(" ", sections));
+        var settled = await factory.WaitForSettledAsync(adminClient);
+        settled
+            .Single(d => d.Id == staged.Id)
+            .Status.Should()
+            .Be(DocumentStatus.Ready);
+
+        var llm = GetLlmClient(factory);
+        llm.Healthy = true;
+        llm.ResponseText = "The onboarding process has eight steps, from step 1 to step 8.";
+
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/queries",
+            new { query = "Summarize the onboarding process", mode = "auto" },
+            _jsonOptions
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
+        json
+            .GetProperty("answer")
+            .GetString()
+            .Should()
+            .Be("The onboarding process has eight steps, from step 1 to step 8.");
+
+        var citations = json.GetProperty("citations").EnumerateArray().ToList();
+        citations.Should().ContainSingle();
+
+        // The cited passage is a larger parent unit spanning the child
+        // boundary: it covers both the first and the last step.
+        var citationText = citations[0].GetProperty("text").GetString()!;
+        citationText.Should().Contain("Step 1:");
+        citationText.Should().Contain("Step 8:");
+
+        var citedId = Guid.Parse(citations[0].GetProperty("chunkId").GetString()!);
+        var chunk = await LoadChunkAsync(factory, citedId);
+        chunk.Should().NotBeNull();
+        chunk!.Level.Should().Be(ChunkLevel.Parent);
+    }
+
     private async Task<Document> UploadTextAsync(HttpClient adminClient, string text)
     {
         var form = new MultipartFormDataContent();
