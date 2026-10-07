@@ -56,6 +56,13 @@ public sealed class QueryResponse
     public int LatencyMs { get; set; }
 
     /// <summary>
+    /// Effective retrieval intent actually used for this answer (030): equal
+    /// to the request override when supplied, else the classifier result.
+    /// Optional and additive — pre-feature clients ignore it.
+    /// </summary>
+    public QueryIntent? Mode { get; set; }
+
+    /// <summary>
     /// Closest person names actually present in retrieved chunks when the
     /// asked name does not match. Surname-anchored hints only; never
     /// transferred facts. Empty when citations exist or no surname matches.
