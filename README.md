@@ -54,6 +54,14 @@ The API listens on `https://localhost:5001` by default. Building the full
 solution needs Windows (it includes the WPF client); without the client, build
 the server filter instead: `dotnet build RAGGit.Server.slnf -c Release`.
 
+Create a login with the operator CLI. Run it from the API project, since the
+database path is relative to the working directory:
+
+```powershell
+cd src/RAGGit.Workstation.Api
+dotnet run -- user add --username me --display-name "Me" --role Admin --password "Passw0rd!"
+```
+
 The desktop client (`src/RAGGit.Client.WPF`) needs both `Workstation:Url` and
 `Workstation:ApiKey` in its `appsettings.json` before it will connect.
 
@@ -68,22 +76,20 @@ dotnet test tests/integration/RAGGit.Tests.Integration.csproj -c Release
 `RequiresOllama` tests are skipped automatically when Ollama is not running, so
 the suite stays green offline.
 
-More: [workstation runbook](docs/workstation.md) ·
-[operator CLI](docs/operator-cli.md) ·
-[publishing guide](docs/publish.md) ·
-[architecture notes](docs/architecture.md).
-
 ## Installing the app (end users)
 
-The desktop client is built, signed, and distributed **per deployment by each
-company's IT** — there is no public binary download, because the app is only
-useful against a running workstation (it needs that workstation's URL and API
-key to connect).
+The desktop client is built and distributed **per deployment by each company's
+IT** — there is no public binary download, because the app is only useful
+against a running workstation (it needs that workstation's URL and API key to
+connect).
 
-- **Employees**: see the [install guide](docs/install.md). IT sends you a link;
-  installing takes about two minutes.
-- **IT / operators**: see the [publishing guide](docs/publish.md) for building
-  and distributing the client.
+IT publishes the client as a self-contained executable and gives employees a
+link; employees double-click the file, sign in with the credentials IT created,
+and the app updates itself. To build that executable:
+
+```powershell
+dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
+```
 
 ## Project structure
 
@@ -94,7 +100,7 @@ key to connect).
 - `src/RAGGit.Ingest` — document ingestion and chunking
 - `src/RAGGit.Retrieval` — vector search and grounded prompt assembly
 - `tests/` — unit, contract, and integration tests
-- `docs/` — architecture, workstation, publishing, and operator guides
+- `docs/` — PlantUML diagram sources and the rendered SVGs used above
 
 ## License
 
