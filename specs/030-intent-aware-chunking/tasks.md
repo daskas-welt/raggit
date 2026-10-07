@@ -30,7 +30,7 @@ description: "Task list for Intent-Aware Chunking"
 **Purpose**: Confirm a clean baseline and add feature configuration defaults.
 
 - [x] T001 Confirm the baseline is green before any change: from repo root run `dotnet build RAGGit.Server.slnf -c Release`, then `dotnet test` for unit, contract, and the offline subset (`QueryOfflineTests|OfflineIdentityTests|OfflineHistoryTests|CrossUserIsolationTests`). Record any pre-existing failure so it is not later attributed to this feature.
-- [ ] T002 [P] Add feature config defaults to `src/RAGGit.Workstation.Api/appsettings.json` and `src/RAGGit.Workstation.Api/appsettings.Development.json`: `Ingest:ParentGroupSize` = `4`, `Retrieval:BroadCandidateMultiplier` = `4`, `Retrieval:MaxCandidates` = `50`.
+- [x] T002 [P] Add feature config defaults to `src/RAGGit.Workstation.Api/appsettings.json` and `src/RAGGit.Workstation.Api/appsettings.Development.json`: `Ingest:ParentGroupSize` = `4`, `Retrieval:BroadCandidateMultiplier` = `4`, `Retrieval:MaxCandidates` = `50`.
 
 ---
 
