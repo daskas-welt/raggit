@@ -6,6 +6,7 @@
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
     xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
     xmlns:models="clr-namespace:RAGGit.Core.Models;assembly=RAGGit.Core"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -14,6 +15,15 @@
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
+        <ObjectDataProvider
+            x:Key="QueryModes"
+            MethodName="GetValues"
+            ObjectType="{x:Type sys:Enum}"
+        >
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:QueryMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </Page.Resources>
     <Grid>
         <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
@@ -32,6 +42,22 @@
                     </StackPanel>
                     <!-- Actions area (US3 adds the Clear-conversation action here). -->
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                        <ui:TextBlock
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            FontTypography="Caption"
+                            Text="Mode"
+                        />
+                        <ComboBox
+                            MinHeight="32"
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            ItemsSource="{StaticResource QueryModes}"
+                            SelectedItem="{Binding QueryMode, Mode=TwoWay}"
+                            AutomationProperties.AutomationId="QueryModeCombo"
+                            AutomationProperties.Name="Query intent mode"
+                            ToolTip="Auto lets the server decide; Broad forces synthesis context; Specific forces granular facts"
+                        />
                         <ui:Button
                             x:Name="QueryClearConversationButton"
                             AutomationProperties.AutomationId="QueryClearConversationButton"
