@@ -132,7 +132,7 @@ description: "Task list for Intent-Aware Chunking"
 
 ### Tests for User Story 4 (write first, confirm they fail)
 
-- [ ] T034 [P] [US4] Integration test in `tests/integration/IntentGroundingTests.cs`: a query with no relevant content returns exactly `no relevant content found` with zero citations in both `auto`-resolved modes and in forced `broad`/`specific`.
+- [x] T034 [P] [US4] Integration test in `tests/integration/IntentGroundingTests.cs`: a query with no relevant content returns exactly `no relevant content found` with zero citations in both `auto`-resolved modes and in forced `broad`/`specific`.
 - [ ] T035 [P] [US4] Integration test in `tests/integration/IntentGroundingTests.cs`: an ambiguous query falls back to granular and still returns a grounded answer or the exact no-content message (never ungrounded text).
 
 ### Implementation for User Story 4
