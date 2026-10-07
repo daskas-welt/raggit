@@ -31,6 +31,14 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Whether the <c>library</c> table carries the <c>parentId</c> column
+    /// (030). Fresh tables are created with it; pre-feature tables lack it
+    /// and keep the old batch shape so upgrades never break on first write —
+    /// broad retrieval then resolves parents through SQLite instead.
+    /// </summary>
+    private bool _supportsParentId;
+
+    /// <summary>
     /// Creates a local LanceDB client that persists data under <paramref name="storagePath"/>.
     /// </summary>
     public LanceDbLocalClient(string storagePath, int vectorSize = DefaultVectorSize)
@@ -65,6 +73,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 _table = await _connection.OpenTable(TableName);
                 // Dimension guard — first-request backstop per Q3
                 await ValidateDimensionInternalAsync(_table, _vectorSize, cancellationToken);
+                _supportsParentId = await HasParentIdColumnAsync(_table);
                 _initialized = true;
                 return _table;
             }
@@ -76,6 +85,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 .Field(new Field("documentId", StringType.Default, nullable: false))
                 .Field(new Field("text", StringType.Default, nullable: true))
                 .Field(new Field("ordinal", Int32Type.Default, nullable: false))
+                .Field(new Field("parentId", StringType.Default, nullable: true))
                 .Field(new Field("vector", vectorType, nullable: false))
                 .Build();
 
@@ -83,6 +93,8 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
                 TableName,
                 new CreateTableOptions { Schema = schema, ExistOk = true }
             );
+
+            _supportsParentId = true;
 
             // No index here: LanceDB cannot build a vector index on an empty
             // table ("cannot be created without training"), and creating one at
@@ -348,11 +360,16 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
     {
         var vectorField = new Field("item", FloatType.Default, nullable: false);
         var vectorType = new FixedSizeListType(vectorField, _vectorSize);
-        var schema = new Schema.Builder()
+        var schemaBuilder = new Schema.Builder()
             .Field(new Field("id", StringType.Default, nullable: false))
             .Field(new Field("documentId", StringType.Default, nullable: false))
             .Field(new Field("text", StringType.Default, nullable: true))
-            .Field(new Field("ordinal", Int32Type.Default, nullable: false))
+            .Field(new Field("ordinal", Int32Type.Default, nullable: false));
+        if (_supportsParentId)
+        {
+            schemaBuilder.Field(new Field("parentId", StringType.Default, nullable: true));
+        }
+        var schema = schemaBuilder
             .Field(new Field("vector", vectorType, nullable: false))
             .Build();
 
@@ -360,6 +377,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
         var documentIdBuilder = new StringArray.Builder();
         var textBuilder = new StringArray.Builder();
         var ordinalBuilder = new Int32Array.Builder();
+        var parentIdBuilder = _supportsParentId ? new StringArray.Builder() : null;
         var vectorBuilder = new FixedSizeListArray.Builder(vectorField, _vectorSize);
         var valueBuilder = (FloatArray.Builder)vectorBuilder.ValueBuilder;
 
@@ -378,6 +396,7 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             documentIdBuilder.Append(GetPayloadString(vector.Payload, "documentId"));
             textBuilder.Append(GetPayloadString(vector.Payload, "text"));
             ordinalBuilder.Append(GetPayloadInt32(vector.Payload, "ordinal"));
+            parentIdBuilder?.Append(GetPayloadString(vector.Payload, "parentId"));
             vectorBuilder.Append();
             foreach (var value in vector.Vector)
             {
@@ -387,18 +406,20 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             count++;
         }
 
-        return new RecordBatch(
-            schema,
-            new IArrowArray[]
-            {
-                idBuilder.Build(),
-                documentIdBuilder.Build(),
-                textBuilder.Build(),
-                ordinalBuilder.Build(),
-                vectorBuilder.Build(),
-            },
-            count
-        );
+        var columns = new List<IArrowArray>
+        {
+            idBuilder.Build(),
+            documentIdBuilder.Build(),
+            textBuilder.Build(),
+            ordinalBuilder.Build(),
+        };
+        if (parentIdBuilder is not null)
+        {
+            columns.Add(parentIdBuilder.Build());
+        }
+        columns.Add(vectorBuilder.Build());
+
+        return new RecordBatch(schema, columns, count);
     }
 
     private static SearchResult MapRow(IReadOnlyDictionary<string, object?> row)
@@ -417,7 +438,27 @@ public sealed class LanceDbLocalClient : IVectorStore, IDisposable
             ?? 0f;
         var score = 1.0f - distance;
 
-        return new SearchResult(id, documentId, text, ordinal, score);
+        // 030: the parent link rides the vector payload. Pre-feature rows
+        // (and pre-feature tables) carry no parentId key — absent or blank
+        // means null so callers fall back to the SQLite child rows.
+        var parentId =
+            row.TryGetValue("parentId", out var parentValue) ? parentValue?.ToString() : null;
+        if (string.IsNullOrWhiteSpace(parentId))
+        {
+            parentId = null;
+        }
+
+        return new SearchResult(id, documentId, text, ordinal, score, parentId);
+    }
+
+    /// <summary>
+    /// Probes whether an existing table already carries the 030
+    /// <c>parentId</c> column.
+    /// </summary>
+    private static async Task<bool> HasParentIdColumnAsync(lancedb.Table table)
+    {
+        var schema = await table.Schema();
+        return schema.GetFieldByName("parentId") is not null;
     }
 
     private static string GetPayloadString(IReadOnlyDictionary<string, object?> payload, string key)
