@@ -24,7 +24,7 @@ public sealed class QueryModeClientTests
     [Fact]
     public void QueryMode_DefaultsToAuto()
     {
-        var viewModel = CreateViewModel(_ => OkAnswer("broad"));
+        var viewModel = CreateViewModel(_ => Task.FromResult(OkAnswer("broad")));
 
         viewModel.QueryMode.Should().Be(QueryMode.Auto);
     }
@@ -33,9 +33,9 @@ public sealed class QueryModeClientTests
     public async Task QueryAsync_SendsSelectedMode()
     {
         string? capturedBody = null;
-        var handler = new CapturingHandler(request =>
+        var handler = new CapturingHandler(async request =>
         {
-            capturedBody = request.Content!.ReadAsStringAsync().Result;
+            capturedBody = await request.Content!.ReadAsStringAsync();
             return OkAnswer("broad");
         });
         var apiClient = new QueryApiClient(
@@ -53,7 +53,7 @@ public sealed class QueryModeClientTests
     public async Task QueryAsync_SurfacesEchoedEffectiveIntent()
     {
         var apiClient = new QueryApiClient(
-            new HttpClient(new CapturingHandler(_ => OkAnswer("broad")))
+            new HttpClient(new CapturingHandler(_ => Task.FromResult(OkAnswer("broad"))))
             {
                 BaseAddress = new Uri("https://w.local/"),
             }
@@ -68,9 +68,9 @@ public sealed class QueryModeClientTests
     public async Task Ask_SendsSelectedViewModelMode()
     {
         string? capturedBody = null;
-        var viewModel = CreateViewModel(request =>
+        var viewModel = CreateViewModel(async request =>
         {
-            capturedBody = request.Content!.ReadAsStringAsync().Result;
+            capturedBody = await request.Content!.ReadAsStringAsync();
             return OkAnswer("granular");
         });
         viewModel.QueryMode = QueryMode.Specific;
@@ -84,7 +84,7 @@ public sealed class QueryModeClientTests
     }
 
     private static QueryViewModel CreateViewModel(
-        Func<HttpRequestMessage, HttpResponseMessage> respond
+        Func<HttpRequestMessage, Task<HttpResponseMessage>> respond
     )
     {
         var apiClient = new QueryApiClient(
@@ -93,10 +93,12 @@ public sealed class QueryModeClientTests
                 BaseAddress = new Uri("https://w.local/"),
             }
         );
-        var historyHandler = new CapturingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("{}"),
-        });
+        var historyHandler = new CapturingHandler(_ =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{}"),
+            })
+        );
         return new QueryViewModel(
             apiClient,
             new QueryHistoryApiClient(
@@ -127,14 +129,14 @@ public sealed class QueryModeClientTests
 
     private sealed class CapturingHandler : HttpMessageHandler
     {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _respond;
+        private readonly Func<HttpRequestMessage, Task<HttpResponseMessage>> _respond;
 
-        public CapturingHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        public CapturingHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond) =>
             _respond = respond;
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
-        ) => Task.FromResult(_respond(request));
+        ) => _respond(request);
     }
 }
