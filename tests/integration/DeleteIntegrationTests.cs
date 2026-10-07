@@ -46,6 +46,13 @@ public sealed class DeleteIntegrationTests
         uploaded.StatusCode.Should().Be(HttpStatusCode.Created);
         var document = await DeserializeDocumentAsync(uploaded);
 
+        // Settle before deleting: removing a document while the background
+        // worker is still indexing it races re-insertion after the purge.
+        // (AGENTS.md: anything that uploads then asserts must wait for the
+        // worker instead of Task.Delay.)
+        var settled = await factory.WaitForSettledAsync(adminClient);
+        settled.Should().ContainSingle(d => d.Id == document.Id);
+
         var delete = await adminClient.DeleteAsync($"/api/documents/{document.Id}");
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
