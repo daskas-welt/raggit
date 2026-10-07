@@ -107,7 +107,7 @@ description: "Task list for Intent-Aware Chunking"
 
 ### Tests for User Story 3 (write first, confirm they fail)
 
-- [ ] T025 [P] [US3] Contract test in `tests/contract/QueryModeContractTests.cs` against `POST /api/queries`: omitted `mode` ⇒ 200 and pre-feature behaviour; `"mode":"broad"` / `"specific"` ⇒ 200 with echoed effective `mode`; unknown `mode` ⇒ 400 with the standard error shape.
+- [x] T025 [P] [US3] Contract test in `tests/contract/QueryModeContractTests.cs` against `POST /api/queries`: omitted `mode` ⇒ 200 and pre-feature behaviour; `"mode":"broad"` / `"specific"` ⇒ 200 with echoed effective `mode`; unknown `mode` ⇒ 400 with the standard error shape.
 - [ ] T026 [P] [US3] Unit tests client plumbing in `tests/unit/QueryModeClientTests.cs`: `QueryViewModel.QueryMode` defaults to `Auto`; `QueryApiClient.QueryAsync` serializes the selected mode.
 
 ### Implementation for User Story 3
