@@ -157,24 +157,13 @@ public sealed class IngestService
                     cancellationToken
                 );
 
-                var records = chunks
-                    .Select(
-                        (chunk, index) =>
-                            new VectorRecord(
-                                chunk.Id,
-                                embeddings[index],
-                                new Dictionary<string, object?>
-                                {
-                                    ["documentId"] = document.Id.ToString(),
-                                    ["text"] = chunk.Text,
-                                    ["ordinal"] = chunk.Ordinal,
-                                }
-                            )
-                    )
-                    .ToList();
+                // Two-level persist (030): only children are embedded; each
+                // child vector carries its parent id for broad grouping.
+                var parents = GroupChildren(chunks);
+                var records = BuildVectorRecords(chunks, embeddings);
 
                 await _vectorStore.UpsertAsync(records, cancellationToken);
-                await InsertChunksAsync(chunks, cancellationToken);
+                await InsertChunksAsync(chunks.Concat(parents), cancellationToken);
             }
 
             document.Status = DocumentStatus.Ready;
@@ -403,29 +392,26 @@ public sealed class IngestService
 
             if (chunks.Count > 0)
             {
+                // Re-process (030 backfill/ retry) replaces stale rows first
+                // so a re-ingested document never keeps single-level chunks
+                // or orphan vectors. Fresh staged documents have none yet,
+                // making both deletes no-ops for the common path.
+                await _vectorStore.DeleteAsync(documentId.ToString(), cancellationToken);
+                await _documents.DeleteChunksAsync(documentId, cancellationToken);
+
                 var embeddings = await EmbedInBatchesAsync(
                     chunks,
                     _options.EmbedBatchSize,
                     cancellationToken
                 );
-                var records = chunks
-                    .Select(
-                        (chunk, index) =>
-                            new VectorRecord(
-                                chunk.Id,
-                                embeddings[index],
-                                new Dictionary<string, object?>
-                                {
-                                    ["documentId"] = document.Id.ToString(),
-                                    ["text"] = chunk.Text,
-                                    ["ordinal"] = chunk.Ordinal,
-                                }
-                            )
-                    )
-                    .ToList();
+
+                // Two-level persist (030): only children are embedded; each
+                // child vector carries its parent id for broad grouping.
+                var parents = GroupChildren(chunks);
+                var records = BuildVectorRecords(chunks, embeddings);
 
                 await _vectorStore.UpsertAsync(records, cancellationToken);
-                await InsertChunksAsync(chunks, cancellationToken);
+                await InsertChunksAsync(chunks.Concat(parents), cancellationToken);
             }
 
             document.Status = DocumentStatus.Ready;
@@ -568,6 +554,43 @@ public sealed class IngestService
         CancellationToken cancellationToken
     ) => _documents.AddChunksAsync(chunks, cancellationToken);
 
+    /// <summary>
+    /// Groups child chunks into parent chunks (030). Clamps a misconfigured
+    /// <see cref="IngestOptions.ParentGroupSize"/> up to 1 so ingest degrades
+    /// to parent == child instead of failing.
+    /// </summary>
+    private IReadOnlyList<Chunk> GroupChildren(IReadOnlyList<Chunk> chunks)
+    {
+        var groupSize = Math.Max(1, _options.ParentGroupSize);
+        return Chunker.GroupIntoParents(chunks, groupSize, _options.ChunkOverlap);
+    }
+
+    /// <summary>
+    /// Builds one vector record per child chunk (030: only children are
+    /// embedded). Each record payload carries <c>parentId</c> alongside the
+    /// existing <c>documentId</c>/<c>text</c>/<c>ordinal</c> keys.
+    /// </summary>
+    private static IReadOnlyList<VectorRecord> BuildVectorRecords(
+        IReadOnlyList<Chunk> chunks,
+        IReadOnlyList<float[]> embeddings
+    ) =>
+        chunks
+            .Select(
+                (chunk, index) =>
+                    new VectorRecord(
+                        chunk.Id,
+                        embeddings[index],
+                        new Dictionary<string, object?>
+                        {
+                            ["documentId"] = chunk.DocumentId.ToString(),
+                            ["text"] = chunk.Text,
+                            ["ordinal"] = chunk.Ordinal,
+                            ["parentId"] = chunk.ParentId?.ToString(),
+                        }
+                    )
+            )
+            .ToList();
+
     private Task UpdateDocumentStatusAsync(
         Guid documentId,
         DocumentStatus status,
@@ -604,6 +627,8 @@ public sealed class IngestService
                     Ordinal = c.Ordinal,
                     Text = c.Text,
                     TokenCount = c.TokenCount,
+                    Level = ChunkLevel.Child,
+                    ParentId = null,
                 }),
             ];
         }
