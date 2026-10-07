@@ -137,7 +137,7 @@ description: "Task list for Intent-Aware Chunking"
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] In `src/RAGGit.Workstation.Api/Controllers/QueryController.cs`, ensure citation mapping and persistence handle **parent** citation ids (broad) as well as child ids: `retrievedChunkIds`/`citationIds` are saved and the `citations` array resolves parent `text`/`ordinal` for broad answers.
+- [x] T036 [US4] In `src/RAGGit.Workstation.Api/Controllers/QueryController.cs`, ensure citation mapping and persistence handle **parent** citation ids (broad) as well as child ids: `retrievedChunkIds`/`citationIds` are saved and the `citations` array resolves parent `text`/`ordinal` for broad answers.
 
 **Checkpoint**: All user stories independently functional and grounded.
 

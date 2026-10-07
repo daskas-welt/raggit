@@ -150,6 +150,55 @@ public sealed class IntentRetrievalTests
         chunk!.Level.Should().Be(ChunkLevel.Parent);
     }
 
+    [Fact]
+    public async Task BroadAnswer_PersistsParentCitationIds_AndEchoesBroad()
+    {
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
+        var adminClient = CreateAdminClient(factory);
+
+        // Two child chunks: "alpha" lands in the first, "omega" in the last.
+        var text = string.Join(
+            " ",
+            Enumerable.Range(1, 600).Select(i => $"filler-{i}")
+        );
+        var staged = await UploadTextAsync(adminClient, $"alpha marker {text} omega marker");
+        var settled = await factory.WaitForSettledAsync(adminClient);
+        settled.Single(d => d.Id == staged.Id).Status.Should().Be(DocumentStatus.Ready);
+
+        var llm = GetLlmClient(factory);
+        llm.Healthy = true;
+        llm.ResponseText = "The document spans from alpha to omega.";
+
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/queries",
+            new { query = "Summarize the document", mode = "broad" },
+            _jsonOptions
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
+        json.GetProperty("mode").GetString().Should().Be("broad");
+
+        var citations = json.GetProperty("citations").EnumerateArray().ToList();
+        citations.Should().ContainSingle();
+        var citedId = Guid.Parse(citations[0].GetProperty("chunkId").GetString()!);
+        citations[0].GetProperty("text").GetString().Should().Contain("alpha marker");
+        citations[0].GetProperty("text").GetString().Should().Contain("omega marker");
+
+        // Mapping + persistence carry the parent id (not a child id).
+        // The audit row stores the PascalCase enum name per data-model.md;
+        // the API wire value stays lowercase per contracts/api.yaml.
+        var (retrievedIds, citationIds, mode) = await LoadLatestQueryRowAsync(factory);
+        retrievedIds.Should().Contain(citedId);
+        citationIds.Should().Contain(citedId);
+        mode.Should().Be("Broad");
+
+        var chunk = await LoadChunkAsync(factory, citedId);
+        chunk.Should().NotBeNull();
+        chunk!.Level.Should().Be(ChunkLevel.Parent);
+    }
+
     private async Task<Document> UploadTextAsync(HttpClient adminClient, string text)
     {
         var form = new MultipartFormDataContent();
@@ -190,5 +239,24 @@ public sealed class IntentRetrievalTests
         var documents = factory.Services.GetRequiredService<IDocumentRepository>();
         var chunks = await documents.GetChunksByIdsAsync(new[] { chunkId });
         return chunks.SingleOrDefault();
+    }
+
+    private static async Task<
+        (IReadOnlyList<Guid> RetrievedIds, IReadOnlyList<Guid> CitationIds, string? Mode)
+    > LoadLatestQueryRowAsync(IntegrationTestFactory factory)
+    {
+        var db = factory.Services.GetRequiredService<RagDbContext>();
+        await using var connection = db.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT RetrievedChunkIds, CitationIds, Mode FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
+        await using var reader = await command.ExecuteReaderAsync();
+        await reader.ReadAsync();
+        return (
+            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(0)) ?? new List<Guid>(),
+            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(1)) ?? new List<Guid>(),
+            reader.IsDBNull(2) ? null : reader.GetString(2)
+        );
     }
 }
