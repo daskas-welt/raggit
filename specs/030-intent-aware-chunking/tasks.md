@@ -145,7 +145,7 @@ description: "Task list for Intent-Aware Chunking"
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T037 [P] Extend `tests/integration/EvalTests.cs` (and its fixture data) with a curated **fact-based** set (SC-001) and a curated **synthesis** set (SC-002), keeping the existing 50-question precision set (SC-003).
+- [x] T037 [P] Extend `tests/integration/EvalTests.cs` (and its fixture data) with a curated **fact-based** set (SC-001) and a curated **synthesis** set (SC-002), keeping the existing 50-question precision set (SC-003).
 - [ ] T038 [P] Verify `specs/030-intent-aware-chunking/contracts/api.yaml` matches the implemented `mode` behaviour and version comment (1.5.0).
 - [ ] T039 [P] Render the PlantUML set to SVG and commit source + render together: `powershell -File scripts/Render-PlantUml.ps1 -Sources specs/030-intent-aware-chunking/docs/architecture.puml,specs/030-intent-aware-chunking/docs/workflow.puml,specs/030-intent-aware-chunking/docs/sequence.puml,specs/030-intent-aware-chunking/docs/dataflow.puml,specs/030-intent-aware-chunking/docs/lifecycle.puml` (requires `tools/plantuml.jar` + Java; if unavailable, leave sources and note it).
 - [ ] T040 Run full verification: `dotnet build RAGGit.sln -c Release -p:Platform=x64`; unit + contract + integration suites (plus the offline subset); `dotnet csharpier check .`; walk [quickstart.md](quickstart.md) scenarios V1–V6.
