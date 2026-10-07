@@ -66,6 +66,46 @@ public sealed class IntentGroundingTests
         json.GetProperty("citations").GetArrayLength().Should().Be(0);
     }
 
+    [Fact]
+    public async Task AmbiguousQuery_FallsBackToGranular_GroundedOrNoContent()
+    {
+        using var factory = new IntegrationTestFactory();
+        var employeeClient = CreateEmployeeClient(factory);
+        var adminClient = CreateAdminClient(factory);
+
+        await UploadTextAsync(adminClient, "The refund policy allows returns within 30 days.");
+        await factory.WaitForSettledAsync(adminClient);
+
+        var llm = GetLlmClient(factory);
+        llm.Healthy = true;
+        llm.ResponseText = "Refunds are accepted within 30 days.";
+
+        // No broad trigger and no explicit override: granular fallback.
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/queries",
+            new { query = "Tell me about the thing" },
+            _jsonOptions
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
+        var answer = json.GetProperty("answer").GetString()!;
+        var citations = json.GetProperty("citations").EnumerateArray().ToList();
+
+        // Either a cited (grounded) answer or the exact no-content message —
+        // never ungrounded text.
+        if (answer != "no relevant content found")
+        {
+            citations.Should().NotBeEmpty("a sourced answer must carry citations");
+        }
+        else
+        {
+            citations.Should().BeEmpty();
+        }
+
+        json.GetProperty("mode").GetString().Should().Be("granular");
+    }
+
     private async Task UploadTextAsync(HttpClient adminClient, string text)
     {
         var form = new MultipartFormDataContent();
