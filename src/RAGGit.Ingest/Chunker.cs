@@ -441,6 +441,97 @@ public static class Chunker
     }
 
     /// <summary>
+    /// Groups consecutive child chunks into parent chunks (030, research R1).
+    /// Each group of <paramref name="parentGroupSize"/> children yields one
+    /// parent with a fresh id, <see cref="ChunkLevel.Parent"/>,
+    /// <c>ParentId = null</c>, and <c>Ordinal</c> = group index; every
+    /// grouped child is stamped with its parent's id (and
+    /// <see cref="ChunkLevel.Child"/>). Parent text is the ordered
+    /// concatenation of its children's texts with the known inter-child
+    /// overlap trimmed — the first <c>min(chunkOverlap, childTokens-1)</c>
+    /// tokens of every child after the first are dropped, so no sentence is
+    /// duplicated. A trailing short group forms its own parent; a group size
+    /// of 1 degrades to parent == child; empty input yields no parents.
+    /// </summary>
+    public static IReadOnlyList<Chunk> GroupIntoParents(
+        IReadOnlyList<Chunk> children,
+        int parentGroupSize = 4,
+        int chunkOverlap = 50
+    )
+    {
+        ArgumentNullException.ThrowIfNull(children);
+
+        if (parentGroupSize < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(parentGroupSize),
+                "Parent group size must be at least 1."
+            );
+        }
+
+        if (chunkOverlap < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(chunkOverlap),
+                "Chunk overlap must be non-negative."
+            );
+        }
+
+        var parents = new List<Chunk>();
+        for (var group = 0; group * parentGroupSize < children.Count; group++)
+        {
+            var groupChildren = children.Skip(group * parentGroupSize).Take(parentGroupSize).ToList();
+            var parentId = Guid.NewGuid();
+            var documentId = groupChildren[0].DocumentId;
+            var text = BuildParentText(groupChildren, chunkOverlap);
+
+            parents.Add(
+                new Chunk
+                {
+                    Id = parentId,
+                    DocumentId = documentId,
+                    Ordinal = group,
+                    Text = text,
+                    TokenCount = CountTokens(text),
+                    Level = ChunkLevel.Parent,
+                    ParentId = null,
+                }
+            );
+
+            foreach (var child in groupChildren)
+            {
+                child.Level = ChunkLevel.Child;
+                child.ParentId = parentId;
+            }
+        }
+
+        return parents;
+    }
+
+    private static string BuildParentText(IReadOnlyList<Chunk> groupChildren, int chunkOverlap)
+    {
+        var parts = new List<string>(groupChildren.Count);
+        for (var i = 0; i < groupChildren.Count; i++)
+        {
+            var tokens = SplitTokens(groupChildren[i].Text);
+            if (i > 0 && tokens.Length > 0)
+            {
+                var drop = Math.Min(chunkOverlap, tokens.Length - 1);
+                tokens = tokens[drop..];
+            }
+
+            parts.Add(string.Join(' ', tokens));
+        }
+
+        return string.Join(' ', parts.Where(p => p.Length > 0));
+    }
+
+    private static string[] SplitTokens(string text) =>
+        text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+
+    private static int CountTokens(string text) => SplitTokens(text).Length;
+
+    /// <summary>
     /// Computes a SHA-256 hash for the stream contents and resets the stream
     /// position to zero when it is seekable.
     /// </summary>
