@@ -137,7 +137,7 @@ public sealed class QueryController : ControllerBase
                 );
             }
 
-            var chunks = await _retrievalService.RetrieveAsync(
+            var (chunks, intent) = await _retrievalService.RetrieveWithIntentAsync(
                 request.Query,
                 topK,
                 request.Mode,
@@ -154,6 +154,7 @@ public sealed class QueryController : ControllerBase
                     "no relevant content found",
                     Array.Empty<Guid>(),
                     noContentLatency,
+                    intent,
                     cancellationToken
                 );
 
@@ -164,7 +165,14 @@ public sealed class QueryController : ControllerBase
                 );
 
                 return Ok(
-                    new { answer = "no relevant content found", citations = Array.Empty<object>() }
+                    new QueryResponse
+                    {
+                        Answer = "no relevant content found",
+                        Citations = new(),
+                        RetrievedChunkIds = new(),
+                        LatencyMs = noContentLatency,
+                        Mode = intent,
+                    }
                 );
             }
 
@@ -205,6 +213,7 @@ public sealed class QueryController : ControllerBase
                 finalAnswer,
                 citationIds,
                 latencyMs,
+                intent,
                 cancellationToken
             );
 
@@ -239,6 +248,7 @@ public sealed class QueryController : ControllerBase
                     RetrievedChunkIds = retrievedChunkIds,
                     LatencyMs = latencyMs,
                     SuggestedPersons = suggestions,
+                    Mode = intent,
                 }
             );
         }
@@ -332,6 +342,7 @@ public sealed class QueryController : ControllerBase
         string? answer,
         IReadOnlyList<Guid> citationIds,
         int latencyMs,
+        QueryIntent? mode,
         CancellationToken cancellationToken
     )
     {
@@ -344,6 +355,7 @@ public sealed class QueryController : ControllerBase
             Answer = answer,
             CitationIds = citationIds,
             LatencyMs = latencyMs,
+            Mode = mode,
             CreatedAt = DateTime.UtcNow,
         };
 
