@@ -1,0 +1,16 @@
+@startuml 030 Intent-Aware Chunking Lifecycle
+' Document processing state (unchanged) and the backfill transition
+' NOTE: no !theme directive for renderer compatibility
+[*] --> Uploading : POST /api/documents (staged, original stored)
+Uploading --> Queued : published to work queue
+Queued --> Indexing : worker picks up
+Indexing --> Ready : two-level index persisted
+Indexing --> Failed : extraction/embed/upsert error
+Failed --> Uploading : re-upload same bytes (retry, reason cleared)
+Ready --> Uploading : startup backfill (no parent row yet)
+Ready --> [*] : DELETE /api/documents
+Failed --> [*] : DELETE /api/documents
+
+note right of Indexing : Chunking now also persists\nparent rows (Level=Parent)
+note right of Ready : Backfill re-indexes Ready docs\nlacking a parent row - idempotent (FR-011)
+@enduml

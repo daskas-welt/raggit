@@ -1,0 +1,35 @@
+@startuml 030 Intent-Aware Chunking Architecture
+' Feature 030-intent-aware-chunking — two-granularity retrieval topology
+' Render: scripts/Render-PlantUml.ps1 (PNG) or PlantUML tooling (SVG)
+' NOTE: no !theme directive for renderer compatibility
+' Dialect: rectangle/actor/package (JS-engine safe; no [bracket] components).
+skinparam defaultFontSize 15
+
+package "LAN workstation :5001 HTTPS" {
+  rectangle "wpf-client\nAsk + Broad/Auto/Specific" as client
+  rectangle "query-controller\nPOST /api/queries - mode" as api
+  rectangle "intent-classifier\nrule-based - Broad|Granular" as classifier
+  rectangle "retrieval-service\ngranular: child / broad: parent" as retrieval
+  rectangle "ingest-service\nchunk 512/50 - group parents" as ingest
+  rectangle "backfill-service\nre-index stale docs" as backfill
+  database "sqlite rag.db\nDocuments - Chunks(Level,ParentId)\nQueries(+Mode)" as sqlite
+  rectangle "lancedb\nchild vectors + parentId" as lance
+  rectangle "ollama\n:11434 loopback - embed + chat" as ollama
+}
+
+client --> api : query + mode\nauto|broad|specific
+api --> classifier : auto -> classify
+api --> retrieval : resolved intent
+retrieval --> lance : search child vectors
+retrieval --> sqlite : resolve parent rows
+retrieval --> ollama : embed query
+api --> ollama : grounded chat
+ingest --> lance : upsert child vectors
+ingest --> sqlite : persist children + parents
+backfill --> ingest : re-enqueue stale Ready docs
+backfill --> sqlite : find docs w/o parent row
+
+note right of classifier : No LLM call - offline,\nzero added latency (FR-006, SC-005)
+note right of lance : Child vectors only (2b);\nparents are groups, not embedded
+note bottom of sqlite : No company_id (Constitution I);\nVectorSize stays 1024
+@enduml

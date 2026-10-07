@@ -1,0 +1,39 @@
+@startuml 030 Intent-Aware Chunking Workflow
+' Ingest -> two-level index -> classify -> retrieve -> answer runbook
+' NOTE: no !theme directive for renderer compatibility
+start
+:upload\nPOST /api/documents;
+:stage\nUploading -> store original;
+:enqueue\nQueued;
+:extract-text\npdf/docx/xlsx/txt/md;
+:chunk-children\n512/50;
+:group-parents\ngroups of ParentGroupSize;
+:persist\nSQLite children + parents;
+:embed-children\nOllama embedder;
+:upsert-child-vectors\nLanceDB payload + parentId;
+:mark-ready\nIndexing -> Ready;
+:ask\nPOST /api/queries (mode);
+if (mode = auto?) then (yes)
+  :classify\nBroad triggers? -> Broad : Granular;
+else (no)
+  :use-override\nbroad -> Broad / specific -> Granular;
+endif
+if (intent = broad?) then (yes)
+  :retrieve-parents\nchild search -> group -> parent rows;
+else (no)
+  :retrieve-children\nchild search + MinScore + topK;
+endif
+if (relevant content?) then (no)
+  :no-relevant\n"no relevant content found";
+  stop
+else (yes)
+  :generate\ncited answer (parent or child ids);
+endif
+stop
+
+partition "startup backfill (once)" {
+  :find stale docs\nReady without parent row;
+  :re-enqueue\nexisting background ingest;
+  :idempotent\nre-run processes none;
+}
+@enduml

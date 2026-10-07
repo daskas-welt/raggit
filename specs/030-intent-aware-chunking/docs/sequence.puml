@@ -1,0 +1,66 @@
+@startuml 030 Intent-Aware Chunking Sequence
+' Request lifecycle: upload/ingest (two-level) and query (intent-routed)
+' NOTE: no !theme directive for renderer compatibility
+' NOTE: <style> lifeLine block required - the JS engine emits lifelines
+' with no stroke otherwise (invisible lines).
+<style>
+sequenceDiagram {
+  lifeLine {
+    LineColor #181818
+    LineThickness 1.5
+  }
+}
+</style>
+actor User as user
+participant "WPF client" as client
+participant "workstation-api" as api
+participant "intent-classifier" as classifier
+participant "retrieval-service" as retrieval
+database "sqlite rag.db" as sqlite
+participant "lancedb" as lance
+participant "ollama" as ollama
+
+== ingest ==
+user -> client : upload document
+client -> api : POST /api/documents
+api -> sqlite : stage (Uploading -> Queued)
+api -> lance : (worker) chunk 512/50 + group parents
+api -> ollama : embed child chunks
+api -> lance : upsert child vectors (+ parentId)
+api -> sqlite : persist children + parent rows
+api -> sqlite : Indexing -> Ready
+
+== query ==
+user -> client : type question, pick mode
+client -> api : POST /api/queries\n{ query, topK, mode }
+alt mode = auto
+  api -> classifier : classify(query)
+  classifier --> api : Broad | Granular
+else mode = broad / specific
+  api -> api : resolved = Broad / Granular
+end
+alt resolved = Broad
+  api -> retrieval : RetrieveAsync(query, topK, broad)
+  retrieval -> ollama : embed query
+  retrieval -> lance : search child vectors (wide candidates)
+  lance --> retrieval : child hits (+ parentId)
+  retrieval -> sqlite : fetch distinct parent rows
+  sqlite --> retrieval : parent text + ordinal
+  retrieval --> api : parent SearchResults
+else resolved = Granular
+  api -> retrieval : RetrieveAsync(query, topK, granular)
+  retrieval -> ollama : embed query
+  retrieval -> lance : search child vectors
+  lance --> retrieval : child hits
+  retrieval --> api : child SearchResults
+end
+alt no relevant content
+  api --> client : 200 { answer: "no relevant content found", citations: [] }
+else relevant content
+  api -> ollama : grounded chat (chunks)
+  ollama --> api : answer + [ids]
+  api -> sqlite : save query (+ Mode)
+  api --> client : 200 { answer, citations, mode }
+end
+note over api, sqlite : Offline - no WAN at query time (FR-006)\nBroad cites parent ids, granular cites child ids (FR-004)
+@enduml

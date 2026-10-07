@@ -1,0 +1,30 @@
+@startuml 030 Intent-Aware Chunking Dataflow
+' Document text -> child chunks -> parent groups -> vectors -> citations
+' NOTE: no !theme directive for renderer compatibility
+skinparam componentStyle rectangle
+
+rectangle "original bytes\n(stored, 009)" as original
+rectangle "extracted text" as text
+rectangle "child chunks\n~512 tokens, overlap 50" as children
+rectangle "parent chunks\ngroups of ParentGroupSize" as parents
+rectangle "child vectors\n+ parentId payload" as vectors
+rectangle "query vector" as qvec
+rectangle "child hits\n(+ parentId)" as hits
+rectangle "parent rows\n(stable citation ids)" as prows
+rectangle "grounded answer\ncitations" as answer
+
+original --> text : extract
+text --> children : ChunkText 512/50
+children --> parents : group + trim overlap
+children --> vectors : embed (Ollama)
+parents --> prows : persist (SQLite, not embedded)
+qvec --> hits : similarity search (LanceDB)
+hits --> children : granular answer -> child citations
+hits --> prows : broad answer -> group by parent
+prows --> answer : parent text -> broad citations
+children --> answer : child text -> granular citations
+vectors --> hits : topK x BroadCandidateMultiplier (broad)
+
+note right of parents : Derived from children (2b);\nno separate embeddings
+note bottom of answer : "no relevant content found" when nothing passes MinScore
+@enduml
