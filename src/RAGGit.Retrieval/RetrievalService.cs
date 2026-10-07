@@ -107,17 +107,148 @@ public sealed class RetrievalService
         var intent = ResolveIntent(query, mode);
         if (intent == QueryIntent.Broad)
         {
-            // US2 (T023) implements parent-context retrieval. Until then a
-            // broad request safely falls back to the granular child path
-            // rather than failing.
-            _logger.LogInformation(
-                "Broad intent for query {QueryPreview}: granular fallback until parent retrieval lands (T023)",
-                TextPreview.Truncate(query)
-            );
+            var broad = await RetrieveBroadAsync(query, topK, cancellationToken);
+            return (broad, intent);
         }
 
         var results = await RetrieveGranularAsync(query, topK, cancellationToken);
         return (results, intent);
+    }
+
+    /// <summary>
+    /// Broad parent path (030, research R3): search child vectors with a
+    /// wider candidate limit, group the hits by parent, resolve the distinct
+    /// parent rows, keep each parent's best child score, apply
+    /// <see cref="RetrievalOptions.MinScore"/>, and take <paramref name="topK"/>
+    /// parents. Parents return as <see cref="SearchResult"/>s carrying the
+    /// parent id, text, and ordinal so citations stay meaningful.
+    /// </summary>
+    private async Task<IReadOnlyList<SearchResult>> RetrieveBroadAsync(
+        string query,
+        int topK,
+        CancellationToken cancellationToken
+    )
+    {
+        if (_documents is null)
+        {
+            throw new InvalidOperationException(
+                "Broad retrieval requires an IDocumentRepository to resolve parent chunks."
+            );
+        }
+
+        topK = Math.Clamp(topK, 1, 5);
+        var multiplier = Math.Max(1, _options.BroadCandidateMultiplier);
+        var maxCandidates = Math.Max(1, _options.MaxCandidates);
+        var candidateLimit = Math.Min(topK * multiplier, maxCandidates);
+
+        var embeddings = await _embedder.GetEmbeddingsAsync(new[] { query }, cancellationToken);
+        if (embeddings.Count == 0)
+        {
+            return Array.Empty<SearchResult>();
+        }
+
+        var candidates = await _vectorStore.SearchAsync(
+            embeddings[0],
+            candidateLimit,
+            cancellationToken: cancellationToken
+        );
+
+        // Child hits whose vector row predates the parentId payload (or
+        // comes from a pre-feature table) resolve their parent through the
+        // SQLite child rows, which are the source of truth after ingest.
+        var missing = candidates
+            .Where(c => string.IsNullOrWhiteSpace(c.ParentId))
+            .Select(c => c.ChunkId)
+            .Distinct()
+            .ToList();
+        var parentByChild = new Dictionary<Guid, string>();
+        if (missing.Count > 0)
+        {
+            var childRows = await _documents.GetChunksByIdsAsync(missing, cancellationToken);
+            foreach (var child in childRows)
+            {
+                if (child.ParentId.HasValue)
+                {
+                    parentByChild[child.Id] = child.ParentId.Value.ToString();
+                }
+            }
+        }
+
+        string? ParentIdOf(SearchResult hit) =>
+            !string.IsNullOrWhiteSpace(hit.ParentId)
+                ? hit.ParentId
+                : parentByChild.GetValueOrDefault(hit.ChunkId);
+
+        var orphans = candidates.Where(c => ParentIdOf(c) is null).ToList();
+        var grouped = candidates
+            .Where(c => ParentIdOf(c) is not null)
+            .GroupBy(c => ParentIdOf(c)!)
+            .ToList();
+
+        var parentIds = grouped
+            .Select(g => Guid.TryParse(g.Key, out var id) ? id : (Guid?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        var parentsById = new Dictionary<Guid, Chunk>();
+        if (parentIds.Count > 0)
+        {
+            var parentRows = await _documents.GetChunksByIdsAsync(parentIds, cancellationToken);
+            foreach (var parent in parentRows)
+            {
+                if (parent.Level == ChunkLevel.Parent)
+                {
+                    parentsById[parent.Id] = parent;
+                }
+            }
+        }
+
+        var minScore = _options.MinScore;
+        var scored = new List<SearchResult>();
+        foreach (var group in grouped)
+        {
+            if (
+                !Guid.TryParse(group.Key, out var parentId)
+                || !parentsById.TryGetValue(parentId, out var parent)
+            )
+            {
+                continue;
+            }
+
+            var best = group.Max(c => c.Score);
+            scored.Add(
+                new SearchResult(
+                    parent.Id,
+                    parent.DocumentId.ToString(),
+                    parent.Text,
+                    parent.Ordinal,
+                    best
+                )
+            );
+        }
+
+        // Orphan hits (no parent anywhere) stay as their own child result so
+        // a mid-migration library still answers instead of going silent.
+        scored.AddRange(orphans);
+
+        var filtered = scored
+            .OrderByDescending(r => r.Score)
+            .Where(r => r.Score >= minScore)
+            .Take(topK)
+            .ToList();
+
+        _logger.LogInformation(
+            "Broad retrieval for query {QueryPreview}: {Kept}/{Total} parents above MinScore {MinScore} from {Candidates} candidates",
+            TextPreview.Truncate(query),
+            filtered.Count,
+            scored.Count,
+            minScore,
+            candidates.Count
+        );
+
+        return filtered;
     }
 
     /// <summary>
