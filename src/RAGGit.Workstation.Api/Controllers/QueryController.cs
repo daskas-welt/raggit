@@ -140,6 +140,7 @@ public sealed class QueryController : ControllerBase
             var chunks = await _retrievalService.RetrieveAsync(
                 request.Query,
                 topK,
+                request.Mode,
                 cancellationToken
             );
 
