@@ -16,4 +16,17 @@ public sealed class RetrievalOptions
     /// if cross-document pollution persists. Comparison is inclusive.
     /// </summary>
     public float MinScore { get; set; } = 0.25f;
+
+    /// <summary>
+    /// Broad-retrieval fan-out (030): child candidates fetched for a broad
+    /// query = <c>topK × BroadCandidateMultiplier</c>, capped at
+    /// <see cref="MaxCandidates"/>. Default 4.
+    /// </summary>
+    public int BroadCandidateMultiplier { get; set; } = 4;
+
+    /// <summary>
+    /// Upper bound on the broad-retrieval child candidate fetch (030).
+    /// Default 50.
+    /// </summary>
+    public int MaxCandidates { get; set; } = 50;
 }

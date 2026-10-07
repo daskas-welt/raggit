@@ -39,6 +39,13 @@ public sealed class IngestOptions
     public int ChunkOverlap { get; set; } = 50;
 
     /// <summary>
+    /// Number of consecutive child chunks grouped into one parent chunk
+    /// (030, default 4 ≈ 2048 tokens at 512/child). Must be at least 1;
+    /// 1 degrades gracefully to parent == child.
+    /// </summary>
+    public int ParentGroupSize { get; set; } = 4;
+
+    /// <summary>
     /// Whether to cache extracted chunks keyed by document hash. This avoids
     /// re-chunking if the same file is uploaded again before the cache entry
     /// expires.
