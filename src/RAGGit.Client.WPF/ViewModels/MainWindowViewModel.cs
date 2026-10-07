@@ -48,10 +48,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var items = new List<object>
         {
             CreateItem("Dashboard", SymbolRegular.Home24, typeof(DashboardPage), "NavDashboard"),
-            CreateItem("Document Library", SymbolRegular.Library24, typeof(LibraryPage), "NavLibrary"),
+            CreateItem(
+                "Document Library",
+                SymbolRegular.Library24,
+                typeof(LibraryPage),
+                "NavLibrary"
+            ),
             CreateItem("Ask", SymbolRegular.Chat24, typeof(QueryPage), "NavAsk"),
             CreateItem("History", SymbolRegular.History24, typeof(HistoryPage), "NavHistory"),
-            CreateItem("My Documents", SymbolRegular.Document24, typeof(DocumentsMinePage), "NavMyDocs"),
+            CreateItem(
+                "My Documents",
+                SymbolRegular.Document24,
+                typeof(DocumentsMinePage),
+                "NavMyDocs"
+            ),
         };
 
         if (IsAdmin)
