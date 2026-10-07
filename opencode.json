@@ -25,6 +25,16 @@
       "type": "remote",
       "url": "https://mcp.vercel.com",
       "enabled": true
+    },
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_MCP_PAT}"
+        }
+      }
     }
   }
 }
