@@ -80,17 +80,25 @@ the suite stays green offline.
 ## Installing the app (end users)
 
 The desktop client is built and distributed **per deployment by each company's
-IT** — there is no public binary download, because the app is only useful
-against a running workstation (it needs that workstation's URL and API key to
-connect).
+IT**, because the app is only useful against a running workstation — it needs
+that workstation's URL and key to connect.
 
-IT publishes the client as a self-contained executable and gives employees a
-link; employees double-click the file, sign in with the credentials IT created,
-and the app updates itself. To build that executable:
+IT builds a self-contained package and gives employees a link. Employees
+double-click it, sign in with the credentials IT created, and use the app. To
+build that package (Windows; the result needs no .NET runtime on the employee's
+PC):
 
 ```powershell
-dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
+dotnet publish src/RAGGit.Client.WPF -c Release -r win-x64 --self-contained true `
+  -p:Platform=x64 -p:PublishSingleFile=true -o ./out/client
 ```
+
+Ship `appsettings.json` next to the executable — it carries the deployment's URL
+and key, so it is per-deployment and must never be committed — plus the
+workstation's `raggit.crt` for the employee to trust. There is **no
+auto-update**: shipping a fix means rebuilding and redistributing the package.
+See [docs/runbooks/client-install.md](docs/runbooks/client-install.md) for the
+step-by-step install.
 
 ## Deploying the workstation
 

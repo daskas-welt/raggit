@@ -83,6 +83,13 @@ mkdir -p /etc/systemd/system/ollama.service.d
 cat > /etc/systemd/system/ollama.service.d/raggit.conf <<'EOF'
 [Service]
 Environment="OLLAMA_HOST=0.0.0.0"
+# Keep the embed and chat models resident together. Ollama's default of 1 makes
+# them evict each other, so every query reloads the chat model (2.2 GB) from
+# disk between embedding the question and generating the answer.
+Environment="OLLAMA_MAX_LOADED_MODELS=2"
+# Never unload on idle. A workstation is queried sporadically, and a cold load
+# costs tens of seconds on CPU-only hardware.
+Environment="OLLAMA_KEEP_ALIVE=-1"
 EOF
 systemctl daemon-reload
 systemctl enable --now ollama

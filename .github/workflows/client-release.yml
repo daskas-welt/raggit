@@ -1,0 +1,77 @@
+name: Client release
+
+# Packages the WPF desktop client and attaches it to a GitHub Release.
+#
+#   git tag client-v1.0.0 && git push origin client-v1.0.0
+#
+# The artifact deliberately contains NO deployment configuration. The repository is public, so a
+# real appsettings.json (workstation URL + API key) or a deployment certificate must never be
+# baked in here - IT fills those in per deployment. See docs/runbooks/client-install.md.
+
+on:
+  push:
+    tags:
+      - 'client-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create the release
+
+jobs:
+  package:
+    name: Package the client (win-x64, self-contained)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET (version comes from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build the client
+        run: >
+          dotnet build src/RAGGit.Client.WPF/RAGGit.Client.WPF.csproj
+          -c Release -p:Platform=x64 --nologo
+
+      - name: Publish self-contained single-file
+        run: >
+          dotnet publish src/RAGGit.Client.WPF/RAGGit.Client.WPF.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:Platform=x64 -p:PublishSingleFile=true
+          -o out/client --nologo
+
+      - name: Assemble the distributable
+        shell: pwsh
+        run: |
+          # Ship the template, never a real config: this repository is public.
+          Copy-Item deploy/appsettings.client.template.json out/client/appsettings.json -Force
+          Copy-Item docs/runbooks/client-install.md out/client/INSTALL.md -Force
+          Remove-Item out/client/*.pdb -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path out/client/* -DestinationPath RAGGit-Client-win-x64.zip -Force
+          Get-ChildItem out/client | Select-Object Name, Length
+
+      - name: Upload the package as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAGGit-Client-win-x64
+          path: RAGGit-Client-win-x64.zip
+
+      - name: Create the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: RAGGit-Client-win-x64.zip
+          generate_release_notes: true
+          body: |
+            Self-contained Windows x64 desktop client. Needs no .NET runtime installed.
+
+            **This build contains no deployment configuration.** After unzipping:
+
+            1. Set `Workstation:Url` and `Workstation:ApiKey` in `appsettings.json` to the values
+               your IT gave you (the shipped file is a placeholder template).
+            2. Put the workstation's `raggit.crt` next to the executable and trust it:
+               `certutil -user -addstore Root raggit.crt`
+            3. Join the company tailnet, then run `RAGGit.Client.WPF.exe`.
+
+            Full instructions are in `INSTALL.md` inside the zip.

@@ -46,7 +46,7 @@ Because `BIND_ADDRESS=0.0.0.0` publishes `443` on every interface, **the cloud f
 
 | `.env` variable | Container env var | Config key | Required | Example |
 |-----------------|-------------------|------------|----------|---------|
-| `WORKSTATION_HOST` | (used by clients and for the certificate SAN) | — | yes | `raggit-workstation.tail5f3d63.ts.net` (tailnet name) or a LAN name |
+| `WORKSTATION_HOST` | (used by clients and for the certificate SAN) | — | yes | `raggit-workstation.<tailnet>.ts.net` (tailnet name) or a LAN name |
 | `BIND_ADDRESS` | (compose publishes `${BIND_ADDRESS}:443:5001`) | — | yes | `0.0.0.0` (firewall is the boundary) or the tailnet/LAN IP |
 | `RAGGIT_DATA_DIR` | (bind source) | — | yes | `/mnt/raggit-data` |
 | `ADMIN_API_KEY` | `Api__AdminKey` | `Api:AdminKey` | yes | (secret) |

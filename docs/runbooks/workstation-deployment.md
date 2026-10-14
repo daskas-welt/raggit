@@ -123,7 +123,7 @@ Tailscale is the reference implementation).
    what keeps it private. Binding to a single interface is equally valid, provided the published port
    matches the address clients actually use.
 4. **Certificate name.** `WORKSTATION_HOST` must be the name clients use — the tailnet DNS name
-   (MagicDNS), e.g. `raggit-workstation.tail5f3d63.ts.net` — so the certificate's **DNS SAN** matches.
+   (MagicDNS), e.g. `raggit-workstation.<tailnet>.ts.net` — so the certificate's **DNS SAN** matches.
    Clients MUST use that name, not the raw tailnet IP: a request to the bare `100.x` address fails TLS
    validation.
 
@@ -278,3 +278,28 @@ docker compose -f deploy/docker-compose.prod.yml up -d
 The ingest worker re-queues anything left in `Uploading`, `Queued`, or `Indexing` on startup, so step 2
 is what makes the whole library re-ingest. Watch progress with
 `docker compose -f deploy/docker-compose.prod.yml logs -f raggit-workstation`.
+
+### Keep both models resident
+
+Ollama's default `OLLAMA_MAX_LOADED_MODELS=1` makes the embed and chat models **evict each other**,
+so every query reloads the chat model (2.2 GB) from disk between embedding the question and
+generating the answer. `deploy/bootstrap.sh` sets `OLLAMA_MAX_LOADED_MODELS=2` and
+`OLLAMA_KEEP_ALIVE=-1`. Measured on a 4 vCPU CPU-only host (`qwen2.5:3b` + `all-minilm`,
+`mode: auto`): **154 s → 112 s** per query, with both models held in memory (~2.3 GB).
+
+### Where query time actually goes
+
+On CPU-only hardware the dominant cost is **prompt processing of the retrieved context**, not answer
+generation — an answer of ~80 tokens still took ~110 s. Levers, cheapest first:
+
+| Lever | Cost | Effect |
+|---|---|---|
+| Model residency (above) | free | measured 27% |
+| Fewer/smaller retrieved chunks | free; retrieval-quality trade-off | roughly proportional to context size |
+| A smaller chat model | free; answer-quality trade-off | large |
+| More vCPU (CPU-only resize) | money; **reversible on DigitalOcean within 24 h** | ~1.6-2x - measure before committing |
+| A GPU | money + provider access | the only order-of-magnitude fix |
+
+Prompt processing parallelises across cores better than token generation does, so a CPU resize helps
+more than the generation speed alone would suggest — but it is a linear cost for a sub-linear gain.
+
