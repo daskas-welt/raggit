@@ -17,7 +17,7 @@ Exactly one mode per deployment; selected by configuration only, no source chang
 | Attribute | Local mode (default) | Private cloud mode |
 |-----------|----------------------|--------------------|
 | Workstation host | a machine on the company's network | a company-controlled cloud virtual machine |
-| Client reachability | the LAN | the company's private network (VPN and/or restricted source addresses) |
+| Client reachability | the LAN | the company's tailnet (WireGuard-based VPN overlay; Tailscale reference) |
 | Deployment artifacts | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` (same as private cloud) | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` |
 | Cloud account | not required | required |
 | Public exposure | none | none |

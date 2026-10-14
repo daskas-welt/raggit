@@ -45,9 +45,9 @@ Paths are repository-relative. New artifacts live under `deploy/` and `docs/runb
 - [x] T006 [P] Create `docs/runbooks/workstation-deployment.md` covering **both modes**: prerequisites/credentials; local-mode stand-up on the same TLS stack with LAN `.env` values (the root compose is plain HTTP and cannot be used with a signed-in client); private-cloud provision (machine + volume + private network address), mount the volume, issue a certificate whose SAN matches the address clients use (IP SAN for a private IP, else the VPN host name; publicly trusted only if a public name exists), restrict reachability, run `deploy/bootstrap.sh`, verify `GET https://<host>/health`, and confirm no response from outside the company's networks (research.md R-01/R-02/R-03/R-07)
 - [x] T007 Create `deploy/bootstrap.sh` (bash, run over SSH for private cloud mode): install Docker and native Ollama, mount the volume, place `deploy/docker-compose.prod.yml` + `.env`, `docker compose up -d`, `ollama pull $EMBED_MODEL` and `$CHAT_MODEL`, and create the first admin account via the operator CLI inside the container (exact invocation: `dotnet RAGGit.Workstation.Api.dll user add --username … --display-name … --role Admin --password …`, run from the API directory so the DB path resolves); idempotent to re-run (research.md R-09)
 - [x] T008 Constitution amendments **applied 2026-10-14** with owner approval — `1.3.0 → 1.4.0`: Principle I widened to "Single-Tenant On-Prem or Private Cloud" (workstation never an open public endpoint), Technology & Deployment Constraints refreshed to the current stack (.NET 10 / LanceDB / native Ollama) and restated Network wording, Principle II runtime reference aligned. `1.4.0 → 1.5.0`: Principle IV's verification clause scoped so private cloud mode verifies the **workstation-local** query offline and the client↔workstation transport is out of scope. Constitution is now v1.5.0; see `.specify/memory/constitution.md` § Amendments 1.3.0 → 1.4.0 and 1.4.0 → 1.5.0.
-- [ ] T009 Provision the private cloud environment: a CPU-only virtual machine (baseline 4 vCPU / 8 GB per research.md R-08), a block-storage volume, a private-network address (VPC/VPN), and a reserved/private IP; record IDs, addresses, and estimated cost — **owner: deployer**
-- [ ] T010 Attach the volume, mount it on the host at `RAGGIT_DATA_DIR`, and restrict reachability: inbound tcp 443 only from the company's VPN/office source ranges, tcp 22 only from operator source ranges, everything else denied; publish no Ollama port (research.md R-07; FR-005, FR-016) — **owner: deployer**
-- [ ] T011 Deploy the stack on the machine using T005–T007 and verify `GET https://<WORKSTATION_HOST>/health` returns HTTP 200 with `vectorDb: ok` and `llm: ok` from a company-network machine, **and** that the same request from outside the company's networks fails (FR-006, FR-012; research.md R-10) — **owner: deployer**
+- [x] T009 Provision the private cloud environment: a CPU-only virtual machine (baseline 4 vCPU / 8 GB per research.md R-08), a block-storage volume, a private-network address (VPC/VPN), and a reserved/private IP; record IDs, addresses, and estimated cost — **owner: deployer**
+- [x] T010 Attach the volume, mount it on the host at `RAGGIT_DATA_DIR`, and restrict reachability: the deployed design is **tailnet-only with zero inbound firewall rules** (no public `443`, no public `22`); a temporary inbound `22` rule from `0.0.0.0/0` (key-only auth, no passwords) was used only to bring the host up. No Ollama port is ever published (research.md R-07; FR-005, FR-016) — **owner: deployer**
+- [x] T011 Deploy the stack on the machine using T005–T007 and verify `GET https://<WORKSTATION_HOST>/health` returns HTTP 200 with `vectorDb: ok` and `llm: ok` from a company-network machine, **and** that the same request from outside the company's networks fails (FR-006, FR-012; research.md R-10) — **owner: deployer**
 
 **Checkpoint**: The workstation is serving over HTTPS, healthy from inside, unreachable from outside — user story verification can begin.
 
@@ -130,6 +130,7 @@ Paths are repository-relative. New artifacts live under `deploy/` and `docs/runb
 - [ ] T031 Run the [quickstart.md](quickstart.md) scenarios end to end for the mode(s) deployed and capture evidence for every success criterion (SC-001…SC-010)
 - [ ] T032 Security confirmation (both modes): only the client-facing service is reachable and only from the company's own networks; Ollama `11434` is not published; the workstation is not reachable from outside the company's networks; no secret appears in the repo, the runbook, or command output (FR-005, FR-016; SC-007)
 - [ ] T033 [P] Re-confirm single-tenant on the deployed surface (FR-017): inspect the exposed route/OpenAPI surface and confirm no tenant or `company_id` parameter exists and the singleton Library is unchanged, so one deployment serves exactly one company
+- [x] T034 Join the company's tailnet (Tailscale) on the workstation, confirm SSH **and** HTTPS `/health` work from a client PC over the tailnet, then remove the temporary inbound `22` rule so the workstation has **zero public ports**; set `WORKSTATION_HOST` to the tailnet MagicDNS name so the certificate's DNS SAN matches (research.md R-07; FR-005, FR-016; SC-007)
 
 ---
 
@@ -207,7 +208,7 @@ Note: US1 is the MVP, but the feature's user-visible value needs US2 (upload) to
 ### Ownership Split
 
 - **coder**: T001–T008, T012, T024, T026–T029 (repository artifacts and docs).
-- **deployer**: T009–T011, plus the live execution behind T013–T023, T025, T030–T033. Per the deployer agent, it never edits `src/`, `tests/`, `.opencode/`, or `.specify/` — the constitution amendment (T008, now applied) was a coder/owner task, not a deployer one.
+- **deployer**: T009–T011 and T034, plus the live execution behind T013–T023, T025, T030–T033. Per the deployer agent, it never edits `src/`, `tests/`, `.opencode/`, or `.specify/` — the constitution amendment (T008, now applied) was a coder/owner task, not a deployer one.
 
 ---
 
@@ -218,4 +219,5 @@ Note: US1 is the MVP, but the feature's user-visible value needs US2 (upload) to
 - T008 (constitution amendment) is applied (constitution v1.4.0); it stays in Phase 2 only as a historical record - it no longer blocks anything.
 - Avoid editing the same runbook file from parallel tasks: T006, T012, T021, T023, and T024 all touch `docs/runbooks/workstation-deployment.md` and must run in the listed order.
 - Only ONE mode is deployed at a time; the same codebase and artifacts serve both (FR-018, SC-010).
+- **Deployed reference** (2026-10-14, `raggit-workstation` in DigitalOcean FRA1, project `raggit`): Tailscale tailnet, **zero inbound firewall rules**, `BIND_ADDRESS=0.0.0.0` (the firewall is the boundary), `WORKSTATION_HOST` = the tailnet MagicDNS name. The generated certificate carries a **DNS SAN**, so clients must use that name — the raw `100.x` tailnet IP fails TLS validation.
 - Commit after each task or logical group.

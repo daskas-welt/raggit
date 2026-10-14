@@ -121,9 +121,12 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   `docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml up -d`. The repository-root
   `docker-compose.yml` is the *developer* compose — plain HTTP on 5001, which a signed-in client
   cannot use because the client refuses non-HTTPS sign-in.
-- `deploy/.env` fails fast on missing values: `BIND_ADDRESS` (publishes `443:5001` on the private
-  interface, never `0.0.0.0`), `RAGGIT_DATA_DIR`, both API keys, and the Kestrel PFX path/password.
-  `.env` is gitignored; only `.env.example` is committed.
+- `deploy/.env` fails fast on missing values: `BIND_ADDRESS`, `RAGGIT_DATA_DIR`, both API keys, and
+  the Kestrel PFX path/password. `.env` is gitignored; only `.env.example` is committed. In the
+  deployed private-cloud design `BIND_ADDRESS=0.0.0.0` is used **because the cloud firewall has zero
+  inbound rules** — access is over a Tailscale tailnet, so there is no public `443` or `22` at all.
+  `WORKSTATION_HOST` is the tailnet MagicDNS name so the certificate's **DNS SAN** matches; clients
+  must use that name, not the raw tailnet IP.
 - Validate the stack after any compose edit:
   `docker compose --env-file deploy/.env.example -f deploy/docker-compose.prod.yml config`.
 - Client config template: `deploy/appsettings.client.template.json` (URL **and** key — see the ApiKey

@@ -54,7 +54,9 @@ All Technical Context values are resolved; no `NEEDS CLARIFICATION` remains. Dec
 
 ## R-07 — Network boundary: private reachability only (no open public endpoint)
 
-**Decision**: In private cloud mode the workstation is reachable only from the company's own networks. Apply the cloud firewall so inbound tcp 443 is allowed **only** from the company's VPN client range and/or its office egress addresses (and tcp 22 only from operator source addresses), denying all other inbound; bind the published `443` to the private interface rather than `0.0.0.0`. Prefer a DigitalOcean VPC plus a VPN so the droplet has no public service at all. Ollama stays bound to the host and is reachable only from the Docker bridge (`host.docker.internal`), never published. Local mode is bounded by the company LAN.
+**Decision**: In private cloud mode the workstation is reachable only over the company's **tailnet** — a WireGuard-based VPN overlay (Tailscale is the reference implementation). The cloud firewall therefore carries **zero inbound rules** (all inbound denied by default); there is no public `443` or `22` at all, and administration happens over the tailnet too. `BIND_ADDRESS=0.0.0.0` is acceptable *because* the firewall is the boundary; binding a single interface is equally valid. `WORKSTATION_HOST` is the tailnet (MagicDNS) name so the generated certificate's **DNS SAN** matches — clients must use that name, not the raw tailnet IP. Ollama stays bound to the host and is reachable only from the Docker bridge (`host.docker.internal`), never published. Local mode is bounded by the company LAN.
+
+**Deployed note**: the reference deployment (`raggit-workstation`, FRA1) uses Tailscale; a temporary inbound `22` rule from `0.0.0.0/0` (key-only auth) was used to bring it up and was removed once tailnet SSH was confirmed, leaving zero public ports.
 
 **Rationale**: Directly implements FR-005, FR-016, and SC-007 without relying on the open internet, and keeps the deployment inside the constitution's LAN/VPN intent (R-01). 443 is the only client-facing port; 22 is required for administration (R-09). Ollama's `11434` must never be published.
 

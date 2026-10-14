@@ -107,17 +107,35 @@ the workstation has a publicly resolvable name, which a private-cloud deployment
 
 ## 4. Reachability (private cloud mode)
 
-The workstation must be reachable **only** from the company's own networks. Two halves:
+The workstation must be reachable **only** from the company's own networks, and in the deployed design
+it has **no public inbound ports at all** — access is over a tailnet (a WireGuard-based VPN overlay;
+Tailscale is the reference implementation).
 
-1. **Cloud firewall / VPC** - allow inbound `443` only from the company's VPN client range and/or its
-   office egress addresses; allow `22` only from operator addresses; deny everything else -
-   explicitly including `11434` (Ollama).
-2. **Bind address** - `BIND_ADDRESS` publishes `443` on the machine's private interface rather than
-   `0.0.0.0`. The compose file refuses to start without it, so the port cannot silently end up on
-   every interface.
+1. **Join the tailnet.** Install Tailscale on the workstation and on each client PC, and sign in to the
+   same tailnet. The workstation needs no auth key: `tailscale up` prints a login URL that the operator
+   approves in a browser.
+2. **Firewall: leave inbound empty.** The cloud firewall denies all inbound by default — do **not** add
+   a rule for `443` or `22`. Administration happens over the tailnet as well. A temporary inbound `22`
+   rule from `0.0.0.0/0` is acceptable only during first bring-up (key-only auth, no passwords) to get
+   in, and MUST be removed once tailnet SSH is confirmed working from a client PC.
+3. **Bind address.** `BIND_ADDRESS=0.0.0.0` publishes `443` on every interface, and the firewall is
+   what keeps it private. Binding to a single interface is equally valid, provided the published port
+   matches the address clients actually use.
+4. **Certificate name.** `WORKSTATION_HOST` must be the name clients use — the tailnet DNS name
+   (MagicDNS), e.g. `raggit-workstation.tail5f3d63.ts.net` — so the certificate's **DNS SAN** matches.
+   Clients MUST use that name, not the raw tailnet IP: a request to the bare `100.x` address fails TLS
+   validation.
 
-In local mode the same controls are typically just the LAN itself; nothing needs to be reachable
-from outside the LAN.
+Verify from a client PC that is on the tailnet:
+
+```bash
+curl --cacert raggit.crt https://<WORKSTATION_HOST>/health
+```
+
+Then confirm from a machine **outside** the tailnet that `443`, `22` and `11434` are all unreachable.
+
+In local mode the same controls are typically just the LAN itself; nothing needs to be reachable from
+outside the LAN.
 
 ---
 
