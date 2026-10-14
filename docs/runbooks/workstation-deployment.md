@@ -27,7 +27,8 @@ is no source-code difference between them. Configuration keys, ports and guarant
 ## 1. Prerequisites (both modes)
 
 - A machine that can run Docker + the models: 4 vCPU / 8 GB baseline, 8 vCPU / 16 GB for more users;
-  more disk if the library grows.
+  more disk if the library grows. **Size the embed model to the host**: on CPU-only hardware the
+  1024-dim default embeds slowly enough to make a large library impractical - see section 10.
 - The repository checked out on that machine (the scripts and compose live in `<repo>/deploy/`).
 - `deploy/.env` filled in from `deploy/.env.example` - at minimum `WORKSTATION_HOST`,
   `BIND_ADDRESS`, `RAGGIT_DATA_DIR`, both API keys, and the certificate path/password.
@@ -228,4 +229,52 @@ stopped compute still bills. The volume/snapshot is retained and can be restored
 | `/health` shows `llm: down` | Ollama not running, or model not pulled | `ollama list`, `systemctl status ollama` |
 | Stack will not start | `deploy/.env` missing or incomplete | compose fails fast on missing `BIND_ADDRESS`, keys, or cert |
 | Startup `DimensionMismatchException` | `VECTOR_SIZE` ≠ `EMBED_MODEL` | align, wipe `lancedb/`, re-ingest |
-| Upload settles `Failed` | unsupported/empty content or cell cap | `Document.FailureReason` in the client |
+| Upload settles `Failed` with `corrupted pdf` / `no extractable content` | unsupported or unreadable content (e.g. a scan with no text layer) | `Document.FailureReason` in the client |
+| Upload settles `Failed` with `indexing failed; see workstation logs for details` | `EMBED_BATCH_SIZE` too large for the host - each embed request exceeds `Ollama:TimeoutMs` | section 10; set `EMBED_BATCH_SIZE=8` on CPU |
+
+---
+
+## 10. Performance and model sizing
+
+Ingest cost is dominated by **embedding every chunk**, so the embed model and the batch size decide
+whether a deployment is practical on a given host. Measure before committing a large library.
+
+| Host | Embed model | `VECTOR_SIZE` | Relative ingest speed | Notes |
+|---|---|---|---|---|
+| 4 vCPU, CPU-only | `snowflake-arctic-embed2` | 1024 | 1x (~7 s per ~900-token input, measured) | Best retrieval quality; impractical for a large library on CPU |
+| 4 vCPU, CPU-only | `all-minilm` | 384 | ~15-25x faster | Pragmatic CPU choice; noticeably weaker retrieval |
+| GPU, 20 GB+ | `snowflake-arctic-embed2` | 1024 | orders of magnitude faster | Preferred when a GPU is available |
+
+**`EMBED_BATCH_SIZE` must fit inside `Ollama:TimeoutMs` (default `300000` ms = 5 min).** The app embeds
+chunks in batches of `EMBED_BATCH_SIZE`; Ollama processes one input at a time per slot, so a batch of
+`N` chunks takes roughly `N x per-chunk time`. The application default (64) is a GPU-sized value: on a
+CPU-only host 64 x 7 s is ~7.5 minutes, which exceeds the timeout, so **every batch times out and every
+document lands on `Failed`**. The shipped `deploy/.env.example` therefore sets `EMBED_BATCH_SIZE=8`;
+raise it toward 64 only on a host that can embed a batch in seconds.
+
+Changing `VECTOR_SIZE` or `EMBED_MODEL` invalidates existing vectors - LanceDB rejects a different
+dimension with `DimensionMismatchException`. To switch models on an existing library:
+
+```bash
+# 1. stop the stack and drop the old vectors (dimension-specific)
+docker compose -f deploy/docker-compose.prod.yml down
+rm -rf "${RAGGIT_DATA_DIR}/lancedb"
+
+# 2. re-queue every document so the ingest worker re-processes it on startup.
+#    Originals are retained under documents/, so nothing needs re-uploading.
+python3 - <<'PY'
+import sqlite3, os
+db = os.environ["RAGGIT_DATA_DIR"] + "/rag.db"
+con = sqlite3.connect(db)
+con.execute("UPDATE Documents SET Status = 1, FailureReason = NULL")  # 1 = Queued
+con.commit(); con.close()
+PY
+
+# 3. edit .env (EMBED_MODEL / VECTOR_SIZE / EMBED_BATCH_SIZE), pull the model, restart
+ollama pull all-minilm
+docker compose -f deploy/docker-compose.prod.yml up -d
+```
+
+The ingest worker re-queues anything left in `Uploading`, `Queued`, or `Indexing` on startup, so step 2
+is what makes the whole library re-ingest. Watch progress with
+`docker compose -f deploy/docker-compose.prod.yml logs -f raggit-workstation`.

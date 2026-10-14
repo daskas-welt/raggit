@@ -48,6 +48,15 @@ services:
       Ollama__EmbedModel: "${EMBED_MODEL:-snowflake-arctic-embed2}"
       Ollama__ChatModel: "${CHAT_MODEL:-qwen2.5:3b}"
 
+      # Chunks embedded per Ollama request. This MUST be small enough that one
+      # request finishes inside Ollama:TimeoutMs (300 s): Ollama processes one
+      # input per slot, so a batch of N costs roughly N x per-chunk time. The
+      # application default (64) is a GPU-sized value - on a CPU-only host that
+      # is ~7.5 minutes and every batch times out, failing the document. Use a
+      # single-digit value on CPU, up to 64 on a GPU host. See the runbook's
+      # "Performance and model sizing".
+      Ingest__EmbedBatchSize: "${EMBED_BATCH_SIZE:-8}"
+
       # Storage. The API workdir is /app, so the './data/...' defaults would already
       # resolve under the volume; they are pinned explicitly for clarity.
       VectorDb__Provider: "LanceDB"
