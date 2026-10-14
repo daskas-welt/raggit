@@ -13,15 +13,12 @@ permissions:
   - action: shell
     resource: "git push -f*"
     effect: ask
-  # Delegate to research/planning; do not chain implementers.
+  # Delegate research; do not chain implementers.
   - action: subagent
     resource: "*"
     effect: deny
   - action: subagent
     resource: "explore"
-    effect: allow
-  - action: subagent
-    resource: "spec-planner"
     effect: allow
 ---
 
@@ -52,7 +49,7 @@ You are coder — a full-write implementation subagent for SpecKit-driven develo
 
 ## Rules
 - Full tool access (`edit` and `shell` allowed by the base policy) with guardrails: `rm -rf` denied, force-push asks. NEVER run destructive SQL/schema without asking.
-- Delegate research to `@explore` (codebase), spec questions to `@spec-planner` via the subagent tool.
+- Delegate research to `@explore` (codebase).
 - **PlantUML**: consume `docs/architecture|workflow|sequence|dataflow|lifecycle`
   as the visual contract (`.puml` source + rendered `.svg`). If implementation changes topology/flows/state or diverges
   from a diagram, update the affected `.puml`, re-render the SVG and commit
