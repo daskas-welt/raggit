@@ -111,6 +111,25 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   patch the client's output `appsettings.json` (see the ApiKey gotcha above) — don't patch the source
   file if you don't intend to keep the change.
 
+## Deployment (031)
+
+- Two modes, one artifact set: **local** (workstation on a machine on the company network) and
+  **private cloud** (company-controlled VM reachable only from the company's own network — never an
+  open public endpoint). Selected by configuration only; see `deploy/` and
+  `docs/runbooks/workstation-deployment.md`.
+- `deploy/docker-compose.prod.yml` is the TLS stack for **both** modes:
+  `docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml up -d`. The repository-root
+  `docker-compose.yml` is the *developer* compose — plain HTTP on 5001, which a signed-in client
+  cannot use because the client refuses non-HTTPS sign-in.
+- `deploy/.env` fails fast on missing values: `BIND_ADDRESS` (publishes `443:5001` on the private
+  interface, never `0.0.0.0`), `RAGGIT_DATA_DIR`, both API keys, and the Kestrel PFX path/password.
+  `.env` is gitignored; only `.env.example` is committed.
+- Validate the stack after any compose edit:
+  `docker compose --env-file deploy/.env.example -f deploy/docker-compose.prod.yml config`.
+- Client config template: `deploy/appsettings.client.template.json` (URL **and** key — see the ApiKey
+  gotcha above). TLS trust comes from the workstation certificate that `deploy/bootstrap.sh` writes
+  next to the PFX (`…/certs/raggit.crt`).
+
 ## Feature work
 
 - Spec Kit drives features: `.opencode/commands/speckit.*` (`/speckit.specify → plan → tasks →

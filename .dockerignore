@@ -1,0 +1,56 @@
+# Build context for src/RAGGit.Workstation.Api/Dockerfile (which does `COPY . .`).
+#
+# Keep this list conservative: the image build needs `global.json`,
+# `Directory.Build.props`, `RAGGit.sln*` and everything under `src/`. Note that
+# `src/RAGGit.Core/Data/` is source code, NOT runtime data - only the rooted
+# `/data/` path is excluded, never a bare `data` pattern.
+
+# VCS / tooling
+.git/
+.github/
+.agents/
+.opencode/
+.gemini/
+.claude/
+.codegraph/
+.specify/
+.vs/
+.vscode/
+.idea/
+
+# Not needed to build or publish the API
+specs/
+tests/
+docs/
+deploy/
+out/
+AppPackages/
+TestResults/
+coverage/
+publish/
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Runtime state (mounted at runtime, never baked into the image)
+/data/
+/data.backup-*/
+/models/
+src/RAGGit.Workstation.Api/data/
+src/RAGGit.Workstation.Api/models/
+*.gguf
+*.onnx
+*.key
+*.pem
+*.pfx
+
+# Noise
+*.user
+*.suo
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

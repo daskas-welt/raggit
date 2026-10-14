@@ -9,7 +9,8 @@ and answers are grounded in cited passages instead of being guessed.
 
 ## Features
 
-- **Private by design** — runs fully on-premises; no cloud, no query-time internet.
+- **Private by design** — runs on your own hardware or your own private cloud;
+  no third-party AI service and no query-time internet.
 - **Single-tenant** — one installation serves one company; no cross-company sharing.
 - **Grounded answers** — every answer cites its source chunks, or returns
   exactly "no relevant content found" instead of hallucinating.
@@ -91,8 +92,30 @@ and the app updates itself. To build that executable:
 dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
 ```
 
+## Deploying the workstation
+
+The workstation supports two modes, both selected by configuration only — the
+desktop client always runs locally and talks to the workstation over your
+network:
+
+- **Local (default)** — the workstation runs on a machine on your network.
+- **Private cloud** — it runs on a company-controlled cloud VM reachable only
+  from your own network (VPN or restricted source addresses). It is never an
+  open public endpoint.
+
+```bash
+cp deploy/.env.example deploy/.env   # WORKSTATION_HOST, BIND_ADDRESS, RAGGIT_DATA_DIR, keys, certificate
+sudo ./deploy/bootstrap.sh           # Linux host: Docker + Ollama, TLS, models, first admin account
+```
+
+See [`docs/runbooks/workstation-deployment.md`](docs/runbooks/workstation-deployment.md)
+for the full operator runbook — provisioning, TLS, network boundary, verification,
+snapshot/restore, and teardown — and `deploy/` for the stack, the bootstrap
+script, and the client configuration template.
+
 ## Project structure
 
+- `deploy/` — production compose stack, bootstrap script, client config template
 - `src/RAGGit.Workstation.Api` — the workstation web service
 - `src/RAGGit.Client.WPF` — the Windows desktop client (WPF + WPF-UI)
 - `src/RAGGit.Client.Core` — shared client logic (view models, API clients)
@@ -100,7 +123,7 @@ dotnet publish src/RAGGit.Client.WPF -c Release -p:Platform=x64 -o ./out/desktop
 - `src/RAGGit.Ingest` — document ingestion and chunking
 - `src/RAGGit.Retrieval` — vector search and grounded prompt assembly
 - `tests/` — unit, contract, and integration tests
-- `docs/` — PlantUML diagram sources and the rendered SVGs used above
+- `docs/` — PlantUML diagram sources, rendered SVGs, and operator runbooks
 
 ## Security
 

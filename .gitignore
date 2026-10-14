@@ -40,6 +40,11 @@ artifacts/
 *.onnx
 *.key
 *.pem
+*.pfx
+
+# Deployment secrets (031-remote-workstation-hosting). Only .env.example is committed.
+deploy/.env
+deploy/certs/
 
 # Test results
 TestResults/

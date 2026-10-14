@@ -12,10 +12,12 @@ Two modes, one codebase, selected by configuration only (FR-018). Employee deskt
 |---|---|---|
 | Workstation runs on | A machine on the company's network | A company-controlled cloud virtual machine |
 | Desktops reach it via | the LAN | the company's private network (VPN and/or restricted source addresses) |
-| Deployment artifacts | existing root `docker-compose.yml` | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` |
+| Deployment artifacts | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` | same artifacts |
 | Cloud account | not required | required |
-| State location | the machine's disk under the data dir | a block-storage volume bind-mounted at `/app/data` |
+| State location | a local disk path bound at `/app/data` | a block-storage volume bind-mounted at `/app/data` |
 | Public exposure | none | **none** — reachable only from the company's own networks |
+
+**Both modes use the same artifacts**; the mode is selected purely by `deploy/.env` values (`BIND_ADDRESS`, `RAGGIT_DATA_DIR`, firewall rules, and the client URL). This satisfies FR-018/SC-010 literally: no source change and no artifact difference between modes. The repository-root `docker-compose.yml` is the *developer* compose — it serves plain HTTP on 5001 and cannot be used with the signed-in client, which requires HTTPS.
 
 ## 1. Network surface
 
@@ -42,6 +44,7 @@ Two modes, one codebase, selected by configuration only (FR-018). Employee deskt
 | `.env` variable | Container env var | Config key | Required | Example |
 |-----------------|-------------------|------------|----------|---------|
 | `WORKSTATION_HOST` | (used by clients, not the container) | — | yes | `10.0.0.12` (LAN) or `10.116.0.4` (VPC) |
+| `BIND_ADDRESS` | (compose publishes `${BIND_ADDRESS}:443:5001`) | — | yes | the machine's LAN or private/VPN IP |
 | `RAGGIT_DATA_DIR` | (bind source) | — | yes | `/mnt/raggit-data` |
 | `ADMIN_API_KEY` | `Api__AdminKey` | `Api:AdminKey` | yes | (secret) |
 | `EMPLOYEE_API_KEY` | `Api__EmployeeKey` | `Api:EmployeeKey` | yes | (secret) |
@@ -56,6 +59,14 @@ Two modes, one codebase, selected by configuration only (FR-018). Employee deskt
 - `.env` is gitignored; the repository ships only `.env.example` (no secrets in the repo, docs, or logs).
 - `VECTOR_SIZE` and `EMBED_MODEL` must agree (384/768/1024 ↔ model family) or startup warns/fails per existing validation.
 - A bare `OLLAMA_URL` is not a valid .NET key; it MUST be mapped to `Ollama__Url` by the Compose file.
+- The Compose file fails fast (`:?`) when a required variable is missing, so the stack cannot start
+  with empty API keys or without a bind address, and the published port is never `0.0.0.0`.
+- `docker compose config` MUST render successfully against `.env.example` (static validation, T027).
+- `deploy/bootstrap.sh` also reads `ADMIN_USERNAME`, `ADMIN_DISPLAY_NAME`, and `ADMIN_PASSWORD` to
+  create the first admin account (password passed to the operator CLI over stdin, never in argv).
+- Storage keys (`VectorDb__Path`, and the defaulted `ConnectionStrings:RagDb` / `Auth:JwtSigningKeyPath`)
+  resolve under `/app/data` because the API working directory is `/app`; they are covered by the
+  mounted-volume contract in §4.
 
 ## 3. Container contract
 

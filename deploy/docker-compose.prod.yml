@@ -1,0 +1,65 @@
+# RAGGit workstation - private cloud deployment (feature 031-remote-workstation-hosting).
+#
+# Reachability is deliberately narrow. The workstation must be reachable only from
+# the company's own networks (VPN and/or restricted source addresses) and MUST NOT
+# be an open public endpoint. BIND_ADDRESS pins the published port to the machine's
+# private interface; the cloud firewall is the other half of the control. See
+# docs/runbooks/workstation-deployment.md.
+#
+# Usage (from the repository root):
+#   cp deploy/.env.example deploy/.env   # then edit it
+#   docker compose -f deploy/docker-compose.prod.yml up -d
+#
+# Compose reads deploy/.env automatically (it is the project directory of this file).
+
+name: raggit-workstation
+
+services:
+  raggit-workstation:
+    build:
+      # Context is the repository root so the Dockerfile sees global.json,
+      # Directory.Build.props and src/.
+      context: ..
+      dockerfile: src/RAGGit.Workstation.Api/Dockerfile
+    image: raggit-workstation:local
+    container_name: raggit-workstation
+
+    # 443 is the ONLY published port, and only on BIND_ADDRESS - never 0.0.0.0.
+    # The official aspnet image runs non-root and cannot bind below 1024, so the
+    # app listens on 5001 inside the container and the host maps 443 -> 5001;
+    # clients then use a bare https://<WORKSTATION_HOST>.
+    ports:
+      - "${BIND_ADDRESS:?set BIND_ADDRESS in deploy/.env to the machine's private interface IP}:443:5001"
+
+    environment:
+      ASPNETCORE_URLS: "https://0.0.0.0:5001"
+      ASPNETCORE_ENVIRONMENT: "Production"
+
+      # TLS terminates in Kestrel. Paths are container paths on the mounted volume.
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "${CERT_PFX_PATH:?set CERT_PFX_PATH in deploy/.env}"
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "${CERT_PFX_PASSWORD:?set CERT_PFX_PASSWORD in deploy/.env}"
+
+      # Authentication (required: empty keys would leave the API unusable)
+      Api__AdminKey: "${ADMIN_API_KEY:?set ADMIN_API_KEY in deploy/.env}"
+      Api__EmployeeKey: "${EMPLOYEE_API_KEY:?set EMPLOYEE_API_KEY in deploy/.env}"
+
+      # Models - native Ollama on the host, reached via host.docker.internal
+      Ollama__Url: "${OLLAMA_URL:-http://host.docker.internal:11434}"
+      Ollama__EmbedModel: "${EMBED_MODEL:-snowflake-arctic-embed2}"
+      Ollama__ChatModel: "${CHAT_MODEL:-qwen2.5:3b}"
+
+      # Storage. The API workdir is /app, so the './data/...' defaults would already
+      # resolve under the volume; they are pinned explicitly for clarity.
+      VectorDb__Provider: "LanceDB"
+      VectorDb__Path: "/app/data/lancedb"
+      VectorDb__VectorSize: "${VECTOR_SIZE:-1024}"
+
+    volumes:
+      # Everything durable lives here: lancedb/, rag.db, documents/, auth.key, certs/.
+      - "${RAGGIT_DATA_DIR:?set RAGGIT_DATA_DIR in deploy/.env}:/app/data"
+
+    extra_hosts:
+      # Lets the container reach the host's Ollama. 11434 is never published.
+      - "host.docker.internal:host-gateway"
+
+    restart: unless-stopped
