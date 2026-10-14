@@ -31,8 +31,9 @@
 
 ## Notes
 
-- All three open decisions were resolved with the user on 2026-10-14:
-  1. **Network exposure** - public HTTPS endpoint restricted by firewall and credentials (the operator may narrow to VPN or an address allowlist later).
+- Decisions resolved with the user on 2026-10-14:
+  1. **Deployment modes** - two supported modes: **local** (default; workstation on the company's own network) and **private cloud** (workstation on a company-controlled cloud VM reachable only over the company's private network). Supersedes the earlier "public HTTPS endpoint" choice; the desktop UI always runs locally and calls the workstation's API. Both modes stay inside the LAN/VPN boundary, so no constitution principle is diluted.
   2. **Client configuration delivery** - shipped configuration file per company; no new in-app settings screen.
-  3. **Library data** - the hosted workstation starts with a fresh empty library; migrating the existing local library is out of scope.
+  3. **Library data** - each mode starts with a fresh empty library; migrating an existing library between modes is out of scope.
+- Revalidated after the two-mode change: all checklist items still pass. FR-018/SC-010 were added to make "two modes from one codebase" testable.
 - Validation passed on the first iteration; all checklist items are complete and the spec is ready for `/speckit.plan`.
