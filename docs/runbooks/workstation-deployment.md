@@ -303,3 +303,50 @@ generation — an answer of ~80 tokens still took ~110 s. Levers, cheapest first
 Prompt processing parallelises across cores better than token generation does, so a CPU resize helps
 more than the generation speed alone would suggest — but it is a linear cost for a sub-linear gain.
 
+---
+
+## 11. Pausing and restoring a private-cloud deployment
+
+**A powered-off Droplet still bills.** DigitalOcean keeps charging until the Droplet is
+*destroyed*, because the compute stays reserved on the hypervisor. To stop paying while keeping the
+library, snapshot the state and destroy the compute.
+
+### Pause
+
+1. **Copy `deploy/.env` off the machine first.** It is *not* on the volume, and it holds both API
+   keys, the certificate password, and the admin password. Losing it means new API keys (every
+   client's `appsettings.json` must be updated) and a new certificate.
+2. **Snapshot the volume** (this is the backup of `lancedb/`, `rag.db`, `documents/`, `auth.key`,
+   `certs/`):
+   ```bash
+   doctl compute volume snapshot <volume-id> --snapshot-name raggit-data-paused
+   ```
+3. **Destroy the Droplet** — this is what stops compute billing.
+4. **Release the reserved IP.** An unassigned reserved IPv4 costs $5/month. The unassign that
+   DigitalOcean runs automatically on destroy can fail (`remove_ip errored` in the action log),
+   leaving the IP unreleasable via the API with `422 The reserved IP action is unprocessable`; if
+   that happens, release it from the control panel instead.
+5. **Delete the volume if you are keeping the snapshot.** The snapshot is $0.06/GiB-month (50 GB =
+   $3/month); the volume itself is $0.10/GiB-month (50 GB = $5/month).
+
+Ongoing cost: the snapshot only.
+
+### Restore
+
+1. Create a volume **in the same region** from the snapshot (at least its `min_disk_size`, 50 GB),
+   attach it to a new Droplet, and mount it at `RAGGIT_DATA_DIR`.
+2. Check out the repository on the new machine and restore `deploy/.env`.
+3. `sudo ./deploy/bootstrap.sh` — it installs Docker and Ollama, re-pulls the models, and brings the
+   stack up against the restored volume. The certificate already on the volume is reused, so
+   `WORKSTATION_HOST` must still match its SAN.
+4. Re-join the tailnet and verify (section 5).
+
+**The Tailscale node identity does not survive the rebuild.** Re-enrolling typically yields a new
+MagicDNS name (`raggit-workstation-1`), which no longer matches the certificate's DNS SAN — either
+rename the node back in the Tailscale admin console or regenerate the certificate and redistribute
+`raggit.crt` to every client. Delete the stale node so its name is freed.
+
+Nothing else is lost: the Ollama models, the container image, and the repository checkout are all
+reproducible by `bootstrap.sh`. Only `deploy/.env` needs to have been saved by hand.
+
+
