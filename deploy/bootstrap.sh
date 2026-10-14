@@ -88,6 +88,20 @@ systemctl daemon-reload
 systemctl enable --now ollama
 systemctl restart ollama
 
+# `systemctl restart` returns before the server is accepting connections, so
+# pulling immediately races the restart and fails. Wait for the API instead.
+log "Waiting for the Ollama API to become ready"
+ollama_ready=""
+for attempt in $(seq 1 30); do
+    if ollama list >/dev/null 2>&1; then
+        ollama_ready="yes"
+        break
+    fi
+    sleep 2
+done
+[[ -n "${ollama_ready}" ]] || die "Ollama did not become ready after 60s; check 'systemctl status ollama'"
+log "Ollama is ready ($(ollama --version 2>/dev/null | head -1))"
+
 log "Pulling models: ${EMBED_MODEL} and ${CHAT_MODEL}"
 ollama pull "${EMBED_MODEL}"
 ollama pull "${CHAT_MODEL}"
