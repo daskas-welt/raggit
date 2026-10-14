@@ -52,7 +52,7 @@
                             MinHeight="32"
                             Margin="0,0,8,0"
                             VerticalAlignment="Center"
-                            ItemsSource="{StaticResource QueryModes}"
+                            ItemsSource="{Binding Source={StaticResource QueryModes}}"
                             SelectedItem="{Binding QueryMode, Mode=TwoWay}"
                             AutomationProperties.AutomationId="QueryModeCombo"
                             AutomationProperties.Name="Query intent mode"

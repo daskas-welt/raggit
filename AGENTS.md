@@ -91,6 +91,14 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 - `{ui:ThemeResource X}` is **enum-keyed** — an unknown key throws `XamlParseException` when the page
   loads. `AccentFillColorDefaultBrush` is *not* a member (use `{DynamicResource AccentFillColorDefaultBrush}`);
   check new keys against `Wpf.Ui.Markup.ThemeResource`.
+- **Never assign an `ObjectDataProvider` straight to `ItemsSource`.** `ItemsSource="{StaticResource X}"`
+  where `X` is an `ObjectDataProvider` (e.g. an `x:Type`/`GetValues` enum source) throws
+  `ArgumentException: 'ObjectDataProvider' is not a valid value for property 'ItemsSource'` at page
+  load. Bind *through* it: `ItemsSource="{Binding Source={StaticResource X}}"`.
+- **A page whose XAML throws during construction fails silently.** `NavigationView` swallows the
+  `XamlParseException` from the page constructor and `App.DispatcherUnhandledException` sets
+  `Handled = true`, so clicking the nav item just does nothing — no dialog, no crash. Every unhandled
+  exception is appended to `%LOCALAPPDATA%\RAGGit\crash.log`; read that first when a page "won't open".
 - `Symbol="…"` must be a real `SymbolRegular` member. `ChevronDoubleLeft24`, `Copy`, `Delete`,
   `Document`, `ArrowUpload` do **not** exist (valid: `ChevronDoubleLeft20`, `Copy24`, `Delete24`,
   `Document24`, `ArrowUpload24`).
