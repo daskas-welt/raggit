@@ -21,12 +21,20 @@
       ],
       "enabled": true
     },
-    "vercel": {
-      "type": "remote",
-      "url": "https://mcp.vercel.com",
-      "enabled": true
-    },
     "servers": {
+      "digitalocean": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@digitalocean/mcp",
+          "--services",
+          "droplets,accounts,networking,volumes,docs"
+        ],
+        "environment": {
+          "DIGITALOCEAN_API_TOKEN": "{env:DIGITALOCEAN_API_TOKEN}"
+        }
+      },
       "github": {
         "type": "remote",
         "url": "https://api.githubcopilot.com/mcp/",
