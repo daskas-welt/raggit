@@ -11,7 +11,7 @@ Support the RAGGit AI Workstation in **two deployment modes** with no change to 
 - **Local mode (default)** - the workstation runs on a machine on the company's own network; desktops call it over the LAN. This is today's mode and needs no cloud account.
 - **Private cloud mode** - the workstation runs on a company-controlled cloud virtual machine reachable only over the company's private network (VPN and/or restricted source addresses); it is never an open public endpoint. Desktops stay local and send their API calls to it.
 
-The workstation (ASP.NET Core 10 REST API, Ollama models, LanceDB vectors, SQLite metadata, document content) already runs as a Linux container via `docker-compose.yml` + `src/RAGGit.Workstation.Api/Dockerfile`. Local mode reuses that as-is; private cloud mode adds a hardened production variant (in-container TLS, state on a durable volume, a locked-down cloud firewall bound to the company's networks, repeatable provisioning) plus a shared client configuration template and a single runbook covering both modes. Almost all of the deliverable is deployment artifacts (`deploy/`, `docs/`) and deployment-interface documentation; the application code is already capable (configurable `Workstation:Url` + credential in `ClientConfigResolver`, anonymous `GET /health`, HTTPS redirection, per-person accounts), so mode selection is configuration only (FR-018).
+The workstation (ASP.NET Core 10 REST API, Ollama models, LanceDB vectors, SQLite metadata, document content) already runs as a Linux container via `docker-compose.yml` + `src/RAGGit.Workstation.Api/Dockerfile`. The feature adds one TLS-enabled production stack (`deploy/docker-compose.prod.yml`), a bootstrap script, and a single runbook, and **both modes use those same artifacts**, differing only by `deploy/.env` (bind address, data path, firewall, client URL). The repository-root `docker-compose.yml` remains the developer compose and is not used for a signed-in deployment, because it serves plain HTTP and the client refuses non-HTTPS sign-in. Almost all of the deliverable is deployment artifacts (`deploy/`, `docs/`) and deployment-interface documentation; the application code is already capable (configurable `Workstation:Url` + credential in `ClientConfigResolver`, anonymous `GET /health`, HTTPS redirection, per-person accounts), so mode selection is configuration only (FR-018).
 
 ## Technical Context
 
@@ -31,7 +31,7 @@ The workstation (ASP.NET Core 10 REST API, Ollama models, LanceDB vectors, SQLit
 
 **Constraints**: Only the workstation's client-facing service may be reachable, and only from the company's own networks (SC-007, FR-016); Ollama (`11434`) and internal storage MUST NOT be reachable from outside those networks; the container runs non-root in the stock `aspnet` image and therefore serves HTTPS on `5001` with the host publishing `443:5001` bound to the private interface; a password-protected PFX is the certificate secret (the app user cannot read `0600` private keys); no per-deployment source edits and no source changes between modes (FR-006, FR-018); single-tenant in both modes (FR-017).
 
-**Scale/Scope**: One workstation instance per company, in exactly one mode at a time; ~6 deployment artifacts (`deploy/docker-compose.prod.yml`, `deploy/.env.example`, `deploy/bootstrap.sh`, a client `appsettings` template, root `.dockerignore`, and the shared runbook) covering both modes; local mode additionally reuses the existing root `docker-compose.yml`. No DB schema change, no API change.
+**Scale/Scope**: One workstation instance per company, in exactly one mode at a time; ~6 deployment artifacts (`deploy/docker-compose.prod.yml`, `deploy/.env.example`, `deploy/bootstrap.sh`, a client `appsettings` template, root `.dockerignore`, and the shared runbook) covering both modes; the same artifacts serve both modes, with no per-mode file. No DB schema change, no API change.
 
 ## Constitution Check
 
@@ -73,8 +73,8 @@ specs/031-remote-workstation-hosting/
 ### Source Code (repository root)
 
 ```text
-deploy/                                       # NEW — private-cloud deployment artifacts (deployer allowlist)
-├── docker-compose.prod.yml                   # NEW — private-cloud stack: https, private bind, volume, host.docker.internal
+deploy/                                       # NEW — deployment artifacts for BOTH modes (deployer allowlist)
+├── docker-compose.prod.yml                   # NEW — TLS stack used by both modes: 443 on BIND_ADDRESS, volume, host.docker.internal
 ├── .env.example                              # NEW — required env vars (no secrets)
 ├── bootstrap.sh                              # NEW — install Docker/Ollama, mount volume, place files, up, pull models
 └── appsettings.client.template.json          # NEW — per-company client config template (Url + ApiKey)
@@ -92,12 +92,12 @@ src/RAGGit.Workstation.Api/
 src/RAGGit.Client.WPF/
 └── appsettings.json                          # reuse; per-company URL+key shipped in the template (both modes)
 
-docker-compose.yml                            # existing LAN compose — reused as the LOCAL mode deployment, left as-is
+docker-compose.yml                            # existing DEV compose (plain HTTP on 5001) — not used for a signed-in deployment
 
 tests/                                        # unchanged (unit/, contract/, integration/)
 ```
 
-**Structure Decision**: No new project or directory under `src/`. The feature adds a `deploy/` artifact set for private cloud mode and a single `docs/runbooks/workstation-deployment.md` covering both modes (both already permitted to the `@deployer` agent), reuses the existing Dockerfile and the existing root `docker-compose.yml` for local mode instead of forking the server, and reuses the client's existing configuration mechanism instead of adding UI. Rationale: the application already supports a configurable workstation URL and a local-model REST API; only the operational packaging, the two-mode documentation, and the client configuration were missing.
+**Structure Decision**: No new project or directory under `src/`. The feature adds a `deploy/` artifact set used by **both** modes and a single `docs/runbooks/workstation-deployment.md` (both already permitted to the `@deployer` agent), reuses the existing Dockerfile instead of forking the server, and reuses the client's existing configuration mechanism instead of adding UI. The root `docker-compose.yml` is left untouched as the developer compose. Rationale: the application already supports a configurable workstation URL and a local-model REST API; only the operational packaging, the two-mode documentation, and the client configuration were missing.
 
 ## Complexity Tracking
 

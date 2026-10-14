@@ -31,7 +31,7 @@ Expected: the same green counts as the current baseline (AGENTS.md records unit 
 
 Purpose: FR-001, FR-006, FR-018; SC-001, SC-010.
 
-1. On the on-network machine, start the workstation using the existing root `docker-compose.yml` (or run the API directly) with local `.env` values; ensure native Ollama is running with the configured embed and chat models pulled.
+1. On the on-network machine, start the workstation with the same stack as private cloud (`sudo ./deploy/bootstrap.sh`, or `docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml up -d --build`) using LAN `.env` values — `BIND_ADDRESS` = the machine's LAN IP. HTTPS is mandatory here: the client refuses non-HTTPS sign-in, so the plain-HTTP developer compose is not usable. Ensure native Ollama is running with the configured models pulled.
 2. Make the required value choices from [contracts/deployment.md](contracts/deployment.md) §2 and create the first admin account with the operator CLI.
 3. From a machine on the same network, verify liveness:
 

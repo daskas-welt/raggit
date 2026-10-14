@@ -18,11 +18,11 @@ Exactly one mode per deployment; selected by configuration only, no source chang
 |-----------|----------------------|--------------------|
 | Workstation host | a machine on the company's network | a company-controlled cloud virtual machine |
 | Client reachability | the LAN | the company's private network (VPN and/or restricted source addresses) |
-| Deployment artifacts | existing root `docker-compose.yml` | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` |
+| Deployment artifacts | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` (same as private cloud) | `deploy/docker-compose.prod.yml` + `deploy/bootstrap.sh` |
 | Cloud account | not required | required |
 | Public exposure | none | none |
 
-**Validation rule**: the mode determines the artifact set and the client's `Workstation:Url` scheme/host; switching modes MUST change configuration and deployed artifacts only, never source code.
+**Validation rule**: the mode determines the `.env` values (bind address, data path, firewall, client URL) and nothing else; switching modes MUST change configuration only, never source code or artifacts.
 
 ## Entity: Workstation
 
