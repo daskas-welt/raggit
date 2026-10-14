@@ -93,10 +93,7 @@ constraints:
   itself; plain HTTP is not a deployment option.
 - **The workstation needs durable state and a long-running process.** LanceDB and
   SQLite live under `./data`, and ingest runs as background workers with ~300s
-  Ollama timeouts. That rules out serverless platforms for the workstation.
-- **DigitalOcean hosts the workstation; Vercel does not.** Vercel suits only a
-  static or thin front-end calling the workstation over HTTPS. Say this plainly
-  rather than designing a deploy that cannot work.
+  Ollama timeouts. Any deployment shape must preserve both.
 - **GPU Droplets bill while powered off.** A cost-conscious design snapshots
   before delete and keeps state on a volume, rather than powering down between
   demos.
