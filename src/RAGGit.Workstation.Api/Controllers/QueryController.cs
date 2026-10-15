@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RAGGit.Core.Abstractions;
 using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
@@ -19,40 +19,42 @@ namespace RAGGit.Workstation.Api.Controllers;
 
 /// <summary>
 /// Employee + Admin query endpoint per contracts/api.yaml.
+/// Both transports delegate to the one <see cref="QueryPipeline"/> (032): the
+/// classic request/response path, and the NDJSON stream that narrates the work
+/// while the employee waits.
 /// </summary>
 [ApiController]
 [Route("api/queries")]
 [Authorize]
 public sealed class QueryController : ControllerBase
 {
-    private readonly RetrievalService _retrievalService;
-    private readonly GenerationService _generationService;
+    private readonly QueryPipeline _pipeline;
     private readonly ILlmClient _llmClient;
     private readonly IQueryRepository _historyStore;
-    private readonly IDocumentRepository _documents;
     private readonly ILogger<QueryController> _logger;
+    private readonly JsonSerializerOptions _jsonOptions;
 
     public QueryController(
-        RetrievalService retrievalService,
-        GenerationService generationService,
+        QueryPipeline pipeline,
         ILlmClient llmClient,
         IQueryRepository historyStore,
-        IDocumentRepository documents,
+        IOptions<JsonOptions> jsonOptions,
         ILogger<QueryController> logger
     )
     {
-        ArgumentNullException.ThrowIfNull(retrievalService);
-        ArgumentNullException.ThrowIfNull(generationService);
+        ArgumentNullException.ThrowIfNull(pipeline);
         ArgumentNullException.ThrowIfNull(llmClient);
         ArgumentNullException.ThrowIfNull(historyStore);
-        ArgumentNullException.ThrowIfNull(documents);
+        ArgumentNullException.ThrowIfNull(jsonOptions);
         ArgumentNullException.ThrowIfNull(logger);
-        _retrievalService = retrievalService;
-        _generationService = generationService;
+
+        _pipeline = pipeline;
         _llmClient = llmClient;
         _historyStore = historyStore;
-        _documents = documents;
         _logger = logger;
+        _jsonOptions =
+            jsonOptions.Value.JsonSerializerOptions
+            ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
     }
 
     /// <summary>
@@ -107,6 +109,7 @@ public sealed class QueryController : ControllerBase
 
     /// <summary>
     /// POST /api/queries — grounded answer with citations or "no relevant content found".
+    /// Unchanged in 032: it runs the same pipeline with no progress observer.
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Employee,Admin")]
@@ -115,14 +118,11 @@ public sealed class QueryController : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var stopwatch = Stopwatch.StartNew();
-
         if (request is null || string.IsNullOrWhiteSpace(request.Query))
         {
             return BadRequest(new { error = "Query is required." });
         }
 
-        var topK = Math.Clamp(request.TopK, 1, 5);
         var userId =
             User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "unknown";
 
@@ -137,120 +137,44 @@ public sealed class QueryController : ControllerBase
                 );
             }
 
-            var (chunks, intent) = await _retrievalService.RetrieveWithIntentAsync(
-                request.Query,
-                topK,
-                request.Mode,
+            var outcome = await _pipeline.ExecuteAsync(
+                request,
+                onProgress: null,
                 cancellationToken
             );
-
-            if (chunks.Count == 0)
-            {
-                var noContentLatency = (int)stopwatch.ElapsedMilliseconds;
-                await SaveQueryAsync(
-                    userId,
-                    request.Query,
-                    Array.Empty<Guid>(),
-                    "no relevant content found",
-                    Array.Empty<Guid>(),
-                    noContentLatency,
-                    intent,
-                    cancellationToken
-                );
-
-                _logger.LogInformation(
-                    "Query from {UserId} returned no relevant content in {LatencyMs}ms",
-                    userId,
-                    noContentLatency
-                );
-
-                return Ok(
-                    new QueryResponse
-                    {
-                        Answer = "no relevant content found",
-                        Citations = new(),
-                        RetrievedChunkIds = new(),
-                        LatencyMs = noContentLatency,
-                        Mode = intent,
-                    }
-                );
-            }
-
-            var documentNames = await ResolveDocumentNamesAsync(chunks, cancellationToken);
-
-            var (answer, citationIds) = await _generationService.GenerateAsync(
-                request.Query,
-                chunks,
-                documentNames,
-                cancellationToken
-            );
-
-            var latencyMs = (int)stopwatch.ElapsedMilliseconds;
-            var retrievedChunkIds = chunks.Select(c => c.ChunkId).ToList();
-
-            // Strict grounding is preserved: when the LLM cites nothing (e.g.
-            // near-miss person name like Αρετής vs Πηνελόπης), offer
-            // surname-anchored did-you-mean hints from retrieved chunks only.
-            var suggestions = new List<PersonSuggestion>();
-            if (citationIds.Count == 0)
-            {
-                suggestions = PersonNameSuggester.Suggest(request.Query, chunks).ToList();
-            }
-
-            var finalAnswer = answer;
-            if (suggestions.Count > 0 && AnswerLanguage.IsRefusalLike(answer))
-            {
-                var names = string.Join("; ", suggestions.Select(s => s.Name));
-                finalAnswer = AnswerLanguage.IsGreek(request.Query)
-                    ? $"{answer} Μήπως εννοούσατε: {names}; Παρακαλώ επιβεβαιώστε."
-                    : $"{answer} Did you mean: {names}? Please confirm.";
-            }
 
             await SaveQueryAsync(
                 userId,
                 request.Query,
-                retrievedChunkIds,
-                finalAnswer,
-                citationIds,
-                latencyMs,
-                intent,
+                outcome.RetrievedChunkIds,
+                outcome.Answer,
+                outcome.CitationIds,
+                outcome.LatencyMs,
+                outcome.Mode,
                 cancellationToken
             );
 
-            var citations = chunks
-                .Where(c => citationIds.Contains(c.ChunkId))
-                .Where(c => Guid.TryParse(c.DocumentId, out _))
-                .Select(c => new Citation
-                {
-                    DocumentId = Guid.Parse(c.DocumentId),
-                    DocumentName = documentNames.GetValueOrDefault(c.DocumentId),
-                    ChunkId = c.ChunkId,
-                    Text = c.Text,
-                    Ordinal = c.Ordinal,
-                })
-                .ToList();
+            if (outcome.RetrievedChunkIds.Count == 0)
+            {
+                _logger.LogInformation(
+                    "Query from {UserId} returned no relevant content in {LatencyMs}ms",
+                    userId,
+                    outcome.LatencyMs
+                );
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Query from {UserId} answered with {CitationCount}/{RetrievedCount} citations and {SuggestionCount} suggestions in {LatencyMs}ms",
+                    userId,
+                    outcome.Citations.Count,
+                    outcome.RetrievedChunkIds.Count,
+                    outcome.SuggestedPersons.Count,
+                    outcome.LatencyMs
+                );
+            }
 
-            _logger.LogInformation(
-                "Query from {UserId} answered with {CitationCount}/{RetrievedCount} citations and {SuggestionCount} suggestions in {LatencyMs}ms; top scores [{Scores}]",
-                userId,
-                citations.Count,
-                chunks.Count,
-                suggestions.Count,
-                latencyMs,
-                string.Join(", ", chunks.Take(5).Select(c => c.Score.ToString("0.###")))
-            );
-
-            return Ok(
-                new QueryResponse
-                {
-                    Answer = finalAnswer,
-                    Citations = citations,
-                    RetrievedChunkIds = retrievedChunkIds,
-                    LatencyMs = latencyMs,
-                    SuggestedPersons = suggestions,
-                    Mode = intent,
-                }
-            );
+            return Ok(outcome.ToResponse());
         }
         catch (HttpRequestException exception)
         {
@@ -304,35 +228,197 @@ public sealed class QueryController : ControllerBase
         }
     }
 
-    private async Task<Dictionary<string, string?>> ResolveDocumentNamesAsync(
-        IReadOnlyList<SearchResult> chunks,
+    /// <summary>
+    /// POST /api/queries/stream — the same query, narrated live (032 FR-001…FR-004).
+    /// Responds with newline-delimited JSON events, flushed as they happen: zero
+    /// or more <c>progress</c> events (with the sources consulted) followed by
+    /// exactly one terminal <c>answer</c> or <c>error</c>. Validation and the
+    /// health probe complete before the first byte, so those failures keep the
+    /// ordinary JSON status codes clients already map.
+    /// </summary>
+    [HttpPost("stream")]
+    [Authorize(Roles = "Employee,Admin")]
+    public async Task PostStream(
+        [FromBody] QueryRequest request,
         CancellationToken cancellationToken
     )
     {
-        var names = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var documentId in chunks.Select(c => c.DocumentId).Distinct())
+        if (request is null || string.IsNullOrWhiteSpace(request.Query))
         {
-            if (!Guid.TryParse(documentId, out var id))
-            {
-                continue;
-            }
-
-            try
-            {
-                var document = await _documents.FindByIdAsync(id, cancellationToken);
-                names[documentId] = document?.Filename;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogDebug(
-                    exception,
-                    "Document name lookup failed for {DocumentId}; using id in prompt",
-                    documentId
-                );
-            }
+            await WriteJsonStatusAsync(
+                StatusCodes.Status400BadRequest,
+                "Query is required.",
+                cancellationToken
+            );
+            return;
         }
 
-        return names;
+        var userId =
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "unknown";
+
+        if (!await _llmClient.IsHealthyAsync(cancellationToken))
+        {
+            _logger.LogWarning("Query rejected: LLM is not healthy for user {UserId}", userId);
+            await WriteJsonStatusAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                "AI workstation unavailable",
+                cancellationToken
+            );
+            return;
+        }
+
+        // First byte is about to be written: from here on, a failure is reported
+        // in-band so the client keeps one error vocabulary (research R10).
+        Response.StatusCode = StatusCodes.Status200OK;
+        Response.ContentType = "application/x-ndjson";
+        Response.Headers.CacheControl = "no-store";
+
+        try
+        {
+            var outcome = await _pipeline.ExecuteAsync(
+                request,
+                WriteProgressAsync,
+                cancellationToken
+            );
+
+            await SaveQueryAsync(
+                userId,
+                request.Query,
+                outcome.RetrievedChunkIds,
+                outcome.Answer,
+                outcome.CitationIds,
+                outcome.LatencyMs,
+                outcome.Mode,
+                cancellationToken
+            );
+
+            if (outcome.RetrievedChunkIds.Count == 0)
+            {
+                _logger.LogInformation(
+                    "Streamed query from {UserId} returned no relevant content in {LatencyMs}ms",
+                    userId,
+                    outcome.LatencyMs
+                );
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Streamed query from {UserId} answered with {CitationCount}/{RetrievedCount} citations and {SuggestionCount} suggestions in {LatencyMs}ms",
+                    userId,
+                    outcome.Citations.Count,
+                    outcome.RetrievedChunkIds.Count,
+                    outcome.SuggestedPersons.Count,
+                    outcome.LatencyMs
+                );
+            }
+
+            await WriteEventAsync(
+                QueryStreamEvent.FromAnswer(outcome.ToResponse()),
+                cancellationToken
+            );
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Streamed query failed because LLM is unreachable for user {UserId}",
+                userId
+            );
+            await TryWriteErrorAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                "model unavailable offline"
+            );
+        }
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(
+                exception,
+                "Streamed query timed out (Ollama:TimeoutMs) for user {UserId}",
+                userId
+            );
+            await TryWriteErrorAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                "model unavailable offline"
+            );
+        }
+        catch (OperationCanceledException exception)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(
+                exception,
+                "Streamed query operation canceled (timeout) for user {UserId}",
+                userId
+            );
+            await TryWriteErrorAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                "model unavailable offline"
+            );
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Streamed query failed due to AI workstation error for user {UserId}",
+                userId
+            );
+            await TryWriteErrorAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                "AI workstation unavailable"
+            );
+        }
+    }
+
+    /// <summary>Writes one progress update and flushes it (liveness, SC-002).</summary>
+    private async ValueTask WriteProgressAsync(
+        QueryProgress progress,
+        CancellationToken cancellationToken
+    ) => await WriteEventAsync(QueryStreamEvent.FromProgress(progress), cancellationToken);
+
+    private async Task WriteEventAsync(
+        QueryStreamEvent streamEvent,
+        CancellationToken cancellationToken
+    )
+    {
+        var line = JsonSerializer.Serialize(streamEvent, _jsonOptions) + "\n";
+        await Response.WriteAsync(line, cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Reports a post-first-byte failure. A disconnected client makes the write
+    /// fail; that is not an error worth surfacing anywhere else.
+    /// </summary>
+    private async Task TryWriteErrorAsync(int status, string error)
+    {
+        try
+        {
+            await WriteEventAsync(
+                QueryStreamEvent.FromError(error, status),
+                CancellationToken.None
+            );
+        }
+        catch (Exception exception)
+        {
+            _logger.LogDebug(exception, "Stream ended before the failure could be reported");
+        }
+    }
+
+    private async Task WriteJsonStatusAsync(
+        int status,
+        string error,
+        CancellationToken cancellationToken
+    )
+    {
+        Response.StatusCode = status;
+        // Pinned content type: WriteAsJsonAsync would otherwise pick
+        // application/problem+json for 4xx, and the classic endpoint answers with
+        // application/json — the two transports must look the same (FR-012).
+        await Response.WriteAsJsonAsync(
+            new { error },
+            _jsonOptions,
+            "application/json",
+            cancellationToken
+        );
     }
 
     private async Task SaveQueryAsync(

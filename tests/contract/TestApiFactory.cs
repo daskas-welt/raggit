@@ -196,11 +196,20 @@ internal sealed class FakeLlmClient : ILlmClient
     public string ResponseText { get; set; } = "fake answer";
     public bool Healthy { get; set; } = true;
 
+    /// <summary>
+    /// When set, <see cref="ChatAsync"/> fails with it — simulates an outage that
+    /// happens *after* a query stream has already started (032 T026/T030).
+    /// </summary>
+    public Exception? ChatException { get; set; }
+
     public Task<string> ChatAsync(
         string systemPrompt,
         string userPrompt,
         CancellationToken cancellationToken = default
-    ) => Task.FromResult(ResponseText);
+    ) =>
+        ChatException is not null
+            ? Task.FromException<string>(ChatException)
+            : Task.FromResult(ResponseText);
 
     public Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(Healthy);

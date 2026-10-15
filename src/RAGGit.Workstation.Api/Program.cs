@@ -206,6 +206,7 @@ builder.Services.AddHostedService<LanceDbMaintenanceWorker>();
 builder.Services.AddHostedService<ReindexBackfillService>();
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
+builder.Services.AddSingleton<QueryPipeline>();
 builder.Services.AddSingleton<IngestService>();
 builder.Services.AddSingleton<IVirusScanner, NoOpVirusScanner>();
 
