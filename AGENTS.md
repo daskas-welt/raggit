@@ -82,6 +82,17 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   `[ObservableProperty]`/`[RelayCommand]` source-gen) + `*ApiClient` (HttpClient only) →
   `Workstation.Api` controllers → `RAGGit.Retrieval` (topK=5 + `MinScore`, grounded prompts) /
   `RAGGit.Ingest` (chunk 512/50). Storage: LanceDB `./data/lancedb` + SQLite `rag.db`.
+- **Live reasoning (032):** the Ask surface consumes `POST /api/queries/stream`, which answers with
+  newline-delimited JSON (`application/x-ndjson`): zero or more `progress` events
+  (`understanding|searching|sources|composing`, each carrying a workstation-rendered sentence in the
+  question's language, with `sourceCount`/`documentNames` only on `sources`) followed by exactly one
+  terminal `answer` or `error` event. Both transports run the same `RAGGit.Retrieval.QueryPipeline`
+  (the pipeline the old `QueryController.Post` inlined); `POST /api/queries` passes a null observer and
+  is byte-for-byte unchanged. **Reasoning is transient** — never persisted, never in history, never part
+  of a `ChatMessage`; the old static busy line is replaced by the `ReasoningProgressList` region. The
+  health probe and model validation finish before the first byte, so `400/401/403/503` stay ordinary
+  JSON; a failure after that arrives as an in-band `error` event whose message matches the classic
+  endpoint's, and a stream that ends without a terminal event is treated as a failure by the client.
 - Invariants (`.specify/memory/constitution.md`): single-tenant (no `company_id` anywhere), no
   query-time WAN, answers carry `[chunk-GUID]` citations or exactly `no relevant content found`, never
   transfer facts between same-template records of different people. TDD is mandatory (VI).

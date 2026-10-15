@@ -95,9 +95,9 @@ Open `appsettings.json` in Notepad. Both values are required:
 - **History** — your past questions and answers.
 
 **Answers can take a while.** The workstation runs the model on its own CPU (or GPU). On a
-CPU-only workstation a long answer can take a minute or more; the app shows a spinner and
-*"Searching the library and writing your answer…"* while it works. This is expected, not a
-freeze. Do not close the window.
+CPU-only workstation a long answer can take a minute or more; while it works the app shows a live
+account of what it is doing — reading your question, searching the library, which sources it found, and
+writing the answer — under the message box. This is expected, not a freeze. Do not close the window.
 
 ---
 

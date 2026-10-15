@@ -1,0 +1,314 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant) — 032-reasoning-progress delta
+  version: 1.6.0
+  description: >
+    ADDITIVE MINOR 1.5.0 → 1.6.0 for 032-reasoning-progress (FR-001…FR-014). A new path,
+    POST /api/queries/stream, returns a live, newline-delimited (NDJSON) account of the work
+    performed while an answer is produced — the named work stages plus the sources consulted —
+    followed by the same terminal payload POST /api/queries returns. Every 1.5.0 path, schema,
+    and required field is preserved unchanged: POST /api/queries behaves exactly as in 1.5.0
+    (same body, same status codes, same answer/citation/no-content shapes, same persistence),
+    and clients MUST ignore unknown fields and unknown stream event types. Reasoning is
+    transient: it is never persisted and never returned by /api/queries/history or
+    /api/queries/{id}. Offline/LAN-only, citation-grounding, and single-tenant guarantees are
+    unchanged. Empty answers remain exactly "no relevant content found".
+
+servers:
+  - url: https://ai-workstation.local:5001
+    description: LAN / private-network HTTPS (no WAN at query time)
+  - url: http://localhost:5001
+    description: Development / in-memory host only
+
+security:
+  - ApiKey: []
+  - Bearer: []
+
+paths:
+  /api/queries:
+    post:
+      summary: Query library with citations (LAN-only, no cloud egress)
+      description: >
+        UNCHANGED in 1.6.0. Identical to 1.5.0 (including the optional `mode` override and its
+        echoed effective intent). Retained for compatibility and used by nothing new; the desktop
+        client asks new questions over /api/queries/stream. When nothing relevant exists, the
+        response is the 1.5.0 `NoRelevantContent` shape (answer exactly "no relevant content
+        found", citations empty).
+      operationId: query
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Grounded answer with citations or no relevant content
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/QueryAnswer'
+                  - $ref: '#/components/schemas/NoRelevantContent'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/queries/stream:
+    post:
+      summary: Query library while streaming the work in progress (NEW 1.6.0)
+      description: >
+        NEW 1.6.0 (FR-001…FR-004). Same request body, credentials, and authorization as
+        POST /api/queries; the same retrieval, generation, citation-grounding, and persistence
+        run, and the same terminal payload is delivered — but the response body is a newline-
+        delimited sequence of JSON events (Content-Type: application/x-ndjson), written and
+        flushed as the work happens, so the caller can show the employee what the workstation is
+        doing while it waits.
+
+        Event order: zero or more `progress` events, then exactly one terminal event
+        (`answer` or `error`). `progress` events carry a stable, language-independent `stage`
+        (`understanding`, `searching`, `sources`, `composing`) and a `text` sentence rendered by
+        the workstation in the question's language. The `sources` stage is emitted only when
+        retrieval actually found one or more relevant sources, and it is the only stage carrying
+        `sourceCount`/`documentNames`; when nothing is retrieved, no `sources` event is emitted
+        and the terminal `answer` is exactly "no relevant content found".
+
+        Honesty and safety: a stage is emitted only at the moment its work happens; `text` never
+        contains prompt text, chunk bodies beyond what the answer's own citations already expose,
+        internal identifiers, or any other person's data. Reasoning is transient — it is not
+        persisted and is never returned by the history/detail endpoints. Clients MUST ignore
+        unknown event types and unknown fields (forward compatibility).
+      operationId: queryStream
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+            examples:
+              ask:
+                summary: Ask with the server deciding the intent
+                value: { "query": "What is the renewal term?" }
+              askInGreek:
+                summary: Greek question (progress text follows the question language)
+                value: { "query": "Ποιος είναι ο χρόνος ανανέωσης;" }
+              overrideBroad:
+                summary: Force synthesis context
+                value: { "query": "renewal term", "mode": "broad" }
+      responses:
+        '200':
+          description: >
+            NDJSON stream: zero or more `progress` events followed by exactly one `answer` or
+            `error` event, each terminated by a newline (LF) and flushed as it happens.
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+                description: >
+                  One JSON object per line; each line matches one of the `StreamEvent` variants
+                  below (ProgressEvent, AnswerEvent, ErrorEvent). Bodies are UTF-8, newline
+                  (LF) terminated, and flushed per event. A reader MUST tolerate an unknown
+                  `type` by ignoring that line, and MUST treat a missing terminal event as a
+                  failure rather than an answer.
+              examples:
+                happyPathWithSources:
+                  summary: Stages then an answer that cites one source
+                  value: |
+                    {"type":"progress","stage":"understanding","text":"Reading your question…"}
+                    {"type":"progress","stage":"searching","text":"Searching the library…"}
+                    {"type":"progress","stage":"sources","text":"Found 2 relevant sources: policy.pdf, renewal.pdf","sourceCount":2,"documentNames":["policy.pdf","renewal.pdf"]}
+                    {"type":"progress","stage":"composing","text":"Writing your answer…"}
+                    {"type":"answer","answer":"The renewal term is 30 days. [00000000-0000-0000-0000-000000000001]","citations":[{"documentId":"00000000-0000-0000-0000-0000000000aa","documentName":"policy.pdf","chunkId":"00000000-0000-0000-0000-000000000001","text":"Renewal term: 30 days.","ordinal":1}],"retrievedChunkIds":["00000000-0000-0000-0000-000000000001"],"latencyMs":4210,"mode":"granular","suggestedPersons":[]}
+                greekQuestionNoSources:
+                  summary: Greek question whose answer has no relevant content (no `sources` stage)
+                  value: |
+                    {"type":"progress","stage":"understanding","text":"Διαβάζω την ερώτησή σας…"}
+                    {"type":"progress","stage":"searching","text":"Αναζητώ στη βιβλιοθήκη…"}
+                    {"type":"answer","answer":"no relevant content found","citations":[],"retrievedChunkIds":[],"latencyMs":180,"mode":"granular","suggestedPersons":[]}
+                midStreamFailure:
+                  summary: Failure after the stream has started
+                  value: |
+                    {"type":"progress","stage":"understanding","text":"Reading your question…"}
+                    {"type":"progress","stage":"searching","text":"Searching the library…"}
+                    {"type":"error","error":"model unavailable offline","status":503}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503':
+          description: >
+            AI workstation unavailable or model unavailable offline. Returned as an ordinary JSON
+            body (not a stream) because the health probe and request validation complete before
+            the first event is written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    QueryRequest:
+      type: object
+      description: UNCHANGED from 1.5.0 — the same body is accepted by both query paths.
+      properties:
+        query: { type: string, minLength: 1 }
+        topK: { type: integer, default: 5, minimum: 1, maximum: 5 }
+        mode:
+          type: string
+          enum: [auto, broad, specific]
+          default: auto
+          description: Intent override (030). Omitted ⇒ auto.
+          x-nullable: true
+      required: [query]
+
+    StreamEvent:
+      description: >
+        Union of the NDJSON event variants distinguished by `type`. NEW 1.6.0.
+      oneOf:
+        - $ref: '#/components/schemas/ProgressEvent'
+        - $ref: '#/components/schemas/AnswerEvent'
+        - $ref: '#/components/schemas/ErrorEvent'
+      discriminator:
+        propertyName: type
+        mapping:
+          progress: '#/components/schemas/ProgressEvent'
+          answer: '#/components/schemas/AnswerEvent'
+          error: '#/components/schemas/ErrorEvent'
+
+    ProgressEvent:
+      type: object
+      description: NEW 1.6.0 — one update on the work in progress, emitted when that work happens.
+      properties:
+        type: { type: string, enum: [progress] }
+        stage:
+          type: string
+          enum: [understanding, searching, sources, composing]
+          description: >
+            Stable, language-independent stage identity; ordered exactly as listed. `sources` is
+            omitted entirely when retrieval found nothing.
+        text:
+          type: string
+          minLength: 1
+          description: >
+            Plain-language sentence rendered by the workstation in the question's language.
+            Contains no prompt text, chunk body, internal identifier, model configuration, or
+            infrastructure name.
+        sourceCount:
+          type: integer
+          minimum: 0
+          description: >
+            Present only on the `sources` stage; count of distinct relevant sources found.
+        documentNames:
+          type: array
+          items: { type: string }
+          description: >
+            Present only on `stage: sources`; filenames of those sources, already surfaced by the
+            answer's own citations. Never includes another person's records.
+      required: [type, stage, text]
+
+    AnswerEvent:
+      type: object
+      description: >
+        NEW 1.6.0 — terminal event. Carries exactly the fields POST /api/queries returns in its
+        `200` body (QueryAnswer or NoRelevantContent in 1.5.0 terms), so the two paths cannot
+        diverge. `answer` is exactly "no relevant content found" with an empty `citations` array
+        when nothing relevant was retrieved.
+      properties:
+        type: { type: string, enum: [answer] }
+        answer: { type: string }
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              documentId: { type: string, format: uuid }
+              documentName: { type: string, nullable: true }
+              chunkId: { type: string, format: uuid }
+              text: { type: string }
+              ordinal: { type: integer }
+            required: [documentId, chunkId, text]
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+        mode:
+          type: string
+          enum: [broad, granular]
+          description: Effective intent actually used for this answer.
+        suggestedPersons:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              documentId: { type: string, format: uuid, nullable: true }
+            required: [name]
+      required: [type, answer, citations]
+
+    ErrorEvent:
+      type: object
+      description: >
+        NEW 1.6.0 — terminal event for a failure that occurs after the stream has started. The
+        `error` string and `status` match what the non-streaming path would have returned, so the
+        client keeps one error vocabulary.
+      properties:
+        type: { type: string, enum: [error] }
+        error: { type: string, example: model unavailable offline }
+        status: { type: integer, example: 503 }
+      required: [type, error, status]
+
+    QueryAnswer:
+      type: object
+      description: UNCHANGED from 1.5.0 (non-streaming `200` body shape).
+      properties:
+        answer: { type: string }
+        citations: { type: array, minItems: 1, items: { type: object } }
+        retrievedChunkIds: { type: array, items: { type: string, format: uuid } }
+        latencyMs: { type: integer }
+        mode: { type: string, enum: [broad, granular] }
+        suggestedPersons: { type: array, items: { type: object } }
+      required: [answer, citations]
+
+    NoRelevantContent:
+      type: object
+      description: UNCHANGED from 1.5.0.
+      properties:
+        answer: { type: string, enum: [no relevant content found] }
+        citations: { type: array, maxItems: 0 }
+        mode: { type: string, enum: [broad, granular] }
+      required: [answer]
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: unauthorized }
+
+  responses:
+    BadRequest:
+      description: Bad request — e.g. empty query or unknown `mode` value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing/invalid/expired credential, or inactive account (generic)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden — authenticated but not permitted for this role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unavailable:
+      description: AI workstation unavailable or model unavailable offline
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
