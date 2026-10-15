@@ -83,6 +83,8 @@
                 InputText="{Binding QueryText, Mode=TwoWay}"
                 SendCommand="{Binding AskCommand}"
                 IsBusy="{Binding IsBusy}"
+                ReasoningSteps="{Binding ReasoningSteps}"
+                HasReasoning="{Binding HasReasoning}"
             />
 
             <!-- Did-you-mean suggestion chips -->

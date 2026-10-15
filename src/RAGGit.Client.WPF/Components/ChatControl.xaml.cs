@@ -41,6 +41,20 @@ public partial class ChatControl : UserControl
         new PropertyMetadata(false)
     );
 
+    public static readonly DependencyProperty ReasoningStepsProperty = DependencyProperty.Register(
+        nameof(ReasoningSteps),
+        typeof(IEnumerable<ReasoningStep>),
+        typeof(ChatControl),
+        new PropertyMetadata(null)
+    );
+
+    public static readonly DependencyProperty HasReasoningProperty = DependencyProperty.Register(
+        nameof(HasReasoning),
+        typeof(bool),
+        typeof(ChatControl),
+        new PropertyMetadata(false)
+    );
+
     public IEnumerable<ChatMessage>? Messages
     {
         get => (IEnumerable<ChatMessage>?)GetValue(MessagesProperty);
@@ -63,6 +77,23 @@ public partial class ChatControl : UserControl
     {
         get => (bool)GetValue(IsBusyProperty);
         set => SetValue(IsBusyProperty, value);
+    }
+
+    /// <summary>
+    /// Live reasoning account for the in-flight question (032). Rows are shown
+    /// in order; the region is hidden whenever <see cref="HasReasoning"/> is
+    /// false, which the ViewModel sets once the answer or a failure arrives.
+    /// </summary>
+    public IEnumerable<ReasoningStep>? ReasoningSteps
+    {
+        get => (IEnumerable<ReasoningStep>?)GetValue(ReasoningStepsProperty);
+        set => SetValue(ReasoningStepsProperty, value);
+    }
+
+    public bool HasReasoning
+    {
+        get => (bool)GetValue(HasReasoningProperty);
+        set => SetValue(HasReasoningProperty, value);
     }
 
     /// <summary>

@@ -86,8 +86,46 @@ public sealed partial class QueryViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasStatusMessage;
 
+    // Live reasoning account for the in-flight question (032). Transient by
+    // design: populated from the query stream and emptied the moment the answer
+    // or a failure is presented, so it never reaches the conversation or history.
+    [ObservableProperty]
+    private ObservableCollection<ReasoningStep> _reasoningSteps = new();
+
+    [ObservableProperty]
+    private bool _hasReasoning;
+
     partial void OnStatusMessageChanged(string? value) =>
         HasStatusMessage = !string.IsNullOrWhiteSpace(value);
+
+    /// <summary>
+    /// Appends one reasoning row in arrival order and marks it as the in-flight
+    /// one (032 FR-003). Existing rows are never rewritten or reordered.
+    /// </summary>
+    private void AddReasoningStep(QueryProgress progress)
+    {
+        foreach (var step in ReasoningSteps)
+        {
+            step.IsCurrent = false;
+        }
+
+        ReasoningSteps.Add(
+            new ReasoningStep
+            {
+                Stage = progress.Stage,
+                Text = progress.Text,
+                IsCurrent = true,
+            }
+        );
+        HasReasoning = ReasoningSteps.Count > 0;
+    }
+
+    /// <summary>Drops the reasoning account (032 FR-009/FR-012/FR-014).</summary>
+    private void ClearReasoning()
+    {
+        ReasoningSteps.Clear();
+        HasReasoning = false;
+    }
 
     private void SetStatusMessage(string? message, string severity = "Informational")
     {
@@ -407,7 +445,42 @@ public sealed partial class QueryViewModel : ObservableObject
 
         try
         {
-            var response = await _apiClient.QueryAsync(question, mode: QueryMode);
+            QueryResponse? response = null;
+            await foreach (var streamEvent in _apiClient.StreamAsync(question, mode: QueryMode))
+            {
+                if (streamEvent.IsError)
+                {
+                    // The workstation sends the same message the classic
+                    // endpoint would have returned, so the error vocabulary in
+                    // the catch blocks below stays the only one clients know.
+                    throw new HttpRequestException(
+                        streamEvent.Error ?? "AI workstation unavailable"
+                    );
+                }
+
+                if (streamEvent.IsProgress)
+                {
+                    AddReasoningStep(streamEvent.ToProgress());
+                    continue;
+                }
+
+                if (streamEvent.IsAnswer)
+                {
+                    response = streamEvent.ToResponse();
+                }
+            }
+
+            if (response is null)
+            {
+                throw new HttpRequestException(
+                    "AI workstation unavailable: response ended before the answer was received"
+                );
+            }
+
+            // Transient (FR-014): cleared before the answer bubble is appended
+            // so no reasoning row can survive into the finished exchange.
+            ClearReasoning();
+
             Answer = response.Answer;
             Citations = new ObservableCollection<Citation>(response.Citations);
             HasCitations = response.Citations.Count > 0;
@@ -480,6 +553,7 @@ public sealed partial class QueryViewModel : ObservableObject
         }
         finally
         {
+            ClearReasoning();
             IsBusy = false;
             IsAskEnabled = true;
         }

@@ -258,14 +258,54 @@
             </Grid>
         </Border>
 
-        <!-- In-stream busy: the conversation above stays visible while answering. -->
-        <ui:TextBlock
+        <!-- Live reasoning: what the workstation is doing while answering (032).
+             Replaces the former static busy line; the ViewModel clears it the
+             moment the answer or a failure is presented. -->
+        <ListBox
+            x:Name="ReasoningRegion"
             Grid.Row="2"
             Margin="0,8,0,0"
-            HorizontalAlignment="Center"
-            Style="{StaticResource SecondaryText}"
-            Text="Searching the library and writing your answer…"
-            Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
-        />
+            ItemsSource="{Binding ReasoningSteps, ElementName=Root}"
+            Visibility="{Binding HasReasoning, ElementName=Root, Converter={StaticResource BoolVisibility}}"
+            SelectionMode="Single"
+            BorderThickness="0"
+            Background="Transparent"
+            IsHitTestVisible="False"
+            Focusable="False"
+            HorizontalContentAlignment="Stretch"
+            AutomationProperties.AutomationId="ReasoningProgressList"
+            AutomationProperties.Name="Work in progress"
+        >
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <!-- Fixed first column keeps older rows aligned when the
+                         activity indicator is collapsed. -->
+                    <Grid ColumnDefinitions="22, *" Margin="0,2">
+                        <ui:ProgressRing
+                            Width="14"
+                            Height="14"
+                            IsIndeterminate="True"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsCurrent, Converter={StaticResource BoolVisibility}}"
+                        />
+                        <ui:TextBlock
+                            Grid.Column="1"
+                            Text="{Binding Text}"
+                            FontTypography="Caption"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                        />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </UserControl>

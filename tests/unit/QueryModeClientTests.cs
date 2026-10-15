@@ -24,7 +24,7 @@ public sealed class QueryModeClientTests
     [Fact]
     public void QueryMode_DefaultsToAuto()
     {
-        var viewModel = CreateViewModel(_ => Task.FromResult(OkAnswer("broad")));
+        var viewModel = CreateViewModel(_ => Task.FromResult(OkAnswerEvent()));
 
         viewModel.QueryMode.Should().Be(QueryMode.Auto);
     }
@@ -71,7 +71,7 @@ public sealed class QueryModeClientTests
         var viewModel = CreateViewModel(async request =>
         {
             capturedBody = await request.Content!.ReadAsStringAsync();
-            return OkAnswer("granular");
+            return OkAnswerEvent();
         });
         viewModel.QueryMode = QueryMode.Specific;
         viewModel.QueryText = "Summarize the refund policy";
@@ -123,6 +123,31 @@ public sealed class QueryModeClientTests
                         mode,
                     }
                 )
+            ),
+        };
+
+    /// <summary>
+    /// NDJSON <c>answer</c> event (032) for the ViewModel-facing stubs, which now
+    /// consume <c>POST /api/queries/stream</c>.
+    /// </summary>
+    private static HttpResponseMessage OkAnswerEvent() =>
+        new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                "{\"type\":\"answer\","
+                    + JsonSerializer
+                        .Serialize(
+                            new
+                            {
+                                answer = "an answer",
+                                citations = Array.Empty<object>(),
+                                retrievedChunkIds = Array.Empty<Guid>(),
+                                latencyMs = 7,
+                                suggestedPersons = Array.Empty<object>(),
+                            }
+                        )
+                        .Substring(1)
+                    + "\n"
             ),
         };
 

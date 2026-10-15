@@ -101,7 +101,7 @@ public sealed class QueryViewModelTests
         {
             var body = request.Content!.ReadAsStringAsync().Result;
             requests.Add(body);
-            var payload =
+            var payload = AsAnswerEvent(
                 requests.Count == 1
                     ? JsonSerializer.Serialize(
                         new
@@ -138,7 +138,8 @@ public sealed class QueryViewModelTests
                             latencyMs = 7,
                             suggestedPersons = Array.Empty<object>(),
                         }
-                    );
+                    )
+            );
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(payload),
@@ -298,6 +299,17 @@ public sealed class QueryViewModelTests
         viewModel.StatusMessage.Should().Be("model unavailable offline");
     }
 
+    /// <summary>
+    /// Wraps a query-response body as the NDJSON <c>answer</c> event the stream
+    /// endpoint sends (032), so the stubbed handler exercises the same reader as
+    /// production. The VM consumes the streaming endpoint only.
+    /// </summary>
+    private static string AsAnswerEvent(string responseJson)
+    {
+        var payload = responseJson.TrimStart();
+        return "{\"type\":\"answer\"," + payload.Substring(1) + "\n";
+    }
+
     private static QueryViewModel CreateViewModel(
         string answer,
         int citationCount,
@@ -322,15 +334,17 @@ public sealed class QueryViewModelTests
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(
-                JsonSerializer.Serialize(
-                    new
-                    {
-                        answer,
-                        citations,
-                        retrievedChunkIds = Array.Empty<Guid>(),
-                        latencyMs = 7,
-                        suggestedPersons = suggestions,
-                    }
+                AsAnswerEvent(
+                    JsonSerializer.Serialize(
+                        new
+                        {
+                            answer,
+                            citations,
+                            retrievedChunkIds = Array.Empty<Guid>(),
+                            latencyMs = 7,
+                            suggestedPersons = suggestions,
+                        }
+                    )
                 )
             ),
         });
@@ -759,15 +773,17 @@ public sealed class QueryViewModelTests
         var askHandler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(
-                JsonSerializer.Serialize(
-                    new
-                    {
-                        answer = "unused",
-                        citations = Array.Empty<object>(),
-                        retrievedChunkIds = Array.Empty<Guid>(),
-                        latencyMs = 1,
-                        suggestedPersons = Array.Empty<object>(),
-                    }
+                AsAnswerEvent(
+                    JsonSerializer.Serialize(
+                        new
+                        {
+                            answer = "unused",
+                            citations = Array.Empty<object>(),
+                            retrievedChunkIds = Array.Empty<Guid>(),
+                            latencyMs = 1,
+                            suggestedPersons = Array.Empty<object>(),
+                        }
+                    )
                 )
             ),
         });
