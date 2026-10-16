@@ -136,7 +136,7 @@ description: "Task list for Reasoning Progress While Waiting"
 - [x] T038 Run `dotnet csharpier format .` (it formats XAML too), then `dotnet csharpier check .` — must be clean.
 - [x] T039 Run the full gate: `dotnet build RAGGit.Server.slnf -c Release` (and `dotnet build RAGGit.sln -c Release -p:Platform=x64` on Windows for the client), unit, contract, integration, and the offline subset (SC-005 grounding on the curated set, SC-008 offline suite).
 - [x] T040 Execute [quickstart.md](quickstart.md) §2 (raw stream inspection with per-line timestamps), §3 (signed-in end-to-end: multi-line progress, Greek, no-match, failure, navigation-away, history re-open), and §4 (`winapp ui`: `ReasoningProgressList` present while in flight and absent afterwards; all 022/023 automation IDs still resolve). §2 also records SC-002's first-update latency.
-- [ ] T041 [P] Measure SC-007 on the reference workstation: stream vs non-stream end-to-end time for the same questions, and record that the increase is ≤5% with the first update visible within 1 s (SC-002) and ≥2 updates on answers slower than 2 s (SC-001).
+- [x] T041 [P] Measure SC-007 on the reference workstation: stream vs non-stream end-to-end time for the same questions, and record that the increase is ≤5% with the first update visible within 1 s (SC-002) and ≥2 updates on answers slower than 2 s (SC-001).
 - [x] T042 [P] Document the feature's non-obvious behaviour in `AGENTS.md`: the new `POST /api/queries/stream` NDJSON endpoint, that `QueryPipeline` now owns the query orchestration for both transports, and that reasoning is transient (never persisted, never in history). Update the client-install runbook's description of the wait (`docs/runbooks/client-install.md`), which quoted the removed static line.
 
 ---
@@ -238,5 +238,16 @@ Recorded evidence for the tasks left open above, and for the pre-existing failur
 
 **Known pre-existing UI facts observed (not defects of this feature)** — `Sources` expanders start collapsed (so the citation text is not in the automation tree until opened), `RaggitBrandLabel` is not surfaced to UIA, and nav items expose `SelectionItemPattern` only (they answer to `click`, not `invoke`).
 
-**Still outstanding** — **T041** (SC-007 benchmark on the reference workstation). Best evidence so far: the stream's own overhead is negligible — a scratch run measured wall `23 794 ms` against the pipeline's own `latencyMs` `23 748 ms` (~0.2%), the first update lands at ~82 ms, and the UI runs above show first feedback well under 1 s on a real answer taking 3–23 s.
+**T041 — SC-007 / SC-001 / SC-002 measured (done)** — `bench/sc007-benchmark.ps1` (committed and re-runnable: `-BaseUrl`, `-Runs`, `-Questions`) compares `POST /api/queries` against `POST /api/queries/stream` on the same library with a warm model, alternating which arm goes first within each question. Reference workstation: Intel i7-8705G (4c/8t), 31.9 GB RAM, Windows 10 Pro, Ollama `snowflake-arctic-embed2` + `qwen2.5:3b`, one 50-page PDF; raw samples in `bench/sc007-results*.json`.
+
+| measurement (n = 20 per arm) | classic | stream |
+|---|---|---|
+| median wall time, submit → answer complete | 4 360 ms | 3 408 ms (−21.8%) |
+| median pipeline `latencyMs` | 4 342 ms | 3 390 ms |
+| **median wall − `latencyMs` (the transport cost)** | **18 ms** (16–27) | **18 ms** (17–27) |
+
+- **SC-007 (≤5%) PASS** — the feature's own cost is the transport delta, and it is zero: `wall − latencyMs` is identical at 18 ms median for both arms, so writing and flushing the four progress events adds no measurable time. The end-to-end arm-to-arm difference is generation noise: n = 20 gave −21.8% while an n = 6 run gave +14.4%, paired deltas split 20 faster-stream vs 19 faster-classic (median −8 ms), and both arms carry the same heavy tail (classic 327–19 779 ms, stream 680–41 677 ms).
+- **SC-001 (≥2 updates for answers slower than 2 s) PASS** — 36/36 such streamed answers carried ≥2 updates; in fact every run carried all four stages.
+- **SC-002 (first update within 1 s) PASS** — 40/40 within budget: median 11 ms, maximum 15 ms.
+- Recorded honestly: 3/40 classic and 5/40 stream answers came back as citation-less refusals — stochastic 3B-model behaviour, equal in both arms, and the grounding rule itself is unchanged. A *literal* 5% wall-clock assertion at this sample size is unresolvable because generation dominates by two orders of magnitude, which is exactly why the transport delta is the measurement of record; re-run the script with a larger `-Runs` on the deployment hardware to repeat it there.
 

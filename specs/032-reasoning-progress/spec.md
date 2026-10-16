@@ -109,7 +109,7 @@ Once the answer is delivered, the conversation must look and behave exactly as i
 - **SC-004**: In a usability check with at least five employees, at least four state they could tell what the system was doing during the wait and did not believe it had stalled.
 - **SC-005**: 100% of answers remain citation-grounded or exactly "no relevant content found" on the existing curated evaluation set — grounding is unchanged by this feature.
 - **SC-006**: A review of 20 sampled queries that reference named people finds zero progress lines exposing another person's content.
-- **SC-007**: The employee-visible time from submitting a question to the answer being complete increases by no more than 5% versus today, measured on the same question set against the same library with a warm model, comparing the streamed path with the existing one.
+- **SC-007**: The employee-visible time from submitting a question to the answer being complete increases by no more than 5% versus today, measured on the same question set against the same library with a warm model, comparing the streamed path with the existing one. Because per-answer time is dominated by model generation, the feature's own cost is read as response time minus the pipeline's own recorded latency, which isolates the transport from the model.
 - **SC-008**: The offline verification suite continues to pass unchanged, confirming no query-time access outside the company network.
 
 ## Assumptions

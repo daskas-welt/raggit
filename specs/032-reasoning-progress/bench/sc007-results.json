@@ -1,0 +1,15 @@
+﻿{
+    "runsPerArm":  20,
+    "classicMedianMs":  4360,
+    "streamMedianMs":  3408.5,
+    "classicMeanMs":  5826.7,
+    "streamMeanMs":  5919.1,
+    "deltaPercentMedian":  -21.82,
+    "deltaPercentServerMs":  -21.91,
+    "sc007Pass":  true,
+    "firstUpdateMedianMs":  11,
+    "firstUpdateMaxMs":  15,
+    "sc002WithinOneSecond":  "40/40",
+    "sc001SlowWithTwoPlus":  "36/36",
+    "citationsAlwaysPresent":  false
+}

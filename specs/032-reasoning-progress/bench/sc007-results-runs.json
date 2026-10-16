@@ -1,0 +1,722 @@
+﻿[
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  15014,
+        "serverMs":  14995,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  6559,
+        "serverMs":  6541,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  2620,
+        "serverMs":  2603,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  3443,
+        "serverMs":  3425,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  6843,
+        "serverMs":  6827,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  5880,
+        "serverMs":  5861,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2618,
+        "serverMs":  2598,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  3032,
+        "serverMs":  3014,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  3045,
+        "serverMs":  3027,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  2620,
+        "serverMs":  2603,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  345,
+        "serverMs":  327,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  0
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  7042,
+        "serverMs":  7024,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  6483,
+        "serverMs":  6465,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  7241,
+        "serverMs":  7221,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  2582,
+        "serverMs":  2565,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  41695,
+        "serverMs":  41677,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  8394,
+        "serverMs":  8370,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  9059,
+        "serverMs":  9041,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2582,
+        "serverMs":  2565,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2950,
+        "serverMs":  2933,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  2957,
+        "serverMs":  2930,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  6454,
+        "serverMs":  6437,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  4510,
+        "serverMs":  4493,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  698,
+        "serverMs":  680,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  0
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  6104,
+        "serverMs":  6079,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  5854,
+        "serverMs":  5834,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  9000,
+        "serverMs":  8981,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  5899,
+        "serverMs":  5882,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  2941,
+        "serverMs":  2916,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  6039,
+        "serverMs":  6013,
+        "firstLineMs":  13,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2584,
+        "serverMs":  2560,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2942,
+        "serverMs":  2917,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  2956,
+        "serverMs":  2934,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  2580,
+        "serverMs":  2561,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  5603,
+        "serverMs":  5583,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  707,
+        "serverMs":  689,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  0
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  8455,
+        "serverMs":  8437,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  20678,
+        "serverMs":  20658,
+        "firstLineMs":  14,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  4210,
+        "serverMs":  4191,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  6452,
+        "serverMs":  6435,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  9545,
+        "serverMs":  9528,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  6761,
+        "serverMs":  6744,
+        "firstLineMs":  10,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2589,
+        "serverMs":  2564,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2945,
+        "serverMs":  2927,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  2940,
+        "serverMs":  2923,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  2584,
+        "serverMs":  2566,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  5971,
+        "serverMs":  5954,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  709,
+        "serverMs":  692,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  0
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  6402,
+        "serverMs":  6384,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  6402,
+        "serverMs":  6384,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  7361,
+        "serverMs":  7342,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  3359,
+        "serverMs":  3341,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  9362,
+        "serverMs":  9344,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  2589,
+        "serverMs":  2562,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2575,
+        "serverMs":  2558,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2946,
+        "serverMs":  2927,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  7245,
+        "serverMs":  7227,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  2580,
+        "serverMs":  2562,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  344,
+        "serverMs":  327,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  0
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  707,
+        "serverMs":  689,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  0
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  19799,
+        "serverMs":  19779,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  4216,
+        "serverMs":  4199,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  0
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  2589,
+        "serverMs":  2569,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  3374,
+        "serverMs":  3356,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  15229,
+        "serverMs":  15211,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  11123,
+        "serverMs":  11103,
+        "firstLineMs":  15,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2584,
+        "serverMs":  2565,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2945,
+        "serverMs":  2927,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "How long is the refund window?",
+        "wallMs":  2939,
+        "serverMs":  2922,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "How long is the refund window?",
+        "wallMs":  2578,
+        "serverMs":  2561,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  345,
+        "serverMs":  328,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  0
+    },
+    {
+        "arm":  "stream",
+        "question":  "Summarise the refund rules.",
+        "wallMs":  6401,
+        "serverMs":  6382,
+        "firstLineMs":  11,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What is the refund policy?",
+        "wallMs":  7072,
+        "serverMs":  7052,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What is the refund policy?",
+        "wallMs":  7056,
+        "serverMs":  7037,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  5975,
+        "serverMs":  5956,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Within how many days may purchases be refunded?",
+        "wallMs":  3371,
+        "serverMs":  3353,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  19774,
+        "serverMs":  19753,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "What does the document say about refunds?",
+        "wallMs":  13346,
+        "serverMs":  13327,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    },
+    {
+        "arm":  "classic",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2582,
+        "serverMs":  2564,
+        "firstLineMs":  null,
+        "updates":  0,
+        "citations":  1
+    },
+    {
+        "arm":  "stream",
+        "question":  "Which policy covers returns or refunds?",
+        "wallMs":  2947,
+        "serverMs":  2923,
+        "firstLineMs":  12,
+        "updates":  4,
+        "citations":  1
+    }
+]
