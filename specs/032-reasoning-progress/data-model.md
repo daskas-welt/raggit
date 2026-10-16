@@ -108,6 +108,7 @@ The renderable row the Ask surface binds to. Never serialized, never sent to the
 |-------|------|-------|
 | `Stage` | `QueryStage` | carried through from the event, for tests/automation/styling |
 | `Text` | string | the workstation-rendered sentence, displayed verbatim |
+| `IsCurrent` | bool | true only for the newest row, which shows the activity indicator |
 
 **Validation rules**
 

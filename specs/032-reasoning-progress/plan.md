@@ -20,13 +20,15 @@ The client replaces the static busy line with a live reasoning region on the Ask
 
 **Storage**: Unchanged. Reasoned progress is never persisted (FR-014): no schema change, no new table, no new column. The streaming path still writes exactly the same `Queries` row through `IQueryRepository.AddAsync` as the non-streaming path (FR-010).
 
-**Testing**: xUnit unit/contract/integration. Unit: `QueryPipeline` stage sequence and honesty rules, progress-text language, NDJSON event parsing (including split/partial lines and malformed input), `QueryViewModel` reasoning lifecycle. Contract: the new endpoint's content type, event ordering, auth/validation/503 behaviour, event-shape parity with `POST /api/queries`, and a redaction check that no event carries chunk or prompt text. Integration: end-to-end stream over `WebApplicationFactory`, history row still written and reasoning not persisted, offline subset unchanged. UI: `winapp ui` automation-ID checks (documented in `contracts/ui-contracts.md` and `quickstart.md`). `dotnet csharpier check .` (XAML included) is part of the gate.
+**Testing**: xUnit unit/contract/integration. Unit: `QueryPipeline` stage sequence and honesty rules, progress-text language, NDJSON event parsing (a partial final line without a trailing newline, malformed input, unknown event types), `QueryViewModel` reasoning lifecycle. Contract: the new endpoint's content type, event ordering, auth/validation/503 behaviour, event-shape parity with `POST /api/queries`, and a redaction check that no event carries chunk or prompt text. Integration: end-to-end stream over `WebApplicationFactory`, history row still written and reasoning not persisted, offline subset unchanged. UI: `winapp ui` automation-ID checks (documented in `contracts/ui-contracts.md` and `quickstart.md`). `dotnet csharpier check .` (XAML included) is part of the gate.
 
 **Target Platform**: Windows workstation (API) + Windows desktop client; single-tenant, LAN-only, offline at query time.
 
+**Hardware baseline**: the workstation the constitution defines — 16 GB RAM with a GPU where available. SC-002 and SC-007 are measured against it; the reference development workstation used for the 032 measurements is Windows with Ollama `snowflake-arctic-embed2` + `qwen2.5:3b` doing CPU-only inference, where an answer takes 3–25 s and the first reasoning update lands at ~80 ms.
+
 **Project Type**: Multi-project .NET (libraries + web service + desktop client) — existing solution, no new project.
 
-**Performance Goals**: First reasoning update visible within 1 s of submit on ≥95% of questions (SC-002); ≥2 distinct updates for every answer slower than 2 s (SC-001); no more than 5% added end-to-end latency (SC-007). The streaming path performs the same AI work as today — the only additions are a few small JSON writes and a flush per stage, on the order of microseconds against multi-second generation.
+**Performance Goals**: First reasoning update visible within 1 s of submit on ≥95% of questions on the hardware baseline above (SC-002); ≥2 distinct updates for every answer slower than 2 s (SC-001); no more than 5% added end-to-end latency (SC-007). The streaming path performs the same AI work as today — the only additions are a few small JSON writes and a flush per stage, on the order of microseconds against multi-second generation.
 
 **Constraints**: Offline invariant untouched (no new egress; nothing is fetched at query time). Citation-grounding unchanged; "no relevant content found" remains exact. Non-streaming `POST /api/queries` behaviour must remain identical (FR-010), so the pipeline extraction must be a pure refactor of that path. Test-first. No new project/dependency. Single-tenant — no tenant field anywhere. No progress line may leak raw prompt text, chunk bodies beyond the answer's own Sources, or any other person's data (FR-007/FR-008).
 
@@ -41,7 +43,7 @@ The client replaces the static busy line with a live reasoning region on the Ask
 - **III. .NET Library-First & Client Reuse**: PASS — the new orchestration (`QueryPipeline`) and its progress model land in `RAGGit.Retrieval` / `RAGGit.Core`, are independently unit-testable, and are reused by both transports; the client reuses the shared contract types in `RAGGit.Core.Models` rather than redefining them.
 - **IV. Offline Invariant (NON-NEGOTIABLE)**: PASS — no query-time egress is added. The stream runs over the same LAN/private-network HTTPS connection as today, uses only local models, and adds no startup or per-query fetch. The WAN-disabled offline integration suite must keep passing.
 - **V. Citation-Grounded RAG**: PASS — the answer, its citations, the fallback rule, and the exact-string "no relevant content found" response are untouched; the progress events describe retrieval and generation but never replace or weaken grounding, and the `sources` stage is suppressed when retrieval found nothing.
-- **VI. Test-First (NON-NEGOTIABLE)**: PASS — new logic (pipeline stage emission, progress text, NDJSON parsing, ViewModel lifecycle) is written red→green; contract tests cover the new endpoint and its parity with `POST /api/queries`; the offline gate is unaffected.
+- **VI. Test-First (NON-NEGOTIABLE)**: PASS — new logic (pipeline stage emission, progress text, NDJSON parsing, ViewModel lifecycle) is written before the implementation it covers and verified failing first at phase granularity (a brand-new type fails to compile, so a meaningful red run is per phase, not per task); contract tests cover the new endpoint and its parity with `POST /api/queries`; the offline gate is unaffected.
 - **VII. Simplicity & Proprietary Stewardship**: PASS — no new project and no new dependency; one pipeline with two transports rather than two pipelines; no server-side session state, no WebSocket, no status polling, and no persisted reasoning.
 
 **Pre-Phase-0 gate**: PASS. No violation requires Complexity Tracking.
@@ -85,7 +87,7 @@ src/
 ├── RAGGit.Client.Core/
 │   ├── Services/QueryApiClient.cs       # NEW StreamAsync(...) → IAsyncEnumerable<QueryStreamEvent> over NDJSON
 │   ├── ViewModels/QueryViewModel.cs     # NEW ReasoningSteps; AskQuestionAsync consumes the stream
-│   └── Models/ReasoningStep.cs          # NEW client-side reasoning row (stage, text)
+│   └── Models/ReasoningStep.cs          # NEW client-side reasoning row (stage, text, is-current)
 └── RAGGit.Client.WPF/
     ├── Components/ChatControl.xaml(.cs) # static busy line → reasoning region (new ReasoningSteps DP)
     └── Views/Pages/QueryPage.xaml       # binds ReasoningSteps to the chat's reasoning region

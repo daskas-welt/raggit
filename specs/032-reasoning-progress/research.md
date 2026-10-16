@@ -52,6 +52,8 @@ returns the same `QueryResponse` as today; `QueryController.PostStream` calls it
 writes events. History persistence (`IQueryRepository.AddAsync`) stays in the controller, exactly where
 it is now.
 
+**Addendum (from implementation)**: the **LLM health probe** deliberately stayed in the controller rather than moving into the pipeline, so that a pre-stream failure still answers with the ordinary `503` JSON the client already maps (and `400`/`401`/`403` likewise stay ordinary statuses); only failures *after* the first byte become in-band `error` events. See T009/T019. Everything else in this decision stands.
+
 **Rationale**: Two independent copies of the pipeline would drift, and drift here means either a
 grounding regression or progress that no longer matches real work (FR-005). Progress is a *side channel*
 of the existing pipeline, not a parallel implementation. Putting the orchestration in `RAGGit.Retrieval`

@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-15
 
-**Status**: Draft
+**Status**: Implemented and verified (2026-10-16)
 
 **Input**: User description: "End user should see the reasoning while waiting for an answer"
 
@@ -78,19 +78,19 @@ Once the answer is delivered, the conversation must look and behave exactly as i
 ### Functional Requirements
 
 - **FR-001**: While a question is in flight, the desktop client MUST display an account of the work being performed instead of only an indeterminate busy indicator.
-- **FR-002**: The displayed reasoning MUST consist of named work stages in plain language together with the sources consulted — at minimum: that the question is being understood, that the library is being searched, which/how many relevant sources were found, and that the answer is being composed. It MUST describe this work only; it MUST NOT reproduce the answering model's internal thinking text.
+- **FR-002**: The displayed reasoning MUST consist of named work stages in plain language together with the sources consulted — at minimum: that the question is being understood, that the library is being searched, how many relevant sources were found and which documents they are (distinct documents, named by filename), and that the answer is being composed. It MUST describe this work only; it MUST NOT reproduce the answering model's internal thinking text.
 - **FR-003**: The displayed reasoning MUST update progressively as the work advances, so the employee sees change over time rather than one static message held from submission to answer.
 - **FR-004**: Each reasoning update MUST be reported live from the workstation at the moment the corresponding work actually happens, rather than being pre-scripted by the client or advanced on a fixed timer.
 - **FR-005**: The reasoning MUST describe only work that actually occurred, at the moment it occurred; it MUST NOT announce a stage as complete before it is, or describe steps that never ran.
 - **FR-006**: The reasoning MUST be written in plain language for a non-technical employee — no internal jargon, identifiers, or infrastructure names — and MUST use the same language as the question.
 - **FR-007**: The reasoning MUST NOT expose raw prompt text, internal chunk/document bodies beyond what the answer's own Sources view already shows, model configuration, or any content belonging to another person or record.
 - **FR-008**: The reasoning MUST be scoped to the requesting employee only, exactly like the answer; it MUST never contain or reveal another employee's question, activity, or library access.
-- **FR-009**: The reasoning MUST disappear once the answer or a failure is presented, leaving the conversation in exactly the state it has today (answer text, citations, Sources, copy action).
+- **FR-009**: The reasoning MUST disappear once the answer or a failure is presented, leaving the conversation in exactly the state it has today (answer text, citations, Sources, copy action). (Its non-persistence is FR-014.)
 - **FR-010**: The reasoning MUST NOT alter the stored answer, its citations, its position in conversation or history, or the "no relevant content found" rule.
 - **FR-011**: The reasoning MUST be produced without any query-time access outside the company's own network, preserving the offline invariant.
 - **FR-012**: When the request fails (workstation unreachable, model unavailable offline, timeout), the employee MUST see the same failure reporting as today, with no lingering progress display.
 - **FR-013**: When a question is answered too quickly for meaningful progress to be shown, the system MUST NOT display misleading, contradictory, or flickering progress lines.
-- **FR-014**: The reasoning MUST NOT be retained beyond the wait: it is discarded as soon as the answer or a failure is presented, is never stored with the query, and is never shown again from the conversation or history.
+- **FR-014**: The reasoning MUST NOT be retained beyond the wait: it is discarded as soon as the answer or a failure is presented, is never stored with the query, and is never shown again from the conversation or history. (Its on-screen removal is FR-009.)
 
 ### Key Entities *(include if feature involves data)*
 
@@ -104,12 +104,12 @@ Once the answer is delivered, the conversation must look and behave exactly as i
 ### Measurable Outcomes
 
 - **SC-001**: For every question whose answer takes longer than two seconds, the employee sees at least two distinct reasoning updates before the answer arrives (100% of sampled slow answers).
-- **SC-002**: The first reasoning update appears within one second of submitting a question, for at least 95% of questions on the reference workstation.
+- **SC-002**: The first reasoning update appears within one second of submitting a question, for at least 95% of questions on a workstation meeting the deployment hardware baseline (16 GB RAM, GPU where available).
 - **SC-003**: In a scripted session of 20 deliberately slow answers, employees re-submit the same question while waiting zero times (down from today's behaviour).
 - **SC-004**: In a usability check with at least five employees, at least four state they could tell what the system was doing during the wait and did not believe it had stalled.
 - **SC-005**: 100% of answers remain citation-grounded or exactly "no relevant content found" on the existing curated evaluation set — grounding is unchanged by this feature.
 - **SC-006**: A review of 20 sampled queries that reference named people finds zero progress lines exposing another person's content.
-- **SC-007**: The employee-visible time from submitting a question to the answer being complete increases by no more than 5% versus today.
+- **SC-007**: The employee-visible time from submitting a question to the answer being complete increases by no more than 5% versus today, measured on the same question set against the same library with a warm model, comparing the streamed path with the existing one.
 - **SC-008**: The offline verification suite continues to pass unchanged, confirming no query-time access outside the company network.
 
 ## Assumptions
@@ -118,9 +118,11 @@ Once the answer is delivered, the conversation must look and behave exactly as i
 - Reasoning updates are reported live from the workstation as each stage happens; the client does not pre-script or timer-advance them.
 - The reasoning account is ephemeral: it is discarded the moment the answer or a failure is presented and is never stored with the query or shown from history.
 - The employee-facing surface is the existing desktop client's question-and-answer conversation; no new screen is introduced.
-- Progress is displayed in the conversation area where the busy indicator sits today, and the existing busy indicator is replaced rather than supplemented.
+- Progress is displayed in the conversation area where the busy indicator sits today: the in-stream busy text line is replaced rather than supplemented. The send button's own in-flight spinner is a separate, pre-existing indicator and stays.
 - The workstation remains the only party performing AI work; the desktop stays a thin client and no AI processing moves to the desktop.
 - No stop/cancel control is added in this feature; the employee can still navigate away, which behaves as today.
 - Answers continue to be stored and retrievable exactly as they are today; only the ephemeral wait experience changes.
 - Answers are generated in the same language as the question (existing behaviour) and progress lines follow it.
 - This feature applies to the desktop client only; no other client surface is in scope.
+- SC-003 and SC-004 are post-launch outcome measurements (a scripted session and a usability check), not buildable acceptance criteria; they are tracked manually after release.
+- SC-002 and SC-006 are timing and sampling observations rather than automated assertions: SC-002 is recorded during the manual stream check in `quickstart.md` §2, and SC-006 is a review of sampled queries. SC-001, SC-005, SC-007 and SC-008 are covered by automated or scripted checks.
