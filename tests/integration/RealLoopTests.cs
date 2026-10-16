@@ -56,6 +56,16 @@ public sealed class RealLoopTests : IDisposable
 
     private sealed class RealFactory : WebApplicationFactory<Program>
     {
+        /// <summary>
+        /// Must match the app's <c>Ollama:TimeoutMs</c> (300 s). The 5 s constructor
+        /// default is far too short for this suite: a 50-page ingest embeds a full
+        /// batch on CPU in one HTTP call, so the embed timed out and the document
+        /// landed on <c>Failed</c> ("Document ingestion failed") while an identical
+        /// upload to a workstation with the configured timeout reached <c>Ready</c>
+        /// in ~15 s.
+        /// </summary>
+        private const int OllamaTimeoutMs = 300_000;
+
         private readonly string _dbPath;
         private readonly string _lancePath;
         private readonly string _ollamaUrl;
@@ -84,11 +94,13 @@ public sealed class RealLoopTests : IDisposable
                 services.AddSingleton(new RagDbContext($"Data Source={_dbPath}"));
                 // Real vector store on temp path (1024 matches snowflake-arctic-embed2)
                 services.AddSingleton<IVectorStore>(new LanceDbLocalClient(_lancePath, 1024));
-                // Real Ollama embedder/llm — TimeoutMs 5000 (R7). 3-arg overload added in T014; 2-arg used until then.
+                // Real Ollama embedder/llm on the app's configured timeout.
                 services.AddSingleton<IEmbedder>(
-                    new OllamaEmbedder(_ollamaUrl, "snowflake-arctic-embed2")
+                    new OllamaEmbedder(_ollamaUrl, "snowflake-arctic-embed2", OllamaTimeoutMs)
                 );
-                services.AddSingleton<ILlmClient>(new OllamaLlmClient(_ollamaUrl, "qwen2.5:3b"));
+                services.AddSingleton<ILlmClient>(
+                    new OllamaLlmClient(_ollamaUrl, "qwen2.5:3b", OllamaTimeoutMs)
+                );
             });
         }
     }

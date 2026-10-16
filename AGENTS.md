@@ -32,11 +32,8 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   row through the normal background path (idempotent), so after upgrading, expect stale documents
   to cycle `Queued → Indexing → Ready` on first boot. `POST /api/queries` accepts optional
   `mode: auto|broad|specific` (default `auto`) and echoes the effective `mode: broad|granular`.
-- Unit 549 / contract 102 / integration 83 on 2026-10-16 (Release, Ollama up). **One pre-existing
-  failure:** `RealLoopTests.RealLoop_PersistChunkRetrieve_CitedAnswer` fails with "Document ingestion
-  failed" whenever Ollama is up (reproduced unchanged on a clean checkout at `3aeb195`), so a red
-  integration run is expected until it is fixed. The offline subset is 12/12. Confirm before treating a
-  failure as pre-existing.
+- Unit 549 / contract 102 / integration 83 pass on 2026-10-16 (Release, Ollama up); the offline subset is
+  12/12. Confirm before treating a failure as pre-existing.
 - CI (`.github/workflows/ci.yml`) triggers on `main` and any specs branch matching `[0-9][0-9][0-9]-*`,
   so a new `specs/NNN-*` feature gets the build, unit/contract, offline and windows-client jobs without
   editing the workflow.
@@ -47,6 +44,10 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   →384, `nomic-embed`→768, `bge-m3`/`arctic-embed2`/`mxbai`→1024) or startup logs a mismatch warning.
   Dev ships 1024 + `snowflake-arctic-embed2`. Changing the size against an existing collection throws
   `DimensionMismatchException` — wipe `src/RAGGit.Workstation.Api/data/lancedb` and re-ingest.
+- A test factory that builds the **real** Ollama clients must pass the app's `Ollama:TimeoutMs`
+  (300000 ms). `OllamaEmbedder`/`OllamaLlmClient` default to 5000 ms, which a large ingest batch exceeds,
+  so the document lands on `Failed` ("Document ingestion failed") instead of `Ready` — the cause of
+  `RealLoopTests` being red long after the loop itself worked.
 - **Tests do not use that path.** Each test project resolves `./data/lancedb` relative to its *output*
   dir: `tests/<suite>/bin/<Config>/net10.0/data/lancedb`. Deleting the repo-root `data/` fixes nothing;
   delete the test-output one.
