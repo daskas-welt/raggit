@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history', '010-winui-client']
+    branches: [main, '[0-9][0-9][0-9]-*']
   pull_request:
-    branches: [main, '001-offline-mode', '002-real-bringup', '003-ingest-breadth', '004-identity', '005-per-person-history', '010-winui-client']
+    branches: [main, '[0-9][0-9][0-9]-*']
 
 jobs:
   build-and-test:
