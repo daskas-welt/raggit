@@ -45,7 +45,7 @@ Expected: HTTP 200 with `vectorDb` and `llm` both `ok`. Record the elapsed time 
 
 Purpose: FR-001, FR-005, FR-006, FR-016, FR-018; SC-001, SC-007, SC-010.
 
-1. Provision (via the DigitalOcean console or the `@deployer` agent): a CPU-only virtual machine, a block-storage volume, an address in the company's private network (VPC/VPN), and network access restricted to the company's own networks.
+1. Provision (via the DigitalOcean console): a CPU-only virtual machine, a block-storage volume, an address in the company's private network (VPC/VPN), and network access restricted to the company's own networks.
 2. Mount the volume (e.g. `/mnt/raggit-data`) and place `deploy/docker-compose.prod.yml`, `deploy/.env` (from `.env.example`), and the certificate PFX. Generate a certificate whose SAN matches the address clients will use (an **IP SAN** for a private IP, or the VPN host name), per R-03.
 3. Run `deploy/bootstrap.sh` (installs Docker + native Ollama, brings the stack up, pulls models, creates the first admin account).
 4. Verify liveness from a machine on the company's network:

@@ -166,7 +166,7 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 - Layout per feature: `specs/NNN-name/{spec.md,plan.md,tasks.md,research.md,quickstart.md}` plus
   `checklists/requirements.md` and `contracts/` (`api.yaml` for server features, `ui-contracts.md` for
   client ones); older features also carry `verification.md`.
-- `.opencode/agents/{coder,architect,deployer}.md` define the repo's subagents.
+- `.opencode/agents/{coder,architect}.md` define the repo's subagents.
 
 <!-- CODEGRAPH_START -->
 ## CodeGraph
