@@ -125,6 +125,28 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 - Keep `AutomationProperties.AutomationId` values stable — 22 IDs are frozen across features 022/023 —
   and add IDs for new interactive elements.
 
+## XAML layout preference
+
+- **Space with Grid tracks, not `Margin`.** No client XAML uses a layout `Margin`; don't add one.
+  Declare explicit `Grid.ColumnDefinitions`/`Grid.RowDefinitions` and interleave fixed-spacing
+  gutter tracks with content tracks (`*,12,*,12,…` / `Auto,8,Auto,8,…`); place item *n* at
+  `Grid.Column = (n % columns) * 2` and `Grid.Row = (n / columns) * 2`, so gutters need no margins.
+  Reflow by zeroing unused content/gutter tracks (`new GridLength(0)`) from page-owned code-behind —
+  reuse `ResponsiveGridLayout.ColumnsFor` for the breakpoints. Inner card padding (icon inset, text
+  inset) is fixed rows/columns too. Page-level vertical insets (`PagePadding`, 24) are outer gutter
+  rows — or `ScrollViewer.Padding` where the page is one — and dialog insets are outer gutter
+  rows/columns. A single child with a four-sided inset gets a small wrapper Grid whose edge tracks
+  carry the inset. `NavigationView.FrameMargin` is a WPF-UI property, not a Thickness margin, and
+  may stay at `0`.
+- **Declare tracks as property elements, not shorthand attributes.** Write
+  `<Grid.RowDefinitions>`/`<Grid.ColumnDefinitions>` with explicit `<RowDefinition>`/
+  `<ColumnDefinition>` children instead of `RowDefinitions="Auto, 12, Auto"` /
+  `ColumnDefinitions="*, 24, Auto"`. Every track then sits on its own line where it can be read,
+  reordered, or reflowed from code-behind without decoding a comma-separated string.
+- Every client page and component follows this pattern — the whole client is margin-free with
+  property-element track definitions. The Dashboard page (`DashboardPage.xaml`, reflowed from
+  `ApplyResponsiveLayout`) is the reference implementation; follow it for new surfaces.
+
 ## Verifying UI
 
 - `winapp ui` (WinApp CLI) drives the app over UI Automation; the repo ships
