@@ -15,12 +15,10 @@ using Xunit;
 namespace RAGGit.Tests.Unit;
 
 /// <summary>
-/// T011 (granular half): routing through
-/// <see cref="RetrievalService"/> keeps the granular child path exactly as
-/// today — <c>Auto</c> with a non-trigger query and explicit
-/// <c>Specific</c> both return child results with unchanged ordering,
+/// Routing through <see cref="RetrievalService"/>: the rule-based classifier
+/// sends broad-trigger questions to parent-context retrieval and everything
+/// else down the granular child path, with unchanged ordering,
 /// <c>MinScore</c> filtering, and <c>topK</c> capping.
-/// The broad half of this file arrives with T017.
 /// </summary>
 public sealed class RetrievalRoutingTests
 {
@@ -31,24 +29,9 @@ public sealed class RetrievalRoutingTests
         var childB = MakeChild("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 0.80f);
         var retrieval = GranularRetrieval(new[] { childA, childB });
 
-        var results = await retrieval.RetrieveAsync("What is the renewal term?", 5, QueryMode.Auto);
+        var results = await retrieval.RetrieveAsync("What is the renewal term?", 5);
 
         results.Select(r => r.ChunkId).Should().Equal(childA.ChunkId, childB.ChunkId);
-    }
-
-    [Fact]
-    public async Task Retrieve_SpecificForcesGranular_EvenForBroadText()
-    {
-        var child = MakeChild("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 0.90f);
-        var retrieval = GranularRetrieval(new[] { child });
-
-        var results = await retrieval.RetrieveAsync(
-            "Summarize the onboarding process",
-            5,
-            QueryMode.Specific
-        );
-
-        results.Should().ContainSingle().Which.ChunkId.Should().Be(child.ChunkId);
     }
 
     [Fact]
@@ -67,11 +50,11 @@ public sealed class RetrievalRoutingTests
             NullLogger<RetrievalService>.Instance
         );
 
-        var results = await retrieval.RetrieveAsync("What is the limit?", 5, QueryMode.Auto);
+        var results = await retrieval.RetrieveAsync("What is the limit?", 5);
 
         results.Select(r => r.Score).Should().Equal(0.90f, 0.50f);
 
-        var capped = await retrieval.RetrieveAsync("What is the limit?", 1, QueryMode.Auto);
+        var capped = await retrieval.RetrieveAsync("What is the limit?", 1);
         capped.Should().ContainSingle().Which.Score.Should().Be(0.90f);
     }
 
@@ -95,11 +78,7 @@ public sealed class RetrievalRoutingTests
         );
         var retrieval = BroadRetrieval(store, repository);
 
-        var results = await retrieval.RetrieveAsync(
-            "Summarize the onboarding process",
-            5,
-            QueryMode.Auto
-        );
+        var results = await retrieval.RetrieveAsync("Summarize the onboarding process", 5);
 
         results.Should().HaveCount(2);
         results[0].ChunkId.Should().Be(parentA);
@@ -133,7 +112,7 @@ public sealed class RetrievalRoutingTests
 
         // Parent C's best score (0.10) is below MinScore (0.25) → dropped.
         // topK = 1 → only the best parent.
-        var results = await retrieval.RetrieveAsync("Give me an overview", 1, QueryMode.Broad);
+        var results = await retrieval.RetrieveAsync("Give me an overview", 1);
 
         results.Should().ContainSingle().Which.ChunkId.Should().Be(parentA);
     }
@@ -157,7 +136,7 @@ public sealed class RetrievalRoutingTests
             new FakeDocumentRepository()
         );
 
-        await retrieval.RetrieveAsync("Compare the plans", 5, QueryMode.Broad);
+        await retrieval.RetrieveAsync("Compare the plans", 5);
 
         // min(topK × multiplier, max) = min(20, 50) = 20.
         store.LastLimit.Should().Be(20);
@@ -182,7 +161,7 @@ public sealed class RetrievalRoutingTests
             new FakeDocumentRepository()
         );
 
-        await retrieval.RetrieveAsync("Compare the plans", 5, QueryMode.Broad);
+        await retrieval.RetrieveAsync("Compare the plans", 5);
 
         store.LastLimit.Should().Be(50);
     }
@@ -202,7 +181,7 @@ public sealed class RetrievalRoutingTests
             new FakeDocumentRepository()
         );
 
-        var results = await retrieval.RetrieveAsync("Summarize everything", 5, QueryMode.Broad);
+        var results = await retrieval.RetrieveAsync("Summarize everything", 5);
 
         results.Should().ContainSingle().Which.ChunkId.Should().Be(orphan.ChunkId);
     }
@@ -225,7 +204,7 @@ public sealed class RetrievalRoutingTests
             new FakeDocumentRepository()
         );
 
-        var results = await retrieval.RetrieveAsync("Summarize everything", 5, QueryMode.Broad);
+        var results = await retrieval.RetrieveAsync("Summarize everything", 5);
 
         results.Should().ContainSingle().Which.ChunkId.Should().Be(child.ChunkId);
     }

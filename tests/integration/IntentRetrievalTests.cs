@@ -52,7 +52,7 @@ public sealed class IntentRetrievalTests
 
         var response = await employeeClient.PostAsJsonAsync(
             "/api/queries",
-            new { query = "What is the renewal term?", mode = "auto" },
+            new { query = "What is the renewal term?" },
             _jsonOptions
         );
 
@@ -124,7 +124,7 @@ public sealed class IntentRetrievalTests
 
         var response = await employeeClient.PostAsJsonAsync(
             "/api/queries",
-            new { query = "Summarize the onboarding process", mode = "auto" },
+            new { query = "Summarize the onboarding process" },
             _jsonOptions
         );
 
@@ -151,7 +151,7 @@ public sealed class IntentRetrievalTests
     }
 
     [Fact]
-    public async Task BroadAnswer_PersistsParentCitationIds_AndEchoesBroad()
+    public async Task BroadAnswer_PersistsParentCitationIds()
     {
         using var factory = new IntegrationTestFactory();
         var employeeClient = CreateEmployeeClient(factory);
@@ -169,13 +169,12 @@ public sealed class IntentRetrievalTests
 
         var response = await employeeClient.PostAsJsonAsync(
             "/api/queries",
-            new { query = "Summarize the document", mode = "broad" },
+            new { query = "Summarize the document" },
             _jsonOptions
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
-        json.GetProperty("mode").GetString().Should().Be("broad");
 
         var citations = json.GetProperty("citations").EnumerateArray().ToList();
         citations.Should().ContainSingle();

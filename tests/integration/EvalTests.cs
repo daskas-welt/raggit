@@ -318,7 +318,6 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
             var citations = json.GetProperty("citations").EnumerateArray().ToList();
             citations.Should().ContainSingle();
             citations[0].GetProperty("chunkId").GetString().Should().Be(chunkId.ToString());
-            json.GetProperty("mode").GetString().Should().Be("granular");
             exact++;
         }
 
@@ -425,7 +424,6 @@ public sealed class EvalTests : IClassFixture<IntegrationTestFactory>
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
-        json.GetProperty("mode").GetString().Should().Be("broad");
 
         var citedIds = json.GetProperty("citations")
             .EnumerateArray()

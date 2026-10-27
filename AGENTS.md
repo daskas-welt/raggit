@@ -30,8 +30,9 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   not embedded) in `Chunks(Level, ParentId)`; broad queries resolve parents at retrieval time.
   `ReindexBackfillService` runs once per startup and re-enqueues `Ready` documents with no parent
   row through the normal background path (idempotent), so after upgrading, expect stale documents
-  to cycle `Queued → Indexing → Ready` on first boot. `POST /api/queries` accepts optional
-  `mode: auto|broad|specific` (default `auto`) and echoes the effective `mode: broad|granular`.
+  to cycle `Queued → Indexing → Ready` on first boot. Retrieval granularity is classified
+  automatically per question (broad trigger phrases, otherwise granular); there is no client or
+  API mode switch and no persisted mode.
 - Unit 549 / contract 102 / integration 83 pass on 2026-10-16 (Release, Ollama up); the offline subset is
   12/12. Confirm before treating a failure as pre-existing.
 - CI (`.github/workflows/ci.yml`) triggers on `main` and any specs branch matching `[0-9][0-9][0-9]-*`,

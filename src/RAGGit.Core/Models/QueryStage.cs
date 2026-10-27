@@ -5,7 +5,7 @@ namespace RAGGit.Core.Models;
 /// <summary>
 /// Identity of one reasoning update streamed while an answer is produced
 /// (032, contracts/api.yaml 1.6.0). Wire values are lowercase per the
-/// existing <see cref="QueryMode"/>/<see cref="QueryIntent"/> convention;
+/// existing <see cref="QueryIntent"/> convention;
 /// the stage is language-independent so tests and automation never depend on
 /// the rendered sentence.
 /// </summary>

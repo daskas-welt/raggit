@@ -32,15 +32,9 @@ public sealed class QueryOutcome
     /// <summary>Whole-pipeline latency, measured exactly as before.</summary>
     public int LatencyMs { get; init; }
 
-    /// <summary>Effective retrieval intent actually used.</summary>
-    public QueryIntent? Mode { get; init; }
-
     /// <summary>Did-you-mean person hints when nothing was cited.</summary>
     public IReadOnlyList<PersonSuggestion> SuggestedPersons { get; init; } =
         Array.Empty<PersonSuggestion>();
-
-    /// <summary>The caller's requested mode (null-invariant: defaults to Auto).</summary>
-    public QueryMode RequestedMode { get; init; }
 
     /// <summary>Projects onto the non-streaming response body.</summary>
     public QueryResponse ToResponse() =>
@@ -50,7 +44,6 @@ public sealed class QueryOutcome
             Citations = Citations.ToList(),
             RetrievedChunkIds = RetrievedChunkIds.ToList(),
             LatencyMs = LatencyMs,
-            Mode = Mode,
             SuggestedPersons = SuggestedPersons.ToList(),
         };
 }

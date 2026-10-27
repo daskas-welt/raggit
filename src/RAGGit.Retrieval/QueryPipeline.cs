@@ -82,10 +82,9 @@ public sealed class QueryPipeline
         );
         await ReportAsync(onProgress, QueryStage.Searching, query, null, null, cancellationToken);
 
-        var (chunks, intent) = await _retrievalService.RetrieveWithIntentAsync(
+        var chunks = await _retrievalService.RetrieveAsync(
             query,
             Math.Clamp(request.TopK, 1, 5),
-            request.Mode,
             cancellationToken
         );
 
@@ -97,13 +96,7 @@ public sealed class QueryPipeline
                 noContentLatency
             );
 
-            return new QueryOutcome
-            {
-                Answer = NoRelevantContent,
-                LatencyMs = noContentLatency,
-                Mode = intent,
-                RequestedMode = request.Mode,
-            };
+            return new QueryOutcome { Answer = NoRelevantContent, LatencyMs = noContentLatency };
         }
 
         // Resolved before the sources stage so the employee sees which sources
@@ -170,9 +163,7 @@ public sealed class QueryPipeline
             CitationIds = citationIds,
             RetrievedChunkIds = retrievedChunkIds,
             LatencyMs = latencyMs,
-            Mode = intent,
             SuggestedPersons = suggestions,
-            RequestedMode = request.Mode,
         };
     }
 

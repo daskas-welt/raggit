@@ -100,12 +100,6 @@ public sealed class QueryStreamContractTests : IClassFixture<TestApiFactory>
         streamed
             .RetrievedChunkIds!.Count.Should()
             .Be(classicJson.GetProperty("retrievedChunkIds").GetArrayLength());
-        streamed.Mode.Should().NotBeNull();
-        streamed
-            .Mode!.Value.ToString()
-            .ToLowerInvariant()
-            .Should()
-            .Be(classicJson.GetProperty("mode").GetString());
     }
 
     [Fact]

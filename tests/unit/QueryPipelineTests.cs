@@ -129,15 +129,11 @@ public sealed class QueryPipelineTests
             answer: $"answered. [{chunkId}]"
         );
 
-        var outcome = await pipeline.ExecuteAsync(
-            new QueryRequest { Query = "q", Mode = QueryMode.Specific }
-        );
+        var outcome = await pipeline.ExecuteAsync(new QueryRequest { Query = "q" });
 
         outcome.Answer.Should().Be($"answered. [{chunkId}]");
         outcome.Citations.Should().ContainSingle().Which.ChunkId.Should().Be(chunkId);
         outcome.RetrievedChunkIds.Should().Equal(chunkId);
-        outcome.Mode.Should().Be(QueryIntent.Granular);
-        outcome.RequestedMode.Should().Be(QueryMode.Specific);
         outcome.LatencyMs.Should().BeGreaterThanOrEqualTo(0);
     }
 

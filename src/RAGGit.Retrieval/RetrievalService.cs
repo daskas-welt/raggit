@@ -53,73 +53,22 @@ public sealed class RetrievalService
     }
 
     /// <summary>
-    /// Resolves the effective intent for <paramref name="query"/>: an
-    /// explicit <see cref="QueryMode.Broad"/>/<see cref="QueryMode.Specific"/>
-    /// override wins; <see cref="QueryMode.Auto"/> runs the rule-based
-    /// classifier (safe default granular).
-    /// </summary>
-    public static QueryIntent ResolveIntent(string query, QueryMode mode) =>
-        mode switch
-        {
-            QueryMode.Broad => QueryIntent.Broad,
-            QueryMode.Specific => QueryIntent.Granular,
-            _ => QueryIntentClassifier.Classify(query),
-        };
-
-    /// <summary>
     /// Retrieves up to <paramref name="topK"/> relevant chunks for
-    /// <paramref name="query"/> using <see cref="QueryMode.Auto"/> intent
-    /// detection (the classifier, defaulting to granular). Callers that want
-    /// to force a granularity, or to read back the effective intent, use the
-    /// <see cref="RetrieveAsync(string,int,QueryMode,CancellationToken)"/> or
-    /// <see cref="RetrieveWithIntentAsync"/> overloads.
-    /// </summary>
-    public Task<IReadOnlyList<SearchResult>> RetrieveAsync(
-        string query,
-        int topK = 5,
-        CancellationToken cancellationToken = default
-    ) => RetrieveAsync(query, topK, QueryMode.Auto, cancellationToken);
-
-    /// <summary>
-    /// Retrieves up to <paramref name="topK"/> relevant chunks for <paramref name="query"/>
-    /// at the granularity selected by <paramref name="mode"/>.
+    /// <paramref name="query"/>, classifying the granularity internally:
+    /// broad trigger phrases use parent-context retrieval, everything else
+    /// keeps the granular child path (the safe default).
     /// </summary>
     public async Task<IReadOnlyList<SearchResult>> RetrieveAsync(
         string query,
-        int topK,
-        QueryMode mode,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var (results, _) = await RetrieveWithIntentAsync(query, topK, mode, cancellationToken);
-        return results;
-    }
-
-    /// <summary>
-    /// Retrieves plus reports the effective intent actually used, so the
-    /// controller can echo and persist it.
-    /// </summary>
-    public async Task<(
-        IReadOnlyList<SearchResult> Results,
-        QueryIntent Intent
-    )> RetrieveWithIntentAsync(
-        string query,
-        int topK,
-        QueryMode mode,
+        int topK = 5,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        var intent = ResolveIntent(query, mode);
-        if (intent == QueryIntent.Broad)
-        {
-            var broad = await RetrieveBroadAsync(query, topK, cancellationToken);
-            return (broad, intent);
-        }
-
-        var results = await RetrieveGranularAsync(query, topK, cancellationToken);
-        return (results, intent);
+        return QueryIntentClassifier.Classify(query) == QueryIntent.Broad
+            ? await RetrieveBroadAsync(query, topK, cancellationToken)
+            : await RetrieveGranularAsync(query, topK, cancellationToken);
     }
 
     /// <summary>

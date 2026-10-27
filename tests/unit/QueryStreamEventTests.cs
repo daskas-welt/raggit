@@ -125,7 +125,6 @@ public sealed class QueryStreamEventTests
             },
             RetrievedChunkIds = new List<Guid> { chunkId },
             LatencyMs = 4210,
-            Mode = QueryIntent.Broad,
             SuggestedPersons = new List<PersonSuggestion> { new() { Name = "Someone" } },
         };
 
@@ -133,7 +132,6 @@ public sealed class QueryStreamEventTests
 
         roundTripped.Answer.Should().Be(response.Answer);
         roundTripped.LatencyMs.Should().Be(4210);
-        roundTripped.Mode.Should().Be(QueryIntent.Broad);
         roundTripped.RetrievedChunkIds.Should().Equal(chunkId);
         roundTripped.SuggestedPersons.Should().ContainSingle().Which.Name.Should().Be("Someone");
         roundTripped
@@ -155,7 +153,7 @@ public sealed class QueryStreamEventTests
     [Fact]
     public void Answer_CarriesOnlyFieldsTheClassicResponseAlsoHas()
     {
-        var response = new QueryResponse { Answer = "a", Mode = QueryIntent.Granular };
+        var response = new QueryResponse { Answer = "a" };
 
         using var classic = JsonDocument.Parse(JsonSerializer.Serialize(response, Options));
         using var streamed = JsonDocument.Parse(

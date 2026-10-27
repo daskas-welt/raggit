@@ -53,9 +53,6 @@ public sealed class QueryStreamEvent
     public int? LatencyMs { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public QueryIntent? Mode { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<PersonSuggestion>? SuggestedPersons { get; set; }
 
     // --- error variant ---
@@ -102,7 +99,6 @@ public sealed class QueryStreamEvent
             Citations = response.Citations,
             RetrievedChunkIds = response.RetrievedChunkIds,
             LatencyMs = response.LatencyMs,
-            Mode = response.Mode,
             SuggestedPersons = response.SuggestedPersons,
         };
     }
@@ -137,7 +133,6 @@ public sealed class QueryStreamEvent
             Citations = Citations ?? new List<Citation>(),
             RetrievedChunkIds = RetrievedChunkIds ?? new List<Guid>(),
             LatencyMs = LatencyMs ?? 0,
-            Mode = Mode,
             SuggestedPersons = SuggestedPersons ?? new List<PersonSuggestion>(),
         };
 }

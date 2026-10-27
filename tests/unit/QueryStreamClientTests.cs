@@ -174,6 +174,7 @@ public sealed class QueryStreamClientTests
 
         uri!.AbsolutePath.Should().Be("/api/queries/stream");
         using var json = System.Text.Json.JsonDocument.Parse(body!);
+        json.RootElement.TryGetProperty("mode", out _).Should().BeFalse();
         json.RootElement.GetProperty("query").GetString().Should().Be("renewal term");
     }
 

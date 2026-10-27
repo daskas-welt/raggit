@@ -15,14 +15,6 @@ public sealed class QueryRequest
 
     [Range(1, 5, ErrorMessage = "topK must be between 1 and 5.")]
     public int TopK { get; set; } = 5;
-
-    /// <summary>
-    /// Intent override (030, FR-007): <c>Auto</c> (default) lets the server
-    /// classify; <c>Broad</c> forces parent-context retrieval;
-    /// <c>Specific</c> forces granular child retrieval. Optional and
-    /// backward compatible — omitting it behaves exactly as pre-feature.
-    /// </summary>
-    public QueryMode Mode { get; set; } = QueryMode.Auto;
 }
 
 /// <summary>
@@ -54,13 +46,6 @@ public sealed class QueryResponse
     public List<Guid> RetrievedChunkIds { get; set; } = new();
 
     public int LatencyMs { get; set; }
-
-    /// <summary>
-    /// Effective retrieval intent actually used for this answer (030): equal
-    /// to the request override when supplied, else the classifier result.
-    /// Optional and additive — pre-feature clients ignore it.
-    /// </summary>
-    public QueryIntent? Mode { get; set; }
 
     /// <summary>
     /// Closest person names actually present in retrieved chunks when the

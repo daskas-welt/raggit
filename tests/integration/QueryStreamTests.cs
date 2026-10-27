@@ -205,7 +205,7 @@ public sealed class QueryStreamTests
         var events = await ReadEventsAsync(
             await employeeClient.PostAsJsonAsync(
                 "/api/queries/stream",
-                new { query = "What is the renewal term?", mode = "specific" },
+                new { query = "What is the renewal term?" },
                 _jsonOptions
             )
         );
@@ -264,11 +264,6 @@ public sealed class QueryStreamTests
         streamed
             .Citations!.Count.Should()
             .Be(classicJson.GetProperty("citations").GetArrayLength());
-        streamed
-            .Mode!.Value.ToString()
-            .ToLowerInvariant()
-            .Should()
-            .Be(classicJson.GetProperty("mode").GetString());
     }
 
     private static async Task<List<QueryStreamEvent>> ReadEventsAsync(HttpResponseMessage response)

@@ -18,10 +18,10 @@ using Xunit;
 namespace RAGGit.Tests.Integration;
 
 /// <summary>
-/// T034/T035 (US4): grounding holds across every intent — no relevant
+/// T034/T035 (US4): grounding holds without a mode switch — no relevant
 /// content yields exactly <c>no relevant content found</c> with zero
-/// citations in auto-resolved and forced modes, and an ambiguous query
-/// falls back to granular with a grounded answer (never ungrounded text).
+/// citations, and an ambiguous query falls back to granular with a grounded
+/// answer (never ungrounded text).
 /// </summary>
 public sealed class IntentGroundingTests
 {
@@ -30,14 +30,8 @@ public sealed class IntentGroundingTests
         Converters = { new DocumentMimeTypeConverter(), new JsonStringEnumConverter() },
     };
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("auto")]
-    [InlineData("broad")]
-    [InlineData("specific")]
-    public async Task NoRelevantContent_AcrossAllModes_ReturnsExactMessage_ZeroCitations(
-        string? mode
-    )
+    [Fact]
+    public async Task NoRelevantContent_ReturnsExactMessage_ZeroCitations()
     {
         using var factory = new IntegrationTestFactory();
         var employeeClient = CreateEmployeeClient(factory);
@@ -52,10 +46,11 @@ public sealed class IntentGroundingTests
         noMatch[30] = 1.0f;
         embedder.VectorOverrides = new Dictionary<string, float[]> { ["unrelated"] = noMatch };
 
-        object payload = mode is null
-            ? new { query = "unrelated topic quasar" }
-            : new { query = "unrelated topic quasar", mode };
-        var response = await employeeClient.PostAsJsonAsync("/api/queries", payload, _jsonOptions);
+        var response = await employeeClient.PostAsJsonAsync(
+            "/api/queries",
+            new { query = "unrelated topic quasar" },
+            _jsonOptions
+        );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
@@ -77,7 +72,7 @@ public sealed class IntentGroundingTests
         llm.Healthy = true;
         llm.ResponseText = "Refunds are accepted within 30 days.";
 
-        // No broad trigger and no explicit override: granular fallback.
+        // No broad trigger: granular fallback.
         var response = await employeeClient.PostAsJsonAsync(
             "/api/queries",
             new { query = "Tell me about the thing" },
@@ -99,8 +94,6 @@ public sealed class IntentGroundingTests
         {
             citations.Should().BeEmpty();
         }
-
-        json.GetProperty("mode").GetString().Should().Be("granular");
     }
 
     private async Task UploadTextAsync(HttpClient adminClient, string text)
