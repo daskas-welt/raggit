@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OllamaSharp;
+using OllamaSharp.Models;
 using OllamaSharp.Models.Chat;
 using RAGGit.Core.Abstractions;
 
@@ -14,9 +15,18 @@ namespace RAGGit.Retrieval.Ai;
 /// </summary>
 public sealed class OllamaLlmClient : ILlmClient
 {
+    /// <summary>
+    /// Context window requested from Ollama. Ollama serves a model at 4096 tokens
+    /// when the request does not ask for more, and silently truncates the prompt
+    /// to about half of that — which drops most of retrieval's five chunks (and
+    /// all of a broad parent-context prompt). 16384 holds both modes whole.
+    /// </summary>
+    public const int DefaultContextWindow = 16_384;
+
     private readonly OllamaApiClient _client;
     private readonly string _modelName;
     private readonly int _timeoutMs;
+    private readonly int _contextWindow;
     private readonly ILogger<OllamaLlmClient>? _logger;
 
     // Health-probe budget: ListLocalModelsAsync is cheap once Ollama is warm,
@@ -27,6 +37,7 @@ public sealed class OllamaLlmClient : ILlmClient
         string baseUrl,
         string modelName,
         int timeoutMs = 5000,
+        int contextWindow = DefaultContextWindow,
         ILogger<OllamaLlmClient>? logger = null
     )
     {
@@ -34,9 +45,12 @@ public sealed class OllamaLlmClient : ILlmClient
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
         if (timeoutMs <= 0)
             throw new ArgumentOutOfRangeException(nameof(timeoutMs));
+        if (contextWindow <= 0)
+            throw new ArgumentOutOfRangeException(nameof(contextWindow));
 
         _modelName = modelName;
         _timeoutMs = timeoutMs;
+        _contextWindow = contextWindow;
         _logger = logger;
         var httpClient = new System.Net.Http.HttpClient
         {
@@ -64,6 +78,9 @@ public sealed class OllamaLlmClient : ILlmClient
             // reasoning-model tokens (qwen3.5) in "thinking", not "content": with
             // thinking on, a slow box can burn the whole timeout and answer "".
             Think = false,
+            // Without an explicit window Ollama truncates the prompt, so the model
+            // answers from a fragment of the retrieved context.
+            Options = new RequestOptions { NumCtx = _contextWindow },
             Messages =
             [
                 new Message(ChatRole.System, systemPrompt),

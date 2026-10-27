@@ -145,6 +145,9 @@ var embedModel = builder.Configuration["Ollama:EmbedModel"] ?? "all-minilm";
 var chatModel = builder.Configuration["Ollama:ChatModel"] ?? "phi3:mini";
 var ollamaTimeoutMs = builder.Configuration.GetValue<int?>("Ollama:TimeoutMs") ?? 5000;
 Log.Information("Ollama timeout configured: {TimeoutMs}ms", ollamaTimeoutMs);
+var ollamaContextWindow =
+    builder.Configuration.GetValue<int?>("Ollama:NumCtx") ?? OllamaLlmClient.DefaultContextWindow;
+Log.Information("Ollama context window configured: {ContextWindow} tokens", ollamaContextWindow);
 var connectionString =
     builder.Configuration.GetConnectionString("RagDb") ?? "Data Source=./data/rag.db";
 
@@ -195,6 +198,7 @@ builder.Services.AddSingleton<ILlmClient>(sp => new OllamaLlmClient(
     ollamaUrl,
     chatModel,
     ollamaTimeoutMs,
+    ollamaContextWindow,
     sp.GetRequiredService<ILogger<OllamaLlmClient>>()
 ));
 builder.Services.Configure<IngestOptions>(builder.Configuration.GetSection("Ingest"));
