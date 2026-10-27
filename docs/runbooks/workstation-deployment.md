@@ -284,8 +284,8 @@ is what makes the whole library re-ingest. Watch progress with
 Ollama's default `OLLAMA_MAX_LOADED_MODELS=1` makes the embed and chat models **evict each other**,
 so every query reloads the chat model (2.2 GB) from disk between embedding the question and
 generating the answer. `deploy/bootstrap.sh` sets `OLLAMA_MAX_LOADED_MODELS=2` and
-`OLLAMA_KEEP_ALIVE=-1`. Measured on a 4 vCPU CPU-only host (`qwen2.5:3b` + `all-minilm`,
-`mode: auto`): **154 s → 112 s** per query, with both models held in memory (~2.3 GB).
+`OLLAMA_KEEP_ALIVE=-1`. Measured on a 4 vCPU CPU-only host (`qwen2.5:3b` + `all-minilm`):
+**154 s → 112 s** per query, with both models held in memory (~2.3 GB).
 
 ### Where query time actually goes
 

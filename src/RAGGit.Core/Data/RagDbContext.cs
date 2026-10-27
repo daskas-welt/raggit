@@ -61,8 +61,7 @@ public sealed class RagDbContext : IAsyncDisposable
             cancellationToken
         );
 
-        // 030-intent-aware-chunking: two-level chunk columns plus the
-        // persisted effective query intent. SQLite has no
+        // 030-intent-aware-chunking: two-level chunk columns. SQLite has no
         // ADD COLUMN IF NOT EXISTS on all supported versions, so probe
         // first and alter only when absent. These migrations MUST run
         // before the index commands below: creating
