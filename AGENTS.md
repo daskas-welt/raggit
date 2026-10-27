@@ -167,10 +167,10 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 
 ## Verifying UI
 
-- `winapp ui` (WinApp CLI) drives the app over UI Automation; the repo ships
-  `.opencode/skills/winui-ui-testing`. Known limits: the nav `AutoSuggestBox` exposes as a *List* (its
-  text is not drivable), `ui:Card`/`Border` automation IDs are not surfaced, layered popups cannot be
-  screenshotted, and `click` targets coordinates while `invoke` uses patterns (survives layout changes).
+- `winapp ui` (WinApp CLI) drives the app over UI Automation. Known limits: the nav
+  `AutoSuggestBox` exposes as a *List* (its text is not drivable), `ui:Card`/`Border` automation IDs are
+  not surfaced, layered popups cannot be screenshotted, and `click` targets coordinates while `invoke`
+  uses patterns (survives layout changes).
 - A client pointed at a live API is the only way to see signed-in surfaces; start the API first, then
   patch the client's output `appsettings.json` (see the ApiKey gotcha above) — don't patch the source
   file if you don't intend to keep the change.
@@ -207,6 +207,20 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   `checklists/requirements.md` and `contracts/` (`api.yaml` for server features, `ui-contracts.md` for
   client ones); older features also carry `verification.md`.
 - `.opencode/agents/{coder,architect}.md` define the repo's subagents.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues (`daskas-welt/raggit`), driven with `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Defaults: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
 <!-- CODEGRAPH_START -->
 ## CodeGraph
