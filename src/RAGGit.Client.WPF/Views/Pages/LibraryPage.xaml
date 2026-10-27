@@ -20,15 +20,29 @@
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
         <converters:DocumentDownloadingConverter x:Key="DocumentDownloading" />
     </Page.Resources>
-    <Grid
-        x:Name="LibraryLayout"
-        Margin="{StaticResource PagePadding}"
-        RowDefinitions="Auto, Auto, *, Auto, Auto"
-        SizeChanged="OnLibraryLayoutSizeChanged"
-    >
+    <Grid x:Name="LibraryLayout" SizeChanged="OnLibraryLayoutSizeChanged">
+        <!-- The 24px outer rows carry the former PagePadding inset of this root grid. -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+        </Grid.RowDefinitions>
+
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-            <Grid ColumnDefinitions="*, Auto">
+        <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Document Library" />
                     <ui:TextBlock
@@ -36,9 +50,15 @@
                         Text="Documents available to everyone"
                     />
                 </StackPanel>
-                <StackPanel Grid.Column="1" VerticalAlignment="Top" Orientation="Horizontal">
+                <Grid Grid.Column="1" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <ui:Button
                         x:Name="UploadButton"
+                        Grid.Column="0"
                         Width="44"
                         Height="44"
                         VerticalAlignment="Center"
@@ -53,9 +73,9 @@
                         </ui:Button.Icon>
                     </ui:Button>
                     <ui:Button
+                        Grid.Column="2"
                         Width="44"
                         Height="44"
-                        Margin="12,0,0,0"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="RefreshButton"
                         AutomationProperties.Name="Refresh documents"
@@ -77,12 +97,19 @@
                             />
                         </Grid>
                     </ui:Button>
-                </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
 
         <!-- Search (feature 029): filters the loaded list as the user types. -->
-        <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto, Auto">
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <ui:TextBox
                 x:Name="LibrarySearchBox"
                 Grid.Column="0"
@@ -93,10 +120,9 @@
             />
             <ui:Button
                 x:Name="LibrarySearchClearButton"
-                Grid.Column="1"
+                Grid.Column="2"
                 Width="44"
                 Height="44"
-                Margin="8,0,0,0"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="LibrarySearchClearButton"
                 AutomationProperties.Name="Clear document search"
@@ -110,8 +136,7 @@
             </ui:Button>
             <ui:TextBlock
                 x:Name="LibraryMatchCount"
-                Grid.Column="2"
-                Margin="12,0,0,0"
+                Grid.Column="4"
                 VerticalAlignment="Center"
                 Style="{StaticResource SecondaryText}"
                 AutomationProperties.AutomationId="LibraryMatchCount"
@@ -127,8 +152,7 @@
              hides the secondary columns (see ApplyResponsiveLayout) so Filename,
              Status and the row actions fit without horizontal scrolling. -->
         <ui:Card
-            Grid.Row="2"
-            Margin="0,12,0,0"
+            Grid.Row="5"
             VerticalAlignment="Stretch"
             Padding="0"
             HorizontalContentAlignment="Stretch"
@@ -161,13 +185,21 @@
                         <DataGridTemplateColumn Header="Filename" Width="*" MinWidth="220">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate DataType="{x:Type models:Document}">
-                                    <ui:TextBlock
-                                        Margin="16,0,8,0"
-                                        FontTypography="Body"
-                                        VerticalAlignment="Center"
-                                        TextTrimming="CharacterEllipsis"
-                                        Text="{Binding Filename}"
-                                    />
+                                    <!-- The 16px/8px edge columns carry the former cell text inset. -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBlock
+                                            Grid.Column="1"
+                                            FontTypography="Body"
+                                            VerticalAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding Filename}"
+                                        />
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -334,19 +366,29 @@
                     VerticalAlignment="Center"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
                 >
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Rows carry the former icon and body margins; the two bodies share a row
+                         because exactly one is visible at a time. -->
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <ui:SymbolIcon
+                            Grid.Row="0"
                             Symbol="Document24"
                             Style="{StaticResource EmptyStateGlyph}"
-                            Margin="0,0,0,12"
                         />
                         <ui:TextBlock
+                            Grid.Row="2"
                             HorizontalAlignment="Center"
                             FontTypography="Title"
                             Text="No documents yet"
                         />
                         <ui:TextBlock
-                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            Grid.Row="4"
                             HorizontalAlignment="Center"
                             FontTypography="Body"
                             Style="{StaticResource SecondaryText}"
@@ -354,7 +396,7 @@
                             Text="Upload a document to see it here."
                         />
                         <ui:TextBlock
-                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            Grid.Row="4"
                             HorizontalAlignment="Center"
                             FontTypography="Body"
                             Style="{StaticResource SecondaryText}"
@@ -363,7 +405,7 @@
                             TextAlignment="Center"
                             Text="Ask a question to get started, or contact an admin to add documents."
                         />
-                    </StackPanel>
+                    </Grid>
                 </ui:Card>
 
                 <ui:ProgressRing
@@ -403,19 +445,29 @@
                             </Style.Triggers>
                         </Style>
                     </ui:Card.Style>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <ui:SymbolIcon
+                            Grid.Row="0"
                             Symbol="Search24"
                             Style="{StaticResource EmptyStateGlyph}"
-                            Margin="0,0,0,12"
                         />
                         <ui:TextBlock
+                            Grid.Row="2"
                             HorizontalAlignment="Center"
                             FontTypography="Title"
                             Text="No matching documents"
                         />
                         <ui:TextBlock
-                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            Grid.Row="4"
                             HorizontalAlignment="Center"
                             FontTypography="Body"
                             Style="{StaticResource SecondaryText}"
@@ -424,7 +476,7 @@
                             Text="Nothing matches your search."
                         />
                         <ui:Button
-                            Margin="0,12,0,0"
+                            Grid.Row="6"
                             HorizontalAlignment="Center"
                             AutomationProperties.Name="Clear document search"
                             Content="Clear search"
@@ -434,15 +486,14 @@
                                 <ui:SymbolIcon Symbol="Dismiss24" />
                             </ui:Button.Icon>
                         </ui:Button>
-                    </StackPanel>
+                    </Grid>
                 </ui:Card>
             </Grid>
         </ui:Card>
 
         <!-- Pagination footer -->
         <components:PaginationFooterControl
-            Grid.Row="3"
-            Margin="0,12,0,0"
+            Grid.Row="7"
             VerticalAlignment="Center"
             PageSizeOptions="{Binding PageSizeOptions}"
             SelectedPageSize="{Binding PageSize, Mode=TwoWay}"
@@ -459,8 +510,7 @@
 
         <!-- Footer -->
         <components:StatusFooterControl
-            Grid.Row="4"
-            Margin="0,12,0,0"
+            Grid.Row="9"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"
             IsBusy="{Binding IsBusy, Mode=OneWay}"

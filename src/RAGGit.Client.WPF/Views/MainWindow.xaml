@@ -20,7 +20,11 @@
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d"
 >
-    <Grid RowDefinitions="Auto, *">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <ui:TitleBar
             Grid.Row="0"
             Title="RAGGit"
@@ -58,13 +62,20 @@
 
         <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="1" Panel.ZIndex="100" />
 
-        <ui:SnackbarPresenter
-            x:Name="RootSnackbarPresenter"
-            Grid.Row="1"
-            Panel.ZIndex="101"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Bottom"
-            Margin="0,0,0,24"
-        />
+        <!-- The bottom inset that lifts the snackbar off the window edge is the
+             last row of this wrapper, so the overlay keeps its alignment and
+             z-order without a margin. -->
+        <Grid Grid.Row="1" Panel.ZIndex="101">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="24" />
+            </Grid.RowDefinitions>
+            <ui:SnackbarPresenter
+                x:Name="RootSnackbarPresenter"
+                Grid.Row="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+            />
+        </Grid>
     </Grid>
 </ui:FluentWindow>

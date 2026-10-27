@@ -28,14 +28,22 @@
         <converters:LockStatusLabelConverter x:Key="LockStatusLabel" />
     </Page.Resources>
 
-    <Grid
-        x:Name="AdminLayout"
-        Margin="{StaticResource PagePadding}"
-        SizeChanged="OnAdminLayoutSizeChanged"
-        RowDefinitions="Auto, Auto, *"
-    >
-        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-            <Grid ColumnDefinitions="*, Auto">
+    <Grid x:Name="AdminLayout" SizeChanged="OnAdminLayoutSizeChanged">
+        <Grid.RowDefinitions>
+            <!-- Outer page inset; was the root PagePadding (0,24) margin. -->
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="24" />
+        </Grid.RowDefinitions>
+        <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="People Management" />
                     <ui:TextBlock
@@ -43,13 +51,17 @@
                         Text="Manage accounts and access"
                     />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                <Grid Grid.Column="1" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <ui:Button
                         x:Name="AddPersonButton"
                         AutomationProperties.AutomationId="AddPersonButton"
                         AutomationProperties.Name="Add person"
                         ToolTip="Add person"
-                        Margin="0,0,8,0"
                         Appearance="Primary"
                         Content="Add person"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
@@ -61,6 +73,7 @@
                     </ui:Button>
                     <ui:Button
                         x:Name="RefreshUsersButton"
+                        Grid.Column="2"
                         AutomationProperties.AutomationId="RefreshUsersButton"
                         AutomationProperties.Name="Refresh users"
                         ToolTip="Refresh users"
@@ -83,49 +96,83 @@
                             />
                         </Grid>
                     </ui:Button>
-                </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
 
-        <components:StatusFooterControl
-            Grid.Row="1"
-            Margin="0,12,0,0"
-            Message="{Binding StatusMessage, Mode=OneWay}"
-            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
-            IsOpen="{Binding HasStatus, Mode=OneWay}"
-            IsBusy="{Binding IsBusy, Mode=OneWay}"
-            RetryCommand="{Binding LoadUsersCommand}"
-            RetryContent="Retry"
-            StatusAutomationId="AdminStatusBar"
-            RetryAutomationId="AdminRetryButton"
-        />
-
+        <!-- The wrapper owns the 12px leading inset so it collapses with the bar. -->
         <Grid
-            x:Name="PeopleLayout"
             Grid.Row="2"
-            Margin="0,12,0,0"
-            ColumnDefinitions="*, 320"
-            RowDefinitions="*, 0"
+            Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
         >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <components:StatusFooterControl
+                Grid.Row="1"
+                Message="{Binding StatusMessage, Mode=OneWay}"
+                Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+                IsOpen="{Binding HasStatus, Mode=OneWay}"
+                IsBusy="{Binding IsBusy, Mode=OneWay}"
+                RetryCommand="{Binding LoadUsersCommand}"
+                RetryContent="Retry"
+                StatusAutomationId="AdminStatusBar"
+                RetryAutomationId="AdminRetryButton"
+            />
+        </Grid>
+
+        <Grid x:Name="PeopleLayout" Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="312" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="0" />
+                <RowDefinition Height="0" />
+            </Grid.RowDefinitions>
+            <!-- Wide: a 16px column gutter (the panels' 8px margins summed) and a 312px detail
+                 track (the old 320px track less the 8px inset it carried). Compact: the column
+                 gutter closes and row gutter 1 opens, see ApplyResponsiveLayout. -->
             <ui:Card
                 x:Name="DirectoryPanel"
                 Grid.Row="0"
                 Grid.Column="0"
-                Margin="0,0,8,0"
                 Padding="0"
                 HorizontalContentAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
             >
-                <Grid RowDefinitions="Auto, Auto, *">
-                    <Grid Margin="16,12,16,8" ColumnDefinitions="*, 145, 145">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                    </Grid.ColumnDefinitions>
+                    <!-- 137 = the role filter's old 145 track less the 8px gutter its margin held. -->
+                    <Grid Grid.Row="1" Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="137" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="145" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBox
                             x:Name="UserSearchBox"
                             AutomationProperties.AutomationId="UserSearchBox"
                             AutomationProperties.Name="Search people"
                             PlaceholderText="Search name or username"
                             TextChanged="OnFiltersChanged"
-                            Margin="0,0,8,0"
                         />
                         <ComboBox
                             x:Name="RoleFilterCombo"
@@ -135,7 +182,6 @@
                             ToolTip="Filter by role"
                             SelectedIndex="0"
                             SelectionChanged="OnFiltersChanged"
-                            Margin="0,0,8,0"
                         >
                             <ComboBoxItem Content="All roles" Tag="All" />
                             <ComboBoxItem Content="Admin" Tag="Admin" />
@@ -143,7 +189,7 @@
                         </ComboBox>
                         <ComboBox
                             x:Name="StatusFilterCombo"
-                            Grid.Column="2"
+                            Grid.Column="3"
                             AutomationProperties.AutomationId="StatusFilterCombo"
                             AutomationProperties.Name="Filter by account status"
                             ToolTip="Filter by account status"
@@ -155,7 +201,11 @@
                             <ComboBoxItem Content="Disabled" Tag="Disabled" />
                         </ComboBox>
                     </Grid>
-                    <Grid Grid.Row="1" Margin="16,0,16,8" ColumnDefinitions="*, Auto">
+                    <Grid Grid.Row="3" Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock
                             x:Name="VisibleUsersText"
                             FontTypography="Caption"
@@ -170,17 +220,23 @@
                             Text="Sorted by name, ascending"
                         />
                     </Grid>
-                    <Grid Grid.Row="2" RowDefinitions="Auto, *">
+                    <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <!-- Pinned header (feature 029, FR-008): the GridView header scrolls away
                              with its rows, so it is suppressed and this sibling row carries the
                              sort affordances. It stays put while the list below scrolls, and the
                              sort indicator is rewritten by the click handler. -->
-                        <Grid
-                            x:Name="PeopleHeader"
-                            Grid.Row="0"
-                            Margin="0,0,0,4"
-                            ColumnDefinitions="235, 135, 190, 132"
-                        >
+                        <Grid x:Name="PeopleHeader" Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="235" />
+                                <ColumnDefinition Width="135" />
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="132" />
+                            </Grid.ColumnDefinitions>
                             <GridViewColumnHeader
                                 Content="Person"
                                 Tag="DisplayName"
@@ -215,7 +271,7 @@
                             />
                         </Grid>
                         <ui:ListView
-                            Grid.Row="1"
+                            Grid.Row="2"
                             x:Name="UsersList"
                             SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
                             SelectionMode="Single"
@@ -247,19 +303,35 @@
                                     <GridViewColumn Width="235">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel VerticalAlignment="Center" Margin="8,4">
-                                                    <ui:TextBlock
-                                                        FontTypography="BodyStrong"
-                                                        TextTrimming="CharacterEllipsis"
-                                                        Text="{Binding DisplayName}"
-                                                    />
-                                                    <ui:TextBlock
-                                                        FontTypography="Caption"
-                                                        Style="{StaticResource SecondaryText}"
-                                                        TextTrimming="CharacterEllipsis"
-                                                        Text="{Binding Username}"
-                                                    />
-                                                </StackPanel>
+                                                <Grid VerticalAlignment="Center">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="4" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="4" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="8" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                    >
+                                                        <ui:TextBlock
+                                                            FontTypography="BodyStrong"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            Text="{Binding DisplayName}"
+                                                        />
+                                                        <ui:TextBlock
+                                                            FontTypography="Caption"
+                                                            Style="{StaticResource SecondaryText}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            Text="{Binding Username}"
+                                                        />
+                                                    </StackPanel>
+                                                </Grid>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -283,10 +355,12 @@
                                     <GridViewColumn Width="190">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel
-                                                    Orientation="Horizontal"
-                                                    VerticalAlignment="Center"
-                                                >
+                                                <Grid VerticalAlignment="Center">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
                                                     <Border
                                                         Padding="8,4"
                                                         CornerRadius="6"
@@ -322,26 +396,30 @@
                                                             </ui:TextBlock.Style>
                                                         </ui:TextBlock>
                                                     </Border>
-                                                    <StackPanel
-                                                        Orientation="Horizontal"
+                                                    <Grid
+                                                        Grid.Column="2"
                                                         VerticalAlignment="Center"
-                                                        Margin="8,0,0,0"
                                                         Visibility="{Binding LockedOut, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                     >
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="4" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
                                                         <ui:SymbolIcon
                                                             Symbol="LockClosed24"
                                                             FontSize="16"
                                                             VerticalAlignment="Center"
-                                                            Margin="0,0,4,0"
                                                             Foreground="{ui:ThemeResource SystemFillColorCautionBrush}"
                                                         />
                                                         <ui:TextBlock
+                                                            Grid.Column="2"
                                                             FontTypography="Caption"
                                                             Foreground="{ui:ThemeResource SystemFillColorCautionBrush}"
                                                             Text="Locked"
                                                         />
-                                                    </StackPanel>
-                                                </StackPanel>
+                                                    </Grid>
+                                                </Grid>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -403,25 +481,33 @@
                             VerticalAlignment="Center"
                             Visibility="{Binding ShowEmptyUsers, Converter={StaticResource BooleanToVisibilityConverter}}"
                         >
-                            <StackPanel HorizontalAlignment="Center">
+                            <Grid HorizontalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <ui:SymbolIcon
+                                    Grid.Row="0"
                                     Symbol="People24"
                                     Style="{StaticResource EmptyStateGlyph}"
-                                    Margin="0,0,0,12"
                                 />
                                 <ui:TextBlock
+                                    Grid.Row="2"
                                     HorizontalAlignment="Center"
                                     FontTypography="Title"
                                     Text="No people yet"
                                 />
                                 <ui:TextBlock
-                                    Margin="{StaticResource EmptyStateBodyMargin}"
+                                    Grid.Row="4"
                                     HorizontalAlignment="Center"
                                     FontTypography="Body"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Add a person to start managing access."
                                 />
-                            </StackPanel>
+                            </Grid>
                         </ui:Card>
                         <ui:Card
                             x:Name="FilteredEmptyState"
@@ -430,21 +516,29 @@
                             VerticalAlignment="Center"
                             Visibility="Collapsed"
                         >
-                            <StackPanel HorizontalAlignment="Center">
+                            <Grid HorizontalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <ui:SymbolIcon
+                                    Grid.Row="0"
                                     Symbol="Search24"
                                     Style="{StaticResource EmptyStateGlyph}"
-                                    Margin="0,0,0,8"
                                 />
                                 <ui:TextBlock
+                                    Grid.Row="2"
                                     FontTypography="BodyStrong"
                                     Text="No matching people"
                                 />
                                 <ui:Button
                                     x:Name="ClearUserFiltersButton"
+                                    Grid.Row="4"
                                     AutomationProperties.AutomationId="ClearUserFiltersButton"
                                     AutomationProperties.Name="Clear people filters"
-                                    Margin="0,8,0,0"
                                     Content="Clear filters"
                                     Click="OnClearFiltersClicked"
                                 >
@@ -452,7 +546,7 @@
                                         <ui:SymbolIcon Symbol="Dismiss24" />
                                     </ui:Button.Icon>
                                 </ui:Button>
-                            </StackPanel>
+                            </Grid>
                         </ui:Card>
                     </Grid>
                 </Grid>
@@ -461,21 +555,27 @@
             <ui:Card
                 x:Name="DetailPanel"
                 Grid.Row="0"
-                Grid.Column="1"
-                Margin="8,0,0,0"
+                Grid.Column="2"
                 Padding="20"
                 HorizontalContentAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
             >
                 <Grid>
-                    <StackPanel
+                    <Grid
                         x:Name="NoSelectionPanel"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                     >
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedUser}" Value="{x:Null}">
@@ -483,26 +583,27 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </StackPanel.Style>
+                        </Grid.Style>
                         <ui:SymbolIcon
+                            Grid.Row="0"
                             Symbol="Person24"
                             Style="{StaticResource EmptyStateGlyph}"
-                            Margin="0,0,0,8"
                         />
                         <ui:TextBlock
+                            Grid.Row="2"
                             FontTypography="BodyStrong"
                             Text="Select a person"
                             HorizontalAlignment="Center"
                         />
                         <ui:TextBlock
-                            Margin="0,4,0,0"
+                            Grid.Row="4"
                             Style="{StaticResource SecondaryText}"
                             Text="Account details and actions will appear here."
                             TextWrapping="Wrap"
                             TextAlignment="Center"
                             HorizontalAlignment="Center"
                         />
-                    </StackPanel>
+                    </Grid>
                     <ScrollViewer
                         x:Name="SelectedDetailsPanel"
                         AutomationProperties.AutomationId="SelectedPersonDetails"
@@ -511,92 +612,117 @@
                         HorizontalScrollBarVisibility="Disabled"
                         Visibility="{Binding SelectedUser, Converter={StaticResource NullVisibility}}"
                     >
-                        <StackPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="2" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="16" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="12" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="20" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <ui:TextBlock
+                                Grid.Row="0"
                                 FontTypography="Caption"
                                 Style="{StaticResource SecondaryText}"
                                 Text="Selected person"
                             />
                             <ui:TextBlock
-                                Margin="0,4,0,0"
+                                Grid.Row="2"
                                 FontTypography="Title"
                                 TextWrapping="Wrap"
                                 Text="{Binding SelectedUser.DisplayName}"
                             />
                             <ui:TextBlock
-                                Margin="0,2,0,0"
+                                Grid.Row="4"
                                 FontTypography="Body"
                                 Style="{StaticResource SecondaryText}"
                                 Text="{Binding SelectedUser.Username}"
                                 TextWrapping="Wrap"
                             />
-                            <Separator Margin="0,16,0,12" />
-                            <ui:TextBlock FontTypography="BodyStrong" Text="Account" />
-                            <Grid
-                                Margin="0,8,0,0"
-                                ColumnDefinitions="Auto, *"
-                                RowDefinitions="Auto, Auto, Auto, Auto"
-                            >
+                            <Separator Grid.Row="6" />
+                            <ui:TextBlock Grid.Row="8" FontTypography="BodyStrong" Text="Account" />
+                            <Grid Grid.Row="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <ui:TextBlock
                                     Grid.Row="0"
+                                    Grid.Column="0"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Role"
                                 />
                                 <ui:TextBlock
                                     Grid.Row="0"
-                                    Grid.Column="1"
-                                    Margin="12,0,0,0"
+                                    Grid.Column="2"
                                     Text="{Binding SelectedUser.Role}"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="1"
-                                    Margin="0,8,0,0"
+                                    Grid.Row="2"
+                                    Grid.Column="0"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Status"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="12,8,0,0"
+                                    Grid.Row="2"
+                                    Grid.Column="2"
                                     Text="{Binding SelectedUser.IsActive, Converter={StaticResource ActiveStatusLabel}}"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="2"
-                                    Margin="0,8,0,0"
+                                    Grid.Row="4"
+                                    Grid.Column="0"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Lockout"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="2"
-                                    Grid.Column="1"
-                                    Margin="12,8,0,0"
+                                    Grid.Row="4"
+                                    Grid.Column="2"
                                     Text="{Binding SelectedUser.LockedOut, Converter={StaticResource LockedLabel}}"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="3"
-                                    Margin="0,8,0,0"
+                                    Grid.Row="6"
+                                    Grid.Column="0"
                                     Style="{StaticResource SecondaryText}"
                                     Text="Created"
                                 />
                                 <ui:TextBlock
-                                    Grid.Row="3"
-                                    Grid.Column="1"
-                                    Margin="12,8,0,0"
+                                    Grid.Row="6"
+                                    Grid.Column="2"
                                     Text="{Binding SelectedUser.CreatedAt, StringFormat={}{0:g}}"
                                 />
                             </Grid>
                             <ui:TextBlock
-                                Margin="0,8,0,0"
+                                Grid.Row="12"
                                 Style="{StaticResource SecondaryText}"
                                 Text="{Binding SelectedUser.LastSignInAt, Converter={StaticResource LastSignInLabel}}"
                                 TextWrapping="Wrap"
                             />
                             <ui:Button
                                 x:Name="OpenResetPasswordButton"
+                                Grid.Row="14"
                                 AutomationProperties.AutomationId="OpenResetPasswordButton"
                                 AutomationProperties.Name="Reset selected person's password"
                                 ToolTip="Reset selected person's password"
-                                Margin="0,20,0,0"
                                 Appearance="Primary"
                                 Content="Reset password"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
@@ -606,7 +732,7 @@
                                     <ui:SymbolIcon Symbol="KeyReset24" />
                                 </ui:Button.Icon>
                             </ui:Button>
-                        </StackPanel>
+                        </Grid>
                     </ScrollViewer>
                 </Grid>
             </ui:Card>

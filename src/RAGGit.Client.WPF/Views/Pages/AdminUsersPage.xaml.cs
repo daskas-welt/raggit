@@ -288,29 +288,30 @@ public partial class AdminUsersPage : Page
         ApplyPeopleColumnWidths(compact);
         if (compact)
         {
+            // Stack the panels: the column gutter closes, row gutter 1 opens.
             PeopleLayout.ColumnDefinitions[1].Width = new GridLength(0);
+            PeopleLayout.ColumnDefinitions[2].Width = new GridLength(0);
             PeopleLayout.RowDefinitions[0].Height = new GridLength(2, GridUnitType.Star);
-            PeopleLayout.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+            PeopleLayout.RowDefinitions[1].Height = new GridLength(8);
+            PeopleLayout.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
             Grid.SetColumn(DirectoryPanel, 0);
-            Grid.SetColumnSpan(DirectoryPanel, 2);
-            Grid.SetRow(DetailPanel, 1);
+            Grid.SetColumnSpan(DirectoryPanel, 3);
+            Grid.SetRow(DetailPanel, 2);
             Grid.SetColumn(DetailPanel, 0);
-            Grid.SetColumnSpan(DetailPanel, 2);
-            DirectoryPanel.Margin = new Thickness(0, 0, 0, 8);
-            DetailPanel.Margin = new Thickness(0);
+            Grid.SetColumnSpan(DetailPanel, 3);
         }
         else
         {
-            PeopleLayout.ColumnDefinitions[1].Width = new GridLength(320);
+            PeopleLayout.ColumnDefinitions[1].Width = new GridLength(16);
+            PeopleLayout.ColumnDefinitions[2].Width = new GridLength(312);
             PeopleLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
             PeopleLayout.RowDefinitions[1].Height = new GridLength(0);
+            PeopleLayout.RowDefinitions[2].Height = new GridLength(0);
             Grid.SetColumn(DirectoryPanel, 0);
             Grid.SetColumnSpan(DirectoryPanel, 1);
             Grid.SetRow(DetailPanel, 0);
-            Grid.SetColumn(DetailPanel, 1);
+            Grid.SetColumn(DetailPanel, 2);
             Grid.SetColumnSpan(DetailPanel, 1);
-            DirectoryPanel.Margin = new Thickness(0, 0, 8, 0);
-            DetailPanel.Margin = new Thickness(8, 0, 0, 0);
         }
     }
 

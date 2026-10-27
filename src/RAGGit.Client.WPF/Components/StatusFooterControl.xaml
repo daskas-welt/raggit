@@ -13,7 +13,13 @@
     <!-- Shared status/error footer (feature 028): one severity-styled InfoBar
          plus an optional retry action. The message always wraps (never trims);
          the retry button only shows while open with a command to run. -->
-    <Grid ColumnDefinitions="*, Auto">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <!-- 8 px gutter: former retry-button left margin -->
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
         <ui:InfoBar
             Grid.Column="0"
             VerticalAlignment="Center"
@@ -25,21 +31,26 @@
             Severity="{Binding Severity, ElementName=Root, Mode=OneWay}"
         />
         <ui:Button
-            Grid.Column="1"
-            Margin="8,0,0,0"
+            Grid.Column="2"
             MinHeight="44"
             VerticalAlignment="Center"
             AutomationProperties.AutomationId="{Binding RetryAutomationId, ElementName=Root, Mode=OneWay}"
             Command="{Binding RetryCommand, ElementName=Root, Mode=OneWay}"
             ToolTip="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
         >
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <!-- 8 px gutter: former label right margin -->
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ui:TextBlock
-                    Margin="0,0,8,0"
+                    Grid.Column="0"
                     VerticalAlignment="Center"
                     Text="{Binding RetryContent, ElementName=Root, Mode=OneWay}"
                 />
-                <Grid Width="24" Height="24">
+                <Grid Grid.Column="2" Width="24" Height="24">
                     <ui:SymbolIcon
                         Symbol="ArrowClockwise24"
                         Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource InvertedBoolVisibility}}"
@@ -52,7 +63,7 @@
                         Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
                     />
                 </Grid>
-            </StackPanel>
+            </Grid>
             <ui:Button.Style>
                 <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
                     <Setter Property="Visibility" Value="Visible" />

@@ -48,19 +48,21 @@ public partial class DashboardPage : Page
 
         if (compact)
         {
+            // Stack the panels: the column gutter and the second content column
+            // collapse, and the row gutter opens, so each panel spans the full width.
             PanelsGrid.ColumnDefinitions[1].Width = new GridLength(0);
-            Grid.SetRow(QuestionsPanel, 1);
+            PanelsGrid.ColumnDefinitions[2].Width = new GridLength(0);
+            PanelsGrid.RowDefinitions[1].Height = new GridLength(8);
+            Grid.SetRow(QuestionsPanel, 2);
             Grid.SetColumn(QuestionsPanel, 0);
-            DocumentsPanel.Margin = new Thickness(0, 0, 0, 8);
-            QuestionsPanel.Margin = new Thickness(0);
         }
         else
         {
-            PanelsGrid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+            PanelsGrid.ColumnDefinitions[1].Width = new GridLength(16);
+            PanelsGrid.ColumnDefinitions[2].Width = new GridLength(1, GridUnitType.Star);
+            PanelsGrid.RowDefinitions[1].Height = new GridLength(0);
             Grid.SetRow(QuestionsPanel, 0);
-            Grid.SetColumn(QuestionsPanel, 1);
-            DocumentsPanel.Margin = new Thickness(0, 0, 8, 0);
-            QuestionsPanel.Margin = new Thickness(8, 0, 0, 0);
+            Grid.SetColumn(QuestionsPanel, 2);
         }
     }
 

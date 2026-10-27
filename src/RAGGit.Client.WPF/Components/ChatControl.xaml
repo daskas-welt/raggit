@@ -18,7 +18,16 @@
         <sys:Double x:Key="ChatUserBubbleMaxWidth">400</sys:Double>
         <sys:Double x:Key="ChatAssistantBubbleMaxWidth">500</sys:Double>
     </UserControl.Resources>
-    <Grid RowDefinitions="*, Auto, Auto">
+    <Grid>
+        <!-- Gutter row: the 8px above the input bar. The reasoning block carries
+             its own leading gutter so a hidden region leaves no gap behind. -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <!-- Messages -->
         <ListBox
             Grid.Row="0"
@@ -36,9 +45,16 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid HorizontalAlignment="Stretch" Margin="0,4">
+                    <Grid HorizontalAlignment="Stretch">
+                        <!-- 4px top/bottom insets (was Margin="0,4"). -->
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="4" />
+                        </Grid.RowDefinitions>
                         <!-- User message (right-aligned) -->
                         <Border
+                            Grid.Row="1"
                             HorizontalAlignment="Right"
                             MaxWidth="{StaticResource ChatUserBubbleMaxWidth}"
                             Background="{DynamicResource AccentFillColorDefaultBrush}"
@@ -72,6 +88,7 @@
                         </Border>
                         <!-- Assistant message (left-aligned) -->
                         <Border
+                            Grid.Row="1"
                             HorizontalAlignment="Left"
                             MaxWidth="{StaticResource ChatAssistantBubbleMaxWidth}"
                             BorderThickness="1"
@@ -79,97 +96,136 @@
                             Padding="12,8"
                             Visibility="{Binding IsUser, Converter={StaticResource InvertedBoolVisibility}}"
                         >
-                            <StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <!-- The expander block carries its own 8px leading gap so a
+                                         message without citations leaves no gap behind. -->
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <ui:TextBlock
+                                    Grid.Row="0"
                                     Text="{Binding Text}"
                                     FontTypography="Body"
                                     TextWrapping="Wrap"
                                 />
-                                <ui:CardExpander
-                                    Margin="0,8,0,0"
+                                <Grid
+                                    Grid.Row="1"
                                     Visibility="{Binding HasCitations, Converter={StaticResource BoolVisibility}}"
-                                    AutomationProperties.AutomationId="{Binding SourcesAutomationId}"
                                 >
-                                    <ui:CardExpander.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ui:SymbolIcon
-                                                Symbol="TextQuote24"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,6,0"
-                                            />
-                                            <ui:TextBlock Text="Sources" Margin="0,0,4,0" />
-                                            <ui:TextBlock
-                                                Text="{Binding Citations.Count}"
-                                                Style="{StaticResource SecondaryText}"
-                                            />
-                                        </StackPanel>
-                                    </ui:CardExpander.Header>
-                                    <ListBox
-                                        ItemsSource="{Binding Citations}"
-                                        SelectionMode="Single"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        HorizontalContentAlignment="Stretch"
-                                        AutomationProperties.AutomationId="{Binding MessageCitationsAutomationId}"
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="8" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <ui:CardExpander
+                                        Grid.Row="1"
+                                        AutomationProperties.AutomationId="{Binding SourcesAutomationId}"
                                     >
-                                        <ListBox.ItemContainerStyle>
-                                            <Style TargetType="ListBoxItem">
-                                                <Setter
-                                                    Property="HorizontalContentAlignment"
-                                                    Value="Stretch"
+                                        <ui:CardExpander.Header>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <!-- 6px icon-to-label gap (was the icon Margin). -->
+                                                    <ColumnDefinition Width="6" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <!-- 4px label-to-count gap (was the label Margin). -->
+                                                    <ColumnDefinition Width="4" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <ui:SymbolIcon
+                                                    Grid.Column="0"
+                                                    Symbol="TextQuote24"
+                                                    VerticalAlignment="Center"
                                                 />
-                                                <Setter Property="Padding" Value="0" />
-                                            </Style>
-                                        </ListBox.ItemContainerStyle>
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border
-                                                    BorderThickness="1"
-                                                    CornerRadius="8"
-                                                    Padding="8"
-                                                    Margin="0,2"
-                                                >
-                                                    <Grid ColumnDefinitions="Auto, *">
+                                                <ui:TextBlock Grid.Column="2" Text="Sources" />
+                                                <ui:TextBlock
+                                                    Grid.Column="4"
+                                                    Text="{Binding Citations.Count}"
+                                                    Style="{StaticResource SecondaryText}"
+                                                />
+                                            </Grid>
+                                        </ui:CardExpander.Header>
+                                        <ListBox
+                                            ItemsSource="{Binding Citations}"
+                                            SelectionMode="Single"
+                                            BorderThickness="0"
+                                            Background="Transparent"
+                                            HorizontalContentAlignment="Stretch"
+                                            AutomationProperties.AutomationId="{Binding MessageCitationsAutomationId}"
+                                        >
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter
+                                                        Property="HorizontalContentAlignment"
+                                                        Value="Stretch"
+                                                    />
+                                                    <Setter Property="Padding" Value="0" />
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <!-- Wrapper carries the former Margin="0,2" as edge rows. -->
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="2" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="2" />
+                                                        </Grid.RowDefinitions>
                                                         <Border
-                                                            Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                            CornerRadius="6"
-                                                            Padding="6,3"
-                                                            VerticalAlignment="Top"
+                                                            Grid.Row="1"
+                                                            BorderThickness="1"
+                                                            CornerRadius="8"
+                                                            Padding="8"
                                                         >
-                                                            <ui:TextBlock
-                                                                Text="{Binding Ordinal, Converter={StaticResource CitationOrdinal}}"
-                                                                FontTypography="Caption"
-                                                                Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                                            />
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <!-- 8px ordinal-to-text gap (was the StackPanel Margin). -->
+                                                                    <ColumnDefinition Width="8" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border
+                                                                    Grid.Column="0"
+                                                                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                                    CornerRadius="6"
+                                                                    Padding="6,3"
+                                                                    VerticalAlignment="Top"
+                                                                >
+                                                                    <ui:TextBlock
+                                                                        Text="{Binding Ordinal, Converter={StaticResource CitationOrdinal}}"
+                                                                        FontTypography="Caption"
+                                                                        Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                                    />
+                                                                </Border>
+                                                                <StackPanel Grid.Column="2">
+                                                                    <ui:TextBlock
+                                                                        Text="{Binding Converter={StaticResource CitationDocumentName}}"
+                                                                        FontTypography="Caption"
+                                                                        TextTrimming="CharacterEllipsis"
+                                                                    />
+                                                                    <ui:TextBlock
+                                                                        Text="{Binding Text}"
+                                                                        FontTypography="Body"
+                                                                        TextWrapping="Wrap"
+                                                                    />
+                                                                    <ui:TextBlock
+                                                                        Text="{Binding Converter={StaticResource CitationSubtitle}}"
+                                                                        FontTypography="Caption"
+                                                                        Style="{StaticResource SecondaryText}"
+                                                                        TextTrimming="CharacterEllipsis"
+                                                                    />
+                                                                </StackPanel>
+                                                            </Grid>
                                                         </Border>
-                                                        <StackPanel
-                                                            Grid.Column="1"
-                                                            Margin="8,0,0,0"
-                                                        >
-                                                            <ui:TextBlock
-                                                                Text="{Binding Converter={StaticResource CitationDocumentName}}"
-                                                                FontTypography="Caption"
-                                                                TextTrimming="CharacterEllipsis"
-                                                            />
-                                                            <ui:TextBlock
-                                                                Text="{Binding Text}"
-                                                                FontTypography="Body"
-                                                                TextWrapping="Wrap"
-                                                            />
-                                                            <ui:TextBlock
-                                                                Text="{Binding Converter={StaticResource CitationSubtitle}}"
-                                                                FontTypography="Caption"
-                                                                Style="{StaticResource SecondaryText}"
-                                                                TextTrimming="CharacterEllipsis"
-                                                            />
-                                                        </StackPanel>
                                                     </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </ui:CardExpander>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </ui:CardExpander>
+                                </Grid>
                                 <ui:Button
+                                    Grid.Row="2"
                                     HorizontalAlignment="Right"
                                     Background="Transparent"
                                     BorderThickness="0"
@@ -183,7 +239,7 @@
                                 >
                                     <ui:SymbolIcon Symbol="Copy24" />
                                 </ui:Button>
-                            </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
                 </DataTemplate>
@@ -191,34 +247,46 @@
         </ListBox>
 
         <!-- Empty state (toggled in code-behind) -->
-        <StackPanel
+        <Grid
             x:Name="EmptyState"
             Grid.Row="0"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
         >
-            <ui:SymbolIcon
-                Symbol="Chat24"
-                Style="{StaticResource EmptyStateGlyph}"
-                Margin="0,0,0,12"
-            />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!-- 12px glyph-to-title gap (was the glyph Margin). -->
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <!-- 12px title-to-body gap (was EmptyStateBodyMargin). -->
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ui:SymbolIcon Grid.Row="0" Symbol="Chat24" Style="{StaticResource EmptyStateGlyph}" />
             <ui:TextBlock
+                Grid.Row="2"
                 Text="Ask a question to get started"
                 FontTypography="Title"
                 HorizontalAlignment="Center"
             />
             <ui:TextBlock
+                Grid.Row="4"
                 Text="Your conversation will appear here."
                 FontTypography="Body"
                 Style="{StaticResource SecondaryText}"
-                Margin="{StaticResource EmptyStateBodyMargin}"
                 HorizontalAlignment="Center"
             />
-        </StackPanel>
+        </Grid>
 
         <!-- Input bar (fixed at bottom) -->
-        <Border Grid.Row="1" BorderThickness="1" CornerRadius="24" Padding="8" Margin="0,8,0,0">
-            <Grid ColumnDefinitions="*, Auto">
+        <Border Grid.Row="2" BorderThickness="1" CornerRadius="24" Padding="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <!-- 8px input-to-send gap (was the button Margin). -->
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ui:TextBox
                     Grid.Column="0"
                     x:Name="InputBox"
@@ -230,7 +298,7 @@
                     AutomationProperties.AutomationId="ChatInputBox"
                 />
                 <ui:Button
-                    Grid.Column="1"
+                    Grid.Column="2"
                     AutomationProperties.AutomationId="SendQuestionButton"
                     AutomationProperties.Name="Send question"
                     ToolTip="Send question"
@@ -238,7 +306,6 @@
                     Width="40"
                     Height="40"
                     Padding="0"
-                    Margin="8,0,0,0"
                     VerticalAlignment="Center"
                 >
                     <Grid Width="24" Height="24">
@@ -261,51 +328,70 @@
         <!-- Live reasoning: what the workstation is doing while answering (032).
              Replaces the former static busy line; the ViewModel clears it the
              moment the answer or a failure is presented. -->
-        <ListBox
-            x:Name="ReasoningRegion"
-            Grid.Row="2"
-            Margin="0,8,0,0"
-            ItemsSource="{Binding ReasoningSteps, ElementName=Root}"
+        <Grid
+            Grid.Row="3"
             Visibility="{Binding HasReasoning, ElementName=Root, Converter={StaticResource BoolVisibility}}"
-            SelectionMode="Single"
-            BorderThickness="0"
-            Background="Transparent"
-            IsHitTestVisible="False"
-            Focusable="False"
-            HorizontalContentAlignment="Stretch"
-            AutomationProperties.AutomationId="ReasoningProgressList"
-            AutomationProperties.Name="Work in progress"
         >
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Focusable" Value="False" />
-                    <Setter Property="Padding" Value="0" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <!-- Fixed first column keeps older rows aligned when the
+            <Grid.RowDefinitions>
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ListBox
+                x:Name="ReasoningRegion"
+                Grid.Row="1"
+                ItemsSource="{Binding ReasoningSteps, ElementName=Root}"
+                SelectionMode="Single"
+                BorderThickness="0"
+                Background="Transparent"
+                IsHitTestVisible="False"
+                Focusable="False"
+                HorizontalContentAlignment="Stretch"
+                AutomationProperties.AutomationId="ReasoningProgressList"
+                AutomationProperties.Name="Work in progress"
+            >
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Fixed first column keeps older rows aligned when the
                          activity indicator is collapsed. -->
-                    <Grid ColumnDefinitions="22, *" Margin="0,2">
-                        <ui:ProgressRing
-                            Width="14"
-                            Height="14"
-                            IsIndeterminate="True"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding IsCurrent, Converter={StaticResource BoolVisibility}}"
-                        />
-                        <ui:TextBlock
-                            Grid.Column="1"
-                            Text="{Binding Text}"
-                            FontTypography="Caption"
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                        />
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- 2px top/bottom insets (was Margin="0,2"). -->
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="2" />
+                            </Grid.RowDefinitions>
+                            <ui:ProgressRing
+                                Grid.Row="1"
+                                Width="14"
+                                Height="14"
+                                IsIndeterminate="True"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsCurrent, Converter={StaticResource BoolVisibility}}"
+                            />
+                            <ui:TextBlock
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Text="{Binding Text}"
+                                FontTypography="Caption"
+                                Style="{StaticResource SecondaryText}"
+                                TextWrapping="Wrap"
+                            />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
     </Grid>
 </UserControl>

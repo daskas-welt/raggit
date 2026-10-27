@@ -16,10 +16,30 @@
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
-    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, Auto, *, Auto, Auto">
+    <Grid>
+        <!-- The 24px outer rows carry the former PagePadding inset of this root grid;
+             the 12px rows are the gutters between the stacked sections. -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+        </Grid.RowDefinitions>
+
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-            <Grid ColumnDefinitions="*, Auto">
+        <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="My Documents" />
                     <ui:TextBlock
@@ -58,7 +78,14 @@
         </ui:Card>
 
         <!-- Search (feature 029): filters the loaded uploads as the user types. -->
-        <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*, Auto, Auto">
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <ui:TextBox
                 x:Name="DocumentsMineSearchBox"
                 Grid.Column="0"
@@ -69,10 +96,9 @@
             />
             <ui:Button
                 x:Name="DocumentsMineSearchClearButton"
-                Grid.Column="1"
+                Grid.Column="2"
                 Width="44"
                 Height="44"
-                Margin="8,0,0,0"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="DocumentsMineSearchClearButton"
                 AutomationProperties.Name="Clear my documents search"
@@ -86,8 +112,7 @@
             </ui:Button>
             <ui:TextBlock
                 x:Name="DocumentsMineMatchCount"
-                Grid.Column="2"
-                Margin="12,0,0,0"
+                Grid.Column="4"
                 VerticalAlignment="Center"
                 Style="{StaticResource SecondaryText}"
                 AutomationProperties.AutomationId="DocumentsMineMatchCount"
@@ -97,7 +122,7 @@
         </Grid>
 
         <!-- Document list -->
-        <Grid Grid.Row="2" Margin="0,12,0,0">
+        <Grid Grid.Row="5">
             <ui:ListView
                 ItemsSource="{Binding FilteredItems}"
                 SelectionMode="Single"
@@ -121,31 +146,43 @@
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="Padding" Value="0" />
+                        <!-- Item spacing in the UniformGrid panel has no Grid tracks. -->
                         <Setter Property="Margin" Value="0,0,12,12" />
                     </Style>
                 </ui:ListView.ItemContainerStyle>
                 <ui:ListView.ItemTemplate>
                     <DataTemplate>
                         <ui:Card Padding="{StaticResource CardPaddingSmall}">
-                            <Grid RowDefinitions="Auto, Auto">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="4" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <ui:TextBlock
                                     Grid.Row="0"
                                     FontTypography="BodyStrong"
                                     TextTrimming="CharacterEllipsis"
                                     Text="{Binding Filename}"
                                 />
-                                <StackPanel Grid.Row="1" Margin="0,4,0,0" Orientation="Horizontal">
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
                                     <components:StatusChip
+                                        Grid.Column="0"
                                         Status="{Binding Status}"
                                         VerticalAlignment="Center"
                                     />
                                     <ui:TextBlock
-                                        Margin="8,0,0,0"
+                                        Grid.Column="2"
                                         FontTypography="Caption"
                                         VerticalAlignment="Center"
                                         Text="{Binding Converter={StaticResource MineMeta}}"
                                     />
-                                </StackPanel>
+                                </Grid>
                             </Grid>
                         </ui:Card>
                     </DataTemplate>
@@ -159,24 +196,32 @@
                 VerticalAlignment="Center"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
             >
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <ui:SymbolIcon
+                        Grid.Row="0"
                         Symbol="Document24"
                         Style="{StaticResource EmptyStateGlyph}"
-                        Margin="0,0,0,12"
                     />
                     <ui:TextBlock
+                        Grid.Row="2"
                         HorizontalAlignment="Center"
                         FontTypography="Title"
                         Text="No documents yet"
                     />
                     <ui:TextBlock
-                        Margin="{StaticResource EmptyStateBodyMargin}"
+                        Grid.Row="4"
                         HorizontalAlignment="Center"
                         FontTypography="Body"
                         Text="Upload a document to see it here."
                     />
-                </StackPanel>
+                </Grid>
             </ui:Card>
 
             <ui:ProgressRing
@@ -213,19 +258,29 @@
                         </Style.Triggers>
                     </Style>
                 </ui:Card.Style>
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <ui:SymbolIcon
+                        Grid.Row="0"
                         Symbol="Search24"
                         Style="{StaticResource EmptyStateGlyph}"
-                        Margin="0,0,0,12"
                     />
                     <ui:TextBlock
+                        Grid.Row="2"
                         HorizontalAlignment="Center"
                         FontTypography="Title"
                         Text="No matching documents"
                     />
                     <ui:TextBlock
-                        Margin="{StaticResource EmptyStateBodyMargin}"
+                        Grid.Row="4"
                         HorizontalAlignment="Center"
                         FontTypography="Body"
                         Style="{StaticResource SecondaryText}"
@@ -234,7 +289,7 @@
                         Text="Nothing loaded matches your search. Load more to search further back."
                     />
                     <ui:Button
-                        Margin="0,12,0,0"
+                        Grid.Row="6"
                         HorizontalAlignment="Center"
                         AutomationProperties.Name="Clear my documents search"
                         Content="Clear search"
@@ -244,24 +299,28 @@
                             <ui:SymbolIcon Symbol="Dismiss24" />
                         </ui:Button.Icon>
                     </ui:Button>
-                </StackPanel>
+                </Grid>
             </ui:Card>
         </Grid>
 
         <!-- Load more -->
         <ui:Button
             x:Name="LoadMoreButton"
-            Grid.Row="3"
+            Grid.Row="7"
             AutomationProperties.AutomationId="LoadMoreButton"
             TabIndex="1"
-            Margin="0,12,0,0"
             HorizontalAlignment="Center"
             Command="{Binding LoadMoreCommand}"
             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
             Visibility="{Binding HasMore, Converter={StaticResource BooleanToVisibilityConverter}}"
         >
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Grid Width="24" Height="24">
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0" Width="24" Height="24">
                     <ui:SymbolIcon
                         Symbol="ArrowDown24"
                         Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
@@ -274,14 +333,13 @@
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                     />
                 </Grid>
-                <ui:TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Load more" />
-            </StackPanel>
+                <ui:TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Load more" />
+            </Grid>
         </ui:Button>
 
         <!-- Footer -->
         <components:StatusFooterControl
-            Grid.Row="4"
-            Margin="0,12,0,0"
+            Grid.Row="9"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"
             IsBusy="{Binding IsBusy, Mode=OneWay}"

@@ -14,10 +14,29 @@
         <converters:HistoryCitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
     </Page.Resources>
-    <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, Auto, Auto, Auto, *">
+    <Grid>
+        <!-- The 24px outer rows carry the former PagePadding inset of this root grid. -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="24" />
+        </Grid.RowDefinitions>
+
         <!-- Header card -->
-        <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-            <Grid ColumnDefinitions="*, Auto">
+        <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Query Detail" />
                     <ui:TextBlock
@@ -25,14 +44,19 @@
                         Text="A saved question and its grounded answer"
                     />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Grid Grid.Column="1" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <ui:Button
                         x:Name="AskAgainButton"
+                        Grid.Column="0"
                         AutomationProperties.AutomationId="AskAgainButton"
                         AutomationProperties.Name="Run this query again"
                         ToolTip="Run this query again"
                         TabIndex="0"
-                        Margin="0,0,8,0"
                         Content="Ask again"
                         Click="OnAskAgainClicked"
                     >
@@ -42,6 +66,7 @@
                     </ui:Button>
                     <ui:Button
                         x:Name="BackButton"
+                        Grid.Column="2"
                         AutomationProperties.AutomationId="BackButton"
                         AutomationProperties.Name="Back"
                         ToolTip="Back"
@@ -53,14 +78,13 @@
                             <ui:SymbolIcon Symbol="ArrowLeft24" />
                         </ui:Button.Icon>
                     </ui:Button>
-                </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
 
         <!-- Error -->
         <components:StatusFooterControl
-            Grid.Row="1"
-            Margin="0,12,0,0"
+            Grid.Row="3"
             Message="{Binding ErrorMessage, Mode=OneWay}"
             Severity="Error"
         >
@@ -77,23 +101,34 @@
         </components:StatusFooterControl>
 
         <!-- Prompt card -->
-        <ui:Card Grid.Row="2" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
-            <StackPanel>
-                <ui:TextBlock Style="{StaticResource SectionHeaderText}" Text="Prompt" />
+        <ui:Card Grid.Row="5" Padding="{StaticResource CardPaddingSmall}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <ui:TextBlock
-                    Margin="0,6,0,0"
+                    Grid.Row="0"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Prompt"
+                />
+                <ui:TextBlock
+                    Grid.Row="2"
                     FontTypography="Body"
                     TextWrapping="Wrap"
                     Text="{Binding Detail.Prompt}"
                 />
                 <ui:Button
                     x:Name="CopyPromptButton"
+                    Grid.Row="4"
                     AutomationProperties.AutomationId="CopyPromptButton"
                     AutomationProperties.Name="Copy prompt"
                     ToolTip="Copy prompt"
                     TabIndex="2"
                     HorizontalAlignment="Right"
-                    Margin="0,6,0,0"
                     Content="Copy"
                     Click="CopyPromptButton_Click"
                 >
@@ -101,27 +136,38 @@
                         <ui:SymbolIcon Symbol="Copy24" />
                     </ui:Button.Icon>
                 </ui:Button>
-            </StackPanel>
+            </Grid>
         </ui:Card>
 
         <!-- Answer card -->
-        <ui:Card Grid.Row="3" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
-            <StackPanel>
-                <ui:TextBlock Style="{StaticResource SectionHeaderText}" Text="Answer" />
+        <ui:Card Grid.Row="7" Padding="{StaticResource CardPaddingSmall}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <ui:TextBlock
-                    Margin="0,6,0,0"
+                    Grid.Row="0"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Answer"
+                />
+                <ui:TextBlock
+                    Grid.Row="2"
                     FontTypography="Body"
                     TextWrapping="Wrap"
                     Text="{Binding Detail.Answer}"
                 />
                 <ui:Button
                     x:Name="CopyAnswerButton"
+                    Grid.Row="4"
                     AutomationProperties.AutomationId="CopyAnswerButton"
                     AutomationProperties.Name="Copy answer"
                     ToolTip="Copy answer"
                     TabIndex="3"
                     HorizontalAlignment="Right"
-                    Margin="0,6,0,0"
                     Content="Copy"
                     Click="CopyAnswerButton_Click"
                 >
@@ -129,18 +175,23 @@
                         <ui:SymbolIcon Symbol="Copy24" />
                     </ui:Button.Icon>
                 </ui:Button>
-            </StackPanel>
+            </Grid>
         </ui:Card>
 
         <!-- Citations card -->
-        <ui:Card Grid.Row="4" Margin="0,12,0,0" Padding="{StaticResource CardPaddingSmall}">
-            <Grid RowDefinitions="Auto, *">
+        <ui:Card Grid.Row="9" Padding="{StaticResource CardPaddingSmall}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <ui:TextBlock
                     Grid.Row="0"
                     Style="{StaticResource SectionHeaderText}"
                     Text="Citations"
                 />
-                <Grid Grid.Row="1" Margin="0,12,0,0">
+                <Grid Grid.Row="2">
                     <ListBox
                         ItemsSource="{Binding Detail.Citations}"
                         Background="Transparent"
@@ -151,6 +202,7 @@
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="Padding" Value="0" />
+                                <!-- Item spacing in the ListBox panel has no Grid tracks. -->
                                 <Setter Property="Margin" Value="0,4" />
                                 <Setter Property="Focusable" Value="False" />
                             </Style>
@@ -158,23 +210,31 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="12" BorderThickness="1" CornerRadius="8">
-                                    <StackPanel>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="4" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="6" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
                                         <ui:TextBlock
+                                            Grid.Row="0"
                                             FontTypography="Body"
                                             TextWrapping="Wrap"
                                             Text="{Binding Text}"
                                         />
                                         <ui:TextBlock
-                                            Margin="0,4,0,0"
+                                            Grid.Row="2"
                                             FontTypography="Caption"
                                             Text="{Binding Converter={StaticResource CitationSubtitle}}"
                                         />
                                         <ui:Button
+                                            Grid.Row="4"
                                             AutomationProperties.AutomationId="CopyCitationButton"
                                             AutomationProperties.Name="Copy citation"
                                             ToolTip="Copy citation"
                                             HorizontalAlignment="Right"
-                                            Margin="0,6,0,0"
                                             Content="Copy"
                                             Click="CopyCitationButton_Click"
                                         >
@@ -182,42 +242,51 @@
                                                 <ui:SymbolIcon Symbol="Copy24" />
                                             </ui:Button.Icon>
                                         </ui:Button>
-                                    </StackPanel>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <StackPanel
+                    <Grid
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Visibility="{Binding Detail.Citations, Converter={StaticResource EmptyListVisibility}}"
                     >
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <ui:SymbolIcon
+                            Grid.Row="0"
                             Symbol="Link24"
                             Style="{StaticResource EmptyStateGlyph}"
-                            Margin="0,0,0,12"
                         />
                         <ui:TextBlock
+                            Grid.Row="2"
                             HorizontalAlignment="Center"
                             FontTypography="Title"
                             Text="No citations"
                         />
                         <ui:TextBlock
-                            Margin="{StaticResource EmptyStateBodyMargin}"
+                            Grid.Row="4"
                             HorizontalAlignment="Center"
                             FontTypography="Body"
                             Style="{StaticResource SecondaryText}"
                             Text="No citations for this query."
                         />
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </ui:Card>
 
-        <!-- Loading overlay -->
+        <!-- Loading overlay: still spans the whole content block (header through citations),
+             now that the former PagePadding inset is carried by the outer 24px rows. -->
         <ui:ProgressRing
-            Grid.Row="0"
-            Grid.RowSpan="5"
+            Grid.Row="1"
+            Grid.RowSpan="9"
             Width="40"
             Height="40"
             HorizontalAlignment="Center"

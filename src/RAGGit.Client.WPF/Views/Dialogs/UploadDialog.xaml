@@ -25,363 +25,496 @@
          placeholder and the list. Upload/Cancel buttons sit in the footer;
          the InfoBar carries outcomes/errors only. Spacing follows the 4px
          scale (4/8/12). -->
-    <Grid Margin="16" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto">
-        <!-- Intake: drop zone + browse action + supported-types hint -->
-        <Border
-            Grid.Row="0"
-            x:Name="DropArea"
-            BorderThickness="1"
-            CornerRadius="8"
-            Padding="16,12"
-            AllowDrop="True"
-            DragOver="DropArea_DragOver"
-            DragLeave="DropArea_DragLeave"
-            Drop="DropArea_Drop"
-            AutomationProperties.AutomationId="UploadDropArea"
-            AutomationProperties.Name="Drop files here"
-        >
-            <Grid>
-                <StackPanel HorizontalAlignment="Center">
-                    <ui:SymbolIcon
-                        Symbol="ArrowUpload24"
-                        HorizontalAlignment="Center"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                    />
-                    <ui:TextBlock
-                        Text="Add documents"
-                        FontTypography="BodyStrong"
-                        Margin="0,8,0,0"
-                        HorizontalAlignment="Center"
-                    />
-                    <ui:TextBlock
-                        Text="Drop files here or browse from your device"
-                        FontTypography="Body"
-                        Style="{StaticResource SecondaryText}"
-                        TextWrapping="Wrap"
-                        TextAlignment="Center"
-                        Margin="0,8,0,0"
-                        HorizontalAlignment="Center"
-                    />
-                    <ui:Button
-                        x:Name="AddFilesButton"
-                        Command="{Binding PickFileCommand}"
-                        HorizontalAlignment="Center"
-                        Width="44"
-                        Height="44"
-                        Margin="0,8,0,0"
-                        AutomationProperties.AutomationId="AddFilesButton"
-                        AutomationProperties.Name="Browse files"
-                        ToolTip="Browse files"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="FolderOpen24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                    <ui:TextBlock
-                        Text="{Binding SupportedTypesText, Mode=OneWay}"
-                        FontTypography="Caption"
-                        Style="{StaticResource SecondaryText}"
-                        TextWrapping="Wrap"
-                        TextAlignment="Center"
-                        Margin="0,8,0,0"
-                        HorizontalAlignment="Center"
-                    />
-                </StackPanel>
-                <!-- Drag-over highlight: accent outline over the idle area -->
-                <Border
-                    BorderThickness="2"
-                    CornerRadius="8"
-                    Margin="-16,-12"
-                    IsHitTestVisible="False"
-                    BorderBrush="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
-                    Visibility="{Binding IsDragOver, Converter={StaticResource BoolVisibility}}"
-                />
-            </Grid>
-        </Border>
+    <!-- Dialog inset: this wrapper's edge rows/columns carry the former root Margin="16". -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="16" />
+        </Grid.ColumnDefinitions>
 
-        <!-- Pick-time rejection: immediate plain-language message -->
-        <ui:InfoBar
-            Grid.Row="1"
-            Severity="Warning"
-            IsOpen="{Binding HasRejection, Mode=OneWay}"
-            Message="{Binding RejectionMessage, Mode=OneWay}"
-            IsClosable="False"
-            Margin="0,12,0,0"
-        />
+        <!-- The 12px rows are the gutters between the stacked sections. -->
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <!-- Single queue card: header + placeholder/list swap -->
-        <Border Grid.Row="2" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,12,0,0">
-            <StackPanel>
-                <Grid
-                    Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
-                    ColumnDefinitions="Auto, *"
-                >
-                    <ui:TextBlock Text="Upload queue" FontTypography="BodyStrong" />
-                    <ui:TextBlock
-                        Grid.Column="1"
-                        Text="{Binding QueueHeaderText, Mode=OneWay}"
-                        FontTypography="Caption"
-                        Style="{StaticResource SecondaryText}"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
+            <!-- Intake: drop zone + browse action + supported-types hint -->
+            <Border
+                Grid.Row="0"
+                x:Name="DropArea"
+                BorderThickness="1"
+                CornerRadius="8"
+                AllowDrop="True"
+                DragOver="DropArea_DragOver"
+                DragLeave="DropArea_DragLeave"
+                Drop="DropArea_Drop"
+                AutomationProperties.AutomationId="UploadDropArea"
+                AutomationProperties.Name="Drop files here"
+            >
+                <!-- The former Padding="16,12" lives in these edge tracks so the drag
+                     highlight can cover the whole padding area without a negative Margin. -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:SymbolIcon
+                            Grid.Row="0"
+                            Symbol="ArrowUpload24"
+                            HorizontalAlignment="Center"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        />
+                        <ui:TextBlock
+                            Grid.Row="2"
+                            Text="Add documents"
+                            FontTypography="BodyStrong"
+                            HorizontalAlignment="Center"
+                        />
+                        <ui:TextBlock
+                            Grid.Row="4"
+                            Text="Drop files here or browse from your device"
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Center"
+                        />
+                        <ui:Button
+                            Grid.Row="6"
+                            x:Name="AddFilesButton"
+                            Command="{Binding PickFileCommand}"
+                            HorizontalAlignment="Center"
+                            Width="44"
+                            Height="44"
+                            AutomationProperties.AutomationId="AddFilesButton"
+                            AutomationProperties.Name="Browse files"
+                            ToolTip="Browse files"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="FolderOpen24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:TextBlock
+                            Grid.Row="8"
+                            Text="{Binding SupportedTypesText, Mode=OneWay}"
+                            FontTypography="Caption"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Center"
+                        />
+                    </Grid>
+                    <!-- Drag-over highlight: accent outline over the idle area; spans the
+                         full padding area that Margin="-16,-12" used to pull through. -->
+                    <Border
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Grid.RowSpan="3"
+                        Grid.ColumnSpan="3"
+                        BorderThickness="2"
+                        CornerRadius="8"
+                        IsHitTestVisible="False"
+                        BorderBrush="{ui:ThemeResource SystemAccentColorPrimaryBrush}"
+                        Visibility="{Binding IsDragOver, Converter={StaticResource BoolVisibility}}"
                     />
                 </Grid>
-                <ui:ListView
-                    x:Name="QueueList"
-                    ItemsSource="{Binding Queue}"
-                    MaxHeight="260"
-                    SelectionMode="Single"
-                    BorderThickness="0"
-                    Background="Transparent"
-                    Margin="0,8,0,0"
-                    HorizontalContentAlignment="Stretch"
-                    Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
-                    AutomationProperties.AutomationId="UploadQueueList"
-                    AutomationProperties.Name="Files to upload"
-                >
-                    <ui:ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                        </Style>
-                    </ui:ListView.ItemContainerStyle>
-                    <ui:ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,0,0,4" ColumnDefinitions="Auto, *, Auto">
-                                <ui:SymbolIcon
-                                    Grid.Column="0"
-                                    Symbol="Document24"
-                                    Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                    VerticalAlignment="Top"
-                                    Margin="2,2,10,0"
-                                />
-                                <StackPanel Grid.Column="1">
-                                    <ui:TextBlock
-                                        Text="{Binding FileName}"
-                                        FontTypography="Body"
-                                        TextTrimming="CharacterEllipsis"
-                                    />
-                                    <ui:TextBlock
-                                        Text="{Binding FileMetaText}"
-                                        FontTypography="Caption"
-                                        Style="{StaticResource SecondaryText}"
-                                        Margin="0,4,0,0"
-                                    />
-                                    <ProgressBar
-                                        Value="{Binding Progress, Mode=OneWay}"
-                                        Maximum="1"
-                                        Height="4"
-                                        Margin="0,4,0,0"
-                                        Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-                                        IsIndeterminate="{Binding IsIndexing, Mode=OneWay}"
-                                        AutomationProperties.Name="Upload progress"
-                                    />
-                                    <ui:TextBlock
-                                        Text="{Binding StateLabel, Mode=OneWay}"
-                                        FontTypography="Caption"
-                                        Style="{StaticResource SecondaryText}"
-                                        Margin="0,4,0,0"
-                                    />
-                                    <Grid
-                                        Margin="0,4,0,0"
-                                        Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}"
-                                        ColumnDefinitions="Auto, *"
-                                    >
+            </Border>
+
+            <!-- Pick-time rejection: immediate plain-language message -->
+            <ui:InfoBar
+                Grid.Row="2"
+                Severity="Warning"
+                IsOpen="{Binding HasRejection, Mode=OneWay}"
+                Message="{Binding RejectionMessage, Mode=OneWay}"
+                IsClosable="False"
+            />
+
+            <!-- Single queue card: header + placeholder/list swap -->
+            <Border Grid.Row="4" BorderThickness="1" CornerRadius="8" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid
+                        Grid.Row="0"
+                        Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
+                    >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBlock
+                            Grid.Column="0"
+                            Text="Upload queue"
+                            FontTypography="BodyStrong"
+                        />
+                        <ui:TextBlock
+                            Grid.Column="1"
+                            Text="{Binding QueueHeaderText, Mode=OneWay}"
+                            FontTypography="Caption"
+                            Style="{StaticResource SecondaryText}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                        />
+                    </Grid>
+                    <ui:ListView
+                        Grid.Row="2"
+                        x:Name="QueueList"
+                        ItemsSource="{Binding Queue}"
+                        MaxHeight="260"
+                        SelectionMode="Single"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        HorizontalContentAlignment="Stretch"
+                        Visibility="{Binding HasFiles, Converter={StaticResource BoolVisibility}}"
+                        AutomationProperties.AutomationId="UploadQueueList"
+                        AutomationProperties.Name="Files to upload"
+                    >
+                        <ui:ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                            </Style>
+                        </ui:ListView.ItemContainerStyle>
+                        <ui:ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="4" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Wrapper carries the icon's former Margin="2,2,10,0". -->
+                                    <Grid Grid.Column="0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="2" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="10" />
+                                        </Grid.ColumnDefinitions>
                                         <ui:SymbolIcon
-                                            Symbol="ErrorCircle24"
-                                            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                                            VerticalAlignment="Top"
-                                            Margin="0,1,6,0"
-                                        />
-                                        <ui:TextBlock
+                                            Grid.Row="1"
                                             Grid.Column="1"
-                                            Text="{Binding ErrorMessage, Mode=OneWay}"
-                                            FontTypography="Caption"
-                                            Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                                            TextWrapping="Wrap"
+                                            Symbol="Document24"
+                                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                            VerticalAlignment="Top"
                                         />
                                     </Grid>
-                                </StackPanel>
-                                <ui:Button
-                                    Grid.Column="2"
-                                    Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                    CommandParameter="{Binding}"
-                                    Width="32"
-                                    Height="32"
-                                    Padding="0"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    VerticalAlignment="Center"
-                                    Margin="10,0,0,0"
-                                    ToolTip="Remove file"
-                                    AutomationProperties.AutomationId="{Binding RemoveAutomationId, Mode=OneWay}"
-                                    AutomationProperties.Name="Remove file"
-                                >
-                                    <ui:SymbolIcon Symbol="Delete24" />
-                                </ui:Button>
-                            </Grid>
-                        </DataTemplate>
-                    </ui:ListView.ItemTemplate>
-                </ui:ListView>
-                <StackPanel
-                    HorizontalAlignment="Center"
-                    Margin="0,8,0,0"
-                    Visibility="{Binding HasFiles, Converter={StaticResource InvertedBoolVisibility}}"
-                >
-                    <ui:SymbolIcon
-                        Symbol="Document24"
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="4" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="4" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="4" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="4" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <ui:TextBlock
+                                            Grid.Row="0"
+                                            Text="{Binding FileName}"
+                                            FontTypography="Body"
+                                            TextTrimming="CharacterEllipsis"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Row="2"
+                                            Text="{Binding FileMetaText}"
+                                            FontTypography="Caption"
+                                            Style="{StaticResource SecondaryText}"
+                                        />
+                                        <ProgressBar
+                                            Grid.Row="4"
+                                            Value="{Binding Progress, Mode=OneWay}"
+                                            Maximum="1"
+                                            Height="4"
+                                            Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+                                            IsIndeterminate="{Binding IsIndexing, Mode=OneWay}"
+                                            AutomationProperties.Name="Upload progress"
+                                        />
+                                        <ui:TextBlock
+                                            Grid.Row="6"
+                                            Text="{Binding StateLabel, Mode=OneWay}"
+                                            FontTypography="Caption"
+                                            Style="{StaticResource SecondaryText}"
+                                        />
+                                        <Grid
+                                            Grid.Row="8"
+                                            Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}"
+                                        >
+                                            <!-- The 1px row and 6px column carry the icon's former
+                                                 Margin="0,1,6,0". -->
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="1" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="6" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <ui:SymbolIcon
+                                                Grid.Row="1"
+                                                Grid.Column="0"
+                                                Symbol="ErrorCircle24"
+                                                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                                VerticalAlignment="Top"
+                                            />
+                                            <ui:TextBlock
+                                                Grid.Row="0"
+                                                Grid.RowSpan="2"
+                                                Grid.Column="2"
+                                                Text="{Binding ErrorMessage, Mode=OneWay}"
+                                                FontTypography="Caption"
+                                                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                                                TextWrapping="Wrap"
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                    <ui:Button
+                                        Grid.Column="3"
+                                        Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}"
+                                        Width="32"
+                                        Height="32"
+                                        Padding="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Remove file"
+                                        AutomationProperties.AutomationId="{Binding RemoveAutomationId, Mode=OneWay}"
+                                        AutomationProperties.Name="Remove file"
+                                    >
+                                        <ui:SymbolIcon Symbol="Delete24" />
+                                    </ui:Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ui:ListView.ItemTemplate>
+                    </ui:ListView>
+                    <!-- Mutually exclusive with the list above, so both share the 8px gutter row. -->
+                    <Grid
+                        Grid.Row="2"
                         HorizontalAlignment="Center"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                    />
-                    <ui:TextBlock
-                        Text="No files yet"
-                        FontTypography="BodyStrong"
-                        Margin="0,4,0,0"
-                        HorizontalAlignment="Center"
-                    />
-                    <ui:TextBlock
-                        Text="Drop files above or choose Browse files to build the queue."
-                        FontTypography="Body"
-                        Style="{StaticResource SecondaryText}"
-                        TextWrapping="Wrap"
-                        TextAlignment="Center"
-                        Margin="0,4,0,0"
-                        HorizontalAlignment="Center"
-                    />
-                </StackPanel>
-            </StackPanel>
-        </Border>
-
-        <!-- Summary outcome: full success auto-closes (see code-behind);
-             any failure/cancel stays open with per-file outcomes above. -->
-        <ui:InfoBar
-            Grid.Row="3"
-            Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
-            IsOpen="{Binding HasStatus, Mode=OneWay}"
-            Message="{Binding StatusMessage, Mode=OneWay}"
-            IsClosable="False"
-            Margin="0,12,0,0"
-        />
-
-        <ui:TextBlock
-            Grid.Row="4"
-            Text="{Binding ClosingStopsUploadHint, Mode=OneWay}"
-            Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-            FontTypography="Caption"
-            Style="{StaticResource SecondaryText}"
-            TextWrapping="Wrap"
-            HorizontalAlignment="Center"
-            Margin="0,12,0,0"
-        />
-
-        <!-- Cancel-mid-upload confirmation (in-window: this modal window sits
-             over the MainWindow dialog host, so the shared confirm cannot be
-             used here — and never a native message box). Shown only while an
-             upload is in flight; declining hides it with the upload untouched. -->
-        <Border
-            Grid.Row="5"
-            x:Name="CancelConfirmPanel"
-            Visibility="Collapsed"
-            Margin="0,12,0,0"
-            Padding="12,8"
-            BorderThickness="1"
-            CornerRadius="8"
-            BorderBrush="{ui:ThemeResource SystemFillColorCautionBrush}"
-            Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
-        >
-            <Grid ColumnDefinitions="*, Auto">
-                <ui:TextBlock
-                    Grid.Column="0"
-                    VerticalAlignment="Center"
-                    TextWrapping="Wrap"
-                    Text="Cancel the in-flight upload? Files already uploaded stay uploaded."
-                />
-                <StackPanel
-                    Grid.Column="1"
-                    Margin="12,0,0,0"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal"
-                >
-                    <ui:Button
-                        x:Name="ConfirmCancelUploadButton"
-                        AutomationProperties.AutomationId="ConfirmCancelUploadButton"
-                        AutomationProperties.Name="Yes, cancel upload"
-                        Appearance="Danger"
-                        Content="Yes, cancel"
-                        MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
-                        Margin="0,0,8,0"
-                        Click="ConfirmCancelUploadButton_Click"
+                        Visibility="{Binding HasFiles, Converter={StaticResource InvertedBoolVisibility}}"
                     >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="Dismiss24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                    <ui:Button
-                        x:Name="KeepUploadingButton"
-                        AutomationProperties.AutomationId="KeepUploadingButton"
-                        AutomationProperties.Name="Keep uploading"
-                        Appearance="Primary"
-                        Content="Keep uploading"
-                        MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
-                        Click="KeepUploadingButton_Click"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="ArrowUpload24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                </StackPanel>
-            </Grid>
-        </Border>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:SymbolIcon
+                            Grid.Row="0"
+                            Symbol="Document24"
+                            HorizontalAlignment="Center"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        />
+                        <ui:TextBlock
+                            Grid.Row="2"
+                            Text="No files yet"
+                            FontTypography="BodyStrong"
+                            HorizontalAlignment="Center"
+                        />
+                        <ui:TextBlock
+                            Grid.Row="4"
+                            Text="Drop files above or choose Browse files to build the queue."
+                            FontTypography="Body"
+                            Style="{StaticResource SecondaryText}"
+                            TextWrapping="Wrap"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Center"
+                        />
+                    </Grid>
+                </Grid>
+            </Border>
 
-        <!-- Footer actions -->
-        <StackPanel
-            Grid.Row="6"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right"
-            Margin="0,12,0,0"
-        >
-            <ProgressBar
-                Value="{Binding UploadProgress, Mode=OneWay}"
-                Maximum="1"
-                Width="160"
-                Height="6"
-                VerticalAlignment="Center"
-                Margin="0,0,12,0"
-                Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-                AutomationProperties.Name="Overall upload progress"
+            <!-- Summary outcome: full success auto-closes (see code-behind);
+                 any failure/cancel stays open with per-file outcomes above. -->
+            <ui:InfoBar
+                Grid.Row="6"
+                Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
+                IsOpen="{Binding HasStatus, Mode=OneWay}"
+                Message="{Binding StatusMessage, Mode=OneWay}"
+                IsClosable="False"
             />
-            <ui:Button
-                Content="Upload"
-                Command="{Binding UploadCommand}"
-                Appearance="Primary"
-                MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
-                Margin="0,0,8,0"
-            >
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="ArrowUpload24" />
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button
-                x:Name="CancelUploadButton"
-                Content="Cancel"
-                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
-                Margin="0,0,8,0"
+
+            <ui:TextBlock
+                Grid.Row="8"
+                Text="{Binding ClosingStopsUploadHint, Mode=OneWay}"
                 Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
-                Click="CancelButton_Click"
+                FontTypography="Caption"
+                Style="{StaticResource SecondaryText}"
+                TextWrapping="Wrap"
+                HorizontalAlignment="Center"
+            />
+
+            <!-- Cancel-mid-upload confirmation (in-window: this modal window sits
+                 over the MainWindow dialog host, so the shared confirm cannot be
+                 used here — and never a native message box). Shown only while an
+                 upload is in flight; declining hides it with the upload untouched. -->
+            <Border
+                Grid.Row="10"
+                x:Name="CancelConfirmPanel"
+                Visibility="Collapsed"
+                Padding="12,8"
+                BorderThickness="1"
+                CornerRadius="8"
+                BorderBrush="{ui:ThemeResource SystemFillColorCautionBrush}"
+                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
             >
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Dismiss24" />
-                </ui:Button.Icon>
-            </ui:Button>
-            <ui:Button
-                Content="Close"
-                MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
-                Click="CloseButton_Click"
-            >
-                <ui:Button.Icon>
-                    <ui:SymbolIcon Symbol="Dismiss24" />
-                </ui:Button.Icon>
-            </ui:Button>
-        </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap"
+                        Text="Cancel the in-flight upload? Files already uploaded stay uploaded."
+                    />
+                    <Grid Grid.Column="2" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:Button
+                            Grid.Column="0"
+                            x:Name="ConfirmCancelUploadButton"
+                            AutomationProperties.AutomationId="ConfirmCancelUploadButton"
+                            AutomationProperties.Name="Yes, cancel upload"
+                            Appearance="Danger"
+                            Content="Yes, cancel"
+                            MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                            Click="ConfirmCancelUploadButton_Click"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Dismiss24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Grid.Column="2"
+                            x:Name="KeepUploadingButton"
+                            AutomationProperties.AutomationId="KeepUploadingButton"
+                            AutomationProperties.Name="Keep uploading"
+                            Appearance="Primary"
+                            Content="Keep uploading"
+                            MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                            Click="KeepUploadingButton_Click"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowUpload24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Footer actions -->
+            <Grid Grid.Row="12" HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ProgressBar
+                    Grid.Column="0"
+                    Value="{Binding UploadProgress, Mode=OneWay}"
+                    Maximum="1"
+                    Width="160"
+                    Height="6"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+                    AutomationProperties.Name="Overall upload progress"
+                />
+                <ui:Button
+                    Grid.Column="2"
+                    Content="Upload"
+                    Command="{Binding UploadCommand}"
+                    Appearance="Primary"
+                    MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowUpload24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+                <ui:Button
+                    Grid.Column="4"
+                    x:Name="CancelUploadButton"
+                    Content="Cancel"
+                    MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                    Visibility="{Binding IsUploading, Converter={StaticResource BoolVisibility}}"
+                    Click="CancelButton_Click"
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Dismiss24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+                <ui:Button
+                    Grid.Column="6"
+                    Content="Close"
+                    MinWidth="{StaticResource DialogSecondaryButtonMinWidth}"
+                    Click="CloseButton_Click"
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Dismiss24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

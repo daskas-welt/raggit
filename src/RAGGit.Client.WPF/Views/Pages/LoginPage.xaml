@@ -13,59 +13,105 @@
     </Page.Resources>
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
         <ui:Card Width="360" Padding="24">
-            <StackPanel>
-                <ui:TextBlock Style="{StaticResource PageTitleText}" Text="Sign in to RAGGit" />
+            <!-- The 8px row is the subtitle's former top margin; the 12/16px rows are the
+                 summed gutters between the stacked fields (each field held a 0,0,0,12 margin).
+                 The status and progress blocks carry their own trailing gutter so a hidden
+                 block leaves no gap behind. -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
                 <ui:TextBlock
-                    Margin="0,8,0,16"
+                    Grid.Row="0"
+                    Style="{StaticResource PageTitleText}"
+                    Text="Sign in to RAGGit"
+                />
+
+                <ui:TextBlock
+                    Grid.Row="2"
                     Style="{StaticResource PageSubtitleText}"
                     Text="Enter your workstation credentials."
                 />
 
                 <ui:TextBox
                     x:Name="UsernameBox"
+                    Grid.Row="4"
                     AutomationProperties.AutomationId="UsernameBox"
                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="Username"
-                    Margin="0,0,0,12"
                     KeyDown="OnCredentialKeyDown"
                 />
 
                 <ui:PasswordBox
                     x:Name="PasswordBox"
+                    Grid.Row="6"
                     AutomationProperties.AutomationId="PasswordBox"
                     PlaceholderText="Password"
-                    Margin="0,0,0,12"
                     PasswordChanged="OnPasswordChanged"
                     KeyDown="OnCredentialKeyDown"
                 />
 
-                <components:StatusFooterControl
-                    Margin="0,0,0,12"
-                    Message="{Binding ErrorMessage, Mode=OneWay}"
-                    Severity="Error"
-                    IsOpen="{Binding HasError, Mode=OneWay}"
-                    StatusAutomationId="LoginStatusMessage"
-                />
+                <Grid
+                    Grid.Row="8"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}"
+                >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                    </Grid.RowDefinitions>
+                    <components:StatusFooterControl
+                        Grid.Row="0"
+                        Message="{Binding ErrorMessage, Mode=OneWay}"
+                        Severity="Error"
+                        IsOpen="{Binding HasError, Mode=OneWay}"
+                        StatusAutomationId="LoginStatusMessage"
+                    />
+                </Grid>
 
-                <ui:TextBlock
-                    x:Name="LoginProgressText"
-                    Margin="0,0,0,12"
-                    HorizontalAlignment="Center"
-                    Style="{StaticResource SecondaryText}"
-                    AutomationProperties.AutomationId="LoginProgressText"
-                    Text="Signing in…"
+                <Grid
+                    Grid.Row="9"
                     Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
-                />
+                >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock
+                        x:Name="LoginProgressText"
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource SecondaryText}"
+                        AutomationProperties.AutomationId="LoginProgressText"
+                        Text="Signing in…"
+                    />
+                </Grid>
 
                 <ui:Button
                     x:Name="SignInButton"
+                    Grid.Row="10"
                     AutomationProperties.AutomationId="SignInButton"
                     Appearance="Primary"
                     Command="{Binding LoginCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 >
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Grid Width="24" Height="24">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0" Width="24" Height="24">
                             <ui:SymbolIcon
                                 Symbol="ArrowEnterLeft24"
                                 Visibility="{Binding IsBusy, Converter={StaticResource InvertedBoolVisibility}}"
@@ -78,10 +124,10 @@
                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"
                             />
                         </Grid>
-                        <ui:TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Sign in" />
-                    </StackPanel>
+                        <ui:TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Sign in" />
+                    </Grid>
                 </ui:Button>
-            </StackPanel>
+            </Grid>
         </ui:Card>
     </Grid>
 </Page>

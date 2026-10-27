@@ -8,69 +8,103 @@
     <UserControl.Resources>
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
     </UserControl.Resources>
-    <StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- Intro line's former bottom margin. -->
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+            <!-- Field label to its input (the input's former top margin). -->
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
+            <!-- Field input to the next label (the input's former bottom margin). -->
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <!-- Status bar to the action row (the bar's former bottom margin). -->
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <ui:TextBlock
+            Grid.Row="0"
             Style="{StaticResource SecondaryText}"
             Text="Create an account for someone who needs workstation access."
             TextWrapping="Wrap"
-            Margin="0,0,0,16"
         />
 
-        <ui:TextBlock FontTypography="Body" Text="Username" />
+        <ui:TextBlock Grid.Row="2" FontTypography="Body" Text="Username" />
         <ui:TextBox
             x:Name="NewUsernameBox"
+            Grid.Row="4"
             AutomationProperties.AutomationId="NewUsernameBox"
-            Margin="0,4,0,12"
             PlaceholderText="Unique login name"
             Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />
 
-        <ui:TextBlock FontTypography="Body" Text="Display name" />
+        <ui:TextBlock Grid.Row="6" FontTypography="Body" Text="Display name" />
         <ui:TextBox
             x:Name="NewDisplayNameBox"
+            Grid.Row="8"
             AutomationProperties.AutomationId="NewDisplayNameBox"
-            Margin="0,4,0,12"
             PlaceholderText="Name shown in the directory"
             Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />
 
-        <ui:TextBlock FontTypography="Body" Text="Role" />
+        <ui:TextBlock Grid.Row="10" FontTypography="Body" Text="Role" />
         <ComboBox
             x:Name="NewRoleCombo"
+            Grid.Row="12"
             AutomationProperties.AutomationId="NewRoleCombo"
-            Margin="0,4,0,12"
             ItemsSource="{Binding Roles}"
             SelectedItem="{Binding NewRole, Mode=TwoWay}"
         />
 
-        <ui:TextBlock FontTypography="Body" Text="Initial password" />
+        <ui:TextBlock Grid.Row="14" FontTypography="Body" Text="Initial password" />
         <ui:PasswordBox
             x:Name="NewPasswordBox"
+            Grid.Row="16"
             AutomationProperties.AutomationId="NewPasswordBox"
-            Margin="0,4,0,12"
             PlaceholderText="At least 10 characters"
             Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />
 
         <ui:InfoBar
+            Grid.Row="18"
             Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
             IsOpen="{Binding HasStatus}"
             IsClosable="False"
             Message="{Binding StatusMessage}"
-            Margin="0,0,0,12"
         />
 
-        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+        <Grid Grid.Row="20" HorizontalAlignment="Right">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <!-- Button gutter: the confirm button's former right margin. -->
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <!-- Confirming action first, dismissing action last (029, FR-012). -->
             <ui:Button
                 x:Name="CreateUserButton"
+                Grid.Column="0"
                 AutomationProperties.AutomationId="CreateUserButton"
                 AutomationProperties.Name="Create user"
                 ToolTip="Create user"
                 Appearance="Primary"
                 Content="Create person"
                 MinWidth="{StaticResource DialogPrimaryButtonMinWidth}"
-                Margin="0,0,8,0"
                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                 Click="OnCreateClicked"
             >
@@ -80,6 +114,7 @@
             </ui:Button>
             <ui:Button
                 x:Name="CancelCreateButton"
+                Grid.Column="2"
                 AutomationProperties.AutomationId="CancelCreateButton"
                 AutomationProperties.Name="Cancel adding person"
                 Content="Cancel"
@@ -90,6 +125,6 @@
                     <ui:SymbolIcon Symbol="Dismiss24" />
                 </ui:Button.Icon>
             </ui:Button>
-        </StackPanel>
-    </StackPanel>
+        </Grid>
+    </Grid>
 </UserControl>

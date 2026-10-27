@@ -44,22 +44,37 @@
     </UserControl.Resources>
 
     <Border BorderThickness="1" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
-        <Grid VerticalAlignment="Center" ColumnDefinitions="Auto, *, Auto">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+        <Grid VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Page-size picker: label and combo separated by an 8px gutter
+                 (was the label's former trailing 8px inset). -->
+            <Grid Grid.Column="0" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ui:TextBlock
+                    Grid.Column="0"
                     Text="Rows per page"
                     FontTypography="Caption"
                     VerticalAlignment="Center"
-                    Margin="0,0,8,0"
                 />
                 <ComboBox
+                    Grid.Column="2"
                     ItemsSource="{Binding PageSizeOptions, ElementName=Root}"
                     SelectedItem="{Binding SelectedPageSize, ElementName=Root, Mode=TwoWay}"
                     MinHeight="32"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="PageSizeCombo"
                 />
-            </StackPanel>
+            </Grid>
+
             <ui:TextBlock
                 Grid.Column="1"
                 Text="{Binding StatusText, ElementName=Root}"
@@ -67,13 +82,24 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
             />
-            <StackPanel
-                Grid.Column="2"
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-            >
+
+            <!-- Paging controls: every gap is a 4px gutter track, summed from the
+                 former per-control margins (4 leading on Previous/Sequence, 4
+                 trailing on Sequence/Next). -->
+            <Grid Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ui:Button
+                    Grid.Column="0"
                     Command="{Binding FirstCommand, ElementName=Root}"
                     IsEnabled="{Binding CanGoPrevious, ElementName=Root}"
                     Appearance="Transparent"
@@ -88,13 +114,13 @@
                     <ui:SymbolIcon Symbol="ChevronDoubleLeft20" />
                 </ui:Button>
                 <ui:Button
+                    Grid.Column="2"
                     Command="{Binding PreviousCommand, ElementName=Root}"
                     IsEnabled="{Binding CanGoPrevious, ElementName=Root}"
                     Appearance="Transparent"
                     Padding="8,4"
                     MinWidth="44"
                     MinHeight="44"
-                    Margin="4,0,0,0"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="PreviousPageButton"
                     AutomationProperties.Name="Previous page"
@@ -103,10 +129,10 @@
                     <ui:SymbolIcon Symbol="ChevronLeft20" />
                 </ui:Button>
                 <ItemsControl
+                    Grid.Column="4"
                     ItemsSource="{Binding Sequence, ElementName=Root}"
                     ItemTemplateSelector="{StaticResource TokenSelector}"
                     VerticalAlignment="Center"
-                    Margin="4,0"
                 >
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -115,13 +141,13 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
                 <ui:Button
+                    Grid.Column="6"
                     Command="{Binding NextCommand, ElementName=Root}"
                     IsEnabled="{Binding CanGoNext, ElementName=Root}"
                     Appearance="Transparent"
                     Padding="8,4"
                     MinWidth="44"
                     MinHeight="44"
-                    Margin="0,0,4,0"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="NextPageButton"
                     AutomationProperties.Name="Next page"
@@ -130,6 +156,7 @@
                     <ui:SymbolIcon Symbol="ChevronRight20" />
                 </ui:Button>
                 <ui:Button
+                    Grid.Column="8"
                     Command="{Binding LastCommand, ElementName=Root}"
                     IsEnabled="{Binding CanGoNext, ElementName=Root}"
                     Appearance="Transparent"
@@ -143,7 +170,7 @@
                 >
                     <ui:SymbolIcon Symbol="ChevronDoubleRight20" />
                 </ui:Button>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

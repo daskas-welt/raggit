@@ -128,6 +128,9 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 ## XAML layout preference
 
 - **Space with Grid tracks, not `Margin`.** No client XAML uses a layout `Margin`; don't add one.
+  The only remaining margins are item spacing inside an `ItemsControl`/`UniformGrid` panel
+  (`ItemContainerStyle` or a `DataTemplate` root) and direct children of a `UniformGrid`, because
+  those panels have no tracks to gutter; comment them when you touch one.
   Declare explicit `Grid.ColumnDefinitions`/`Grid.RowDefinitions` and interleave fixed-spacing
   gutter tracks with content tracks (`*,12,*,12,…` / `Auto,8,Auto,8,…`); place item *n* at
   `Grid.Column = (n % columns) * 2` and `Grid.Row = (n / columns) * 2`, so gutters need no margins.

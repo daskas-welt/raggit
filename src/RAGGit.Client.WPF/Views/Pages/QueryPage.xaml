@@ -26,10 +26,27 @@
         </ObjectDataProvider>
     </Page.Resources>
     <Grid>
-        <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto, *, Auto, Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- Outer page inset; was the root PagePadding (0,24) margin. -->
+                <RowDefinition Height="24" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="24" />
+            </Grid.RowDefinitions>
+
             <!-- Header card -->
-            <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
-                <Grid ColumnDefinitions="*, Auto">
+            <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <ui:TextBlock
                             Style="{StaticResource PageTitleText}"
@@ -41,16 +58,23 @@
                         />
                     </StackPanel>
                     <!-- Actions area (US3 adds the Clear-conversation action here). -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock
-                            Margin="0,0,8,0"
+                            Grid.Column="0"
                             VerticalAlignment="Center"
                             FontTypography="Caption"
                             Text="Mode"
                         />
                         <ComboBox
+                            Grid.Column="2"
                             MinHeight="32"
-                            Margin="0,0,8,0"
                             VerticalAlignment="Center"
                             ItemsSource="{Binding Source={StaticResource QueryModes}}"
                             SelectedItem="{Binding QueryMode, Mode=TwoWay}"
@@ -59,6 +83,7 @@
                             ToolTip="Auto lets the server decide; Broad forces synthesis context; Specific forces granular facts"
                         />
                         <ui:Button
+                            Grid.Column="4"
                             x:Name="QueryClearConversationButton"
                             AutomationProperties.AutomationId="QueryClearConversationButton"
                             AutomationProperties.Name="Clear conversation"
@@ -70,15 +95,14 @@
                                 <ui:SymbolIcon Symbol="Delete24" />
                             </ui:Button.Icon>
                         </ui:Button>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </ui:Card>
 
             <!-- Chat -->
             <components:ChatControl
                 x:Name="Chat"
-                Grid.Row="1"
-                Margin="0,12,0,0"
+                Grid.Row="3"
                 Messages="{Binding Messages}"
                 InputText="{Binding QueryText, Mode=TwoWay}"
                 SendCommand="{Binding AskCommand}"
@@ -89,16 +113,20 @@
 
             <!-- Did-you-mean suggestion chips -->
             <ui:Card
-                Grid.Row="2"
-                Margin="0,12,0,0"
+                Grid.Row="5"
                 Padding="12"
                 Visibility="{Binding HasSuggestedPersons, Converter={StaticResource BoolVisibility}}"
             >
-                <StackPanel>
-                    <ui:TextBlock FontTypography="Body" Text="Did you mean?" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="Did you mean?" />
                     <ItemsControl
                         x:Name="SuggestionChips"
-                        Margin="0,8,0,0"
+                        Grid.Row="2"
                         ItemsSource="{Binding SuggestedPersons}"
                         AutomationProperties.AutomationId="SuggestionChips"
                     >
@@ -109,25 +137,37 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type models:PersonSuggestion}">
-                                <ui:Button
-                                    Margin="0,0,8,8"
-                                    Appearance="Primary"
-                                    AutomationProperties.AutomationId="SuggestionChipButton"
-                                    AutomationProperties.Name="{Binding Name}"
-                                    Command="{Binding ElementName=SuggestionChips, Path=DataContext.UseSuggestedPersonCommand}"
-                                    CommandParameter="{Binding}"
-                                    Content="{Binding Name}"
-                                />
+                                <!-- Chip inset: the 8px trailing/bottom gutter keeps wrapped
+                                     chips apart without a Margin. -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="8" />
+                                    </Grid.RowDefinitions>
+                                    <ui:Button
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Appearance="Primary"
+                                        AutomationProperties.AutomationId="SuggestionChipButton"
+                                        AutomationProperties.Name="{Binding Name}"
+                                        Command="{Binding ElementName=SuggestionChips, Path=DataContext.UseSuggestedPersonCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="{Binding Name}"
+                                    />
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </StackPanel>
+                </Grid>
             </ui:Card>
 
             <!-- Status -->
             <ui:InfoBar
-                Grid.Row="3"
-                Margin="0,12,0,0"
+                Grid.Row="7"
                 Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}}"
                 IsClosable="False"
                 IsOpen="{Binding HasStatusMessage, Mode=OneWay}"
