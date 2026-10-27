@@ -6,7 +6,6 @@
     xmlns:converters="clr-namespace:RAGGit.Client.WPF.Converters"
     xmlns:components="clr-namespace:RAGGit.Client.WPF.Components"
     xmlns:models="clr-namespace:RAGGit.Core.Models;assembly=RAGGit.Core"
-    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -15,15 +14,6 @@
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:StatusSeverityConverter x:Key="StatusSeverity" />
-        <ObjectDataProvider
-            x:Key="QueryModes"
-            MethodName="GetValues"
-            ObjectType="{x:Type sys:Enum}"
-        >
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="models:QueryMode" />
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
     </Page.Resources>
     <Grid>
         <Grid>
@@ -58,44 +48,20 @@
                         />
                     </StackPanel>
                     <!-- Actions area (US3 adds the Clear-conversation action here). -->
-                    <Grid Grid.Column="1" VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:TextBlock
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontTypography="Caption"
-                            Text="Mode"
-                        />
-                        <ComboBox
-                            Grid.Column="2"
-                            MinHeight="32"
-                            VerticalAlignment="Center"
-                            ItemsSource="{Binding Source={StaticResource QueryModes}}"
-                            SelectedItem="{Binding QueryMode, Mode=TwoWay}"
-                            AutomationProperties.AutomationId="QueryModeCombo"
-                            AutomationProperties.Name="Query intent mode"
-                            ToolTip="Auto lets the server decide; Broad forces synthesis context; Specific forces granular facts"
-                        />
-                        <ui:Button
-                            Grid.Column="4"
-                            x:Name="QueryClearConversationButton"
-                            AutomationProperties.AutomationId="QueryClearConversationButton"
-                            AutomationProperties.Name="Clear conversation"
-                            ToolTip="Clear conversation"
-                            Content="Clear"
-                            Click="OnClearConversationClicked"
-                        >
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="Delete24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
-                    </Grid>
+                    <ui:Button
+                        Grid.Column="1"
+                        x:Name="QueryClearConversationButton"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="QueryClearConversationButton"
+                        AutomationProperties.Name="Clear conversation"
+                        ToolTip="Clear conversation"
+                        Content="Clear"
+                        Click="OnClearConversationClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Delete24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                 </Grid>
             </ui:Card>
 

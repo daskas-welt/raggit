@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
 using RAGGit.Core.Models;
 using Xunit;
 
@@ -150,7 +152,7 @@ public sealed class QueryStreamClientTests
     }
 
     [Fact]
-    public async Task StreamAsync_PostsToTheStreamEndpoint_WithTheSelectedMode()
+    public async Task StreamAsync_PostsToTheStreamEndpoint()
     {
         string? body = null;
         Uri? uri = null;
@@ -168,12 +170,29 @@ public sealed class QueryStreamClientTests
             new HttpClient(handler) { BaseAddress = new Uri("https://w.local/") }
         );
 
-        await CollectAsync(client.StreamAsync("renewal term", mode: QueryMode.Broad));
+        await CollectAsync(client.StreamAsync("renewal term"));
 
         uri!.AbsolutePath.Should().Be("/api/queries/stream");
         using var json = System.Text.Json.JsonDocument.Parse(body!);
-        json.RootElement.GetProperty("mode").GetString().Should().Be("broad");
         json.RootElement.GetProperty("query").GetString().Should().Be("renewal term");
+    }
+
+    [Fact]
+    public void ClientApi_NoLongerAcceptsOrExposesAMode()
+    {
+        typeof(QueryApiClient)
+            .GetMethod(nameof(QueryApiClient.StreamAsync))!
+            .GetParameters()
+            .Select(parameter => parameter.Name)
+            .Should()
+            .NotContain("mode");
+        typeof(QueryApiClient)
+            .GetMethod(nameof(QueryApiClient.QueryAsync))!
+            .GetParameters()
+            .Select(parameter => parameter.Name)
+            .Should()
+            .NotContain("mode");
+        typeof(QueryViewModel).GetProperty("QueryMode").Should().BeNull();
     }
 
     private static QueryApiClient ClientFor(

@@ -30,24 +30,17 @@ public sealed class QueryApiClient
     }
 
     /// <summary>
-    /// POST /api/queries with the selected intent mode (030). The server
-    /// echoes the effective intent on the returned <see cref="QueryResponse"/>.
+    /// POST /api/queries for a grounded answer with citations.
     /// </summary>
     public async Task<QueryResponse> QueryAsync(
         string query,
         int topK = 5,
-        QueryMode mode = QueryMode.Auto,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        var request = new QueryRequest
-        {
-            Query = query,
-            TopK = topK,
-            Mode = mode,
-        };
+        var request = new QueryRequest { Query = query, TopK = topK };
 
         try
         {
@@ -97,18 +90,12 @@ public sealed class QueryApiClient
     public async IAsyncEnumerable<QueryStreamEvent> StreamAsync(
         string query,
         int topK = 5,
-        QueryMode mode = QueryMode.Auto,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        var request = new QueryRequest
-        {
-            Query = query,
-            TopK = topK,
-            Mode = mode,
-        };
+        var request = new QueryRequest { Query = query, TopK = topK };
 
         HttpResponseMessage response;
         try

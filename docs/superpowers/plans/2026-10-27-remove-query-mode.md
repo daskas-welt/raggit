@@ -48,47 +48,51 @@
   - `QueryViewModel` no longer has a `QueryMode` property.
   - `QueryPage.xaml` no longer references `RAGGit.Core.Models.QueryMode` or `System.Enum`.
 
-- [ ] **Step 1: Write the failing client test**
+- [ ] **Step 1: Write the failing client tests**
 
-Replace `StreamAsync_PostsToTheStreamEndpoint_WithTheSelectedMode` in `tests/unit/QueryStreamClientTests.cs` with:
+Replace `StreamAsync_PostsToTheStreamEndpoint_WithTheSelectedMode` in `tests/unit/QueryStreamClientTests.cs` with the endpoint/query test below, and add the API-shape test (`QueryRequest.Mode` still defaults to `Auto` until Task 3, so the body-absence assertion moves there):
 
 ```csharp
 [Fact]
-public async Task StreamAsync_PostsToTheStreamEndpoint_WithoutAModeField()
+public async Task StreamAsync_PostsToTheStreamEndpoint()
 {
-    string? body = null;
-    Uri? uri = null;
-    var handler = new StubHttpHandler(request =>
-    {
-        body = request.Content!.ReadAsStringAsync().Result;
-        uri = request.RequestUri;
-        return Ok(
-            Body(
-                "{\"type\":\"answer\",\"answer\":\"done\",\"citations\":[],\"retrievedChunkIds\":[],\"latencyMs\":1}"
-            )
-        );
-    });
-    var client = new QueryApiClient(
-        new HttpClient(handler) { BaseAddress = new Uri("https://w.local/") }
-    );
-
+    // ... existing capturing handler ...
     await CollectAsync(client.StreamAsync("renewal term"));
 
     uri!.AbsolutePath.Should().Be("/api/queries/stream");
     using var json = System.Text.Json.JsonDocument.Parse(body!);
-    json.RootElement.TryGetProperty("mode", out _).Should().BeFalse();
     json.RootElement.GetProperty("query").GetString().Should().Be("renewal term");
 }
+
+[Fact]
+public void ClientApi_NoLongerAcceptsOrExposesAMode()
+{
+    typeof(QueryApiClient)
+        .GetMethod(nameof(QueryApiClient.StreamAsync))!
+        .GetParameters()
+        .Select(parameter => parameter.Name)
+        .Should()
+        .NotContain("mode");
+    typeof(QueryApiClient)
+        .GetMethod(nameof(QueryApiClient.QueryAsync))!
+        .GetParameters()
+        .Select(parameter => parameter.Name)
+        .Should()
+        .NotContain("mode");
+    typeof(QueryViewModel).GetProperty("QueryMode").Should().BeNull();
+}
 ```
+
+Add `using System.Linq;` and `using RAGGit.Client.Core.ViewModels;`.
 
 - [ ] **Step 2: Delete the mode-plumbing test file and run the new test to see it fail**
 
 ```bash
 git rm tests/unit/QueryModeClientTests.cs
-dotnet test tests/unit/RAGGit.Tests.Unit.csproj --filter "FullyQualifiedName~QueryStreamClientTests.StreamAsync_PostsToTheStreamEndpoint_WithoutAModeField"
+dotnet test tests/unit/RAGGit.Tests.Unit.csproj --filter "FullyQualifiedName~QueryStreamClientTests.ClientApi_NoLongerAcceptsOrExposesAMode"
 ```
 
-Expected: FAIL — the current client still serializes `"mode":"auto"`.
+Expected: FAIL — the client method still has a `mode` parameter / the ViewModel still has `QueryMode`.
 
 - [ ] **Step 3: Drop the mode argument from `QueryApiClient`**
 
@@ -336,6 +340,7 @@ git commit -m "refactor(db): stop persisting query mode"
 - Modify: `tests/unit/RetrievalRoutingTests.cs`
 - Modify: `tests/unit/QueryPipelineTests.cs:132-140`
 - Modify: `tests/unit/QueryStreamEventTests.cs:128`, `:136`, `:158`
+- Modify: `tests/unit/QueryStreamClientTests.cs` (add the body-absence assertion now that the field is gone)
 - Modify: `AGENTS.md` (Two-level chunks bullet)
 
 **Interfaces:**
@@ -447,6 +452,7 @@ Delete `ResolveIntent`, the `QueryMode` overload, and `RetrieveWithIntentAsync`.
 - `RetrievalRoutingTests`: drop the `QueryMode` argument from every `RetrieveAsync` call; delete `Retrieve_SpecificForcesGranular_EvenForBroadText` (the override no longer exists); update the file summary comment. The remaining broad cases already use trigger phrases (`Summarize…`, `Give me an overview`, `Compare the plans`).
 - `QueryPipelineTests`: construct `new QueryRequest { Query = "q" }`; delete the `outcome.Mode` and `outcome.RequestedMode` assertions.
 - `QueryStreamEventTests`: delete `Mode = QueryIntent.Broad,` and the `roundTripped.Mode` assertion in the round-trip fact; construct the classic response as `new QueryResponse { Answer = "a" }`.
+- `QueryStreamClientTests.StreamAsync_PostsToTheStreamEndpoint`: add `json.RootElement.TryGetProperty("mode", out _).Should().BeFalse();` — the shared request model no longer serializes it.
 
 - [ ] **Step 6: Update the documented behavior**
 
