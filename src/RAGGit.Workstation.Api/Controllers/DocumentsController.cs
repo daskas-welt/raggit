@@ -13,6 +13,7 @@ using RAGGit.Core.Abstractions.Repositories;
 using RAGGit.Core.Models;
 using RAGGit.Ingest;
 using RAGGit.Workstation.Api;
+using RAGGit.Workstation.Api.Filters;
 
 namespace RAGGit.Workstation.Api.Controllers;
 
@@ -53,7 +54,10 @@ public sealed class DocumentsController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    [RequestSizeLimit(DocumentValidation.MaxFileSizeBytes + 1024)]
+    [RequestSizeLimit(
+        DocumentValidation.MaxFileSizeBytes + DocumentValidation.MultipartEnvelopeBytes
+    )]
+    [RejectOversizedUpload]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload(IFormFile? file, CancellationToken cancellationToken)
     {

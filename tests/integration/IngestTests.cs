@@ -116,6 +116,31 @@ public sealed class IngestTests
     }
 
     [Fact]
+    public async Task Upload_BodyWellOverTheLimit_StillReturns413()
+    {
+        // A file far over the cap used to trip the framework's own size limit
+        // first, which answers 400 ("Failed to read the request form") instead of
+        // the contract's 413. Rejection must not depend on how far over it is.
+        using var factory = new IntegrationTestFactory();
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", factory.AdminKey);
+
+        var form = new MultipartFormDataContent();
+        var oversized = new LengthOnlyStream(
+            DocumentValidation.MaxFileSizeBytes + (5L * 1024 * 1024)
+        );
+        var file = new StreamContent(oversized);
+        file.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        form.Add(file, "file", "huge.pdf");
+
+        var response = await client.PostAsync("/api/documents", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("File exceeds 100MB.");
+    }
+
+    [Fact]
     public async Task Upload_DuplicateHash_Returns200ExistingDocument()
     {
         using var factory = new IntegrationTestFactory();

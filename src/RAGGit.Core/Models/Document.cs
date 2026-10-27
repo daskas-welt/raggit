@@ -110,6 +110,14 @@ public static class DocumentMimeTypeExtensions
 public static class DocumentValidation
 {
     public const long MaxFileSizeBytes = 100L * 1024 * 1024;
+
+    /// <summary>
+    /// Room for multipart boundaries and part headers on top of the file cap, so
+    /// a file of exactly <see cref="MaxFileSizeBytes"/> is never refused for its
+    /// envelope alone. Requests larger than the cap plus this allowance are
+    /// rejected by the upload action before the form is read.
+    /// </summary>
+    public const long MultipartEnvelopeBytes = 64L * 1024;
     public const int MaxSpreadsheetCells = 100_000;
 
     /// <summary>

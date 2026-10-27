@@ -258,7 +258,8 @@ builder.Services.AddProblemDetails(options =>
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = DocumentValidation.MaxFileSizeBytes + 1024;
+    options.Limits.MaxRequestBodySize =
+        DocumentValidation.MaxFileSizeBytes + DocumentValidation.MultipartEnvelopeBytes;
 });
 
 // -----------------------------------------------------------------------------
