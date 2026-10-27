@@ -60,6 +60,10 @@ public sealed class OllamaLlmClient : ILlmClient
         {
             Model = _modelName,
             Stream = true,
+            // Grounded RAG answers need no chain-of-thought, and Ollama returns
+            // reasoning-model tokens (qwen3.5) in "thinking", not "content": with
+            // thinking on, a slow box can burn the whole timeout and answer "".
+            Think = false,
             Messages =
             [
                 new Message(ChatRole.System, systemPrompt),
