@@ -632,20 +632,24 @@ public static class Chunker
             }
 
             var text = builder.ToString();
-            // Truncated PDFs may parse but yield no text — treat as corrupted if we produced no tokens and stream was non-empty
+            // A PDF that parses but carries no text is a scan, not a corrupt
+            // file: report the real cause so the library does not call a
+            // perfectly readable scan "corrupted".
             if (string.IsNullOrWhiteSpace(text))
             {
-                // Check if original stream had substantial bytes beyond header: if so, consider it corrupted
                 if (stream.CanSeek && stream.Length > 100)
                 {
-                    // No text extracted from a non-trivial PDF → likely corrupted
-                    throw new CorruptDocumentException("corrupted pdf");
+                    throw new NoExtractableContentException("no extractable content");
                 }
             }
 
             return text;
         }
         catch (CorruptDocumentException)
+        {
+            throw;
+        }
+        catch (NoExtractableContentException)
         {
             throw;
         }
