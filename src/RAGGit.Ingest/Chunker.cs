@@ -21,6 +21,21 @@ namespace RAGGit.Ingest;
 public static class Chunker
 {
     /// <summary>
+    /// Longest unbroken run the token chunker accepts (512 tokens at roughly 4
+    /// characters per token). Whitespace token counting is meaningless when text
+    /// arrives without word breaks — a whole book then counts as a few hundred
+    /// "tokens" and collapses into one chunk the embedder truncates — so text
+    /// containing a longer run is windowed by characters instead.
+    /// </summary>
+    public const int MaxUnbrokenChunkChars = 2048;
+
+    /// <summary>
+    /// Characters per token assumed when a token budget has to be expressed as a
+    /// character window (text without word breaks).
+    /// </summary>
+    private const int CharsPerToken = 4;
+
+    /// <summary>
     /// Extracts raw text from a stream based on the document MIME type.
     /// </summary>
     public static async Task<string> ExtractTextAsync(
@@ -409,10 +424,19 @@ public static class Chunker
             );
         }
 
-        var tokens = text.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+        var tokens = SplitTokens(text);
         if (tokens.Length == 0)
         {
             return new List<Chunk>();
+        }
+
+        // A text layer with no word breaks arrives as one enormous run, so
+        // whitespace token counting would report a handful of "tokens" and emit
+        // a single chunk the embedder silently truncates. Window by characters
+        // instead; documents that do have word breaks keep the token windows.
+        if (tokens.Any(token => token.Length > MaxUnbrokenChunkChars))
+        {
+            return ChunkUnbrokenText(text, documentId, chunkSize, overlap);
         }
 
         var step = chunkSize - overlap;
@@ -435,6 +459,49 @@ public static class Chunker
                     TokenCount = length,
                 }
             );
+        }
+
+        return chunks;
+    }
+
+    /// <summary>
+    /// Windows text that has no word breaks at all on a character budget derived
+    /// from the caller's token budget. Word overlap is impossible here, so
+    /// consecutive windows overlap by characters instead, in the same proportion
+    /// as the token path.
+    /// </summary>
+    private static IReadOnlyList<Chunk> ChunkUnbrokenText(
+        string text,
+        Guid documentId,
+        int chunkSize,
+        int overlap
+    )
+    {
+        var window = chunkSize * CharsPerToken;
+        var step = (chunkSize - overlap) * CharsPerToken;
+        var chunks = new List<Chunk>();
+        var ordinal = 0;
+
+        for (var start = 0; start < text.Length; start += step)
+        {
+            var length = Math.Min(window, text.Length - start);
+            var chunkText = text.Substring(start, length);
+
+            chunks.Add(
+                new Chunk
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = documentId,
+                    Ordinal = ordinal++,
+                    Text = chunkText,
+                    TokenCount = Math.Max(1, length / CharsPerToken),
+                }
+            );
+
+            if (start + length >= text.Length)
+            {
+                break;
+            }
         }
 
         return chunks;
