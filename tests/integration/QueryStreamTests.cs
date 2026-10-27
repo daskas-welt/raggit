@@ -220,7 +220,6 @@ public sealed class QueryStreamTests
         row.Answer.Should().Be(streamed.Answer);
         row.RetrievedChunkIds.Should().NotBeEmpty();
         row.CitationIds.Count.Should().Be(streamed.Citations!.Count);
-        row.Mode!.ToLowerInvariant().Should().Be("granular");
 
         // ...and none of the narration was persisted (FR-014).
         row.Answer.Should().NotContain("Reading your question");
@@ -351,8 +350,7 @@ public sealed class QueryStreamTests
         string Prompt,
         string Answer,
         IReadOnlyList<Guid> RetrievedChunkIds,
-        IReadOnlyList<Guid> CitationIds,
-        string? Mode
+        IReadOnlyList<Guid> CitationIds
     )> LoadLatestQueryRowAsync(IntegrationTestFactory factory)
     {
         var db = factory.Services.GetRequiredService<RagDbContext>();
@@ -361,7 +359,7 @@ public sealed class QueryStreamTests
 
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT Prompt, Answer, RetrievedChunkIds, CitationIds, Mode FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
+            "SELECT Prompt, Answer, RetrievedChunkIds, CitationIds FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
 
         await using var reader = await command.ExecuteReaderAsync();
         (await reader.ReadAsync())
@@ -372,8 +370,7 @@ public sealed class QueryStreamTests
             reader.GetString(0),
             reader.GetString(1),
             JsonSerializer.Deserialize<List<Guid>>(reader.GetString(2)) ?? new List<Guid>(),
-            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(3)) ?? new List<Guid>(),
-            reader.IsDBNull(4) ? null : reader.GetString(4)
+            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(3)) ?? new List<Guid>()
         );
     }
 }

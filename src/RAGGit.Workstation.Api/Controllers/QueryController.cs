@@ -150,7 +150,6 @@ public sealed class QueryController : ControllerBase
                 outcome.Answer,
                 outcome.CitationIds,
                 outcome.LatencyMs,
-                outcome.Mode,
                 cancellationToken
             );
 
@@ -288,7 +287,6 @@ public sealed class QueryController : ControllerBase
                 outcome.Answer,
                 outcome.CitationIds,
                 outcome.LatencyMs,
-                outcome.Mode,
                 cancellationToken
             );
 
@@ -428,7 +426,6 @@ public sealed class QueryController : ControllerBase
         string? answer,
         IReadOnlyList<Guid> citationIds,
         int latencyMs,
-        QueryIntent? mode,
         CancellationToken cancellationToken
     )
     {
@@ -441,7 +438,6 @@ public sealed class QueryController : ControllerBase
             Answer = answer,
             CitationIds = citationIds,
             LatencyMs = latencyMs,
-            Mode = mode,
             CreatedAt = DateTime.UtcNow,
         };
 

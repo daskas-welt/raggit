@@ -86,15 +86,6 @@ public sealed class RagDbContext : IAsyncDisposable
             cancellationToken
         );
 
-        await EnsureColumnAsync(
-            connection,
-            transaction,
-            "Queries",
-            "Mode",
-            "TEXT",
-            cancellationToken
-        );
-
         foreach (var sql in GetIndexCommands())
         {
             using var command = connection.CreateCommand();
@@ -214,8 +205,7 @@ public sealed class RagDbContext : IAsyncDisposable
                 Answer TEXT,
                 CitationIds TEXT,
                 LatencyMs INTEGER,
-                CreatedAt TEXT NOT NULL,
-                Mode TEXT
+                CreatedAt TEXT NOT NULL
             );";
 
         yield return @"

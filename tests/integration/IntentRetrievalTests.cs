@@ -184,12 +184,9 @@ public sealed class IntentRetrievalTests
         citations[0].GetProperty("text").GetString().Should().Contain("omega marker");
 
         // Mapping + persistence carry the parent id (not a child id).
-        // The audit row stores the PascalCase enum name per data-model.md;
-        // the API wire value stays lowercase per contracts/api.yaml.
-        var (retrievedIds, citationIds, mode) = await LoadLatestQueryRowAsync(factory);
+        var (retrievedIds, citationIds) = await LoadLatestQueryRowAsync(factory);
         retrievedIds.Should().Contain(citedId);
         citationIds.Should().Contain(citedId);
-        mode.Should().Be("Broad");
 
         var chunk = await LoadChunkAsync(factory, citedId);
         chunk.Should().NotBeNull();
@@ -240,8 +237,7 @@ public sealed class IntentRetrievalTests
 
     private static async Task<(
         IReadOnlyList<Guid> RetrievedIds,
-        IReadOnlyList<Guid> CitationIds,
-        string? Mode
+        IReadOnlyList<Guid> CitationIds
     )> LoadLatestQueryRowAsync(IntegrationTestFactory factory)
     {
         var db = factory.Services.GetRequiredService<RagDbContext>();
@@ -249,13 +245,12 @@ public sealed class IntentRetrievalTests
         await connection.OpenAsync();
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT RetrievedChunkIds, CitationIds, Mode FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
+            "SELECT RetrievedChunkIds, CitationIds FROM Queries ORDER BY CreatedAt DESC LIMIT 1;";
         await using var reader = await command.ExecuteReaderAsync();
         await reader.ReadAsync();
         return (
             JsonSerializer.Deserialize<List<Guid>>(reader.GetString(0)) ?? new List<Guid>(),
-            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(1)) ?? new List<Guid>(),
-            reader.IsDBNull(2) ? null : reader.GetString(2)
+            JsonSerializer.Deserialize<List<Guid>>(reader.GetString(1)) ?? new List<Guid>()
         );
     }
 }
