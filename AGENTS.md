@@ -48,6 +48,21 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   (300000 ms). `OllamaEmbedder`/`OllamaLlmClient` default to 5000 ms, which a large ingest batch exceeds,
   so the document lands on `Failed` ("Document ingestion failed") instead of `Ready` — the cause of
   `RealLoopTests` being red long after the loop itself worked.
+- **`Ollama:NumCtx` must stay above retrieval's prompt size.** Ollama serves a model at 4096 tokens when
+  the request asks for nothing, then truncates the prompt to ~2050 — most of five 512-token chunks, and
+  all of a broad-mode parent prompt (~15k). The model then answers from a fragment and invents the rest,
+  which reads exactly like a bad model. Client sends `Ollama:NumCtx` (default 16384). Verify with
+  `Select-String $env:LOCALAPPDATA\Ollama\server.log 'truncating input prompt'` — that warning means
+  answers are being generated from truncated context.
+- **A PDF text layer without word breaks is windowed by characters, not whitespace tokens.**
+  `Chunker.CountTokens`-style whitespace counting sees a whole book as a few hundred "tokens" (two corpus
+  books are 1.0M and 317K chars with ~200 spaces each), so `Chunker.ChunkText` switches to
+  `MaxUnbrokenChunkChars` windows when any run exceeds it. Such a book used to land on `Ready` with a
+  single chunk the embedder truncated — searchable in principle, invisible in practice. A PDF that parses
+  but yields no text is a scan: it fails as `no extractable content`, not `corrupted pdf`. Chunking only
+  changes on ingest, and a byte-identical re-upload of a `Ready` document is a no-op, so an affected
+  document must be **deleted and then uploaded again** — deleting alone leaves it gone, uploading alone
+  changes nothing.
 - **Tests do not use that path.** Each test project resolves `./data/lancedb` relative to its *output*
   dir: `tests/<suite>/bin/<Config>/net10.0/data/lancedb`. Deleting the repo-root `data/` fixes nothing;
   delete the test-output one.
