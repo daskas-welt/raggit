@@ -411,7 +411,14 @@ public partial class AdminUsersPage : Page
 
         var contentDialogs = App.Services.GetRequiredService<IContentDialogService>();
         var form = new CreatePersonDialog(ViewModel);
-        var dialog = new ContentDialog { Title = "Add person", Content = form };
+        var dialog = new ContentDialog
+        {
+            Title = "Add person",
+            Content = form,
+            // The form owns its own Create/Cancel actions, so the host footer
+            // would only duplicate the dismiss.
+            IsFooterVisible = false,
+        };
         form.RequestClose += (_, _) => dialog.Hide();
         await contentDialogs.ShowAsync(dialog, CancellationToken.None);
         RefreshUsersView();
@@ -440,7 +447,14 @@ public partial class AdminUsersPage : Page
 
         var contentDialogs = App.Services.GetRequiredService<IContentDialogService>();
         var form = new ResetPasswordDialog(ViewModel, user);
-        var dialog = new ContentDialog { Title = "Reset password", Content = form };
+        var dialog = new ContentDialog
+        {
+            Title = "Reset password",
+            Content = form,
+            // The form owns its own Reset/Cancel actions, so the host footer
+            // would only duplicate the dismiss.
+            IsFooterVisible = false,
+        };
         form.RequestClose += (_, _) => dialog.Hide();
         await contentDialogs.ShowAsync(dialog, CancellationToken.None);
         RefreshUsersView();

@@ -49,6 +49,7 @@
             x:Name="NewUsernameBox"
             Grid.Row="4"
             AutomationProperties.AutomationId="NewUsernameBox"
+            AutomationProperties.Name="Username"
             PlaceholderText="Unique login name"
             Text="{Binding NewUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />
@@ -58,6 +59,7 @@
             x:Name="NewDisplayNameBox"
             Grid.Row="8"
             AutomationProperties.AutomationId="NewDisplayNameBox"
+            AutomationProperties.Name="Display name"
             PlaceholderText="Name shown in the directory"
             Text="{Binding NewDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />
@@ -67,6 +69,7 @@
             x:Name="NewRoleCombo"
             Grid.Row="12"
             AutomationProperties.AutomationId="NewRoleCombo"
+            AutomationProperties.Name="Role"
             ItemsSource="{Binding Roles}"
             SelectedItem="{Binding NewRole, Mode=TwoWay}"
         />
@@ -76,6 +79,7 @@
             x:Name="NewPasswordBox"
             Grid.Row="16"
             AutomationProperties.AutomationId="NewPasswordBox"
+            AutomationProperties.Name="Initial password"
             PlaceholderText="At least 10 characters"
             Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         />

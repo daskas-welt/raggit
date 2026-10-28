@@ -74,7 +74,7 @@
                                     Foreground="{ui:ThemeResource TextOnAccentFillColorPrimaryBrush}"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    Width="36"
+                                    Width="32"
                                     Height="32"
                                     Padding="0"
                                     ToolTip="Copy message"
@@ -189,7 +189,7 @@
                                                                     Grid.Column="0"
                                                                     Background="{DynamicResource AccentFillColorDefaultBrush}"
                                                                     CornerRadius="6"
-                                                                    Padding="6,3"
+                                                                    Padding="8,4"
                                                                     VerticalAlignment="Top"
                                                                 >
                                                                     <ui:TextBlock
@@ -229,7 +229,7 @@
                                     HorizontalAlignment="Right"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    Width="36"
+                                    Width="32"
                                     Height="32"
                                     Padding="0"
                                     ToolTip="Copy message"
@@ -266,15 +266,12 @@
             <ui:TextBlock
                 Grid.Row="2"
                 Text="Ask a question to get started"
-                FontTypography="Title"
-                HorizontalAlignment="Center"
+                Style="{StaticResource EmptyStateTitleText}"
             />
             <ui:TextBlock
                 Grid.Row="4"
                 Text="Your conversation will appear here."
-                FontTypography="Body"
-                Style="{StaticResource SecondaryText}"
-                HorizontalAlignment="Center"
+                Style="{StaticResource EmptyStateBodyText}"
             />
         </Grid>
 
@@ -303,8 +300,8 @@
                     AutomationProperties.Name="Send question"
                     ToolTip="Send question"
                     Command="{Binding SendCommand, ElementName=Root}"
-                    Width="40"
-                    Height="40"
+                    Width="44"
+                    Height="44"
                     Padding="0"
                     VerticalAlignment="Center"
                 >

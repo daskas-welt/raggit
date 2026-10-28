@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using RAGGit.Client.Core.Services;
 using RAGGit.Client.Core.ViewModels;
 
 namespace RAGGit.Client.WPF.Views.Pages;
@@ -28,4 +29,7 @@ public partial class DocumentsMinePage : Page
 
     private void OnClearSearchClicked(object sender, RoutedEventArgs e) =>
         ViewModel.SearchText = string.Empty;
+
+    private void OnOpenLibraryClicked(object sender, RoutedEventArgs e) =>
+        App.Services.GetRequiredService<INavigationService>().NavigateToLibrary();
 }

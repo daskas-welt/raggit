@@ -115,11 +115,22 @@
                 Severity="{Binding StatusSeverity, Converter={StaticResource StatusSeverity}, Mode=OneWay}"
                 IsOpen="{Binding HasStatus, Mode=OneWay}"
                 IsBusy="{Binding IsBusy, Mode=OneWay}"
-                RetryCommand="{Binding LoadUsersCommand}"
                 RetryContent="Retry"
                 StatusAutomationId="AdminStatusBar"
                 RetryAutomationId="AdminRetryButton"
-            />
+            >
+                <components:StatusFooterControl.Style>
+                    <Style TargetType="components:StatusFooterControl">
+                        <!-- A successful load has nothing to retry; failures keep the action. -->
+                        <Setter Property="RetryCommand" Value="{Binding LoadUsersCommand}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusSeverity}" Value="Success">
+                                <Setter Property="RetryCommand" Value="{x:Null}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </components:StatusFooterControl.Style>
+            </components:StatusFooterControl>
         </Grid>
 
         <Grid x:Name="PeopleLayout" Grid.Row="4">
@@ -476,10 +487,12 @@
                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                         />
                         <ui:Card
-                            Padding="24"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            Style="{StaticResource EmptyStateCard}"
                             Visibility="{Binding ShowEmptyUsers, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            AutomationProperties.AutomationId="AdminEmptyState"
+                            AutomationProperties.Name="No people yet"
                         >
                             <Grid HorizontalAlignment="Center">
                                 <Grid.RowDefinitions>
@@ -487,6 +500,8 @@
                                     <RowDefinition Height="12" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="16" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <ui:SymbolIcon
@@ -496,32 +511,46 @@
                                 />
                                 <ui:TextBlock
                                     Grid.Row="2"
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Title"
+                                    Style="{StaticResource EmptyStateTitleText}"
                                     Text="No people yet"
                                 />
                                 <ui:TextBlock
                                     Grid.Row="4"
-                                    HorizontalAlignment="Center"
-                                    FontTypography="Body"
-                                    Style="{StaticResource SecondaryText}"
+                                    Style="{StaticResource EmptyStateBodyText}"
                                     Text="Add a person to start managing access."
                                 />
+                                <ui:Button
+                                    Grid.Row="6"
+                                    HorizontalAlignment="Center"
+                                    Appearance="Primary"
+                                    AutomationProperties.Name="Add person"
+                                    Content="Add person"
+                                    ToolTip="Add person"
+                                    Click="OnAddPersonClicked"
+                                >
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="PersonAdd24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
                             </Grid>
                         </ui:Card>
                         <ui:Card
                             x:Name="FilteredEmptyState"
-                            Padding="20"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            Style="{StaticResource EmptyStateCard}"
                             Visibility="Collapsed"
+                            AutomationProperties.AutomationId="AdminNoMatchState"
+                            AutomationProperties.Name="No matching people"
                         >
                             <Grid HorizontalAlignment="Center">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="12" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="16" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <ui:SymbolIcon
@@ -531,12 +560,18 @@
                                 />
                                 <ui:TextBlock
                                     Grid.Row="2"
-                                    FontTypography="BodyStrong"
+                                    Style="{StaticResource EmptyStateTitleText}"
                                     Text="No matching people"
+                                />
+                                <ui:TextBlock
+                                    Grid.Row="4"
+                                    Style="{StaticResource EmptyStateBodyText}"
+                                    Text="No one matches these filters."
                                 />
                                 <ui:Button
                                     x:Name="ClearUserFiltersButton"
-                                    Grid.Row="4"
+                                    Grid.Row="6"
+                                    HorizontalAlignment="Center"
                                     AutomationProperties.AutomationId="ClearUserFiltersButton"
                                     AutomationProperties.Name="Clear people filters"
                                     Content="Clear filters"
@@ -556,7 +591,7 @@
                 x:Name="DetailPanel"
                 Grid.Row="0"
                 Grid.Column="2"
-                Padding="20"
+                Padding="{StaticResource CardPaddingMedium}"
                 HorizontalContentAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
@@ -597,11 +632,8 @@
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            Style="{StaticResource SecondaryText}"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Text="Account details and actions will appear here."
-                            TextWrapping="Wrap"
-                            TextAlignment="Center"
-                            HorizontalAlignment="Center"
                         />
                     </Grid>
                     <ScrollViewer
@@ -638,7 +670,7 @@
                             />
                             <ui:TextBlock
                                 Grid.Row="2"
-                                FontTypography="Title"
+                                Style="{StaticResource PanelHeaderText}"
                                 TextWrapping="Wrap"
                                 Text="{Binding SelectedUser.DisplayName}"
                             />

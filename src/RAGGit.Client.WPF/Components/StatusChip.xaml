@@ -45,7 +45,7 @@
         <ui:TextBlock
             Grid.Column="2"
             Text="{Binding Text, ElementName=Root}"
-            FontTypography="Body"
+            FontTypography="Caption"
             Foreground="{Binding TextBrush, ElementName=Root}"
         />
     </Grid>

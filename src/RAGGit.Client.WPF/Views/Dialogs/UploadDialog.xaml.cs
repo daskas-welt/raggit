@@ -7,6 +7,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.Services;
 using RAGGit.Client.Core.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace RAGGit.Client.WPF.Views.Dialogs;
 
@@ -19,7 +20,7 @@ namespace RAGGit.Client.WPF.Views.Dialogs;
 /// remove) locks while uploading. Closing mid-upload cancels the in-flight
 /// operation. Focus moves inside on open.
 /// </summary>
-public partial class UploadDialog : Window
+public partial class UploadDialog : FluentWindow
 {
     private bool _autoCloseArmed;
     private bool _closeAfterCancel;

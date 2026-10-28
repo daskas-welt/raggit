@@ -361,10 +361,12 @@
                      load) so it never shows while loading — overlapping the
                      ProgressRing — or after a failed load. -->
                 <ui:Card
-                    Padding="{StaticResource CardPaddingLarge}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
+                    Style="{StaticResource EmptyStateCard}"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolVisibility}}"
+                    AutomationProperties.AutomationId="LibraryEmptyState"
+                    AutomationProperties.Name="No documents yet"
                 >
                     <!-- Rows carry the former icon and body margins; the two bodies share a row
                          because exactly one is visible at a time. -->
@@ -375,36 +377,45 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="12" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <ui:SymbolIcon
                             Grid.Row="0"
-                            Symbol="Document24"
+                            Symbol="Library24"
                             Style="{StaticResource EmptyStateGlyph}"
                         />
                         <ui:TextBlock
                             Grid.Row="2"
-                            HorizontalAlignment="Center"
-                            FontTypography="Title"
+                            Style="{StaticResource EmptyStateTitleText}"
                             Text="No documents yet"
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            HorizontalAlignment="Center"
-                            FontTypography="Body"
-                            Style="{StaticResource SecondaryText}"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                             Text="Upload a document to see it here."
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            HorizontalAlignment="Center"
-                            FontTypography="Body"
-                            Style="{StaticResource SecondaryText}"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
-                            TextWrapping="Wrap"
-                            TextAlignment="Center"
                             Text="Ask a question to get started, or contact an admin to add documents."
                         />
+                        <ui:Button
+                            Grid.Row="6"
+                            HorizontalAlignment="Center"
+                            Appearance="Primary"
+                            AutomationProperties.Name="Upload documents"
+                            Content="Upload documents"
+                            ToolTip="Upload documents"
+                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
+                            Click="OnUploadClicked"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowUpload24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
                     </Grid>
                 </ui:Card>
 
@@ -422,13 +433,12 @@
                      when the library is genuinely empty (clearing the search would not help). -->
                 <ui:Card
                     x:Name="LibraryNoMatchState"
-                    Padding="{StaticResource CardPaddingLarge}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="LibraryNoMatchState"
                 >
                     <ui:Card.Style>
-                        <Style TargetType="ui:Card">
+                        <Style TargetType="ui:Card" BasedOn="{StaticResource EmptyStateCard}">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
                                 <MultiDataTrigger>
@@ -462,17 +472,12 @@
                         />
                         <ui:TextBlock
                             Grid.Row="2"
-                            HorizontalAlignment="Center"
-                            FontTypography="Title"
+                            Style="{StaticResource EmptyStateTitleText}"
                             Text="No matching documents"
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            HorizontalAlignment="Center"
-                            FontTypography="Body"
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            TextAlignment="Center"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Text="Nothing matches your search."
                         />
                         <ui:Button

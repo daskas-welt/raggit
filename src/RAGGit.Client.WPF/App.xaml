@@ -17,12 +17,6 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
 
-            <!-- Hero banner gradient (theme-accent; adapts to Light/Dark/High Contrast). -->
-            <LinearGradientBrush x:Key="HeroAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Offset="0" Color="{DynamicResource SystemAccentColorPrimary}" />
-                <GradientStop Offset="1" Color="{DynamicResource SystemAccentColorSecondary}" />
-            </LinearGradientBrush>
-
             <!-- Design-system text styles (feature 023). Adopt these instead of re-declaring attributes. -->
             <Style x:Key="PageTitleText" TargetType="ui:TextBlock">
                 <Setter Property="FontTypography" Value="Title" />
@@ -38,6 +32,16 @@
             <Style x:Key="SecondaryText" TargetType="ui:TextBlock">
                 <Setter Property="Appearance" Value="Secondary" />
             </Style>
+            <!-- Metadata (counts, dates, helper lines under a row title): a step below Body. -->
+            <Style x:Key="MetaText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Caption" />
+                <Setter Property="Appearance" Value="Secondary" />
+            </Style>
+            <!-- Panel/section headline: one step below PageTitleText. Dashboard panels and the
+                 selected-person card use this so a section never competes with the page title. -->
+            <Style x:Key="PanelHeaderText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Subtitle" />
+            </Style>
             <Style x:Key="EmptyStateGlyph" TargetType="ui:SymbolIcon">
                 <Setter Property="FontSize" Value="40" />
                 <Setter Property="HorizontalAlignment" Value="Center" />
@@ -46,17 +50,43 @@
                     Value="{ui:ThemeResource TextFillColorSecondaryBrush}"
                 />
             </Style>
+            <!-- One empty-state hierarchy: the title sits a step below the page title and the
+                 body is secondary, wrapped and centred. Panel-level states inside a card keep
+                 this body but use SectionHeaderText for the title. -->
+            <Style x:Key="EmptyStateTitleText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Subtitle" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="EmptyStateBodyText" TargetType="ui:TextBlock">
+                <Setter Property="FontTypography" Value="Body" />
+                <Setter Property="Appearance" Value="Secondary" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="TextAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
 
             <!-- Design-system spacing tokens (feature 028, 4-px scale). Reference
                  these instead of inline literals on affected surfaces. -->
-            <Thickness x:Key="PagePadding">0,24</Thickness>
             <Thickness x:Key="PageHeaderCardPadding">16,12</Thickness>
             <Thickness x:Key="CardPaddingSmall">12</Thickness>
-            <Thickness x:Key="CardPaddingMedium">18</Thickness>
+            <Thickness x:Key="CardPaddingMedium">20</Thickness>
             <Thickness x:Key="CardPaddingLarge">24</Thickness>
-            <Thickness x:Key="EmptyStateBodyMargin">0,12,0,0</Thickness>
             <sys:Double x:Key="DialogPrimaryButtonMinWidth">136</sys:Double>
             <sys:Double x:Key="DialogSecondaryButtonMinWidth">96</sys:Double>
+
+            <!-- Shared page-level empty state: one surface for every page, capped so the copy wraps
+                 in a readable column instead of stretching across the page. It carries no border;
+                 BasedOn is still required — a bare Style TargetType="ui:Card" replaces WPF-UI's
+                 implicit style and drops the card template, so padding stops rendering too. -->
+            <Style
+                x:Key="EmptyStateCard"
+                TargetType="ui:Card"
+                BasedOn="{StaticResource {x:Type ui:Card}}"
+            >
+                <Setter Property="Padding" Value="{StaticResource CardPaddingLarge}" />
+                <Setter Property="MaxWidth" Value="480" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
 
             <!-- Shared page-header treatment: title + supporting line on the left,
                  page actions on the right (Library/History/My Documents/Admin). -->

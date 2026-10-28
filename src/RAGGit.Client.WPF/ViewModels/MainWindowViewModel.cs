@@ -54,8 +54,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 typeof(LibraryPage),
                 "NavLibrary"
             ),
-            CreateItem("Ask", SymbolRegular.Chat24, typeof(QueryPage), "NavAsk"),
-            CreateItem("History", SymbolRegular.History24, typeof(HistoryPage), "NavHistory"),
+            CreateItem("Ask the Library", SymbolRegular.Chat24, typeof(QueryPage), "NavAsk"),
+            CreateItem("Query History", SymbolRegular.History24, typeof(HistoryPage), "NavHistory"),
             CreateItem(
                 "My Documents",
                 SymbolRegular.Document24,
@@ -67,7 +67,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (IsAdmin)
         {
             items.Add(
-                CreateItem("Admin", SymbolRegular.People24, typeof(AdminUsersPage), "NavAdmin")
+                CreateItem(
+                    "People Management",
+                    SymbolRegular.People24,
+                    typeof(AdminUsersPage),
+                    "NavAdmin"
+                )
             );
         }
 

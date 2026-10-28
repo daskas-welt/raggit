@@ -13,28 +13,11 @@
         HorizontalScrollBarVisibility="Disabled"
         VerticalScrollBarVisibility="Auto"
     >
-        <Grid MaxWidth="760">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <!-- The header card and the settings rows both span the page, like every other screen. -->
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="24" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="Auto" />
-                <!-- 36 = the appearance row's 12 trailing + the next section's 24 leading. -->
-                <RowDefinition Height="36" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="12" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="12" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="24" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -52,263 +35,298 @@
                             Text="Preferences for this client"
                         />
                     </StackPanel>
-                    <StackPanel
-                        Grid.Column="1"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                    />
                 </Grid>
             </ui:Card>
 
-            <!-- Appearance & behavior -->
-            <ui:TextBlock
-                Grid.Row="2"
-                Style="{StaticResource SectionHeaderText}"
-                Text="Appearance &amp; behavior"
-            />
-            <ui:CardControl Grid.Row="4" AutomationProperties.AutomationId="SettingsRowAppearance">
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Color24" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="App theme" />
-                        <ui:TextBlock
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            Text="Select which app theme to display"
-                        />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <RadioButton
-                        Grid.Column="0"
-                        x:Name="LightThemeRadio"
-                        AutomationProperties.AutomationId="LightThemeRadio"
-                        TabIndex="0"
-                        VerticalContentAlignment="Center"
-                        Content="Light"
-                        GroupName="AppTheme"
-                        Checked="OnLightThemeChecked"
-                    />
-                    <RadioButton
-                        Grid.Column="2"
-                        x:Name="DarkThemeRadio"
-                        AutomationProperties.AutomationId="DarkThemeRadio"
-                        TabIndex="1"
-                        VerticalContentAlignment="Center"
-                        Content="Dark"
-                        GroupName="AppTheme"
-                        Checked="OnDarkThemeChecked"
-                    />
-                </Grid>
-            </ui:CardControl>
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                    <!-- 32 = the appearance row's trailing inset plus the next section's lead. -->
+                    <RowDefinition Height="32" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <!-- Connection -->
-            <ui:TextBlock
-                Grid.Row="6"
-                Style="{StaticResource SectionHeaderText}"
-                Text="Connection"
-            />
-            <ui:CardControl Grid.Row="8" AutomationProperties.AutomationId="SettingsRowConnection">
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Link24" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="Workstation URL" />
-                        <ui:TextBlock
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            Text="The AI workstation this client connects to"
+                <!-- Appearance & behavior -->
+                <ui:TextBlock
+                    Grid.Row="0"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Appearance &amp; behavior"
+                />
+                <ui:CardControl
+                    Grid.Row="2"
+                    AutomationProperties.AutomationId="SettingsRowAppearance"
+                >
+                    <ui:CardControl.Icon>
+                        <ui:SymbolIcon Symbol="Color24" />
+                    </ui:CardControl.Icon>
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="App theme" />
+                            <ui:TextBlock
+                                Style="{StaticResource MetaText}"
+                                TextWrapping="Wrap"
+                                Text="Select which app theme to display"
+                            />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <RadioButton
+                            Grid.Column="0"
+                            x:Name="LightThemeRadio"
+                            AutomationProperties.AutomationId="LightThemeRadio"
+                            TabIndex="0"
+                            VerticalContentAlignment="Center"
+                            Content="Light"
+                            GroupName="AppTheme"
+                            Checked="OnLightThemeChecked"
                         />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock
-                        Grid.Column="0"
-                        x:Name="WorkstationUrlText"
-                        AutomationProperties.AutomationId="WorkstationUrlValue"
-                        MaxWidth="320"
-                        VerticalAlignment="Center"
-                        TextTrimming="CharacterEllipsis"
-                        Text="(not configured)"
-                    />
-                    <ui:Button
-                        Grid.Column="2"
-                        x:Name="SettingsCopyWorkstationUrlButton"
-                        AutomationProperties.AutomationId="SettingsCopyWorkstationUrlButton"
-                        AutomationProperties.Name="Copy workstation URL"
-                        ToolTip="Copy workstation URL"
-                        Width="44"
-                        Height="44"
-                        VerticalAlignment="Center"
-                        Click="OnCopyWorkstationUrlClicked"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="Copy24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                </Grid>
-            </ui:CardControl>
-            <ui:CardControl Grid.Row="10" AutomationProperties.AutomationId="SettingsRowSignedInAs">
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Person24" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="Signed in as" />
-                        <ui:TextBlock
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            Text="The account currently using this client"
+                        <RadioButton
+                            Grid.Column="2"
+                            x:Name="DarkThemeRadio"
+                            AutomationProperties.AutomationId="DarkThemeRadio"
+                            TabIndex="1"
+                            VerticalContentAlignment="Center"
+                            Content="Dark"
+                            GroupName="AppTheme"
+                            Checked="OnDarkThemeChecked"
                         />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock
-                        Grid.Column="0"
-                        x:Name="SignedInAsText"
-                        AutomationProperties.AutomationId="SignedInAsValue"
-                        MaxWidth="320"
-                        VerticalAlignment="Center"
-                        TextTrimming="CharacterEllipsis"
-                        Text=""
-                    />
-                    <ui:Button
-                        Grid.Column="2"
-                        x:Name="SettingsCopySignedInAsButton"
-                        AutomationProperties.AutomationId="SettingsCopySignedInAsButton"
-                        AutomationProperties.Name="Copy signed-in account"
-                        ToolTip="Copy signed-in account"
-                        Width="44"
-                        Height="44"
-                        VerticalAlignment="Center"
-                        Click="OnCopySignedInAsClicked"
-                    >
-                        <ui:Button.Icon>
-                            <ui:SymbolIcon Symbol="Copy24" />
-                        </ui:Button.Icon>
-                    </ui:Button>
-                </Grid>
-            </ui:CardControl>
-            <ui:CardControl
-                Grid.Row="12"
-                AutomationProperties.AutomationId="SettingsRowConnectionStatus"
-            >
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="PlugConnected24" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="Connection status" />
+                    </Grid>
+                </ui:CardControl>
+
+                <!-- Connection -->
+                <ui:TextBlock
+                    Grid.Row="4"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Connection"
+                />
+                <ui:CardControl
+                    Grid.Row="6"
+                    AutomationProperties.AutomationId="SettingsRowConnection"
+                >
+                    <ui:CardControl.Icon>
+                        <ui:SymbolIcon Symbol="Link24" />
+                    </ui:CardControl.Icon>
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="Workstation URL" />
+                            <ui:TextBlock
+                                Style="{StaticResource MetaText}"
+                                TextWrapping="Wrap"
+                                Text="The AI workstation this client connects to"
+                            />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            Text="Reachability of the AI workstation"
+                            Grid.Column="0"
+                            x:Name="WorkstationUrlText"
+                            AutomationProperties.AutomationId="WorkstationUrlValue"
+                            MaxWidth="320"
+                            VerticalAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            Text="(not configured)"
                         />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:SymbolIcon
-                        Grid.Column="0"
-                        x:Name="ConnectionStatusIcon"
-                        Symbol="PlugConnected24"
-                        VerticalAlignment="Center"
-                    />
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <ui:Button
+                            Grid.Column="2"
+                            x:Name="SettingsCopyWorkstationUrlButton"
+                            AutomationProperties.AutomationId="SettingsCopyWorkstationUrlButton"
+                            AutomationProperties.Name="Copy workstation URL"
+                            ToolTip="Copy workstation URL"
+                            Width="44"
+                            Height="44"
+                            VerticalAlignment="Center"
+                            Click="OnCopyWorkstationUrlClicked"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Copy24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </ui:CardControl>
+                <ui:CardControl
+                    Grid.Row="8"
+                    AutomationProperties.AutomationId="SettingsRowSignedInAs"
+                >
+                    <ui:CardControl.Icon>
+                        <ui:SymbolIcon Symbol="Person24" />
+                    </ui:CardControl.Icon>
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="Signed in as" />
+                            <ui:TextBlock
+                                Style="{StaticResource MetaText}"
+                                TextWrapping="Wrap"
+                                Text="The account currently using this client"
+                            />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock
-                            x:Name="ConnectionStatusText"
-                            AutomationProperties.AutomationId="ConnectionStatusValue"
+                            Grid.Column="0"
+                            x:Name="SignedInAsText"
+                            AutomationProperties.AutomationId="SignedInAsValue"
                             MaxWidth="320"
                             VerticalAlignment="Center"
                             TextTrimming="CharacterEllipsis"
                             Text=""
                         />
-                        <ui:TextBlock
-                            x:Name="ConnectionLastCheckedText"
-                            Style="{StaticResource SecondaryText}"
-                            Text=""
-                        />
-                    </StackPanel>
-                    <ui:Button
-                        Grid.Column="4"
-                        x:Name="SettingsRecheckConnectionButton"
-                        AutomationProperties.AutomationId="SettingsRecheckConnectionButton"
-                        AutomationProperties.Name="Re-check connection"
-                        ToolTip="Re-check connection"
-                        Width="44"
-                        Height="44"
-                        VerticalAlignment="Center"
-                        Click="OnRecheckConnectionClicked"
-                    >
-                        <Grid Width="24" Height="24">
-                            <ui:SymbolIcon x:Name="RecheckStatusIcon" Symbol="ArrowClockwise24" />
-                            <ui:ProgressRing
-                                x:Name="RecheckStatusRing"
-                                Width="24"
-                                Height="24"
-                                AutomationProperties.Name="Re-checking connection"
-                                IsIndeterminate="True"
-                                Visibility="Collapsed"
-                            />
-                        </Grid>
-                    </ui:Button>
-                </Grid>
-            </ui:CardControl>
-
-            <!-- Session -->
-            <ui:TextBlock Grid.Row="14" Style="{StaticResource SectionHeaderText}" Text="Session" />
-            <ui:CardControl Grid.Row="16" AutomationProperties.AutomationId="SettingsRowSession">
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="SignOut24" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="Sign out" />
-                        <ui:TextBlock
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            Text="End this session on this device"
-                        />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:Button
-                    x:Name="SignOutButton"
-                    AutomationProperties.AutomationId="SignOutButton"
-                    TabIndex="2"
-                    HorizontalAlignment="Left"
-                    Appearance="Danger"
-                    Content="Sign out"
-                    Click="OnSignOutClicked"
+                        <ui:Button
+                            Grid.Column="2"
+                            x:Name="SettingsCopySignedInAsButton"
+                            AutomationProperties.AutomationId="SettingsCopySignedInAsButton"
+                            AutomationProperties.Name="Copy signed-in account"
+                            ToolTip="Copy signed-in account"
+                            Width="44"
+                            Height="44"
+                            VerticalAlignment="Center"
+                            Click="OnCopySignedInAsClicked"
+                        >
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Copy24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </ui:CardControl>
+                <ui:CardControl
+                    Grid.Row="10"
+                    AutomationProperties.AutomationId="SettingsRowConnectionStatus"
                 >
-                    <ui:Button.Icon>
+                    <ui:CardControl.Icon>
+                        <ui:SymbolIcon Symbol="PlugConnected24" />
+                    </ui:CardControl.Icon>
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="Connection status" />
+                            <ui:TextBlock
+                                Style="{StaticResource MetaText}"
+                                TextWrapping="Wrap"
+                                Text="Reachability of the AI workstation"
+                            />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon
+                            Grid.Column="0"
+                            x:Name="ConnectionStatusIcon"
+                            Symbol="PlugConnected24"
+                            VerticalAlignment="Center"
+                        />
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <ui:TextBlock
+                                x:Name="ConnectionStatusText"
+                                AutomationProperties.AutomationId="ConnectionStatusValue"
+                                MaxWidth="320"
+                                VerticalAlignment="Center"
+                                TextTrimming="CharacterEllipsis"
+                                Text=""
+                            />
+                            <ui:TextBlock
+                                x:Name="ConnectionLastCheckedText"
+                                Style="{StaticResource SecondaryText}"
+                                Text=""
+                            />
+                        </StackPanel>
+                        <ui:Button
+                            Grid.Column="4"
+                            x:Name="SettingsRecheckConnectionButton"
+                            AutomationProperties.AutomationId="SettingsRecheckConnectionButton"
+                            AutomationProperties.Name="Re-check connection"
+                            ToolTip="Re-check connection"
+                            Width="44"
+                            Height="44"
+                            VerticalAlignment="Center"
+                            Click="OnRecheckConnectionClicked"
+                        >
+                            <Grid Width="24" Height="24">
+                                <ui:SymbolIcon
+                                    x:Name="RecheckStatusIcon"
+                                    Symbol="ArrowClockwise24"
+                                />
+                                <ui:ProgressRing
+                                    x:Name="RecheckStatusRing"
+                                    Width="24"
+                                    Height="24"
+                                    AutomationProperties.Name="Re-checking connection"
+                                    IsIndeterminate="True"
+                                    Visibility="Collapsed"
+                                />
+                            </Grid>
+                        </ui:Button>
+                    </Grid>
+                </ui:CardControl>
+
+                <!-- Session -->
+                <ui:TextBlock
+                    Grid.Row="12"
+                    Style="{StaticResource SectionHeaderText}"
+                    Text="Session"
+                />
+                <ui:CardControl
+                    Grid.Row="14"
+                    AutomationProperties.AutomationId="SettingsRowSession"
+                >
+                    <ui:CardControl.Icon>
                         <ui:SymbolIcon Symbol="SignOut24" />
-                    </ui:Button.Icon>
-                </ui:Button>
-            </ui:CardControl>
+                    </ui:CardControl.Icon>
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="Sign out" />
+                            <ui:TextBlock
+                                Style="{StaticResource MetaText}"
+                                TextWrapping="Wrap"
+                                Text="End this session on this device"
+                            />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ui:Button
+                        x:Name="SignOutButton"
+                        AutomationProperties.AutomationId="SignOutButton"
+                        TabIndex="2"
+                        HorizontalAlignment="Left"
+                        Appearance="Danger"
+                        Content="Sign out"
+                        Click="OnSignOutClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="SignOut24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </ui:CardControl>
+            </Grid>
         </Grid>
     </ScrollViewer>
 </Page>

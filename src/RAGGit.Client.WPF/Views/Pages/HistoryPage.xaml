@@ -219,10 +219,12 @@
 
             <!-- Empty state card -->
             <ui:Card
-                Padding="{StaticResource CardPaddingLarge}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Style="{StaticResource EmptyStateCard}"
                 Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+                AutomationProperties.AutomationId="HistoryEmptyState"
+                AutomationProperties.Name="No queries yet"
             >
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid.RowDefinitions>
@@ -230,6 +232,8 @@
                         <RowDefinition Height="12" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="16" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <ui:SymbolIcon
@@ -239,16 +243,26 @@
                     />
                     <ui:TextBlock
                         Grid.Row="2"
-                        HorizontalAlignment="Center"
-                        FontTypography="Title"
+                        Style="{StaticResource EmptyStateTitleText}"
                         Text="No queries yet"
                     />
                     <ui:TextBlock
                         Grid.Row="4"
-                        HorizontalAlignment="Center"
-                        FontTypography="Body"
+                        Style="{StaticResource EmptyStateBodyText}"
                         Text="Ask a question to see it here."
                     />
+                    <ui:Button
+                        Grid.Row="6"
+                        HorizontalAlignment="Center"
+                        AutomationProperties.Name="Ask a question"
+                        Content="Ask a question"
+                        ToolTip="Ask a question"
+                        Click="OnAskQuestionClicked"
+                    >
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Chat24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
                 </Grid>
             </ui:Card>
 
@@ -266,13 +280,12 @@
                  there are genuinely no questions (clearing the search would not help). -->
             <ui:Card
                 x:Name="HistoryNoMatchState"
-                Padding="{StaticResource CardPaddingLarge}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="HistoryNoMatchState"
             >
                 <ui:Card.Style>
-                    <Style TargetType="ui:Card">
+                    <Style TargetType="ui:Card" BasedOn="{StaticResource EmptyStateCard}">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
                             <MultiDataTrigger>
@@ -303,17 +316,12 @@
                     />
                     <ui:TextBlock
                         Grid.Row="2"
-                        HorizontalAlignment="Center"
-                        FontTypography="Title"
+                        Style="{StaticResource EmptyStateTitleText}"
                         Text="No matching questions"
                     />
                     <ui:TextBlock
                         Grid.Row="4"
-                        HorizontalAlignment="Center"
-                        FontTypography="Body"
-                        Style="{StaticResource SecondaryText}"
-                        TextWrapping="Wrap"
-                        TextAlignment="Center"
+                        Style="{StaticResource EmptyStateBodyText}"
                         Text="Nothing loaded matches your search. Load more to search further back."
                     />
                     <ui:Button

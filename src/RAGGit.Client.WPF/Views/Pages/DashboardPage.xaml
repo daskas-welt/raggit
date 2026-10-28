@@ -20,26 +20,32 @@
         <converters:ResponsiveColumnCountConverter x:Key="DashboardRecentColumns" />
     </Page.Resources>
     <Grid>
+        <!-- The layout is at least one viewport tall so the empty state can center in the space
+             below the metric cards; the outer 24px rows are the page insets. -->
         <ScrollViewer
+            x:Name="DashboardScroll"
             HorizontalScrollBarVisibility="Disabled"
             VerticalScrollBarVisibility="Auto"
-            Padding="0,24"
         >
-            <Grid x:Name="DashboardLayout" SizeChanged="OnDashboardLayoutSizeChanged">
+            <Grid
+                x:Name="DashboardLayout"
+                MinHeight="{Binding ViewportHeight, ElementName=DashboardScroll}"
+                SizeChanged="OnDashboardLayoutSizeChanged"
+            >
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="24" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="4" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="4" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="4" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="24" />
                 </Grid.RowDefinitions>
 
                 <!-- Shared header card: title + supporting line on the left, the refresh
                      affordance and the signed-in account chip on the right. -->
-                <ui:Card Grid.Row="0" Style="{StaticResource PageHeaderCard}">
+                <ui:Card Grid.Row="1" Style="{StaticResource PageHeaderCard}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -82,7 +88,7 @@
                         </ui:Button>
                         <Border
                             Grid.Column="2"
-                            Padding="14,10"
+                            Padding="16,8"
                             VerticalAlignment="Center"
                             CornerRadius="8"
                             Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
@@ -148,7 +154,7 @@
                      "Dashboard refreshed" / load errors are seen without scrolling. The wrapper
                      owns the 12px insets so they collapse with the bar when there is no status. -->
                 <Grid
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVisibility}}"
                 >
                     <Grid.RowDefinitions>
@@ -186,7 +192,7 @@
                      count. Em dashes are visibly not data. The cards keep their trailing margin
                      because a UniformGrid has no tracks to gutter. -->
                 <UniformGrid
-                    Grid.Row="3"
+                    Grid.Row="4"
                     Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource DashboardMetricColumns}, ConverterParameter=6, FallbackValue=6}"
                 >
                     <UniformGrid.Style>
@@ -331,7 +337,7 @@
                      zeros as loaded data. Each card keeps its trailing margin because a
                      UniformGrid has no tracks to gutter. -->
                 <UniformGrid
-                    Grid.Row="3"
+                    Grid.Row="4"
                     Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource DashboardMetricColumns}, ConverterParameter=6, FallbackValue=6}"
                 >
                     <UniformGrid.Style>
@@ -717,17 +723,21 @@
                 </UniformGrid>
 
                 <!-- Whole-dashboard empty state: only after a successful load, once the library is
-                     confirmed empty and no questions exist. Not shown while loading or after a failure. -->
+                     confirmed empty and no questions exist. Not shown while loading or after a
+                     failure. It shares the content row with the panels below, centered in the
+                     space the metric cards leave. -->
                 <ui:Card
-                    Grid.Row="5"
-                    Padding="24"
+                    Grid.Row="6"
                     HorizontalContentAlignment="Stretch"
+                    VerticalAlignment="Center"
                     VerticalContentAlignment="Stretch"
                     AutomationProperties.AutomationId="DashboardEmptyState"
                     AutomationProperties.Name="Empty library"
                 >
                     <ui:Card.Style>
-                        <Style TargetType="ui:Card">
+                        <!-- The trigger needs a local Style; BasedOn keeps the shared empty-state
+                             surface instead of replacing the implicit ui:Card style. -->
+                        <Style TargetType="ui:Card" BasedOn="{StaticResource EmptyStateCard}">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
                                 <MultiDataTrigger>
@@ -764,23 +774,18 @@
                         />
                         <ui:TextBlock
                             Grid.Row="2"
-                            HorizontalAlignment="Center"
-                            FontTypography="Title"
+                            Style="{StaticResource EmptyStateTitleText}"
                             Text="No documents yet"
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            HorizontalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                             Text="Open the library to upload your first document."
                         />
                         <ui:TextBlock
                             Grid.Row="4"
-                            HorizontalAlignment="Center"
-                            Style="{StaticResource SecondaryText}"
-                            TextWrapping="Wrap"
-                            TextAlignment="Center"
+                            Style="{StaticResource EmptyStateBodyText}"
                             Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
                             Text="Ask a question to get grounded answers, or contact an admin to add documents."
                         />
@@ -801,7 +806,7 @@
                 </ui:Card>
 
                 <!-- Content -->
-                <Grid x:Name="PanelsGrid" Grid.Row="7">
+                <Grid x:Name="PanelsGrid" Grid.Row="6" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.15*" />
                         <ColumnDefinition Width="16" />
@@ -833,7 +838,7 @@
                         x:Name="DocumentsPanel"
                         Grid.Row="0"
                         Grid.Column="0"
-                        Padding="18"
+                        Padding="{StaticResource CardPaddingMedium}"
                         HorizontalContentAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
@@ -851,7 +856,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ui:TextBlock
                                     Grid.Column="0"
-                                    FontTypography="Title"
+                                    Style="{StaticResource PanelHeaderText}"
                                     VerticalAlignment="Center"
                                     Text="Recent documents"
                                 />
@@ -962,23 +967,19 @@
                                     />
                                     <ui:TextBlock
                                         Grid.Row="2"
+                                        Style="{StaticResource SectionHeaderText}"
                                         HorizontalAlignment="Center"
-                                        FontTypography="Title"
                                         Text="No documents yet"
                                     />
                                     <ui:TextBlock
                                         Grid.Row="4"
-                                        HorizontalAlignment="Center"
-                                        Style="{StaticResource SecondaryText}"
+                                        Style="{StaticResource EmptyStateBodyText}"
                                         Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}"
                                         Text="Open the library to upload your first document."
                                     />
                                     <ui:TextBlock
                                         Grid.Row="4"
-                                        HorizontalAlignment="Center"
-                                        Style="{StaticResource SecondaryText}"
-                                        TextWrapping="Wrap"
-                                        TextAlignment="Center"
+                                        Style="{StaticResource EmptyStateBodyText}"
                                         Visibility="{Binding IsAdmin, Converter={StaticResource InvertedBoolVisibility}}"
                                         Text="Ask a question to get grounded answers, or contact an admin to add documents."
                                     />
@@ -991,7 +992,7 @@
                         x:Name="QuestionsPanel"
                         Grid.Row="0"
                         Grid.Column="2"
-                        Padding="18"
+                        Padding="{StaticResource CardPaddingMedium}"
                         HorizontalContentAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
@@ -1009,7 +1010,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ui:TextBlock
                                     Grid.Column="0"
-                                    FontTypography="Title"
+                                    Style="{StaticResource PanelHeaderText}"
                                     VerticalAlignment="Center"
                                     Text="Recent questions"
                                 />
@@ -1126,14 +1127,13 @@
                                     />
                                     <ui:TextBlock
                                         Grid.Row="2"
+                                        Style="{StaticResource SectionHeaderText}"
                                         HorizontalAlignment="Center"
-                                        FontTypography="Title"
                                         Text="No questions yet"
                                     />
                                     <ui:TextBlock
                                         Grid.Row="4"
-                                        HorizontalAlignment="Center"
-                                        Style="{StaticResource SecondaryText}"
+                                        Style="{StaticResource EmptyStateBodyText}"
                                         Text="Ask the library to find grounded answers."
                                     />
                                 </Grid>
