@@ -26,7 +26,7 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   `413`/`400` — they are accepted and fail in the background, so `specs/001…005/contracts/api.yaml`
   (400-corrupt, status enum) is stale for them.
 - **Two-level chunks (030):** ingest persists child chunks (512/50, embedded, vector payload
-  carries `parentId`) plus parent chunks (groups of `Ingest:ParentGroupSize` = 4 children,
+  carries `parentId`) plus parent chunks (groups of `Ingest:ParentGroupSize` = 2 children,
   not embedded) in `Chunks(Level, ParentId)`; broad queries resolve parents at retrieval time.
   `ReindexBackfillService` runs once per startup and re-enqueues `Ready` documents with no parent
   row through the normal background path (idempotent), so after upgrading, expect stale documents
@@ -43,18 +43,40 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 
 - `VectorDb:VectorSize` must be 384|768|1024 and the embed model must match (`all-minilm`/`bge-micro`
   →384, `nomic-embed`→768, `bge-m3`/`arctic-embed2`/`mxbai`→1024) or startup logs a mismatch warning.
-  Dev ships 1024 + `snowflake-arctic-embed2`. Changing the size against an existing collection throws
+  Dev ships 1024 + `bge-m3`. Changing the size against an existing collection throws
   `DimensionMismatchException` — wipe `src/RAGGit.Workstation.Api/data/lancedb` and re-ingest.
 - A test factory that builds the **real** Ollama clients must pass the app's `Ollama:TimeoutMs`
-  (300000 ms). `OllamaEmbedder`/`OllamaLlmClient` default to 5000 ms, which a large ingest batch exceeds,
+  (900000 ms). `OllamaEmbedder`/`OllamaLlmClient` default to 5000 ms, which a large ingest batch exceeds,
   so the document lands on `Failed` ("Document ingestion failed") instead of `Ready` — the cause of
   `RealLoopTests` being red long after the loop itself worked.
 - **`Ollama:NumCtx` must stay above retrieval's prompt size.** Ollama serves a model at 4096 tokens when
-  the request asks for nothing, then truncates the prompt to ~2050 — most of five 512-token chunks, and
-  all of a broad-mode parent prompt (~15k). The model then answers from a fragment and invents the rest,
-  which reads exactly like a bad model. Client sends `Ollama:NumCtx` (default 16384). Verify with
+  the request asks for nothing, then truncates large prompts — three 512-token chunks, or a broad-mode
+  parent prompt — to a fragment. The model then answers from that fragment and invents the rest, which
+  reads exactly like a bad model. Client sends `Ollama:NumCtx` (default 32768; with `ParentGroupSize` 2
+  and the default `Retrieval:TopK` 5, a five-parent broad prompt is ~19.5k tokens). Verify with
   `Select-String $env:LOCALAPPDATA\Ollama\server.log 'truncating input prompt'` — that warning means
   answers are being generated from truncated context.
+- **Model sizing is measured, not guessed (2026-10-28).** On a 4-core Skull Canyon with a Vega M GL
+  (11/37 layers offloaded), `qwen3:4b-instruct-2507` was the only chat model that never stated a false
+  fact across the EY Greek corpus, but broad prompts take 5–11 min, which is why `Ollama:TimeoutMs` is
+  900000. Smaller models are much faster and demonstrably wrong: `qwen2.5:3b` answers AMKA with the ΑΜΑ
+  registry number, `gemma3:4b` glosses `ΕΓΓΑΜΟΣ-Η` as "Engaged", and `qwen3.5:2b` refuses answers that
+  are present in the retrieved chunk.
+- **`Retrieval:TopK` (default 5) is the model's evidence budget; 3 is a small-library speed setting.**
+  The EY library (43 chunks) scored 36/36 at `TopK` 3 with ~90 s granular queries; the ebook library
+  (2933 chunks) lost a retrievable answer ("armor class of a red dragon" refused at 3, answered `-3`
+  at 5). Set `Retrieval:TopK = 3` only for small single-form libraries where prompt processing, not
+  recall, is the bottleneck. `QueryRequest.TopK` is nullable: omitted means "use the configured
+  value", explicit (1–5) overrides it.
+- **Uploads are capped at 100 MB per file** (`DocumentValidation.MaxFileSizeBytes`); Kestrel and the
+  controller both use `MaxFileSizeBytes + MultipartEnvelopeBytes`, so anything larger is rejected with
+  `413` before parsing (measured: a 139 MB and a 108 MB rulebook). The desktop client checks the same
+  constant before uploading. Raise the constant if large books must be accepted.
+- **Multi-column PDFs chunk badly even when they extract.** PdfPig's reading order interleaves columns,
+  so a two-column monster manual produces chunks like "of a pit fiend is dreadful indeed, causing
+  Telugon erinyes any creature bitten…" and a stat-block line is separated from its entry ("Dragon, Red"
+  matches 0 chunks, "armor class" matches 611). Such books ingest `Ready` and are partly unsearchable —
+  this is extraction order, not embedder or chunk-size tuning. Single-column forms are unaffected.
 - **A PDF text layer without word breaks is windowed by characters, not whitespace tokens.**
   `Chunker.CountTokens`-style whitespace counting sees a whole book as a few hundred "tokens" (two corpus
   books are 1.0M and 317K chars with ~200 spaces each), so `Chunker.ChunkText` switches to
@@ -76,8 +98,15 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   alone falls back to an `invalid-config` client, and login shows `cannot reach AI workstation`. Add
   `Workstation:ApiKey` (or `Api:AdminKey`/`Api:EmployeeKey`) to `src/RAGGit.Client.WPF/appsettings.json`;
   it is copied to the output dir on build.
-- API ports from `Properties/launchSettings.json`: http `5142`, https `5001`; the client's default
+- API ports from `Properties/launchSettings.json`: http `8080`, https `5001`; the client's default
   `Workstation:Url` is `https://localhost:5001`.
+- **`http://localhost:8080` can still fail to bind on Windows if Hyper-V/WinNAT has reserved it.**
+  `netsh int ipv4 show excludedportrange protocol=tcp` lists the reserved blocks (Docker Desktop/WSL2
+  create them and they outlive those processes); a port inside one throws
+  `IOException: Failed to bind to address …: An attempt was made to access a socket in a way forbidden
+  by its access permissions` at `app.Run()` even though nothing is listening. Verify a candidate with a
+  `TcpListener` bind before editing `launchSettings.json`; `net stop winnat` + `net start winnat` (admin)
+  clears the reservations but Docker/WSL recreate them on next start.
 
 ## Architecture (not obvious from names)
 
@@ -101,7 +130,7 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   keep those framework-independent roots when adding or moving client behavior.
 - Flow: WPF pages/code-behind → `Client.Core` ViewModels (`CommunityToolkit.Mvvm`
   `[ObservableProperty]`/`[RelayCommand]` source-gen) + `*ApiClient` (HttpClient only) →
-  `Workstation.Api` controllers → `RAGGit.Retrieval` (topK=5 + `MinScore`, grounded prompts) /
+  `Workstation.Api` controllers → `RAGGit.Retrieval` (topK from `Retrieval:TopK`, default 5; + `MinScore`, grounded prompts) /
   `RAGGit.Ingest` (chunk 512/50). Storage: LanceDB `./data/lancedb` + SQLite `rag.db`.
 - **Live reasoning (032):** the Ask surface consumes `POST /api/queries/stream`, which answers with
   newline-delimited JSON (`application/x-ndjson`): zero or more `progress` events
@@ -168,6 +197,19 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
 
 ## Verifying UI
 
+- `dotnet test tests/client/RAGGit.Tests.Client.csproj -c Release` constructs **every** screen
+  (9 pages, `MainWindow`, 3 dialogs) on an STA thread with the real `App` resources, lays it out at
+  1280×900, and fails on a `XamlParseException` or any data-binding error. It exists because
+  `NavigationView` swallows page-construction exceptions and `DispatcherUnhandledException` sets
+  `Handled = true`, so a broken page only shows as a nav item that does nothing. The same project lints
+  every XAML file against the traps below using reflection over WPF-UI (`ThemeResource` keys,
+  `SymbolRegular` names, `Icon=` on `ui:Button`, `Appearance` misuse, `ItemsSource` on a resource).
+  It is Windows-only and lives in `RAGGit.sln`, not `RAGGit.Server.slnf`, so Linux CI is unaffected;
+  the `windows-client` job runs it after the full build.
+- Reference app resources with an assembly-qualified pack URI
+  (`pack://application:,,,/RAGGit.Client.WPF;component/Assets/…`). The assembly-less form resolves
+  against the entry assembly, which works in the app but not when a host (such as the screen tests)
+  loads the same XAML.
 - `winapp ui` (WinApp CLI) drives the app over UI Automation. Known limits: the nav
   `AutoSuggestBox` exposes as a *List* (its text is not drivable), `ui:Card`/`Border` automation IDs are
   not surfaced, layered popups cannot be screenshotted, and `click` targets coordinates while `invoke`
