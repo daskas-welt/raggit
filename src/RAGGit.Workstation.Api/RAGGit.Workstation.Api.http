@@ -1,4 +1,4 @@
-@RAGGit.Workstation.Api_HostAddress = http://localhost:5142
+@RAGGit.Workstation.Api_HostAddress = http://localhost:8080
 
 GET {{RAGGit.Workstation.Api_HostAddress}}/weatherforecast/
 Accept: application/json

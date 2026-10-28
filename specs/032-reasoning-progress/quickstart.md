@@ -57,7 +57,7 @@ ordering, `400`/`401`/`403`/`503` before the first byte, and **parity**: for the
 
 ## 2. Raw stream inspection (server only)
 
-Start the API (http on `5142`, https on `5001`) and watch the events arrive line by line — this is the
+Start the API (http on `8080`, https on `5001`) and watch the events arrive line by line — this is the
 fastest way to confirm events are *flushed live* rather than buffered to the end.
 
 ```powershell
