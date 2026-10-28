@@ -53,6 +53,13 @@ public sealed class RetrievalService
     }
 
     /// <summary>
+    /// Retrieval depth configured by <c>Retrieval:TopK</c>, clamped to the
+    /// supported 1..5 range. The query pipeline uses it when a request omits
+    /// <see cref="QueryRequest.TopK"/>.
+    /// </summary>
+    public int DefaultTopK => Math.Clamp(_options.TopK, 1, 5);
+
+    /// <summary>
     /// Retrieves up to <paramref name="topK"/> relevant chunks for
     /// <paramref name="query"/>, classifying the granularity internally:
     /// broad trigger phrases use parent-context retrieval, everything else
@@ -60,7 +67,7 @@ public sealed class RetrievalService
     /// </summary>
     public async Task<IReadOnlyList<SearchResult>> RetrieveAsync(
         string query,
-        int topK = 5,
+        int topK,
         CancellationToken cancellationToken = default
     )
     {

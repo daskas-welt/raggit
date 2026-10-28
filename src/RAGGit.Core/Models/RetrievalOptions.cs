@@ -7,6 +7,15 @@ namespace RAGGit.Core.Models;
 public sealed class RetrievalOptions
 {
     /// <summary>
+    /// Chunks retrieved and fed to the model when the request does not ask for
+    /// a specific depth. Measured: 3 chunks suffice on a small form library
+    /// (43 chunks) but lose retrievable answers on a large one (2933 chunks),
+    /// so the shipped default is 5. Lower it to 3 only when prompt processing,
+    /// not recall, is the bottleneck.
+    /// </summary>
+    public int TopK { get; set; } = 5;
+
+    /// <summary>
     /// Minimum cosine-similarity score for a chunk to be considered relevant.
     /// LanceDB returns cosine distance (0 = identical); the service converts
     /// it to similarity via <c>score = 1 - distance</c>.

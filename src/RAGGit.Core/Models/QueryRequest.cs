@@ -13,8 +13,12 @@ public sealed class QueryRequest
     [MinLength(1, ErrorMessage = "Query cannot be empty.")]
     public string Query { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional retrieval depth. Null means "use <c>Retrieval:TopK</c>", which
+    /// keeps the default in configuration instead of duplicating it here.
+    /// </summary>
     [Range(1, 5, ErrorMessage = "topK must be between 1 and 5.")]
-    public int TopK { get; set; } = 5;
+    public int? TopK { get; set; }
 }
 
 /// <summary>

@@ -84,7 +84,7 @@ public sealed class QueryPipeline
 
         var chunks = await _retrievalService.RetrieveAsync(
             query,
-            Math.Clamp(request.TopK, 1, 5),
+            Math.Clamp(request.TopK ?? _retrievalService.DefaultTopK, 1, 5),
             cancellationToken
         );
 

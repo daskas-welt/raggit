@@ -155,6 +155,60 @@ public sealed class QueryPipelineTests
         sources.Text.Should().NotContain(documentId.ToString());
     }
 
+    [Fact]
+    public async Task Execute_WithoutTopK_UsesTheConfiguredRetrievalDepth()
+    {
+        var documentId = Guid.NewGuid();
+        var chunks = Enumerable
+            .Range(0, 5)
+            .Select(i => new SearchResult(
+                Guid.NewGuid(),
+                documentId.ToString(),
+                $"chunk {i}",
+                i,
+                0.9f - (i * 0.01f)
+            ))
+            .ToList();
+        var pipeline = Build(
+            chunks,
+            "policy.pdf",
+            "an answer",
+            new RetrievalOptions { MinScore = 0.0f, TopK = 2 }
+        );
+
+        var outcome = await pipeline.ExecuteAsync(new QueryRequest { Query = "question" });
+
+        outcome.RetrievedChunkIds.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Execute_WithTopK_OverridesTheConfiguredDepth()
+    {
+        var documentId = Guid.NewGuid();
+        var chunks = Enumerable
+            .Range(0, 5)
+            .Select(i => new SearchResult(
+                Guid.NewGuid(),
+                documentId.ToString(),
+                $"chunk {i}",
+                i,
+                0.9f - (i * 0.01f)
+            ))
+            .ToList();
+        var pipeline = Build(
+            chunks,
+            "policy.pdf",
+            "an answer",
+            new RetrievalOptions { MinScore = 0.0f, TopK = 2 }
+        );
+
+        var outcome = await pipeline.ExecuteAsync(
+            new QueryRequest { Query = "question", TopK = 4 }
+        );
+
+        outcome.RetrievedChunkIds.Should().HaveCount(4);
+    }
+
     private static async Task<List<QueryProgress>> RunAsync(QueryPipeline pipeline, string query)
     {
         var progress = new List<QueryProgress>();
@@ -173,14 +227,15 @@ public sealed class QueryPipelineTests
     private static QueryPipeline Build(
         IReadOnlyList<SearchResult> chunks,
         string? documentName,
-        string answer
+        string answer,
+        RetrievalOptions? options = null
     )
     {
         var documents = new NamingDocumentRepository(documentName);
         var retrieval = new RetrievalService(
             new FixedEmbedder(),
             new FixedVectorStore(chunks),
-            Options.Create(new RetrievalOptions { MinScore = 0.0f }),
+            Options.Create(options ?? new RetrievalOptions { MinScore = 0.0f }),
             NullLogger<RetrievalService>.Instance,
             documents
         );

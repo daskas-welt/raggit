@@ -34,7 +34,7 @@ public sealed class QueryApiClient
     /// </summary>
     public async Task<QueryResponse> QueryAsync(
         string query,
-        int topK = 5,
+        int? topK = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -89,7 +89,7 @@ public sealed class QueryApiClient
     /// </remarks>
     public async IAsyncEnumerable<QueryStreamEvent> StreamAsync(
         string query,
-        int topK = 5,
+        int? topK = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
