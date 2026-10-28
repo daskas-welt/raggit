@@ -53,8 +53,24 @@ public sealed class AnswerLanguageTests
             .BeTrue();
         AnswerLanguage.IsRefusalLike("Δεν υπάρχει σχετικό περιεχόμενο.").Should().BeTrue();
         AnswerLanguage.IsRefusalLike(null).Should().BeTrue();
+        AnswerLanguage
+            .IsRefusalLike(
+                "The provided text does not contain any information about Maria Papadopoulou."
+            )
+            .Should()
+            .BeTrue();
+        AnswerLanguage
+            .IsRefusalLike("I could not find the AFM in the provided context.")
+            .Should()
+            .BeTrue();
+        AnswerLanguage
+            .IsRefusalLike("Το κείμενο δεν περιέχει πληροφορίες για την οικογενειακή κατάσταση.")
+            .Should()
+            .BeTrue();
+        AnswerLanguage.IsRefusalLike("Η πληροφορία δεν αναφέρεται στο έγγραφο.").Should().BeTrue();
         AnswerLanguage.IsRefusalLike("Ο χρόνος είναι 1 έτος και 5 μήνες.").Should().BeFalse();
         AnswerLanguage.IsRefusalLike("Maria works in accounting.").Should().BeFalse();
+        AnswerLanguage.IsRefusalLike("The AFM is 113220596.").Should().BeFalse();
     }
 
     [Fact]

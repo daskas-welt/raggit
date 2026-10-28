@@ -38,6 +38,80 @@ public static class AnswerLanguage
         !IsGreek(query) || IsGreek(answer);
 
     /// <summary>
+    /// Negative-answer phrases. Small models rarely echo the exact prompt
+    /// refusal, so matching only "no relevant content found" lets a paraphrased
+    /// refusal reach the citation fallback. Strictness matters more than
+    /// precision here: a false positive only loses a fallback citation, while a
+    /// false negative attaches a citation to an answer that says the content is
+    /// absent.
+    /// </summary>
+    private static readonly string[] RefusalPhrases =
+    [
+        // English
+        "no relevant content",
+        "no relevant information",
+        "no information",
+        "no mention",
+        "no specific information",
+        "no details",
+        "no answer",
+        "no such",
+        "not contain",
+        "doesn't contain",
+        "not include",
+        "doesn't include",
+        "not mention",
+        "doesn't mention",
+        "not state",
+        "doesn't state",
+        "not mentioned",
+        "not specified",
+        "not provided",
+        "not available",
+        "not present",
+        "not found",
+        "cannot find",
+        "can't find",
+        "could not find",
+        "couldn't find",
+        "unable to find",
+        "not enough",
+        "insufficient information",
+        "i don't know",
+        "i do not know",
+        "does not have",
+        "doesn't have",
+        "context does not",
+        "text does not",
+        "document does not",
+        // Greek
+        "δεν υπάρχει",
+        "δεν υπάρχουν",
+        "δεν βρέθηκε",
+        "δεν βρέθηκαν",
+        "καμία πληροφορία",
+        "καμια πληροφορια",
+        "δεν περιέχει",
+        "δεν περιέχουν",
+        "δεν αναφέρεται",
+        "δεν αναφέρονται",
+        "δεν αναγράφεται",
+        "δεν αναγράφονται",
+        "δεν προκύπτει",
+        "δεν εντοπίστηκε",
+        "δεν εντοπίστηκαν",
+        "δεν είναι διαθέσιμο",
+        "δεν είναι διαθέσιμη",
+        "δεν μπορώ να βρω",
+        "δεν μπορούμε να βρούμε",
+        "χωρίς πληροφορίες",
+        "δεν έχουμε πληροφορίες",
+        "δεν δίνεται",
+        "δεν παρέχεται",
+        "δεν τεκμηριώνεται",
+    ];
+
+    /// <summary>
     /// True when <paramref name="answer"/> is a refusal / no-content answer
     /// rather than a grounded claim. The citation fallback must never attach
     /// chunk IDs to these: a refusal with citations both violates the prompt
@@ -50,11 +124,14 @@ public static class AnswerLanguage
             return true;
         }
 
-        return answer.Contains("no relevant content", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("no information", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("δεν υπάρχει", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("δεν βρέθηκε", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("καμία πληροφορία", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("καμια πληροφορια", StringComparison.OrdinalIgnoreCase);
+        foreach (var phrase in RefusalPhrases)
+        {
+            if (answer.Contains(phrase, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

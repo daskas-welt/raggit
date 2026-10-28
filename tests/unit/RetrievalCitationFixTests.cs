@@ -235,6 +235,35 @@ public sealed class RetrievalCitationFixTests
     }
 
     [Fact]
+    public async Task Generate_ParaphrasedNegativeAnswer_NeverGetsFallbackCitation()
+    {
+        var chunks = new List<SearchResult>
+        {
+            MakeResult(
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                0.95f,
+                "Maria Schmidt works in accounting."
+            ),
+        };
+        var llm = new FixedLlm(
+            "The provided text does not contain any information about Maria Papadopoulou "
+                + "or her bank account details."
+        );
+        var generation = new GenerationService(
+            llm,
+            Options.Create(new GenerationOptions { FallbackToTopChunk = true }),
+            NullLogger<GenerationService>.Instance
+        );
+
+        var (_, citationIds) = await generation.GenerateAsync(
+            "What is Maria Papadopoulou's IBAN?",
+            chunks
+        );
+
+        citationIds.Should().BeEmpty("a negative answer must never get a fallback citation");
+    }
+
+    [Fact]
     public async Task Generate_Prompt_ContainsPersonRuleAndFilename()
     {
         var chunkId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
