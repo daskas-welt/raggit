@@ -11,6 +11,8 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using RAGGit.Core.Models;
 using UglyToad.PdfPig;
+using PdfPage = UglyToad.PdfPig.Content.Page;
+using PdfWord = UglyToad.PdfPig.Content.Word;
 
 namespace RAGGit.Ingest;
 
@@ -628,7 +630,7 @@ public static class Chunker
             using var document = PdfDocument.Open(stream);
             foreach (var page in document.GetPages())
             {
-                builder.AppendLine(page.Text);
+                builder.AppendLine(BuildPageText(page));
             }
 
             var text = builder.ToString();
@@ -657,6 +659,80 @@ public static class Chunker
         {
             throw new CorruptDocumentException("corrupted pdf", ex);
         }
+    }
+
+    /// <summary>
+    /// Reconstructs a page in visual reading order. PdfPig's default page text
+    /// follows the PDF content stream, which for form-style tables is often
+    /// column-major: every label is emitted before every value, so a value
+    /// ends up next to the wrong label (e.g. the AMKA beside the Α.Φ.Μ
+    /// caption). Grouping the positioned words into visual lines restores the
+    /// label/value pairs the page actually shows.
+    /// </summary>
+    private static string BuildPageText(PdfPage page)
+    {
+        var words = page.GetWords()
+            .Where(word =>
+                !string.IsNullOrWhiteSpace(word.Text)
+                && double.IsFinite(word.BoundingBox.Bottom)
+                && double.IsFinite(word.BoundingBox.Left)
+            )
+            .ToList();
+
+        // No positioned words: keep whatever the extractor produced rather
+        // than turning a readable page into an empty one.
+        if (words.Count == 0)
+        {
+            return page.Text;
+        }
+
+        // Words on one visual line share a baseline but not exactly: bold
+        // labels and digits can sit a fraction higher or lower. Half a line
+        // height absorbs that without merging neighbouring rows.
+        var tolerance = Math.Max(2.0, MedianWordHeight(words) * 0.5);
+        var lines = new List<List<PdfWord>>();
+        foreach (var word in words.OrderByDescending(w => w.BoundingBox.Bottom))
+        {
+            var line = lines.Count > 0 ? lines[^1] : null;
+            if (
+                line is null
+                || Math.Abs(line[0].BoundingBox.Bottom - word.BoundingBox.Bottom) > tolerance
+            )
+            {
+                lines.Add(new List<PdfWord> { word });
+            }
+            else
+            {
+                line.Add(word);
+            }
+        }
+
+        var builder = new StringBuilder();
+        foreach (var line in lines)
+        {
+            if (builder.Length > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.AppendJoin(
+                ' ',
+                line.OrderBy(w => w.BoundingBox.Left).Select(w => w.Text.Trim())
+            );
+        }
+
+        return builder.ToString();
+    }
+
+    private static double MedianWordHeight(IReadOnlyList<PdfWord> words)
+    {
+        var heights = words
+            .Select(w => w.BoundingBox.Height)
+            .Where(height => height > 0 && double.IsFinite(height))
+            .OrderBy(height => height)
+            .ToList();
+
+        return heights.Count == 0 ? 10.0 : heights[heights.Count / 2];
     }
 
     private static string ExtractDocxText(Stream stream)
