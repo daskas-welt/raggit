@@ -86,6 +86,12 @@ jobs:
       - name: Build full solution
         run: dotnet build RAGGit.sln --no-restore --configuration Release -p:Platform=x64
 
+      # Every screen is constructed on an STA thread with the real Application
+      # resources, laid out, and checked for binding errors. A page whose XAML
+      # throws would otherwise only produce a nav item that does nothing.
+      - name: Client screen tests
+        run: dotnet test tests/client/RAGGit.Tests.Client.csproj --no-build --configuration Release
+
       # Publish the WPF desktop client (self-contained unpackaged .exe).
       - name: Publish WPF desktop client
         run: dotnet publish src/RAGGit.Client.WPF/RAGGit.Client.WPF.csproj --no-restore --configuration Release -p:Platform=x64 -o publish/wpf
