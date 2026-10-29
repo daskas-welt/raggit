@@ -668,6 +668,13 @@ public static class Chunker
     /// ends up next to the wrong label (e.g. the AMKA beside the Α.Φ.Μ
     /// caption). Grouping the positioned words into visual lines restores the
     /// label/value pairs the page actually shows.
+    /// <para>
+    /// Words sharing a baseline are joined left-to-right across the full page
+    /// width. That is what pairs a form label with its value, but it also means
+    /// a two-column prose page emits one line per baseline with both columns
+    /// on it. This does not detect column gutters; multi-column books stay
+    /// partly unsearchable until extraction does proper layout analysis.
+    /// </para>
     /// </summary>
     private static string BuildPageText(PdfPage page)
     {

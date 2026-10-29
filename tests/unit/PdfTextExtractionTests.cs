@@ -66,6 +66,46 @@ public sealed class PdfTextExtractionTests
         lines[1].Should().Contain("Second line");
     }
 
+    [Fact]
+    public async Task ExtractTextAsync_TwoColumnProse_JoinsBothColumnsPerBaseline()
+    {
+        // Known limitation, pinned so a change is deliberate: BuildPageText
+        // groups by baseline and does not detect column gutters, so a
+        // two-column page emits one line per baseline containing both
+        // columns. The form test above relies on the same join.
+        using var stream = new MemoryStream(BuildTwoColumnProsePdf());
+
+        var text = await Chunker.ExtractTextAsync(stream, DocumentMimeType.Pdf);
+
+        var lines = text.Split(
+            ['\n', '\r'],
+            System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries
+        );
+        lines
+            .Should()
+            .Contain(line =>
+                line.Contains("Left column first.") && line.Contains("Right column first.")
+            );
+        lines
+            .Should()
+            .Contain(line =>
+                line.Contains("Left column second.") && line.Contains("Right column second.")
+            );
+    }
+
+    private static byte[] BuildTwoColumnProsePdf()
+    {
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        var page = builder.AddPage(612, 792);
+        // Two columns sharing baselines, as a typical two-column book page.
+        page.AddText("Left column first.", 12, new PdfPoint(50, 700), font);
+        page.AddText("Right column first.", 12, new PdfPoint(320, 700), font);
+        page.AddText("Left column second.", 12, new PdfPoint(50, 680), font);
+        page.AddText("Right column second.", 12, new PdfPoint(320, 680), font);
+        return builder.Build();
+    }
+
     private static byte[] BuildOutOfOrderProsePdf()
     {
         var builder = new PdfDocumentBuilder();
