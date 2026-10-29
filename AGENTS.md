@@ -67,7 +67,8 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   (2933 chunks) lost a retrievable answer ("armor class of a red dragon" refused at 3, answered `-3`
   at 5). Set `Retrieval:TopK = 3` only for small single-form libraries where prompt processing, not
   recall, is the bottleneck. `QueryRequest.TopK` is nullable: omitted means "use the configured
-  value", explicit (1–5) overrides it.
+  value", explicit (1–5) overrides it. The per-feature contracts under `specs/*/contracts/api.yaml`
+  predate the nullable field (032 still shows the 1.6.0 non-null shape); this section is authoritative.
 - **Uploads are capped at 100 MB per file** (`DocumentValidation.MaxFileSizeBytes`); Kestrel and the
   controller both use `MaxFileSizeBytes + MultipartEnvelopeBytes`, so anything larger is rejected with
   `413` before parsing (measured: a 139 MB and a 108 MB rulebook). The desktop client checks the same
@@ -77,6 +78,10 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   Telugon erinyes any creature bitten…" and a stat-block line is separated from its entry ("Dragon, Red"
   matches 0 chunks, "armor class" matches 611). Such books ingest `Ready` and are partly unsearchable —
   this is extraction order, not embedder or chunk-size tuning. Single-column forms are unaffected.
+Grouping by baseline (the form-table fix in `Chunker.BuildPageText`) does not change that: it joins
+same-baseline words left-to-right, so a two-column page emits one line containing both columns.
+Extraction only changes at ingest, so a `Ready` document must be deleted and uploaded again to pick
+up an extraction or chunking fix.
 - **A PDF text layer without word breaks is windowed by characters, not whitespace tokens.**
   `Chunker.CountTokens`-style whitespace counting sees a whole book as a few hundred "tokens" (two corpus
   books are 1.0M and 317K chars with ~200 spaces each), so `Chunker.ChunkText` switches to
