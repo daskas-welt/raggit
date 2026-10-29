@@ -523,6 +523,7 @@
                                     Grid.Row="6"
                                     HorizontalAlignment="Center"
                                     Appearance="Primary"
+                                    AutomationProperties.AutomationId="AdminEmptyAddPersonButton"
                                     AutomationProperties.Name="Add person"
                                     Content="Add person"
                                     ToolTip="Add person"

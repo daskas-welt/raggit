@@ -226,6 +226,7 @@
                     <ui:Button
                         Grid.Row="6"
                         HorizontalAlignment="Center"
+                        AutomationProperties.AutomationId="DocumentsMineEmptyOpenLibraryButton"
                         AutomationProperties.Name="Open the library"
                         Content="Open the library"
                         ToolTip="Open the library"

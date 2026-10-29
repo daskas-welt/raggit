@@ -406,6 +406,7 @@
                             Grid.Row="6"
                             HorizontalAlignment="Center"
                             Appearance="Primary"
+                            AutomationProperties.AutomationId="LibraryEmptyUploadButton"
                             AutomationProperties.Name="Upload documents"
                             Content="Upload documents"
                             ToolTip="Upload documents"

@@ -254,6 +254,7 @@
                     <ui:Button
                         Grid.Row="6"
                         HorizontalAlignment="Center"
+                        AutomationProperties.AutomationId="HistoryEmptyAskButton"
                         AutomationProperties.Name="Ask a question"
                         Content="Ask a question"
                         ToolTip="Ask a question"
