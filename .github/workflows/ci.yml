@@ -35,11 +35,16 @@ jobs:
       - name: Build
         run: dotnet build RAGGit.Server.slnf --no-restore --configuration Release
 
+      # Each dotnet test invocation targets the slnf explicitly: a bare
+      # `dotnet test` at the repo root resolves to RAGGit.sln, which also
+      # contains the Windows-only tests/client project — vstest then rejects
+      # its unbuilt net10.0-windows DLL on Linux ("The argument ... is
+      # invalid") and fails the step even when every runnable suite passes.
       - name: Unit tests
-        run: dotnet test --filter "FullyQualifiedName~Tests.Unit" --no-build --configuration Release
+        run: dotnet test RAGGit.Server.slnf --filter "FullyQualifiedName~Tests.Unit" --no-build --configuration Release
 
       - name: Contract tests
-        run: dotnet test --filter "FullyQualifiedName~Tests.Contract" --no-build --configuration Release
+        run: dotnet test RAGGit.Server.slnf --filter "FullyQualifiedName~Tests.Contract" --no-build --configuration Release
 
       # WAN-disabled offline integration suite per Constitution IV/VI.
       # unshare -n removes network access while keeping localhost (fakes only, no
@@ -51,19 +56,19 @@ jobs:
       - name: WAN-disabled offline integration tests
         run: |
           if unshare -n true 2>/dev/null; then
-            unshare -n dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
+            unshare -n dotnet test RAGGit.Server.slnf --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
           else
             echo "::warning::unshare not permitted on this runner, running offline tests without network isolation"
-            dotnet test --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
+            dotnet test RAGGit.Server.slnf --filter "FullyQualifiedName~QueryOfflineTests|FullyQualifiedName~OfflineIdentityTests|FullyQualifiedName~OfflineHistoryTests|FullyQualifiedName~CrossUserIsolationTests" --no-build --configuration Release
           fi
 
       - name: Remaining integration tests (incl. SC-005 corruption, performance gate, RequiresOllama skips)
-        run: dotnet test --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests&FullyQualifiedName!~OfflineIdentityTests&FullyQualifiedName!~OfflineHistoryTests&FullyQualifiedName!~CrossUserIsolationTests" --no-build --configuration Release
+        run: dotnet test RAGGit.Server.slnf --filter "FullyQualifiedName~Tests.Integration&FullyQualifiedName!~QueryOfflineTests&FullyQualifiedName!~OfflineIdentityTests&FullyQualifiedName!~OfflineHistoryTests&FullyQualifiedName!~CrossUserIsolationTests" --no-build --configuration Release
 
       - name: Verify no Ollama required (SC-003)
         run: |
           echo "Plain dotnet test must be green without Ollama (fakes only, RequiresOllama skipped)"
-          dotnet test --no-build --configuration Release --filter "RequiresOllama!=true" | tail -20
+          dotnet test RAGGit.Server.slnf --no-build --configuration Release --filter "RequiresOllama!=true" | tail -20
 
   # WPF desktop client: builds only on Windows (WPF + XAML
   # compiler). Builds the full solution plus a self-contained Release
