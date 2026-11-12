@@ -1,0 +1,570 @@
+% !TeX program = xelatex
+% RAGGit: Single-tenant on-prem RAG system
+% Patras Tech Talk, 26 Nov 2026
+% Build: latexmk -pdfxe main.tex
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme[titleformat=regular,progressbar=frametitle]{metropolis}
+\usepackage{appendixnumberbeamer}
+\AtBeginSection{}
+
+% Greek text via XeLaTeX and Windows system fonts.
+\usepackage[greek]{babel}
+\usepackage{fontspec}
+\setmainfont{Segoe UI}
+\setsansfont{Segoe UI}
+\setmonofont{Consolas}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+\usepackage{booktabs}
+
+\setbeamertemplate{page number in head/foot}[totalframenumber]
+\setbeamerfont{title}{size=\Large}
+\setbeamerfont{subtitle}{size=\normalsize}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{date}{size=\small}
+
+% Use the real screenshot when available; otherwise show a clear placeholder.
+\newcommand{\screenshot}[3]{% filename, width, height
+  \IfFileExists{images/screenshots/#1}{%
+    \includegraphics[width=#2]{images/screenshots/#1}%
+  }{%
+    \begin{tikzpicture}
+      \draw[very thick, dashed, mDarkBrown!60, rounded corners=3pt]
+        (0,0) rectangle (#2,#3);
+      \node[text=mDarkBrown!80, align=center, font=\scriptsize]
+        at (0.5*#2,0.5*#3) {ΣΤΙΓΜΙΟΤΥΠΟ\\[2pt]\texttt{images/screenshots/#1}};
+    \end{tikzpicture}%
+  }%
+}
+
+\title{RAGGit}
+\author{Ανδρέας Δασκαλόπουλος}
+\date{Patras Tech Talk · 26 Νοεμβρίου 2026 · Πάτρα}
+
+\begin{document}
+
+% 20 minutes for the talk. Q&A follows.
+\begin{frame}[plain,noframenumbering]
+  \vspace*{1cm}
+  {\huge\bfseries\color{mDarkTeal}\inserttitle\par}
+  \vspace{0.7cm}
+  {\Large Single-tenant, on-prem RAG system\par}
+  \vspace{1.2cm}
+  {\large \insertauthor\par}
+  \vspace{0.2cm}
+  {\normalsize \insertdate\par}
+  \vfill
+  \note{1'. Καλησπέρα. Θα σας δείξω το RAGGit, ένα σύστημα που αφήνει μια
+  εταιρεία να κάνει ερωτήσεις πάνω στα δικά της έγγραφα. Η βασική ιδέα είναι
+  απλή: κρατάμε την αναζήτηση και το μοντέλο μέσα στο ιδιωτικό περιβάλλον της
+  εταιρείας και ζητάμε από το σύστημα να δείχνει τις πηγές της απάντησης.
+  Θα περάσουμε από τη διαδρομή ενός εγγράφου μέχρι την απάντηση και θα κλείσω
+  με όσα μάθαμε φτιάχνοντάς το.}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Το πρόβλημα}
+
+\begin{frame}{Τι σημαίνει «ανεβάζω ένα έγγραφο σε AI»;}
+  \begin{itemize}
+    \item Το αρχείο και η ερώτηση φεύγουν από τον υπολογιστή και φτάνουν
+      στην υπηρεσία του παρόχου.
+    \item Ιδιαίτερα για τα αρχεία, αυτά αποθηκεύονται σε vector stores.
+    \item Η πολιτική εξαρτάται από την υπηρεσία, το πλάνο και τις ρυθμίσεις:
+      εκπαίδευση, διατήρηση, συνεργάτες και συνδεδεμένα εργαλεία.
+    \item Παραμένουν και οι κίνδυνοι παραβίασης ή νόμιμου αιτήματος πρόσβασης.
+  \end{itemize}
+  \note{1'. Σκεφτείτε ένα συνηθισμένο έγγραφο: μια φόρμα προσωπικού, μια
+    προσφορά ή ένα συμβόλαιο. Το ανεβάζουμε σε μια υπηρεσία AI και παίρνουμε
+    μια γρήγορη απάντηση. Για να λειτουργήσει, το περιεχόμενο πρέπει να
+    φτάσει στην υπηρεσία. Από εκεί και πέρα, οι πολιτικές για εκπαίδευση,
+    διατήρηση και επεξεργασία από συνεργάτες διαφέρουν ανά πλάνο και ρύθμιση.
+    Ένας σύνδεσμος κοινοποίησης ή ένα συνδεδεμένο εργαλείο μπορεί να ανοίξει
+    άλλη διαδρομή για τα δεδομένα.\par
+    Στην επόμενη διαφάνεια θα δούμε τρία ενδεικτικά παραδείγματα. Οι όροι
+    αλλάζουν, γι' αυτό χρειάζεται έλεγχος της επίσημης πολιτικής για τον
+    συγκεκριμένο λογαριασμό. Ακόμη και αν η εκπαίδευση είναι απενεργοποιημένη,
+    αυτό δεν σημαίνει αυτόματα ότι οι συνομιλίες διαγράφονται ή ότι δεν
+    επεξεργάζονται από υποδομές παρόχων.}
+\end{frame}
+
+\begin{frame}{Παράδειγμα πολιτικών υπηρεσιών AI}
+  \begin{itemize}
+    \item OpenAI: στους προσωπικούς λογαριασμούς Free, Plus και Pro, η
+      κοινή χρήση για βελτίωση είναι ενεργή από προεπιλογή.
+    \item Anthropic: η χρήση συνομιλιών για βελτίωση εξαρτάται από συναίνεση
+      και ορισμένες εξαιρέσεις ασφάλειας.
+    \item xAI: υπάρχουν ρυθμίσεις εκπαίδευσης. Το Private Chat δεν
+      χρησιμοποιείται για εκπαίδευση και διαγράφεται εντός 30 ημερών.
+  \end{itemize}
+  \note{1'. Τα παραδείγματα ελέγχθηκαν στις 12 Νοεμβρίου 2026 και αφορούν
+    συγκεκριμένες πολιτικές καταναλωτικών λογαριασμών. Η OpenAI έχει ενεργή
+    από προεπιλογή την κοινή χρήση για βελτίωση, αλλά μπορεί να απενεργοποιηθεί·
+    αυτό δεν διαγράφει το ιστορικό, ενώ τα Temporary Chats μπορεί να
+    διατηρηθούν έως 30 ημέρες για λόγους ασφάλειας. Η Anthropic περιγράφει
+    χρήση μετά από συναίνεση, με ορισμένες εξαιρέσεις· η διατήρηση μπορεί να
+    φτάσει τα πέντε χρόνια όταν ο χρήστης επιτρέψει τη χρήση. Στην xAI, το
+    Private Chat δεν χρησιμοποιείται για εκπαίδευση και διαγράφεται εντός
+    30 ημερών, εκτός αν ισχύουν νομικοί λόγοι, ασφάλεια ή συμμόρφωση.
+    Πρόκειται για περιλήψεις, όχι νομική συμβουλή. Ελέγξτε τους όρους για το
+    συγκεκριμένο πλάνο και λογαριασμό πριν την ομιλία.}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Η ιδέα}
+
+\begin{frame}{Τι θέλουμε να πετύχουμε}
+  \textbf{Στόχος}
+
+  Ένα RAG σύστημα αποκλειστικά για ένα οργανισμό (single-tenant) όπου τα LLM, τα RAG pipelines και τα δεδομένα μας είναι
+  όλα τοπικά (on premises).
+
+  \medskip
+  \textbf{Προς}
+
+  \begin{itemize}
+     \item Υπουργεία, δήμοι, νοσοκομεία, ιατρεία, φορολογικά και δικηγορικά γραφεία.
+     \item Μεγάλος όγκος ψηφιακών αρχείων.
+     \item Έγγραφα, ερωτήματα και απαντήσεις που πρέπει να παραμένουν ιδιωτικά.
+     \item Διατεθειμένοι να καλύψουν το κόστος εξοπλισμού για τα τοπικά AI models.
+   \end{itemize}
+  \note{1,5'. Το RAGGit απευθύνεται σε οργανισμούς με μεγάλο αρχείο ψηφιακών
+    εγγράφων, για παράδειγμα μεγάλα δικηγορικά γραφεία, υπουργεία, δήμους και
+    νοσοκομεία. Συχνά αυτά τα έγγραφα περιέχουν πληροφορίες που πρέπει να
+    παραμένουν ιδιωτικές. Το ίδιο ισχύει και για τα ερωτήματα και τις
+    απαντήσεις. Στόχος είναι να βοηθήσει το προσωπικό να βρίσκει πληροφορίες
+    σε αυτά τα αρχεία και να ελέγχει τις πηγές τους. Η τοπική λειτουργία
+    απαιτεί workstation και εξοπλισμό για τα AI models και το RAGGit back-end.
+    Ο οργανισμός πρέπει να είναι διατεθειμένος να καλύψει αυτό το κόστος.
+    Σε λίγο θα δούμε πώς γίνεται αυτή η αναζήτηση.}
+\end{frame}
+
+\begin{frame}{Retrieval-Augmented Generation (RAG)}
+  \textbf{Ορισμός}
+
+  Μια μέθοδος που δίνει στα μεγάλα γλωσσικά μοντέλα (LLMs) τη δυνατότητα να
+  ψάχνουν και να βρίσκουν στοιχεία σε εξωτερικές πηγές δεδομένων, προτού
+  διαμορφώσουν την απάντησή τους.
+
+  \medskip
+  \textbf{RAG pipelines}
+
+  \begin{itemize}
+    \item Data Ingestion (Εισαγωγή των δεδομένων)
+    \item Retrieval \& Generation (Ερώτηση και Απάντηση)
+  \end{itemize}
+  \note{1,5'. Ορισμός με απλά λόγια: αντί να ρωτάμε το μοντέλο μόνο με ό,τι
+    θυμάται από την εκπαίδευσή του, του δίνουμε τα σχετικά αποσπάσματα από
+    τις δικές μας πηγές και απαντά πάνω σε αυτά. Αυτό είναι το RAG.\par
+    Οι RAG pipelines έχουν δύο φάσεις. Η data ingestion ετοιμάζει το υλικό
+    μία φορά ανά έγγραφο· η retrieval and generation τρέχει σε κάθε ερώτηση.
+    Στις επόμενες δύο διαφάνειες τις βλέπουμε αναλυτικά.}
+\end{frame}
+
+\begin{frame}{Data Ingestion}
+	\small
+  \begin{enumerate}
+    \item \textbf{Εξαγωγή Text}\\
+	Αφαίρεση περιττών κενών, κεφαλίδων, υποσέλιδων και αριθμών σελίδων.
+    \item \textbf{Τεμαχισμός (Chunking)}\\
+      Τα μοντέλα διαβάζουν περιορισμένο κείμενο τη φορά, οπότε το σύστημα
+      κόβει τα μεγάλα έγγραφα σε κομμάτια (chunks).
+    \item \textbf{Μετατροπή σε Διανύσματα (Embeddings)}\\
+      Ένα ειδικό μοντέλο (Embedding LLM) μετατρέπει κάθε κομμάτι σε λίστα
+      αριθμών (διάνυσμα) που αποτυπώνει το νόημά του.
+    \item \textbf{Αποθήκευση στη Διανυσματική Βάση (Vector Database)}\\
+      Τα διανύσματα, με το αρχικό κείμενο και τα μεταδεδομένα (τίτλος,
+      σελίδα), αποθηκεύονται σε Vector Database.
+  \end{enumerate}
+  \note{0,5'. Τέσσερα βήματα, μία φορά ανά έγγραφο. Στην πράξη η εξαγωγή
+    κειμένου κρύβει εκπλήξεις, ειδικά σε πολύπλοκα PDF.}
+\end{frame}
+
+\begin{frame}{Retrieval \& Generation}
+  \begin{enumerate}
+    \item \textbf{Ανάκτηση (Retrieval)}. Όταν κάνετε μια ερώτηση, το σύστημα τη
+      μετατρέπει και αυτήν σε αριθμούς (με το ίδιο Embedding LLM). Ψάχνει στη
+      βάση δεδομένων και εντοπίζει τα κομμάτια κειμένου που ταιριάζουν
+      μαθηματικά περισσότερο με το νόημα της ερώτησής σας.
+    \item \textbf{Επαύξηση (Augmentation)}. Το σύστημα παίρνει την ερώτησή
+      σας, κολλάει από κάτω τα σχετικά αποσπάσματα που μόλις βρήκε και τα
+      στέλνει μαζί στο Query LLM, το γλωσσικό μοντέλο που συντάσσει την απάντηση.
+    \item \textbf{Παραγωγή (Generation)}. Το Query LLM διαβάζει τα συγκεκριμένα
+      αποσπάσματα και συντάσσει μια φυσική, τεκμηριωμένη απάντηση, με
+      λιγότερες επινοήσεις (hallucinations).
+  \end{enumerate}
+  \note{1'. Σε κάθε ερώτηση: η ερώτηση γίνεται και αυτή διάνυσμα, με το ίδιο
+    embedding μοντέλο. Η βάση επιστρέφει τα κοντινότερα chunks και το query
+    LLM συντάσσει την απάντηση μόνο πάνω σε αυτά.}
+\end{frame}
+
+\begin{frame}{RAG pipelines}
+  \begin{center}
+    \begin{tikzpicture}[
+      box/.style={rounded corners=2pt, draw=mDarkTeal, fill=mDarkTeal!8,
+        font=\scriptsize, align=center, inner sep=4pt, minimum height=9mm},
+      hi/.style={box, draw=mLightBrown, fill=mLightBrown!18},
+      lab/.style={font=\scriptsize\bfseries, text=mDarkTeal, anchor=west},
+      arr/.style={-{Stealth[length=2.2mm]}, semithick, mDarkTeal}
+      ]
+      \node[lab] at (0,4.0) {Data Ingestion · μία φορά ανά έγγραφο};
+      \node[box] (docs) at (1.7,3.1) {Documents\\PDF · DOCX · XLSX};
+      \node[box] (text) at (5.0,3.1) {Text extraction\\+ chunking};
+      \node[box] (emb) at (8.3,3.1) {Embeddings\\vectors νοήματος};
+      \node[hi]  (db) at (11.7,3.1) {Vector database\\LanceDB};
+      \draw[arr] (docs) -- (text);
+      \draw[arr] (text) -- (emb);
+      \draw[arr] (emb) -- (db);
+
+      \node[lab] at (0,1.8) {Query · σε κάθε ερώτηση};
+      \node[box] (q) at (1.7,0.9) {Question\\ερώτημα};
+      \node[box] (find) at (5.0,0.9) {Retrieval\\επιλογή σχετικών chunks};
+      \node[hi]  (llm) at (8.3,0.9) {Generation\\LLM + context};
+      \node[hi]  (ans) at (11.7,0.9) {Answer + citations\\απάντηση + παραπομπές};
+      \draw[arr] (q) -- (find);
+      \draw[arr] (find) -- (llm);
+      \draw[arr] (llm) -- (ans);
+    \end{tikzpicture}
+  \end{center}
+  \vspace{2mm}
+  \small Η απάντηση βασίζεται στα chunks που επέστρεψε το retrieval και περιλαμβάνει citations προς τις πηγές.
+  \note{2,5'. Το RAG έχει δύο φάσεις. Η πρώτη λέγεται ingestion και γίνεται
+    όταν προσθέτουμε ένα έγγραφο. Το text extraction βγάζει το κείμενο από το
+    αρχείο. Το chunking το χωρίζει σε μικρά κομμάτια, τα chunks. Για κάθε
+    chunk φτιάχνουμε ένα embedding, δηλαδή ένα vector που αποτυπώνει το νόημά
+    του, και το αποθηκεύουμε στη vector database, εδώ στη LanceDB. Η ingestion
+    γίνεται στο παρασκήνιο: το upload μπαίνει σε queue και ο worker ενημερώνει
+    την κατάσταση από Queued και Indexing σε Ready ή Failed.\par
+    Η δεύτερη φάση γίνεται σε κάθε query. Το retrieval βρίσκει τα chunks που
+    ταιριάζουν περισσότερο στην ερώτηση. Το generation στέλνει την ερώτηση
+    μαζί με αυτά τα chunks στο LLM, που συντάσσει την απάντηση. Τα citations
+    δείχνουν από ποια πηγή προήλθε.\par
+    Οι αγγλικοί όροι είναι αυτοί που συναντάμε συνήθως στην ανάπτυξη τέτοιων
+    συστημάτων. Το βασικό είναι να θυμόμαστε τη ροή: ingestion, retrieval,
+    generation και citations. Αν δεν βρεθεί σχετικό chunk, το σύστημα λέει ότι
+    δεν βρήκε σχετική πληροφορία αντί να μαντέψει.}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Η αρχιτεκτονική}
+
+\begin{frame}{Workstation + Desktop clients}
+  \begin{center}
+    \begin{tikzpicture}[
+      emp/.style={rounded corners=2pt, draw=mDarkTeal, fill=mDarkTeal!8,
+        font=\scriptsize, align=center, inner sep=4pt, text width=28mm},
+      inner/.style={rounded corners=2pt, draw=mDarkTeal!70,
+        fill=white, font=\scriptsize, align=center, inner sep=4pt,
+        text width=39mm},
+      arr/.style={-{Stealth[length=2.4mm]}, very thick, mDarkTeal}
+      ]
+      \node[emp] (pc1) at (1.5,3.0) {Υπολογιστής εργαζομένου\\Desktop app};
+      \node[emp] (pc2) at (1.5,1.0) {Υπολογιστής εργαζομένου\\Desktop app};
+      \draw[very thick, rounded corners=4pt, fill=mLightBrown!12,
+        draw=mLightBrown!80] (4.2,0.1) rectangle (13.3,4.1);
+      \node[font=\small\bfseries, text=mDarkBrown] at (8.75,3.8)
+        {ON-PREM AI WORKSTATION};
+      \node[inner] (api) at (6.35,2.75) {REST APIs\\RAG pipelines};
+      \node[inner] (model) at (10.95,2.75) {Ollama\\τοπικά query και embedding LLM};
+      \node[inner] (vec) at (6.35,1.0) {LanceDB\\διανύσματα αναζήτησης};
+      \node[inner] (sql) at (10.95,1.0) {SQLite + αρχεία\\δεδομένα εφαρμογής};
+      \draw[arr] (pc1.east) -- node[above,font=\tiny] {LAN} (4.2,3.0);
+      \draw[arr] (pc2.east) -- (4.2,1.0);
+      \draw[arr,thin] (api) -- (model);
+      \draw[arr,thin] (api) -- (vec);
+      \draw[arr,thin] (api) -- (sql);
+    \end{tikzpicture}
+  \end{center}
+  \vspace{1mm}
+  \note{3'. Αυτό είναι το βασικό διάγραμμα του συστήματος. Ο εργαζόμενος
+    χρησιμοποιεί μια εφαρμογή Windows. Η εφαρμογή είναι λεπτή: εμφανίζει τις
+    οθόνες και επικοινωνεί με το API μέσω HTTPS. Δεν κατεβάζει τα έγγραφα για
+    να τρέξει το μοντέλο στον υπολογιστή του.\par
+    Το API, το μοντέλο Ollama, η βάση LanceDB και η βάση SQLite λειτουργούν
+    μέσα στην ίδια εγκατάσταση. Τα έγγραφα αποθηκεύονται στο storage της
+    εγκατάστασης. Η LanceDB κρατά τα δεδομένα που χρειάζεται η αναζήτηση και
+    η SQLite κρατά πληροφορίες για έγγραφα, χρήστες και ερωτήσεις.\par
+    Στην παρουσίαση εστιάζουμε σε on-prem εγκατάσταση. Το workstation
+    βρίσκεται φυσικά στον χώρο του οργανισμού και συνδέεται στο εταιρικό LAN.
+    Δεν χρησιμοποιείται VM σε ιδιωτικό cloud. Το αίτημα πηγαίνει από τον
+    client στο API του workstation, και η απάντηση παράγεται εκεί. Έτσι οι
+    υπολογιστές των εργαζομένων χρειάζονται μόνο το desktop app και σύνδεση
+    στο LAN. Το workstation συγκεντρώνει το μοντέλο και τα δεδομένα, γι' αυτό
+    η διαθεσιμότητα και η ασφάλειά του είναι ευθύνη του οργανισμού.}
+\end{frame}
+
+\begin{frame}{LLM: τοπικά μοντέλα μέσω Ollama}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Embedding LLM}
+        \small
+        \begin{itemize}
+          \item BGE-M3 (1024 διαστάσεις)
+          \item Μετατρέπει chunks και ερωτήσεις σε διανύσματα
+          \item Το ίδιο μοντέλο και στις δύο φάσεις
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Query LLM}
+        \small
+        \begin{itemize}
+          \item Qwen3 4B Instruct
+          \item Απαντά μόνο με βάση τα αποσπάσματα
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{2mm}
+  \small Τα μοντέλα είναι \textbf{configurable} (στους \texttt{appsettings}
+  του workstation): σε ισχυρότερο hardware επιλέγεται μεγαλύτερο Query LLM,
+  χωρίς αλλαγή στον κώδικα. Τα δικά μας είναι μικρά, γιατί η ανάπτυξη έγινε
+  σε έναν Intel NUC «Skull Canyon» — οι επιλογές περιορίστηκαν από το υλικό
+  που είχαμε διαθέσιμο.
+  \vspace{1mm}
+
+  \small Όλα εκτελούνται τοπικά μέσω Ollama — καμία κλήση σε εξωτερική υπηρεσία.
+  \note{2'. Χρησιμοποιούμε δύο μοντέλα. Το embedding μοντέλο BGE-M3 παράγει
+    διανύσματα 1024 διαστάσεων και χρησιμοποιείται και στην εισαγωγή των
+    εγγράφων και στην κωδικοποίηση της ερώτησης — πρέπει να είναι το ίδιο
+    αλλιώς η σύγκριση δεν έχει νόημα.\par
+    Το query μοντέλο είναι το Qwen3 4B Instruct. Το επιλέξαμε μετά από
+    μέτρηση στο δικό μας υλικό: τα μικρότερα μοντέλα ήταν γρήγορα αλλά
+    έκαναν συγκεκριμένα λάθη στα ελληνικά. Το Qwen3 ήταν το μόνο που δεν
+    δήλωσε ψευδές γεγονός. Το τίμημα είναι ο χρόνος στις ευρείες ερωτήσεις.\par
+    Αξίζει να πούμε γιατί τόσο μικρά μοντέλα: όλη η ανάπτυξη έγινε σε έναν
+    Intel NUC «Skull Canyon» — ένα μικροσκοπικό μηχάνημα με περιορισμένη GPU
+    (4 πυρήνες, με τα 11 από τα 37 layers του μοντέλου να φτάνουν στην
+    GPU). Σε τέτοιο υλικό δεν χωράνε μεγάλα μοντέλα, οπότε δοκιμάσαμε ό,τι
+    χωρούσε και μετρήσαμε.\par
+    Σημαντικό: τα μοντέλα δεν είναι hard-coded. Επιλέγονται από τη ρύθμιση
+    του workstation (Ollama section στους appsettings) — Embedding LLM και
+    Query LLM είναι ονόματα μοντέλων στη configuration, όχι στον κώδικα. Με
+    καλύτερο workstation, αλλάζεις δύο γραμμές ρυθμίσεων και ανεβάζεις
+    μοντέλο, χωρίς rebuild ή αναφορά σε υπηρεσία του κατασκευαστή. Το μόνο
+    που χρειάζεται προσοχή είναι η διάσταση του embedding να ταιριάζει με
+    τη βάση (384, 768 ή 1024 ανάλογα με το μοντέλο).\par
+    Και τα δύο τρέχουν τοπικά μέσω Ollama. Καμία ερώτηση δεν φεύγει από τον
+    οργανισμό.}
+\end{frame}
+
+\begin{frame}{Βάσεις δεδομένων}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{LanceDB — διανύσματα}
+        \small
+        \begin{itemize}
+          \item Embeddings + κείμενο chunks + metadata
+          \item ANN αναζήτηση (cosine, HNSW index)
+          \item Τοπική αποθήκευση σε αρχεία στον δίσκο
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{SQLite — δεδομένα εφαρμογής}
+        \small
+        \begin{itemize}
+          \item Έγγραφα, καταστάσεις ingest, χρήστες
+          \item Chunks (παιδιά/γονείς) και ιστορικό ερωτήσεων
+          \item Ένα αρχείο \texttt{rag.db}, χωρίς server
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{2mm}
+  \small Τα πρωτότυπα αρχεία των εγγράφων φυλάσσονται στο ίδιο workstation
+  (ένα αρχείο ανά document id).
+  \note{2'. Δύο βάσεις με διαφορετικούς ρόλους. Η LanceDB είναι η
+    διανυσματική βάση: κρατά τα embeddings μαζί με το κείμενο του chunk και
+    μεταδεδομένα, και κάνει την αναζήτηση πλησιέστερων γειτόνων με cosine
+    ομοιότητα. Όταν η βιβλιοθήκη μεγαλώσει, χτίζει HNSW index για ταχύτητα.\par
+    Η SQLite κρατά ό,τι είναι σχεσιακό: έγγραφα και κατάστασή τους, χρήστες
+    και ρόλους, τα chunks με τη σχέση παιδιού-γονιού και το ιστορικό
+    ερωτήσεων. Είναι ένα απλό αρχείο, δεν χρειάζεται ξεχωριστός server.\par
+    Τα πρωτότυπα uploads μένουν ως ξεχωριστά αρχεία στον δίσκο, ένα για κάθε
+    document id, ώστε ο χρήστης να μπορεί να ανοίξει την πρωτότυπη πηγή.}
+\end{frame}
+
+\begin{frame}{RAGGit desktop app}
+  \begin{center}
+    \screenshot{ask-citations.png}{0.72\textwidth}{5.6cm}
+  \end{center}
+  \note{2,5'. Εδώ φαίνεται η οθόνη Ask του desktop app. Ο εργαζόμενος γράφει
+    την ερώτηση στα ελληνικά ή σε άλλη γλώσσα. Η εφαρμογή δείχνει τα βήματα
+    της αναζήτησης: πρώτα καταλαβαίνει το αίτημα, μετά ψάχνει, εμφανίζει τις
+    πηγές και συντάσσει την απάντηση.\par
+    Οι παραπομπές οδηγούν στα αποσπάσματα που χρησιμοποιήθηκαν. Έτσι ο
+    εργαζόμενος μπορεί να ελέγξει αν η απάντηση στηρίζεται πράγματι στο
+    έγγραφο. Αν δεν υπάρχει σχετικό περιεχόμενο, το σύστημα πρέπει να πει
+    ακριβώς ότι δεν βρήκε σχετικό περιεχόμενο — \texttt{no relevant content
+    found} — και όχι να συμπληρώσει το κενό με μια πιθανή απάντηση. Δείχνω
+    πώς η παραπομπή ανοίγει το σχετικό απόσπασμα και πώς ο χρήστης μπορεί να
+    συγκρίνει την απάντηση με την πηγή.\par
+    Οι παραπομπές βοηθούν στον έλεγχο, αλλά δεν εγγυώνται από μόνες τους ότι
+    κάθε απάντηση είναι σωστή. Ο χρήστης πρέπει να ανοίγει την πηγή όταν η
+    πληροφορία έχει σημασία.}
+\end{frame}
+
+\begin{frame}{Technology stack}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Εφαρμογή}
+        \small
+        \begin{itemize}
+          \item C\# / .NET 10 — ASP.NET Core Web API
+          \item WPF + WPF-UI (Fluent, MVVM) client
+          \item PdfPig: εξαγωγή κειμένου από PDF
+          \item JWT αυθεντικοποίηση με ρόλους
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Δοκιμές και παράδοση}
+        \small
+        \begin{itemize}
+          \item TDD: 700+ τεστ σε τέσσερα επίπεδα
+          \item GitHub Actions CI σε κάθε αλλαγή
+          \item Spec-driven ανάπτυξη ανά feature
+          \item Docker Compose με TLS
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{2mm}
+  \small Ο κώδικας είναι ανοιχτός:
+  \href{https://github.com/daskas-welt/raggit}{github.com/daskas-welt/raggit}
+  \note{1'. Όλο το σύστημα είναι γραμμένο σε C\# πάνω στο .NET 10: το API του
+    workstation είναι ένα ASP.NET Core project και ο client μια WPF εφαρμογή
+    με το WPF-UI kit για Fluent εμφάνιση και το MVVM pattern για τον
+    διαχωρισμό της λογικής από την εμφάνιση. Το PdfPig κάνει την εξαγωγή
+    κειμένου από τα PDF — είδαμε νωρίτερα ότι αυτή η φάση κρύβει
+    εκπλήξεις με πολυτονικά και πολυστήλιχα έγγραφα. Η πρόσβαση γίνεται με
+    JWT tokens και ρόλους, ώστε κάθε χρήστης βλέπει μόνο τα δικά του
+    έγγραφα.\par
+    Στη δεξιά στήλη είναι η διαδικασία: γράφουμε τα τεστ πριν από τον κώδικα
+    — πάνω από 700 τεστ σε τέσσερα επίπεδα — και το CI τρέχει σε κάθε
+    αλλαγή. Κάθε feature ξεκινά από μια προδιαγραφή που γίνεται plan και
+    tasks, ώστε οι αποφάσεις να μένουν καταγεγραμμένες. Το deployment είναι
+    ένα Docker Compose stack με TLS.\par
+    Όλος ο κώδικας είναι δημόσιος στο GitHub — ο σύνδεσμος είναι και στην
+    τελευταία διαφάνεια.}
+\end{frame}
+
+\begin{frame}{Τι διαφοροποιεί το RAGGit}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Single-tenant, on-prem}
+        \small
+        \begin{itemize}
+          \item Μια εγκατάσταση ανά οργανισμό
+          \item Δεδομένα και μοντέλα στον χώρο του πελάτη
+          \item Έλεγχος πρόσβασης και αντιγράφων ασφαλείας
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Συντονισμός στον πελάτη}
+        \small
+        \begin{itemize}
+          \item Query / embedding LLM — επιλογή με μέτρηση
+          \item Chunk size και TopK ανά βιβλιοθήκη
+          \item Δοκιμή στο δικό του υλικό
+          \item Όλα ρυθμίσεις, όχι κώδικας
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{2mm}
+  \small Η αξία: \textbf{μετρημένη ρύθμιση} στα δεδομένα και το υλικό του
+  πελάτη — δουλειά σε \textbf{συμβουλευτικό επίπεδο}.
+  \note{1'. Το διαφοροποιητικό δεν είναι κάποιος αλγόριθμος· είναι ό,τι όλα
+    τα σημεία που συνήθως μαντεύονται εδώ γίνονται μετρήσεις. Το query μοντέλο
+    το επιλέξαμε μετρώντας υποψήφια μοντέλα σε πραγματικό ελληνικό corpus —
+    τα μικρότερα ήταν γρήγορα αλλά έλεγαν ψευδή γεγονότα με σιγουριά. Το TopK
+    το ίδιο: σε μικρή βιβλιοθήκη αρκεί το 3, σε μεγάλη το 5 κρατά την
+    ανακτήσιμη απάντηση. Ο chunking και το embedding μοντέλο ακολουθούν την
+    ίδια λογική. Και όλα είναι appsettings, όχι αλλαγές στον κώδικα.\par
+    Σε κάθε πελάτη η ίδια διαδικασία: ανεβάζουμε τα δικά του έγγραφα, μετράμε
+    στο δικό του υλικό, διαλέγουμε μοντέλα και chunking, και παραδίδουμε μια
+    εγκατάσταση συντονισμένη στα δικά του δεδομένα. Γι' αυτό μιλάμε για
+    δουλειά σε συμβουλευτικό επίπεδο, όχι για απλή πώληση λογισμικού.}
+\end{frame}
+
+\begin{frame}{Το κρατάμε ως έχει; Σενάρια και εναλλακτικές}
+  \small
+  \textbf{Κρατάμε το RAGGit, αλλάζουμε μόνο το deployment}
+  \begin{itemize}
+    \item Ίδια εγκατάσταση on-prem, όπως παρουσιάστηκε.
+    \item Private cloud: VM με GPU που ελέγχει ο οργανισμός — ήδη
+      υποστηρίζεται με ρύθμιση.
+    \item GPU VM παρόχοι:
+      \href{https://vast.ai/}{Vast.AI},
+      \href{https://www.paperspace.com/machines}{DigitalOcean Paperspace},
+      \href{https://learn.microsoft.com/en-us/azure/architecture/guide/compute/high-performance-computing}{Azure HPC}
+  \end{itemize}
+  \smallskip
+  \textbf{Αντικαθιστούμε το RAGGit με έτοιμη λύση}
+  \begin{itemize}
+    \item \href{https://ollama.com/}{Ollama} ή
+      \href{https://lmstudio.ai/}{LM Studio} μόνο: τοπικό μοντέλο χωρίς
+      βιβλιοθήκη εγγράφων.
+    \item \href{https://azure.microsoft.com/products/ai-services/ai-foundry}{Azure OpenAI}:
+      ισχύς και πολυπλοκότητα, αλλά τα δεδομένα φεύγουν από τον οργανισμό.
+    \item \href{https://github.com/infiniflow/ragflow}{RagFlow} (open
+      source) και \href{https://gendox.dev/}{Gendox}: έτοιμες RAG πλατφόρμες.
+  \end{itemize}
+  \note{1,5'. Υποθετική συζήτηση: δείχνω ότι έχω σκεφτεί τα εναλλακτικά
+    σενάρια, όχι ότι περιμένω αυτές τις ερωτήσεις. Κρατώ τις απαντήσεις
+    σύντομες.\par
+    Κρατάμε ως έχει (on-prem): μέγιστος έλεγχος — δικό μας μηχάνημα μέσα στο
+    γραφείο. Και δεν χρειάζεται μεγάλο μηχάνημα: η ανάπτυξη έγινε σε Intel
+    NUC. Ξεκινάς με ό,τι έχεις και αναβαθμίζεις· τα μοντέλα είναι ρύθμιση,
+    όχι κώδικας.\par
+    Private cloud: ο δρόμος του μέσου όρου — δικά σου δεδομένα σε υποδομή
+    που ελέγχεις, αλλά εκτός γραφείου. Το RAGGit το υποστηρίζει ήδη ως
+    δεύτερο mode του deployment: ίδιο artifact set, μόνο αλλαγές σε
+    configuration (BIND_ADDRESS, TLS, tailnet), όχι νέος κώδικας. Όποιος
+    δεν θέλει να αγοράσει μηχάνημα παίρνει το ίδιο προϊόν.\par
+    Vast.AI / Paperspace / Azure HPC: πού νοικιάζεις το GPU VM για το
+    σενάριο private cloud. Ίδια λογική, μηνιαίο κόστος αντί για κεφάλαιο.\par
+    Ollama / LM Studio: δίνουν το τοπικό μοντέλο, αλλά όχι RAG — δεν έχουν
+    βιβλιοθήκη εγγράφων, chunking, ανάκτηση, παραπομπές, χρήστες και ρόλους.
+    Το RAGGit χτίζει όλη αυτή τη στρώση πάνω σε Ollama.\par
+    Azure OpenAI: μοντέλα OpenAI σε cloud της Microsoft, με υποσχέση ότι δεν
+    χρησιμοποιούνται για εκπαίδευση. Τα δεδομένα όμως φεύγουν από τον
+    οργανισμό — το ακριβό σημείο της ομιλίας.\par
+    RagFlow: ανοιχτού κώδικα RAG engine με έτοιμο interface — σύγκριση με
+    το RAGGit ως προς τον έλεγχο, το single-tenant και το βάρος της
+    εγκατάστασης. Gendox: εμπορική εναλλακτική RAG-as-a-service — σύγκριση
+    κόστους και ελέγχου.\par
+    Κλείσιμο: αν ο οργανισμός θέλει πλήρη έλεγχο και μπορεί να έχει ένα
+    μηχάνημα, κρατάμε on-prem. Αν όχι, private cloud με την ίδια
+    εγκατάσταση. Έτοιμη πλατφόρμα μόνο όταν ο πλήρης έλεγχος δεν μετράει.}
+\end{frame}
+
+\begin{frame}[plain,noframenumbering]
+  \vfill
+  \centering
+  {\Large\bfseries\color{mDarkTeal} Η αναζήτηση γίνεται στο εταιρικό περιβάλλον.\par}
+  \vspace{5mm}
+  {\normalsize Τα έγγραφα και το μοντέλο μένουν στην εγκατάσταση.\par
+    Η εταιρεία διαχειρίζεται την πρόσβαση και τα αντίγραφα ασφαλείας.\par}
+  \vspace{8mm}
+  {\Large\bfseries Ευχαριστώ για την προσοχή!\par}
+  \vspace{4mm}
+  {\Large\bfseries Ερωτήσεις;\par}
+  \vfill
+  {\footnotesize Ανδρέας Δασκαλόπουλος · Patras Tech Talk · 26 Νοεμβρίου 2026\par}
+  \vspace{2mm}
+  {\footnotesize \href{https://github.com/daskas-welt/raggit}{github.com/daskas-welt/raggit}}
+  \note{0,5'. Κλείνω με το βασικό σημείο: η ιδιωτικότητα δεν προκύπτει μόνο
+    από το μοντέλο. Προκύπτει από το πού τρέχει, ποιος έχει πρόσβαση, πώς
+    αποθηκεύονται τα αρχεία και πώς ελέγχονται οι απαντήσεις. Το RAGGit
+    μεταφέρει αυτόν τον έλεγχο στην εταιρεία. Ευχαριστώ όλους όσοι ήρθαν
+    απόψε και όσους θα δουν την παρουσίαση αργότερα. Από εδώ και πέρα,
+    ευχαρίστως να απαντήσω στις ερωτήσεις σας.}
+\end{frame}
+
+\end{document}
