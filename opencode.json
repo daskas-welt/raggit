@@ -1,5 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    {
+      "action": "skill",
+      "resource": "using-superpowers",
+      "effect": "deny"
+    }
+  ],
   "mcp": {
     "Neon": {
       "enabled": false
