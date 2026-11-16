@@ -33,7 +33,7 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   to cycle `Queued → Indexing → Ready` on first boot. Retrieval granularity is classified
   automatically per question (broad trigger phrases, otherwise granular); there is no client or
   API mode switch and no persisted mode.
-- Unit 647 / contract 110 / client 105 / integration 82 pass on 2026-11-16 (Release; fakes where
+- Unit 650 / contract 110 / client 105 / integration 82 pass on 2026-11-17 (Release; fakes where
   Ollama is absent); the offline subset is 12/12. Confirm before treating a failure as pre-existing.
 - CI (`.github/workflows/ci.yml`) triggers on `main` and any specs branch matching `[0-9][0-9][0-9]-*`,
   so a new `specs/NNN-*` feature gets the build, unit/contract, offline and windows-client jobs without
