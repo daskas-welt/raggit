@@ -25,6 +25,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+        <ProjectReference Include="..\RAGGit.Documents\RAGGit.Documents.csproj" />
         <ProjectReference Include="..\RAGGit.Ingest\RAGGit.Ingest.csproj" />
         <ProjectReference Include="..\RAGGit.Retrieval\RAGGit.Retrieval.csproj" />
     </ItemGroup>

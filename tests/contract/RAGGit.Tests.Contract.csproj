@@ -23,5 +23,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\RAGGit.Workstation.Api\RAGGit.Workstation.Api.csproj" />
+        <ProjectReference Include="..\..\src\RAGGit.Documents\RAGGit.Documents.csproj" />
     </ItemGroup>
 </Project>

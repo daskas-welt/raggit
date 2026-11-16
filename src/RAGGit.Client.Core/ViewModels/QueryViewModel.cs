@@ -29,6 +29,8 @@ public sealed partial class QueryViewModel : ObservableObject
     private readonly QueryHistoryApiClient _historyApiClient;
     private readonly ClientSession _session;
     private readonly ConversationStore _conversation;
+    private readonly DocumentApiClient _documentApiClient;
+    private readonly IFileSaveService _fileSaveService;
 
     // Aborts the in-flight question. A broad answer can take minutes, so the
     // employee must be able to stop it instead of waiting for the gate to lift
@@ -92,6 +94,9 @@ public sealed partial class QueryViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasReasoning;
 
+    [ObservableProperty]
+    private bool _isDocumentBusy;
+
     partial void OnStatusMessageChanged(string? value) =>
         HasStatusMessage = !string.IsNullOrWhiteSpace(value);
 
@@ -150,7 +155,9 @@ public sealed partial class QueryViewModel : ObservableObject
         QueryApiClient apiClient,
         QueryHistoryApiClient historyApiClient,
         ClientSession session,
-        ConversationStore conversation
+        ConversationStore conversation,
+        DocumentApiClient documentApiClient,
+        IFileSaveService fileSaveService
     )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
@@ -158,6 +165,10 @@ public sealed partial class QueryViewModel : ObservableObject
             historyApiClient ?? throw new ArgumentNullException(nameof(historyApiClient));
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _conversation = conversation ?? throw new ArgumentNullException(nameof(conversation));
+        _documentApiClient =
+            documentApiClient ?? throw new ArgumentNullException(nameof(documentApiClient));
+        _fileSaveService =
+            fileSaveService ?? throw new ArgumentNullException(nameof(fileSaveService));
 
         // The page is recreated on every navigation: re-seed from the
         // login-scoped cache so asked questions survive leaving Ask.
@@ -169,17 +180,16 @@ public sealed partial class QueryViewModel : ObservableObject
         $"{session.Username}|{session.LastLoginAtUtc:O}";
 
     /// <summary>
-    /// Loads the current login session's queries (server scopes by JWT sub,
-    /// client keeps only items at/after <see cref="ClientSession.LastLoginAtUtc"/>)
-    /// as chat pairs, oldest first. Session-scoped by design: a restart or a
-    /// new login starts with an empty conversation; the full archive lives on
-    /// the History page. Bounded to the <see cref="MaxSessionItems"/> most
-    /// recent in-session queries with details fetched in small parallel
-    /// batches; pass a <see cref="CancellationToken"/> to abort on navigation
-    /// away (aborted loads leave the cached messages and store untouched).
-    /// Replaces <see cref="Messages"/> wholesale so user switches never leak
-    /// across logins. History list rows carry 120-char previews, so each
-    /// item's full detail is fetched for prompt/answer/citations.
+    /// Loads the employee's most recent queries (server scopes by JWT sub) as
+    /// chat pairs, oldest first, so the Ask page opens with the conversation
+    /// they had before this start. Bounded to the
+    /// <see cref="MaxSessionItems"/> most recent queries with details fetched
+    /// in small parallel batches; pass a <see cref="CancellationToken"/> to
+    /// abort on navigation away (aborted loads leave the cached messages and
+    /// store untouched). Replaces <see cref="Messages"/> wholesale so user
+    /// switches never leak across logins. History list rows carry 120-char
+    /// previews, so each item's full detail is fetched for
+    /// prompt/answer/citations.
     /// </summary>
     public async Task LoadHistoryAsync(CancellationToken cancellationToken = default)
     {
@@ -193,9 +203,7 @@ public sealed partial class QueryViewModel : ObservableObject
 
         try
         {
-            // History pages arrive newest-first: stop paging once items predate
-            // the login boundary, and never hold more than the cap.
-            var since = _session.LastLoginAtUtc;
+            // Never hold more than the cap. Pages arrive newest-first.
             var items = new List<HistoryItem>();
             const int pageSize = 100;
             var offset = 0;
@@ -207,13 +215,7 @@ public sealed partial class QueryViewModel : ObservableObject
                     cancellationToken
                 );
                 items.AddRange(page.Items);
-                if (
-                    items.Count >= page.Total
-                    || page.Items.Count == 0
-                    // Pages arrive newest-first: once any item predates the
-                    // login boundary, every later page is older too.
-                    || (since is not null && page.Items.Any(i => i.CreatedAt < since))
-                )
+                if (items.Count >= page.Total || page.Items.Count == 0)
                 {
                     break;
                 }
@@ -222,7 +224,6 @@ public sealed partial class QueryViewModel : ObservableObject
             }
 
             var targets = items
-                .Where(i => since is null || i.CreatedAt >= since)
                 .OrderByDescending(i => i.CreatedAt)
                 .ThenByDescending(i => i.Id)
                 .Take(MaxSessionItems)
@@ -265,6 +266,7 @@ public sealed partial class QueryViewModel : ObservableObject
                         Text = detail.Answer,
                         IsUser = false,
                         Timestamp = detail.CreatedAt,
+                        QueryId = detail.Id,
                         Citations = detail
                             .Citations.OrderBy(c => c.Ordinal)
                             .Select(c => new Citation
@@ -339,6 +341,22 @@ public sealed partial class QueryViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Seeds the Ask conversation from the server on the first visit after a
+    /// start, unless the conversation already holds messages for this login or
+    /// the employee cleared it. A restart therefore opens with the conversation
+    /// they had before; navigating back to Ask never refetches over local state.
+    /// </summary>
+    public async Task EnsureConversationLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_conversation.IsCleared || _conversation.Messages.Count > 0)
+        {
+            return;
+        }
+
+        await LoadHistoryAsync(cancellationToken);
     }
 
     [RelayCommand(CanExecute = nameof(CanAsk))]
@@ -428,6 +446,8 @@ public sealed partial class QueryViewModel : ObservableObject
         _askCts = cts;
         StopAnswerCommand.NotifyCanExecuteChanged();
 
+        var detection = DocumentRequestDetector.Detect(question);
+
         QueryText = string.Empty;
 
         IsBusy = true;
@@ -504,6 +524,7 @@ public sealed partial class QueryViewModel : ObservableObject
                 Text = response.Answer,
                 IsUser = false,
                 Citations = response.Citations,
+                QueryId = response.QueryId,
             };
             Messages.Add(assistantMessage);
             _conversation.Messages.Add(assistantMessage);
@@ -518,6 +539,22 @@ public sealed partial class QueryViewModel : ObservableObject
                     $"Answered in {response.LatencyMs}ms with {response.Citations.Count} citation(s).",
                     "Success"
                 );
+            }
+
+            if (detection.UnsupportedFormat is not null)
+            {
+                SetStatusMessage(
+                    "Unsupported format. Supported formats: Word, Excel, PDF and text.",
+                    "Warning"
+                );
+            }
+            else if (detection.IsAmbiguous)
+            {
+                SetStatusMessage("Choose a format to save this answer.", "Informational");
+            }
+            else if (detection.Format is { } format)
+            {
+                await AutoSaveDocumentAsync(assistantMessage, response, format, cts.Token);
             }
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -582,6 +619,114 @@ public sealed partial class QueryViewModel : ObservableObject
         }
     }
 
+    private async Task AutoSaveDocumentAsync(
+        ChatMessage message,
+        QueryResponse response,
+        DocumentOutputFormat format,
+        CancellationToken cancellationToken
+    )
+    {
+        if (
+            response.QueryId is not { } queryId
+            || response.Citations.Count == 0
+            || string.Equals(
+                response.Answer.Trim(),
+                "no relevant content found",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            return;
+        }
+
+        await SaveDocumentCoreAsync(message, queryId, format, cancellationToken);
+    }
+
+    [RelayCommand]
+    private async Task SaveDocumentAsync(DocumentSaveRequest? request)
+    {
+        if (
+            request is null
+            || !request.Message.CanSave
+            || request.Message.QueryId is not { } queryId
+        )
+        {
+            return;
+        }
+
+        await SaveDocumentCoreAsync(
+            request.Message,
+            queryId,
+            request.Format,
+            CancellationToken.None
+        );
+    }
+
+    [RelayCommand]
+    private async Task OpenDocumentAsync(ChatMessage? message)
+    {
+        if (message?.SavedPath is not { } path)
+        {
+            return;
+        }
+
+        try
+        {
+            await _fileSaveService.OpenAsync(path);
+        }
+        catch (Exception)
+        {
+            SetStatusMessage("Could not open the saved document.", "Error");
+        }
+    }
+
+    private async Task SaveDocumentCoreAsync(
+        ChatMessage message,
+        Guid queryId,
+        DocumentOutputFormat format,
+        CancellationToken cancellationToken
+    )
+    {
+        if (IsDocumentBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            IsDocumentBusy = true;
+            var file = await _documentApiClient.GetAsync(queryId, format, cancellationToken);
+            var savedPath = await _fileSaveService.SaveAsync(
+                file.FileName,
+                file.Bytes,
+                file.ContentType,
+                cancellationToken
+            );
+
+            if (savedPath is not null)
+            {
+                message.SavedPath = savedPath;
+                SetStatusMessage($"Saved {System.IO.Path.GetFileName(savedPath)}.", "Success");
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The employee stopped the answer; no file is expected.
+        }
+        catch (HttpRequestException exception)
+        {
+            SetStatusMessage(exception.Message, "Error");
+        }
+        catch (Exception)
+        {
+            SetStatusMessage("Document generation failed. No file was saved.", "Error");
+        }
+        finally
+        {
+            IsDocumentBusy = false;
+        }
+    }
+
     [RelayCommand]
     private async Task RetryAsync()
     {
@@ -603,9 +748,10 @@ public sealed partial class QueryViewModel : ObservableObject
 
     /// <summary>
     /// Clears the current conversation view: the bound <see cref="Messages"/>
-    /// and the shared conversation store's in-session messages (via the
-    /// store's bulk-clear), and resets the input. A no-op when the
-    /// conversation is already empty. Persisted server history is untouched.
+    /// and the shared conversation store's in-session messages, and resets the
+    /// input. A no-op when the conversation is already empty. Persisted server
+    /// history is untouched, and the cleared conversation is not re-seeded from
+    /// it until the next login.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanClearConversation))]
     private void ClearConversation()
@@ -617,7 +763,7 @@ public sealed partial class QueryViewModel : ObservableObject
         }
 
         Messages.Clear();
-        _conversation.ReplaceAll(Array.Empty<ChatMessage>());
+        _conversation.MarkCleared();
         QueryText = string.Empty;
     }
 

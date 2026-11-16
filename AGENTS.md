@@ -33,8 +33,8 @@ Private single-tenant RAG: ASP.NET workstation API + WPF desktop client (WPF-UI)
   to cycle `Queued → Indexing → Ready` on first boot. Retrieval granularity is classified
   automatically per question (broad trigger phrases, otherwise granular); there is no client or
   API mode switch and no persisted mode.
-- Unit 549 / contract 102 / integration 83 pass on 2026-10-16 (Release, Ollama up); the offline subset is
-  12/12. Confirm before treating a failure as pre-existing.
+- Unit 647 / contract 110 / client 105 / integration 82 pass on 2026-11-16 (Release; fakes where
+  Ollama is absent); the offline subset is 12/12. Confirm before treating a failure as pre-existing.
 - CI (`.github/workflows/ci.yml`) triggers on `main` and any specs branch matching `[0-9][0-9][0-9]-*`,
   so a new `specs/NNN-*` feature gets the build, unit/contract, offline and windows-client jobs without
   editing the workflow.
@@ -148,6 +148,20 @@ up an extraction or chunking fix.
   health probe and model validation finish before the first byte, so `400/401/403/503` stay ordinary
   JSON; a failure after that arrives as an in-band `error` event whose message matches the classic
   endpoint's, and a stream that ends without a terminal event is treated as a failure by the client.
+- **Document output (033):** the Ask view and Query Detail can save an owned grounded answer as DOCX,
+  XLSX, PDF or TXT. `POST /api/queries/{id}/documents` renders from the **persisted** `Queries` row and
+  its citations — never a second model generation — and returns the bytes with a suggested filename;
+  `QueryResponse.QueryId` / the streamed answer event carry the persisted id (additive, 1.7.0). The
+  workstation-side `RAGGit.Documents` library owns the renderers: OpenXml for DOCX/XLSX, SkiaSharp
+  (MIT) with embedded DejaVu fonts for PDF, UTF-8 for TXT. The client only calls the endpoint and saves
+  through `SaveFileDialog` (`IFileSaveService`), writing a sibling temp file then moving it; generated
+  files are never added to the library, content store or LanceDB. A refusal or a citationless answer
+  produces no file (`422`), and from-scratch/ungrounded generation is out of scope.
+- **Ask conversation on startup:** the Ask page seeds from the employee's most recent queries (up to
+  `QueryViewModel.MaxSessionItems` = 50, details fetched four at a time) on the first visit after a
+  start, so it opens with the conversation they had before; this is not login-boundary scoped. Clear
+  empties the view and suppresses re-seeding for the rest of the login (`ConversationStore.IsCleared`);
+  persisted history is untouched.
 - Invariants (`.specify/memory/constitution.md`): single-tenant (no `company_id` anywhere), no
   query-time WAN, answers carry `[chunk-GUID]` citations or exactly `no relevant content found`, never
   transfer facts between same-template records of different people. TDD is mandatory (VI).

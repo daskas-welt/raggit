@@ -52,6 +52,10 @@ public sealed class QueryStreamEvent
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? LatencyMs { get; set; }
 
+    /// <summary>Persisted query id used by the document endpoint (033, additive).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? QueryId { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<PersonSuggestion>? SuggestedPersons { get; set; }
 
@@ -99,6 +103,7 @@ public sealed class QueryStreamEvent
             Citations = response.Citations,
             RetrievedChunkIds = response.RetrievedChunkIds,
             LatencyMs = response.LatencyMs,
+            QueryId = response.QueryId,
             SuggestedPersons = response.SuggestedPersons,
         };
     }
@@ -133,6 +138,7 @@ public sealed class QueryStreamEvent
             Citations = Citations ?? new List<Citation>(),
             RetrievedChunkIds = RetrievedChunkIds ?? new List<Guid>(),
             LatencyMs = LatencyMs ?? 0,
+            QueryId = QueryId,
             SuggestedPersons = SuggestedPersons ?? new List<PersonSuggestion>(),
         };
 }

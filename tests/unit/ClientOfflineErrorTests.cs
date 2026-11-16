@@ -31,7 +31,14 @@ public sealed class ClientOfflineErrorTests
         var history = new QueryHistoryApiClient(
             new HttpClient { BaseAddress = new Uri("http://localhost:5001") }
         );
-        var vm = new QueryViewModel(api, history, new ClientSession(), new ConversationStore());
+        var vm = new QueryViewModel(
+            api,
+            history,
+            new ClientSession(),
+            new ConversationStore(),
+            new DocumentApiClient(http),
+            new InMemoryFileSaveService()
+        );
         vm.QueryText = "refund policy";
 
         await vm.AskCommand.ExecuteAsync(null);

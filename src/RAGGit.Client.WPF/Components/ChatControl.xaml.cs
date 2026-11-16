@@ -7,6 +7,8 @@ using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using RAGGit.Client.Core.Models;
 using RAGGit.Client.Core.Services;
+using RAGGit.Client.Core.ViewModels;
+using RAGGit.Core.Models;
 
 namespace RAGGit.Client.WPF.Components;
 
@@ -255,6 +257,42 @@ public partial class ChatControl : UserControl
                 // Clipboard may be locked by another process; a failed copy
                 // stays silent rather than confirming what did not happen.
             }
+        }
+    }
+
+    private async void SaveAsDocx_Click(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(sender, DocumentOutputFormat.Docx);
+
+    private async void SaveAsXlsx_Click(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(sender, DocumentOutputFormat.Xlsx);
+
+    private async void SaveAsPdf_Click(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(sender, DocumentOutputFormat.Pdf);
+
+    private async void SaveAsTxt_Click(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(sender, DocumentOutputFormat.Txt);
+
+    private async Task SaveAsAsync(object sender, DocumentOutputFormat format)
+    {
+        if (
+            sender is FrameworkElement { Tag: ChatMessage message }
+            && DataContext is QueryViewModel viewModel
+        )
+        {
+            await viewModel.SaveDocumentCommand.ExecuteAsync(
+                new DocumentSaveRequest(message, format)
+            );
+        }
+    }
+
+    private async void OpenDocument_Click(object sender, RoutedEventArgs e)
+    {
+        if (
+            sender is FrameworkElement { Tag: ChatMessage message }
+            && DataContext is QueryViewModel viewModel
+        )
+        {
+            await viewModel.OpenDocumentCommand.ExecuteAsync(message);
         }
     }
 }

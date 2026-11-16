@@ -22,6 +22,9 @@ public class TestApiFactory : WebApplicationFactory<Program>
     public string AdminKey { get; } = "admin-contract-test";
     public string EmployeeKey { get; } = "employee-contract-test";
 
+    /// <summary>Directory the content store writes uploaded originals to (test-only).</summary>
+    public string ContentDirectory => _contentDir;
+
     private readonly string _dbPath;
     private readonly string _contentDir;
 

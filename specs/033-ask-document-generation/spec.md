@@ -57,7 +57,7 @@ An employee reads an answer they did not ask to receive as a document and decide
 
 **Acceptance Scenarios**:
 
-1. **Given** any finished answer in the conversation, **When** the employee chooses to save it as Word, Excel, PDF or text, **Then** a file in that format is produced whose content matches the answer.
+1. **Given** any finished answer **with at least one citation** in the conversation, **When** the employee chooses to save it as Word, Excel, PDF or text, **Then** a file in that format is produced whose content matches the answer.
 2. **Given** an answer opened from history, **When** the employee saves it, **Then** the file matches the answer and carries the same sources.
 3. **Given** an answer whose citations exist, **When** it is saved in any format, **Then** the file lists the same sources as the answer.
 4. **Given** the answer is exactly `no relevant content found`, **When** the employee looks at the answer, **Then** no save action is offered for it.
@@ -93,6 +93,7 @@ A generated document is a business document: it must contain only what the libra
 - A document is saved while the same file is open in another application: the employee must see a clear message and be able to retry, not a crash or a silently truncated file.
 - The subject's name contains characters that are invalid in a filename: the suggested filename must be valid for the operating system.
 - The library is empty, or the question matches nothing: same refusal as today, and no file.
+- An answer that is not a refusal but has no citations: no save action is offered, and no file is produced.
 - A second document request is submitted while one is still being generated: the existing busy behavior applies; two documents must never be mixed into one file.
 - The employee leaves the page while a document is being generated: nothing orphaned or half-written is left behind, and returning to the page shows no stale file.
 - The employee is signed in but has no access to the subject: the document must obey the same per-person access rules as the answer.
@@ -115,7 +116,7 @@ A generated document is a business document: it must contain only what the libra
 
 - **FR-008**: A spreadsheet MUST be organized as a table: one header row naming the fields, one row per record, and one value per cell.
 - **FR-009**: A field the library does not record for a record MUST be left empty or explicitly marked as not recorded; the system MUST NOT guess, infer or carry a value over from another record.
-- **FR-010**: Dates, amounts and quantities in a spreadsheet MUST be stored so a spreadsheet application recognizes them as dates and numbers rather than as plain text.
+- **FR-010**: Dates, amounts and quantities that use a **documented format** MUST be stored as date or number cells with the appropriate number format, so a spreadsheet application can sort, filter and calculate them. Documented dates are `yyyy-MM-dd`, `dd/MM/yyyy`, `d/M/yyyy`, `dd-MM-yyyy`, `d.M.yyyy`, and Greek month-name dates; ambiguous numeric dates are interpreted day-first. Documented amounts and quantities are decimal numbers with `.` or `,` separators, currency amounts in `€`, `$` or `£`, percentages, and parenthesised negatives. Values outside these formats remain text; the system MUST NOT guess a date or number.
 - **FR-011**: When the requested content is not naturally tabular, the spreadsheet MUST remain usable — for example as a sheet with clearly titled sections — rather than forcing prose into a single cell or an arbitrary grid.
 
 **Saving and delivery**
@@ -127,7 +128,7 @@ A generated document is a business document: it must contain only what the libra
 
 **Any answer as a file**
 
-- **FR-016**: Any finished answer in the conversation MUST be savable in any of the four formats, and the same MUST be possible for an answer reopened from history.
+- **FR-016**: Any finished answer **with at least one citation** in the conversation MUST be savable in any of the four formats, and the same MUST be possible for an answer reopened from history. An answer that is exactly `no relevant content found`, or that has no citations, MUST NOT offer a save action and MUST NOT produce a file.
 - **FR-017**: A saved ordinary answer MUST match the on-screen answer in content and sources; the only permitted differences are formatting and layout.
 - **FR-018**: The refusal answer `no relevant content found` MUST NOT offer a save action, and a request for a document that matches nothing MUST produce no file.
 
@@ -156,7 +157,7 @@ A generated document is a business document: it must contain only what the libra
 - **SC-002**: Zero files are produced for questions the library cannot support; those answers remain exactly `no relevant content found`.
 - **SC-003**: In a sample of 30 generated documents checked against the sources they list, zero statements or cell values are unsupported by those sources.
 - **SC-004**: In a sample of 20 documents about named people who share a record template, zero contain content belonging to another person's record.
-- **SC-005**: Saving any finished answer in any of the four formats yields content matching the on-screen answer in 100% of a 20-answer sample.
+- **SC-005**: Saving any finished answer **with at least one citation** in any of the four formats yields content matching the on-screen answer in 100% of a 20-answer sample.
 - **SC-006**: Producing a document takes no more than 15% longer than answering the same question as text alone, measured over 10 questions on the same workstation with the model already loaded.
 - **SC-007**: In a usability check with at least five employees, at least four produce and save a document on their first attempt without assistance.
 - **SC-008**: The shared library contains exactly the same documents before and after a session in which documents were generated.
@@ -172,6 +173,7 @@ A generated document is a business document: it must contain only what the libra
 - **Saving uses the operating system's file dialog** and the employee's own disk, consistent with how uploading and downloading library documents already work.
 - **Spreadsheet shape follows the content**: tabular when the request is about records, titled sections when the content is prose. One workbook per request; custom templates, branding and multi-sheet structures are out of scope.
 - **"Any finished answer" covers the current conversation and answers reopened from history.** It is delivered as one capability, but may ship after document requests themselves.
+- **A finished answer with no citations is not document-eligible.** A document must list the sources that support it (FR-019), so "any finished answer" means any answer carrying at least one citation.
 - **Only the four formats are in scope.** Other formats (presentations, images, email drafts) are out of scope; the employee is told they are unsupported.
 - **One document per request.** Requests asking for several separate files are answered as one document covering the request, or the employee is asked to split them.
 - **No in-app editing, scheduling, batch generation, mail merge or signature workflows** in this feature; the employee edits the saved file in their own tools.

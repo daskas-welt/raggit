@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- TargetFramework inherited from Directory.Build.props (net10.0) -->
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>RAGGit.Documents</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+        <!-- MIT PDF output via SkiaSharp's PDF backend. PDFsharp/MigraDoc 6.5 is
+             AGPL or paid-commercial; PDFsharpCore drags a vulnerable ImageSharp
+             line. SkiaSharp is MIT and supports the embedded Greek font. -->
+        <PackageReference Include="SkiaSharp" Version="4.156.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.156.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.156.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RAGGit.Core\RAGGit.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\DejaVuSans.ttf" />
+        <EmbeddedResource Include="Assets\DejaVuSans-Bold.ttf" />
+    </ItemGroup>
+</Project>

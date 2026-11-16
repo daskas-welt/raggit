@@ -1,0 +1,247 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant) — 033-ask-document-generation delta
+  version: 1.7.0
+  description: >
+    ADDITIVE MINOR 1.6.0 → 1.7.0 for 033-ask-document-generation (FR-001…FR-025).
+    Adds document output for an already-persisted, owned grounded answer:
+    POST /api/queries/{id}/documents returns a Word, Excel, PDF or plain-text file whose
+    content is the answer already shown in the conversation. The document is rendered from
+    the persisted Queries row and its citations; it is never a second model generation.
+    Every 1.6.0 path, schema and required field is preserved. QueryResponse gains an optional
+    queryId (present on new answers), and the streamed answer event carries the same optional
+    field. Generated files are not persisted, not added to the library, and not visible to
+    other employees. Offline/LAN-only, citation-grounding and single-tenant guarantees are
+    unchanged. An answer with no relevant content, or with no citations, produces no file.
+servers:
+  - url: https://ai-workstation.local:5001
+    description: LAN / private-network HTTPS (no WAN at query time)
+  - url: http://localhost:5001
+    description: Development / in-memory host only
+security:
+  - ApiKey: []
+  - Bearer: []
+paths:
+  /api/queries:
+    post:
+      summary: Query library with citations (unchanged; queryId is additive)
+      operationId: query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Grounded answer with citations, or exactly "no relevant content found".
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryAnswer'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/queries/stream:
+    post:
+      summary: Query library while streaming progress (answer event gains queryId)
+      operationId: queryStream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: >
+            NDJSON: zero or more progress events, then exactly one terminal answer or error
+            event. The answer event carries the same fields as QueryAnswer, including the
+            additive queryId.
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/queries/{id}/documents:
+    post:
+      summary: Render an owned grounded answer as a downloadable document
+      description: >
+        NEW 1.7.0 (FR-001…FR-025). Loads the caller's own persisted query (404 when not
+        found, not owned, or legacy — never 403, so ids cannot be enumerated), verifies the
+        answer is document-eligible, renders it in the requested format and returns the file
+        bytes. No model call is made; the content is the answer already shown. Nothing is
+        persisted, added to the library, or retained after the response. The suggested
+        filename is derived from the query, is valid for the client OS, and may be changed
+        by the employee in the save dialog.
+      operationId: queryDocument
+      security:
+        - ApiKey: []
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentRequest'
+            examples:
+              word:
+                value: { "format": "docx" }
+              excel:
+                value: { "format": "xlsx" }
+              pdf:
+                value: { "format": "pdf" }
+              text:
+                value: { "format": "txt" }
+      responses:
+        '200':
+          description: The rendered file. Content-Type matches the requested format.
+          headers:
+            Content-Disposition:
+              description: >
+                attachment with a suggested filename. Non-ASCII names are sent as
+                filename*=UTF-8''<percent-encoded> in addition to a sanitized ASCII fallback.
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+            text/plain:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '500': { $ref: '#/components/responses/InternalError' }
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    QueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+        topK:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+    QueryAnswer:
+      type: object
+      required: [answer, citations, retrievedChunkIds, latencyMs]
+      properties:
+        answer:
+          type: string
+          description: Exactly "no relevant content found" when nothing matched.
+        citations:
+          type: array
+          items: { $ref: '#/components/schemas/Citation' }
+        retrievedChunkIds:
+          type: array
+          items: { type: string, format: uuid }
+        latencyMs:
+          type: integer
+        suggestedPersons:
+          type: array
+          items: { $ref: '#/components/schemas/PersonSuggestion' }
+        queryId:
+          type: string
+          format: uuid
+          nullable: true
+          description: >
+            ADDITIVE 1.7.0. The persisted query id used by POST /api/queries/{id}/documents.
+            Present on new answers; clients MUST disable save when absent.
+    Citation:
+      type: object
+      required: [documentId, chunkId, text, ordinal]
+      properties:
+        documentId: { type: string, format: uuid }
+        documentName: { type: string, nullable: true }
+        chunkId: { type: string, format: uuid }
+        text: { type: string }
+        ordinal: { type: integer }
+    PersonSuggestion:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        documentId: { type: string, format: uuid, nullable: true }
+    DocumentRequest:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [docx, xlsx, pdf, txt]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid body or unsupported document format.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated but not allowed to use the endpoint.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Query not found, not owned, or legacy (no file is produced).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unprocessable:
+      description: >
+        The answer cannot become a document (exactly "no relevant content found", no
+        citations) or the result would exceed the size/row limit. No file is produced.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            refusal: { value: { error: "no document available" } }
+            tooLarge: { value: { error: "document too large" } }
+    Unavailable:
+      description: The AI workstation or local model is unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    InternalError:
+      description: Rendering failed; no partial or corrupt file is returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

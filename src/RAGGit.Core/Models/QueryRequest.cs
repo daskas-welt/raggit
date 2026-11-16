@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace RAGGit.Core.Models;
 
@@ -50,6 +51,13 @@ public sealed class QueryResponse
     public List<Guid> RetrievedChunkIds { get; set; } = new();
 
     public int LatencyMs { get; set; }
+
+    /// <summary>
+    /// The persisted query id used by the document endpoint (033, additive).
+    /// Null when the response predates this feature; clients disable save then.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? QueryId { get; set; }
 
     /// <summary>
     /// Closest person names actually present in retrieved chunks when the

@@ -285,7 +285,9 @@ public sealed class QueryViewModelReasoningTests
             ),
             EmptyHistoryClient(),
             new ClientSession(),
-            conversation ?? new ConversationStore()
+            conversation ?? new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
 
     private static HttpResponseMessage Ok(string body) =>

@@ -151,7 +151,9 @@ public sealed class QueryViewModelTests
             ),
             EmptyHistoryClient(),
             new ClientSession(),
-            new ConversationStore()
+            new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
         viewModel.QueryText =
             "συνολικό χρόνο προϋπηρεσίας εντός δημοσίου τομέα της δημοπούλου αρετής";
@@ -375,7 +377,9 @@ public sealed class QueryViewModelTests
             ),
             EmptyHistoryClient(),
             new ClientSession(),
-            new ConversationStore()
+            new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
         viewModel.QueryText = "q";
 
@@ -440,7 +444,9 @@ public sealed class QueryViewModelTests
             apiClient,
             EmptyHistoryClient(),
             new ClientSession(),
-            new ConversationStore()
+            new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
     }
 
@@ -456,7 +462,9 @@ public sealed class QueryViewModelTests
             apiClient,
             EmptyHistoryClient(),
             new ClientSession(),
-            conversation ?? new ConversationStore()
+            conversation ?? new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
     }
 
@@ -587,7 +595,7 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
-    public async Task LoadHistory_OnlyKeepsQueriesSinceLastLogin()
+    public async Task LoadHistory_KeepsQueriesFromBeforeThisLogin()
     {
         var loginAt = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc);
         var seeds = new[]
@@ -619,16 +627,18 @@ public sealed class QueryViewModelTests
 
         await viewModel.LoadHistoryAsync();
 
-        viewModel.Messages.Should().HaveCount(4);
-        viewModel.Messages[0].Text.Should().Be("boundary prompt");
-        viewModel.Messages[1].Text.Should().Be("boundary answer");
-        viewModel.Messages[2].Text.Should().Be("new prompt");
-        viewModel.Messages[3].Text.Should().Be("new answer");
+        viewModel.Messages.Should().HaveCount(6);
+        viewModel.Messages[0].Text.Should().Be("old prompt");
+        viewModel.Messages[1].Text.Should().Be("old answer");
+        viewModel.Messages[2].Text.Should().Be("boundary prompt");
+        viewModel.Messages[3].Text.Should().Be("boundary answer");
+        viewModel.Messages[4].Text.Should().Be("new prompt");
+        viewModel.Messages[5].Text.Should().Be("new answer");
         viewModel.StatusMessage.Should().BeNull();
     }
 
     [Fact]
-    public async Task LoadHistory_AllOlderThanLogin_ShowsEmptyWithoutError()
+    public async Task LoadHistory_LoadsQueriesOlderThanThisLogin()
     {
         var loginAt = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc);
         var seeds = new[]
@@ -646,8 +656,98 @@ public sealed class QueryViewModelTests
 
         await viewModel.LoadHistoryAsync();
 
-        viewModel.Messages.Should().BeEmpty();
+        viewModel.Messages.Should().HaveCount(2);
+        viewModel.Messages[0].Text.Should().Be("old prompt");
+        viewModel.Messages[1].Text.Should().Be("old answer");
         viewModel.StatusMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EnsureConversationLoaded_RestoresHistoryOnStartup()
+    {
+        var startedAt = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc);
+        var seed = new HistorySeed(
+            Guid.NewGuid(),
+            "asked before this start",
+            "answer before this start",
+            startedAt.AddHours(-2),
+            Array.Empty<CitationSeed>()
+        );
+        var session = new ClientSession { Username = "maria", LastLoginAtUtc = startedAt };
+        var store = new ConversationStore();
+        var viewModel = CreateViewModelWithHistory(
+            new HistoryStubHandler(new[] { seed }),
+            session,
+            store
+        );
+
+        await viewModel.EnsureConversationLoadedAsync();
+
+        viewModel.Messages.Should().HaveCount(2);
+        viewModel.Messages[0].Text.Should().Be("asked before this start");
+        viewModel.Messages[1].Text.Should().Be("answer before this start");
+        store.Messages.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task EnsureConversationLoaded_SkipsWhenStoreAlreadyHasMessages()
+    {
+        var session = new ClientSession
+        {
+            Username = "maria",
+            LastLoginAtUtc = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+        };
+        var store = new ConversationStore();
+        var firstVisit = CreateViewModelWithHistory(
+            new HistoryStubHandler(Array.Empty<HistorySeed>()),
+            session,
+            store
+        );
+        store.ReplaceAll(
+            new[]
+            {
+                new ChatMessage { Text = "asked this run", IsUser = true },
+            }
+        );
+        var handler = new HistoryStubHandler(Array.Empty<HistorySeed>());
+
+        var secondVisit = CreateViewModelWithHistory(handler, session, store);
+        await secondVisit.EnsureConversationLoadedAsync();
+
+        secondVisit.Messages.Should().ContainSingle();
+        secondVisit.Messages[0].Text.Should().Be("asked this run");
+        handler.HistoryCalls.Should().Be(0);
+        firstVisit.Messages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EnsureConversationLoaded_SkipsAfterClear()
+    {
+        var seed = new HistorySeed(
+            Guid.NewGuid(),
+            "prompt",
+            "answer",
+            new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+            Array.Empty<CitationSeed>()
+        );
+        var session = new ClientSession
+        {
+            Username = "maria",
+            LastLoginAtUtc = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+        };
+        var store = new ConversationStore();
+        var handler = new HistoryStubHandler(new[] { seed });
+        var firstVisit = CreateViewModelWithHistory(handler, session, store);
+        await firstVisit.EnsureConversationLoadedAsync();
+        firstVisit.Messages.Should().HaveCount(2);
+
+        firstVisit.ClearConversationCommand.Execute(null);
+
+        var secondVisit = CreateViewModelWithHistory(handler, session, store);
+        await secondVisit.EnsureConversationLoadedAsync();
+
+        secondVisit.Messages.Should().BeEmpty();
+        handler.HistoryCalls.Should().Be(1);
     }
 
     [Fact]
@@ -756,7 +856,7 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
-    public async Task LoadHistory_StopsPaging_WhenPagePredatesLogin()
+    public async Task LoadHistory_PagesUntilTotal_RegardlessOfLoginBoundary()
     {
         var loginAt = new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc);
         var seeds = new[]
@@ -789,10 +889,11 @@ public sealed class QueryViewModelTests
 
         await viewModel.LoadHistoryAsync();
 
-        handler.HistoryCalls.Should().Be(1);
-        handler.DetailCalls.Should().Be(1);
-        viewModel.Messages.Should().HaveCount(2);
-        viewModel.Messages[0].Text.Should().Be("new prompt");
+        handler.HistoryCalls.Should().Be(2);
+        handler.DetailCalls.Should().Be(3);
+        viewModel.Messages.Should().HaveCount(6);
+        viewModel.Messages[0].Text.Should().Be("old prompt 2");
+        viewModel.Messages[^1].Text.Should().Be("new answer");
     }
 
     [Fact]
@@ -896,7 +997,9 @@ public sealed class QueryViewModelTests
                 new HttpClient(historyHandler) { BaseAddress = new Uri("https://w.local/") }
             ),
             session ?? new ClientSession(),
-            store ?? new ConversationStore()
+            store ?? new ConversationStore(),
+            new DocumentApiClient(new HttpClient { BaseAddress = new Uri("https://w.local/") }),
+            new InMemoryFileSaveService()
         );
     }
 

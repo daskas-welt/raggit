@@ -10,6 +10,7 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
         <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibility" />
         <converters:CitationOrdinalConverter x:Key="CitationOrdinal" />
         <converters:CitationDocumentNameConverter x:Key="CitationDocumentName" />
         <converters:CitationSubtitleConverter x:Key="CitationSubtitle" />
@@ -224,21 +225,91 @@
                                         </ListBox>
                                     </ui:CardExpander>
                                 </Grid>
-                                <ui:Button
-                                    Grid.Row="2"
-                                    HorizontalAlignment="Right"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Width="32"
-                                    Height="32"
-                                    Padding="0"
-                                    ToolTip="Copy message"
-                                    AutomationProperties.AutomationId="CopyMessageButton"
-                                    AutomationProperties.Name="Copy message"
-                                    Click="CopyMessageButton_Click"
-                                >
-                                    <ui:SymbolIcon Symbol="Copy24" />
-                                </ui:Button>
+                                <Grid Grid.Row="2" HorizontalAlignment="Right">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:DropDownButton
+                                        Grid.Column="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Width="32"
+                                        Height="32"
+                                        Padding="0"
+                                        ToolTip="Save as"
+                                        AutomationProperties.AutomationId="{Binding AutomationKey, StringFormat='SaveAsButton_{0}'}"
+                                        AutomationProperties.Name="Save as"
+                                        Visibility="{Binding CanSave, Converter={StaticResource BoolVisibility}}"
+                                    >
+                                        <ui:DropDownButton.Icon>
+                                            <ui:SymbolIcon Symbol="Document24" />
+                                        </ui:DropDownButton.Icon>
+                                        <ui:DropDownButton.Flyout>
+                                            <ContextMenu>
+                                                <ui:MenuItem
+                                                    Header="Word"
+                                                    Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                    Click="SaveAsDocx_Click"
+                                                    AutomationProperties.AutomationId="{Binding PlacementTarget.DataContext.AutomationKey, RelativeSource={RelativeSource AncestorType=ContextMenu}, StringFormat='SaveAsDocx_{0}'}"
+                                                />
+                                                <ui:MenuItem
+                                                    Header="Excel"
+                                                    Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                    Click="SaveAsXlsx_Click"
+                                                    AutomationProperties.AutomationId="{Binding PlacementTarget.DataContext.AutomationKey, RelativeSource={RelativeSource AncestorType=ContextMenu}, StringFormat='SaveAsXlsx_{0}'}"
+                                                />
+                                                <ui:MenuItem
+                                                    Header="PDF"
+                                                    Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                    Click="SaveAsPdf_Click"
+                                                    AutomationProperties.AutomationId="{Binding PlacementTarget.DataContext.AutomationKey, RelativeSource={RelativeSource AncestorType=ContextMenu}, StringFormat='SaveAsPdf_{0}'}"
+                                                />
+                                                <ui:MenuItem
+                                                    Header="Text"
+                                                    Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                    Click="SaveAsTxt_Click"
+                                                    AutomationProperties.AutomationId="{Binding PlacementTarget.DataContext.AutomationKey, RelativeSource={RelativeSource AncestorType=ContextMenu}, StringFormat='SaveAsTxt_{0}'}"
+                                                />
+                                            </ContextMenu>
+                                        </ui:DropDownButton.Flyout>
+                                    </ui:DropDownButton>
+                                    <ui:Button
+                                        Grid.Column="2"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Width="32"
+                                        Height="32"
+                                        Padding="0"
+                                        ToolTip="Open saved document"
+                                        AutomationProperties.AutomationId="{Binding AutomationKey, StringFormat='SavedDocumentOpen_{0}'}"
+                                        AutomationProperties.Name="Open saved document"
+                                        Visibility="{Binding SavedPath, Converter={StaticResource NullToVisibility}}"
+                                        Tag="{Binding}"
+                                        Click="OpenDocument_Click"
+                                    >
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="ArrowRight24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <ui:Button
+                                        Grid.Column="4"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Width="32"
+                                        Height="32"
+                                        Padding="0"
+                                        ToolTip="Copy message"
+                                        AutomationProperties.AutomationId="CopyMessageButton"
+                                        AutomationProperties.Name="Copy message"
+                                        Click="CopyMessageButton_Click"
+                                    >
+                                        <ui:SymbolIcon Symbol="Copy24" />
+                                    </ui:Button>
+                                </Grid>
                             </Grid>
                         </Border>
                     </Grid>

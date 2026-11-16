@@ -143,7 +143,7 @@ public sealed class QueryController : ControllerBase
                 cancellationToken
             );
 
-            await SaveQueryAsync(
+            var queryId = await SaveQueryAsync(
                 userId,
                 request.Query,
                 outcome.RetrievedChunkIds,
@@ -173,7 +173,9 @@ public sealed class QueryController : ControllerBase
                 );
             }
 
-            return Ok(outcome.ToResponse());
+            var response = outcome.ToResponse();
+            response.QueryId = queryId;
+            return Ok(response);
         }
         catch (HttpRequestException exception)
         {
@@ -280,7 +282,7 @@ public sealed class QueryController : ControllerBase
                 cancellationToken
             );
 
-            await SaveQueryAsync(
+            var queryId = await SaveQueryAsync(
                 userId,
                 request.Query,
                 outcome.RetrievedChunkIds,
@@ -310,10 +312,9 @@ public sealed class QueryController : ControllerBase
                 );
             }
 
-            await WriteEventAsync(
-                QueryStreamEvent.FromAnswer(outcome.ToResponse()),
-                cancellationToken
-            );
+            var response = outcome.ToResponse();
+            response.QueryId = queryId;
+            await WriteEventAsync(QueryStreamEvent.FromAnswer(response), cancellationToken);
         }
         catch (HttpRequestException exception)
         {
@@ -428,7 +429,7 @@ public sealed class QueryController : ControllerBase
         );
     }
 
-    private async Task SaveQueryAsync(
+    private async Task<Guid> SaveQueryAsync(
         string userId,
         string prompt,
         IReadOnlyList<Guid> retrievedChunkIds,
@@ -451,5 +452,6 @@ public sealed class QueryController : ControllerBase
         };
 
         await _historyStore.AddAsync(query, cancellationToken);
+        return query.Id;
     }
 }

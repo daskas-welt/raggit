@@ -13,6 +13,7 @@
     <Page.Resources>
         <converters:HistoryCitationSubtitleConverter x:Key="CitationSubtitle" />
         <converters:EmptyListToVisibilityConverter x:Key="EmptyListVisibility" />
+        <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
     </Page.Resources>
     <Grid>
         <!-- A long prompt or answer must scroll the page instead of clipping the cards;
@@ -60,6 +61,8 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <ui:Button
                                 x:Name="AskAgainButton"
@@ -89,6 +92,43 @@
                                     <ui:SymbolIcon Symbol="ArrowLeft24" />
                                 </ui:Button.Icon>
                             </ui:Button>
+                            <ui:DropDownButton
+                                x:Name="SaveAsButton"
+                                Grid.Column="4"
+                                AutomationProperties.AutomationId="DetailSaveAsButton"
+                                AutomationProperties.Name="Save as"
+                                ToolTip="Save as"
+                                TabIndex="2"
+                                Visibility="{Binding CanSave, Converter={StaticResource BoolVisibility}}"
+                            >
+                                <ui:DropDownButton.Icon>
+                                    <ui:SymbolIcon Symbol="Document24" />
+                                </ui:DropDownButton.Icon>
+                                <ui:DropDownButton.Flyout>
+                                    <ContextMenu>
+                                        <ui:MenuItem
+                                            Header="Word"
+                                            Click="OnSaveDocxClicked"
+                                            AutomationProperties.AutomationId="DetailSaveAsDocx"
+                                        />
+                                        <ui:MenuItem
+                                            Header="Excel"
+                                            Click="OnSaveXlsxClicked"
+                                            AutomationProperties.AutomationId="DetailSaveAsXlsx"
+                                        />
+                                        <ui:MenuItem
+                                            Header="PDF"
+                                            Click="OnSavePdfClicked"
+                                            AutomationProperties.AutomationId="DetailSaveAsPdf"
+                                        />
+                                        <ui:MenuItem
+                                            Header="Text"
+                                            Click="OnSaveTxtClicked"
+                                            AutomationProperties.AutomationId="DetailSaveAsTxt"
+                                        />
+                                    </ContextMenu>
+                                </ui:DropDownButton.Flyout>
+                            </ui:DropDownButton>
                         </Grid>
                     </Grid>
                 </ui:Card>

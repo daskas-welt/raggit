@@ -75,10 +75,16 @@ public sealed class QueryDetailViewModelTests
         Func<HttpRequestMessage, HttpResponseMessage> responder
     )
     {
-        var api = new QueryHistoryApiClient(
-            new HttpClient(new StubHandler(responder)) { BaseAddress = new Uri("https://w.local/") }
+        var http = new HttpClient(new StubHandler(responder))
+        {
+            BaseAddress = new Uri("https://w.local/"),
+        };
+        var api = new QueryHistoryApiClient(http);
+        return new QueryDetailViewModel(
+            api,
+            new DocumentApiClient(http),
+            new InMemoryFileSaveService()
         );
-        return new QueryDetailViewModel(api);
     }
 
     private sealed class StubHandler : HttpMessageHandler

@@ -1,3 +1,5 @@
+using RAGGit.Core;
+
 namespace RAGGit.Retrieval;
 
 /// <summary>
@@ -10,23 +12,7 @@ public static class AnswerLanguage
     /// <summary>
     /// True when <paramref name="value"/> contains any Greek-script character.
     /// </summary>
-    public static bool IsGreek(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return false;
-        }
-
-        foreach (var c in value)
-        {
-            if (c is >= '\u0370' and <= '\u03FF' or >= '\u1F00' and <= '\u1FFF')
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    public static bool IsGreek(string? value) => TextScript.IsGreek(value);
 
     /// <summary>
     /// True when <paramref name="answer"/> satisfies the query language.

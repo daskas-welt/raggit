@@ -31,6 +31,21 @@ public partial class QueryDetailPage : Page
     private void OnBackClicked(object sender, RoutedEventArgs e) =>
         App.Services.GetRequiredService<INavigationService>().GoBack();
 
+    private async void OnSaveDocxClicked(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(DocumentOutputFormat.Docx);
+
+    private async void OnSaveXlsxClicked(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(DocumentOutputFormat.Xlsx);
+
+    private async void OnSavePdfClicked(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(DocumentOutputFormat.Pdf);
+
+    private async void OnSaveTxtClicked(object sender, RoutedEventArgs e) =>
+        await SaveAsAsync(DocumentOutputFormat.Txt);
+
+    private Task SaveAsAsync(DocumentOutputFormat format) =>
+        ViewModel.SaveDocumentCommand.ExecuteAsync(format);
+
     private void OnAskAgainClicked(object sender, RoutedEventArgs e)
     {
         var prompt = ViewModel.Detail?.Prompt;

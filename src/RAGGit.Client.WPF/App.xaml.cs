@@ -131,6 +131,7 @@ public sealed partial class App : Application
         services.AddSingleton<IFilePicker, WpfFilePicker>();
         services.AddSingleton<ILibraryPreferences, WpfLibraryPreferences>();
         services.AddSingleton<ILauncherService, WpfLauncherService>();
+        services.AddSingleton<IFileSaveService, WpfFileSaveService>();
         services.AddSingleton<ISessionExpirySink, WpfSessionExpiryNavigator>();
 
         // Connection/error state
@@ -180,6 +181,13 @@ public sealed partial class App : Application
             })
             .AddHttpMessageHandler<BearerDelegatingHandler>();
         services
+            .AddHttpClient<DocumentApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+                client.Timeout = TimeSpan.FromMinutes(10);
+            })
+            .AddHttpMessageHandler<BearerDelegatingHandler>();
+        services
             .AddHttpClient<AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
@@ -210,6 +218,9 @@ public sealed partial class App : Application
             new HttpClient { BaseAddress = new Uri("http://invalid-config") }
         ));
         services.AddTransient<QueryHistoryApiClient>(_ => new QueryHistoryApiClient(
+            new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+        ));
+        services.AddTransient<DocumentApiClient>(_ => new DocumentApiClient(
             new HttpClient { BaseAddress = new Uri("http://invalid-config") }
         ));
         services.AddTransient<AuthApiClient>(_ => new AuthApiClient(
