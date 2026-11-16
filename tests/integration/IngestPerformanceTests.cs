@@ -20,10 +20,23 @@ using Xunit.Abstractions;
 namespace RAGGit.Tests.Integration;
 
 /// <summary>
+/// The wall-clock gates below only mean something when no other test competes for
+/// the CPU: running beside the rest of the integration suite, the same fake ingest
+/// that takes ~1 s alone has been measured over the 4 s gate. A non-parallel
+/// collection keeps the gate honest instead of raising it and hiding regressions.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class IngestPerformanceCollection
+{
+    public const string Name = "IngestPerformance";
+}
+
+/// <summary>
 /// T016 performance measurement for SC-001/SC-002: 50-page PDF ingest → Ready must be &lt;300s (5 min)
 /// and query cited answer measured. On fakes the ingest is &lt;4s; on real Ollama it is &lt;300s.
 /// Logs wall-clock for verification.md. Never requires Ollama to pass CI; real timing measured in RealLoopTests.
 /// </summary>
+[Collection(IngestPerformanceCollection.Name)]
 public sealed class IngestPerformanceTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
