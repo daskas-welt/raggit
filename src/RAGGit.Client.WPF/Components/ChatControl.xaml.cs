@@ -34,11 +34,18 @@ public partial class ChatControl : UserControl
         new PropertyMetadata(null)
     );
 
+    public static readonly DependencyProperty StopCommandProperty = DependencyProperty.Register(
+        nameof(StopCommand),
+        typeof(ICommand),
+        typeof(ChatControl),
+        new PropertyMetadata(null)
+    );
+
     public static readonly DependencyProperty IsBusyProperty = DependencyProperty.Register(
         nameof(IsBusy),
         typeof(bool),
         typeof(ChatControl),
-        new PropertyMetadata(false)
+        new PropertyMetadata(false, OnIsBusyChanged)
     );
 
     public static readonly DependencyProperty ReasoningStepsProperty = DependencyProperty.Register(
@@ -71,6 +78,17 @@ public partial class ChatControl : UserControl
     {
         get => (ICommand?)GetValue(SendCommandProperty);
         set => SetValue(SendCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Aborts the in-flight question. Bound only while <see cref="IsBusy"/>, in
+    /// place of <see cref="SendCommand"/>, so a slow answer can be stopped
+    /// instead of locking the input until it completes.
+    /// </summary>
+    public ICommand? StopCommand
+    {
+        get => (ICommand?)GetValue(StopCommandProperty);
+        set => SetValue(StopCommandProperty, value);
     }
 
     public bool IsBusy
@@ -115,6 +133,20 @@ public partial class ChatControl : UserControl
         if (d is ChatControl control)
         {
             control.UpdateEmptyState();
+        }
+    }
+
+    /// <summary>
+    /// Reflows the stop action's gutter: while idle the track is zero-width so
+    /// the bar keeps its single-action spacing without a Margin.
+    /// </summary>
+    private static void OnIsBusyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is ChatControl control)
+        {
+            control.StopGutterColumn.Width = (bool)e.NewValue
+                ? new GridLength(8)
+                : new GridLength(0);
         }
     }
 

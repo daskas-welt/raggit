@@ -283,6 +283,11 @@
                     <!-- 8px input-to-send gap (was the button Margin). -->
                     <ColumnDefinition Width="8" />
                     <ColumnDefinition Width="Auto" />
+                    <!-- 8px send-to-stop gap, zeroed from code-behind while idle
+                         so the bar keeps its single-action spacing without a
+                         Margin. -->
+                    <ColumnDefinition x:Name="StopGutterColumn" Width="0" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:TextBox
                     Grid.Column="0"
@@ -318,6 +323,26 @@
                             Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
                         />
                     </Grid>
+                </ui:Button>
+                <!-- Same bar while an answer is in flight: a broad answer can
+                     take minutes, so the employee must be able to stop it rather
+                     than stay locked out of the input until it lands. The send
+                     button keeps its in-flight spinner (032). -->
+                <ui:Button
+                    Grid.Column="4"
+                    AutomationProperties.AutomationId="StopQuestionButton"
+                    AutomationProperties.Name="Stop answer"
+                    ToolTip="Stop answer"
+                    Command="{Binding StopCommand, ElementName=Root}"
+                    Visibility="{Binding IsBusy, ElementName=Root, Converter={StaticResource BoolVisibility}}"
+                    Width="44"
+                    Height="44"
+                    Padding="0"
+                    VerticalAlignment="Center"
+                >
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Stop24" />
+                    </ui:Button.Icon>
                 </ui:Button>
             </Grid>
         </Border>

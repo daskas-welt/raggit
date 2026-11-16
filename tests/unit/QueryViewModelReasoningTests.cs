@@ -213,6 +213,57 @@ public sealed class QueryViewModelReasoningTests
         viewModel.Answer.Should().NotBeNullOrWhiteSpace();
     }
 
+    [Fact]
+    public async Task StopAnswer_ClearsReasoning_AndLeavesThePromptUnanswered()
+    {
+        var viewModel = CreateViewModel(new StallingBodyHandler(UnderstandingEvent));
+        viewModel.QueryText = "a broad question";
+
+        var askTask = viewModel.AskCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => viewModel.HasReasoning);
+
+        viewModel.StopAnswerCommand.Execute(null);
+        await askTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        viewModel.ReasoningSteps.Should().BeEmpty();
+        viewModel.HasReasoning.Should().BeFalse();
+        viewModel.Answer.Should().BeEmpty();
+        viewModel.IsBusy.Should().BeFalse();
+        viewModel.StatusMessage.Should().Be("Question stopped.");
+        viewModel.StatusSeverity.Should().Be("Informational");
+        viewModel.Messages.Should().ContainSingle().Which.IsUser.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Ask_AppliesTheAnswerWithoutWaitingForTheStreamToClose()
+    {
+        // The terminal answer is the last event the workstation sends; a stop
+        // requested while the connection winds down must not discard it.
+        var viewModel = CreateViewModel(new StallingBodyHandler(AnswerEvent()));
+        viewModel.QueryText = "q";
+
+        await viewModel.AskCommand.ExecuteAsync(null).WaitAsync(TimeSpan.FromSeconds(5));
+
+        viewModel.Answer.Should().Be("The renewal term is 30 days.");
+        viewModel.IsBusy.Should().BeFalse();
+        viewModel.Messages.Should().HaveCount(2);
+        viewModel.StatusMessage.Should().Contain("Answered in 42ms");
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException("condition was not met in time");
+            }
+
+            await Task.Delay(10);
+        }
+    }
+
     private static string AnswerEvent() =>
         "{\"type\":\"answer\",\"answer\":\"The renewal term is 30 days.\",\"citations\":[],"
         + "\"retrievedChunkIds\":[],\"latencyMs\":42,\"suggestedPersons\":[]}";
@@ -284,5 +335,89 @@ public sealed class QueryViewModelReasoningTests
             HttpRequestMessage request,
             CancellationToken cancellationToken
         ) => throw new HttpRequestException("cannot reach AI workstation");
+    }
+
+    /// <summary>
+    /// Sends the given NDJSON prefix, then holds the body open until the reader
+    /// cancels — the shape of a long answer that is still being composed.
+    /// </summary>
+    private sealed class StallingBodyHandler : HttpMessageHandler
+    {
+        private readonly string _prefix;
+
+        public StallingBodyHandler(string prefix) => _prefix = prefix;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        ) =>
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StreamContent(new StallingStream(_prefix + "\n")),
+                }
+            );
+    }
+
+    private sealed class StallingStream : Stream
+    {
+        private readonly byte[] _prefix;
+        private int _position;
+
+        public StallingStream(string prefix)
+        {
+            _prefix = Encoding.UTF8.GetBytes(prefix);
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => _position;
+            set => throw new NotSupportedException();
+        }
+
+        public override async ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (_position < _prefix.Length)
+            {
+                var count = Math.Min(buffer.Length, _prefix.Length - _position);
+                _prefix.AsMemory(_position, count).CopyTo(buffer);
+                _position += count;
+                return count;
+            }
+
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return 0;
+        }
+
+        public override Task<int> ReadAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken
+        ) => ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            ReadAsync(buffer.AsMemory(offset, count), CancellationToken.None)
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+
+        public override void Flush() { }
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
     }
 }

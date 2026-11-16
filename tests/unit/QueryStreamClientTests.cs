@@ -196,6 +196,40 @@ public sealed class QueryStreamClientTests
         typeof(QueryViewModel).GetProperty("QueryMode").Should().BeNull();
     }
 
+    [Fact]
+    public async Task StreamAsync_CallerCancellation_SurfacesAsCancellationNotATimeout()
+    {
+        using var cts = new CancellationTokenSource();
+        var client = new QueryApiClient(
+            new HttpClient(new HangingHandler()) { BaseAddress = new Uri("https://w.local/") }
+        );
+
+        var enumeration = CollectAsync(client.StreamAsync("q", cancellationToken: cts.Token));
+        cts.CancelAfter(TimeSpan.FromMilliseconds(50));
+
+        Func<Task> act = () => enumeration;
+
+        // A stopped question must not be reported as a workstation timeout.
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task QueryAsync_CallerCancellation_SurfacesAsCancellationNotATimeout()
+    {
+        using var cts = new CancellationTokenSource();
+        var client = new QueryApiClient(
+            new HttpClient(new HangingHandler()) { BaseAddress = new Uri("https://w.local/") }
+        );
+
+        var query = client.QueryAsync("q", cancellationToken: cts.Token);
+        cts.CancelAfter(TimeSpan.FromMilliseconds(50));
+
+        Func<Task> act = () => query;
+
+        // Same rule as the stream: a caller-cancelled request is not a timeout.
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     private static QueryApiClient ClientFor(
         string body,
         HttpStatusCode status = HttpStatusCode.OK

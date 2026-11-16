@@ -188,6 +188,45 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
+    public void StopAnswer_WhenIdle_CannotExecute()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+
+        viewModel.StopAnswerCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StopAnswer_CancelsTheInFlightQuestion_AndReenablesTheInput()
+    {
+        var store = new ConversationStore();
+        var viewModel = CreateViewModel(new HangingHandler(), store);
+        viewModel.QueryText = "a broad question";
+
+        var askTask = viewModel.AskCommand.ExecuteAsync(null);
+        viewModel.IsBusy.Should().BeTrue();
+        viewModel.StopAnswerCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.StopAnswerCommand.Execute(null);
+        await askTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        viewModel.IsBusy.Should().BeFalse();
+        viewModel.IsAskEnabled.Should().BeTrue();
+        viewModel.StopAnswerCommand.CanExecute(null).Should().BeFalse();
+        viewModel.StatusMessage.Should().Be("Question stopped.");
+        viewModel.StatusSeverity.Should().Be("Informational");
+        viewModel.ReasoningSteps.Should().BeEmpty();
+        // The stopped prompt stays visible (same shape as a failed ask) rather
+        // than vanishing from the conversation.
+        viewModel.Messages.Should().ContainSingle().Which.IsUser.Should().BeTrue();
+        viewModel.Messages[0].Text.Should().Be("a broad question");
+        store.Messages.Should().ContainSingle();
+
+        // The next question can be submitted without waiting for the first one.
+        viewModel.QueryText = "a follow-up";
+        viewModel.AskCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
     public void BuildFollowUpQuestion_NoHistory_FallsBackToTemplate()
     {
         var viewModel = CreateViewModel(answer: "a", citationCount: 0);
@@ -276,6 +315,52 @@ public sealed class QueryViewModelTests
     }
 
     [Fact]
+    public void ClearConversation_WhileBusy_CannotExecute()
+    {
+        var viewModel = CreateViewModel(answer: "a", citationCount: 0);
+
+        viewModel.ClearConversationCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.IsBusy = true;
+
+        viewModel.ClearConversationCommand.CanExecute(null).Should().BeFalse();
+
+        viewModel.IsBusy = false;
+
+        viewModel.ClearConversationCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ClearConversation_StaysBlockedUntilTheAnswerEnds_ThenClears()
+    {
+        var store = new ConversationStore();
+        var viewModel = CreateViewModel(new HangingHandler(), store);
+        viewModel.QueryText = "a broad question";
+
+        var askTask = viewModel.AskCommand.ExecuteAsync(null);
+        viewModel.ClearConversationCommand.CanExecute(null).Should().BeFalse();
+
+        // Direct Execute callers bypass CanExecute; the command itself must not clear.
+        viewModel.ClearConversationCommand.Execute(null);
+        viewModel.Messages.Should().ContainSingle().Which.IsUser.Should().BeTrue();
+        store.Messages.Should().ContainSingle();
+
+        viewModel.StopAnswerCommand.Execute(null);
+        await askTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // The blocked clear left the question where it was.
+        viewModel.Messages.Should().ContainSingle().Which.IsUser.Should().BeTrue();
+        store.Messages.Should().ContainSingle();
+
+        viewModel.ClearConversationCommand.CanExecute(null).Should().BeTrue();
+        viewModel.ClearConversationCommand.Execute(null);
+
+        viewModel.Messages.Should().BeEmpty();
+        store.Messages.Should().BeEmpty();
+        viewModel.QueryText.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Ask_OfflineModelUnavailable_SurfacesStatus()
     {
         var handler = new StubHandler(_ => new HttpResponseMessage(
@@ -356,6 +441,22 @@ public sealed class QueryViewModelTests
             EmptyHistoryClient(),
             new ClientSession(),
             new ConversationStore()
+        );
+    }
+
+    private static QueryViewModel CreateViewModel(
+        HttpMessageHandler handler,
+        ConversationStore? conversation = null
+    )
+    {
+        var apiClient = new QueryApiClient(
+            new HttpClient(handler) { BaseAddress = new Uri("https://w.local/") }
+        );
+        return new QueryViewModel(
+            apiClient,
+            EmptyHistoryClient(),
+            new ClientSession(),
+            conversation ?? new ConversationStore()
         );
     }
 

@@ -57,6 +57,7 @@
                         ToolTip="Clear conversation"
                         Content="Clear"
                         Click="OnClearConversationClicked"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                     >
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="Delete24" />
@@ -72,6 +73,7 @@
                 Messages="{Binding Messages}"
                 InputText="{Binding QueryText, Mode=TwoWay}"
                 SendCommand="{Binding AskCommand}"
+                StopCommand="{Binding StopAnswerCommand}"
                 IsBusy="{Binding IsBusy}"
                 ReasoningSteps="{Binding ReasoningSteps}"
                 HasReasoning="{Binding HasReasoning}"

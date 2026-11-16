@@ -67,7 +67,7 @@ public sealed class QueryApiClient
         {
             throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
         }
@@ -119,7 +119,7 @@ public sealed class QueryApiClient
         {
             throw new HttpRequestException($"cannot reach AI workstation: {ex.Message}", ex);
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             throw new HttpRequestException("AI workstation unavailable: request timed out", ex);
         }

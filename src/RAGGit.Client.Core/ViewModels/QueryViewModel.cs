@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,6 +29,11 @@ public sealed partial class QueryViewModel : ObservableObject
     private readonly QueryHistoryApiClient _historyApiClient;
     private readonly ClientSession _session;
     private readonly ConversationStore _conversation;
+
+    // Aborts the in-flight question. A broad answer can take minutes, so the
+    // employee must be able to stop it instead of waiting for the gate to lift
+    // (QueryViewModel.AskCommand is disabled while IsBusy).
+    private CancellationTokenSource? _askCts;
 
     [ObservableProperty]
     private string _queryText = string.Empty;
@@ -136,6 +142,8 @@ public sealed partial class QueryViewModel : ObservableObject
     {
         AskCommand.NotifyCanExecuteChanged();
         UseSuggestedPersonCommand.NotifyCanExecuteChanged();
+        StopAnswerCommand.NotifyCanExecuteChanged();
+        ClearConversationCommand.NotifyCanExecuteChanged();
     }
 
     public QueryViewModel(
@@ -416,6 +424,10 @@ public sealed partial class QueryViewModel : ObservableObject
             return;
         }
 
+        var cts = new CancellationTokenSource();
+        _askCts = cts;
+        StopAnswerCommand.NotifyCanExecuteChanged();
+
         QueryText = string.Empty;
 
         IsBusy = true;
@@ -437,7 +449,9 @@ public sealed partial class QueryViewModel : ObservableObject
         try
         {
             QueryResponse? response = null;
-            await foreach (var streamEvent in _apiClient.StreamAsync(question))
+            await foreach (
+                var streamEvent in _apiClient.StreamAsync(question, cancellationToken: cts.Token)
+            )
             {
                 if (streamEvent.IsError)
                 {
@@ -457,7 +471,11 @@ public sealed partial class QueryViewModel : ObservableObject
 
                 if (streamEvent.IsAnswer)
                 {
+                    // The terminal answer is the last event the workstation
+                    // sends; stop reading here so a stop requested while the
+                    // connection winds down cannot discard it.
                     response = streamEvent.ToResponse();
+                    break;
                 }
             }
 
@@ -502,6 +520,14 @@ public sealed partial class QueryViewModel : ObservableObject
                 );
             }
         }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // The employee stopped the question. The workstation persists only
+            // completed queries, so nothing reaches History; the prompt stays
+            // visible unanswered (same shape as a failed ask) and the input is
+            // ready for the next question immediately.
+            SetStatusMessage("Question stopped.", "Informational");
+        }
         catch (HttpRequestException exception)
             when (exception.Message.Contains(
                     "model unavailable offline",
@@ -545,6 +571,12 @@ public sealed partial class QueryViewModel : ObservableObject
         finally
         {
             ClearReasoning();
+            if (ReferenceEquals(_askCts, cts))
+            {
+                _askCts = null;
+            }
+            cts.Dispose();
+            StopAnswerCommand.NotifyCanExecuteChanged();
             IsBusy = false;
             IsAskEnabled = true;
         }
@@ -557,18 +589,44 @@ public sealed partial class QueryViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Aborts the in-flight question. Answers take minutes on a slow
+    /// workstation, so the employee must not be locked out of the Ask surface
+    /// until the current answer (or timeout) arrives.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanStop))]
+    private void StopAnswer()
+    {
+        _askCts?.Cancel();
+    }
+
+    private bool CanStop => IsBusy && _askCts is not null;
+
+    /// <summary>
     /// Clears the current conversation view: the bound <see cref="Messages"/>
     /// and the shared conversation store's in-session messages (via the
     /// store's bulk-clear), and resets the input. A no-op when the
     /// conversation is already empty. Persisted server history is untouched.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanClearConversation))]
     private void ClearConversation()
     {
+        // CanExecute gates the UI; this keeps direct Execute callers honest.
+        if (IsBusy)
+        {
+            return;
+        }
+
         Messages.Clear();
         _conversation.ReplaceAll(Array.Empty<ChatMessage>());
         QueryText = string.Empty;
     }
+
+    /// <summary>
+    /// Clearing while an answer is in flight would empty the question first and
+    /// let the late answer land in an empty conversation (an answer with no
+    /// question); leave the wait to Stop, then clear.
+    /// </summary>
+    private bool CanClearConversation => !IsBusy;
 
     /// <summary>
     /// Re-runs a prompt from query history (or any caller). Sets the input

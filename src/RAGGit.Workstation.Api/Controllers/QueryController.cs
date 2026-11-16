@@ -352,6 +352,15 @@ public sealed class QueryController : ControllerBase
                 "model unavailable offline"
             );
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The employee stopped the question or left the page: the answer is
+            // abandoned by design, not a workstation failure.
+            _logger.LogInformation(
+                "Streamed query stopped by the client for user {UserId}",
+                userId
+            );
+        }
         catch (Exception exception)
         {
             _logger.LogError(
