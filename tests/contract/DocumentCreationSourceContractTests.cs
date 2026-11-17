@@ -36,8 +36,7 @@ public sealed class DocumentCreationSourceContractTests : IClassFixture<TestApiF
     [Fact]
     public async Task Generate_SourceBackedRequest_UsesOnlyTheRetrievedSource_AndPersistsNothing()
     {
-        var vectorStore = (FakeVectorStore)
-            _factory.Services.GetRequiredService<IVectorStore>();
+        var vectorStore = (FakeVectorStore)_factory.Services.GetRequiredService<IVectorStore>();
         vectorStore.Clear();
 
         var documentId = Guid.NewGuid();

@@ -38,11 +38,7 @@ public sealed class DocumentCreationViewModelTests
     public async Task CreateCommand_SendsTheSelection_AndSavesTheReturnedFile()
     {
         var fileBytes = Encoding.UTF8.GetBytes("Welcome to the team.");
-        var handler = new OkHandler("txt")
-        {
-            Bytes = fileBytes,
-            FileName = "welcome.txt",
-        };
+        var handler = new OkHandler("txt") { Bytes = fileBytes, FileName = "welcome.txt" };
         var save = new InMemoryFileSaveService { NextPath = "C:\\chosen\\welcome.txt" };
         var viewModel = CreateViewModel(handler, save);
         viewModel.Description = "Draft a welcome note.";

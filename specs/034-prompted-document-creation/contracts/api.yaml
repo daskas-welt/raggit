@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: RAGGit Workstation API (Single-Tenant) — 034-prompted-document-creation delta
+  version: 1.8.0
+  description: >
+    ADDITIVE MINOR 1.7.0 → 1.8.0 for description-based document creation.
+    Adds a stateless operation that creates a new TXT, PDF, DOCX or XLSX file
+    from a user description, optionally using relevant uploaded-library sources.
+    It does not create a query-history row or add the result to the document library.
+servers:
+  - url: https://ai-workstation.local:5001
+    description: LAN / private-network HTTPS (no WAN at generation time)
+  - url: http://localhost:5001
+    description: Development / in-memory host only
+security:
+  - ApiKey: []
+  - Bearer: []
+paths:
+  /api/documents/generate:
+    post:
+      summary: Create a new document from a description
+      description: >
+        Authenticated Employee/Admin operation. Retrieves relevant local-library
+        content where available and returns a generated file. With no relevant
+        sources, the result is explicitly marked as not library-grounded.
+        Generated content is never persisted or added to the library.
+      operationId: createDocument
+      security:
+        - ApiKey: []
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreationRequest'
+            examples:
+              word:
+                value:
+                  description: Create a short handover summary based on the uploaded onboarding guide.
+                  format: docx
+              spreadsheet:
+                value:
+                  description: List each policy area and its retention period from the library.
+                  format: xlsx
+              standalone:
+                value:
+                  description: Draft a brief welcome note for a new team member.
+                  format: txt
+      responses:
+        '200':
+          description: The generated file. Content-Type matches the requested format.
+          headers:
+            Content-Disposition:
+              description: Attachment with an OS-safe suggested filename.
+              schema:
+                type: string
+            Cache-Control:
+              description: The generated response is not cacheable.
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+            text/plain:
+              schema: { type: string, format: binary }
+        '400':
+          description: Missing, blank, overlong description or unsupported format.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Missing or invalid credentials.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Authenticated caller does not have an Employee or Admin role.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Output exceeds existing document limits or cannot be safely rendered.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: Local model or workstation is unavailable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Rendering failed; no partial file is returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    DocumentCreationRequest:
+      type: object
+      required: [description, format]
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: The goal and intended content of one new document.
+        format:
+          type: string
+          enum: [docx, xlsx, pdf, txt]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }

@@ -28,11 +28,7 @@ public sealed class DocumentCreationControllerFailureTests
         var controller = BuildController();
 
         var result = await controller.Generate(
-            new DocumentCreationRequest
-            {
-                Description = "Draft a welcome note.",
-                Format = "txt",
-            },
+            new DocumentCreationRequest { Description = "Draft a welcome note.", Format = "txt" },
             CancellationToken.None
         );
 
@@ -81,10 +77,7 @@ public sealed class DocumentCreationControllerFailureTests
         public Task<IReadOnlyList<float[]>> GetEmbeddingsAsync(
             IEnumerable<string> inputs,
             CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult<IReadOnlyList<float[]>>(
-                inputs.Select(_ => new float[384]).ToList()
-            );
+        ) => Task.FromResult<IReadOnlyList<float[]>>(inputs.Select(_ => new float[384]).ToList());
     }
 
     private sealed class EmptyVectorStore : IVectorStore

@@ -25,7 +25,11 @@ public sealed class DocumentCreationEvalTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new DocumentMimeTypeConverter(), new System.Text.Json.Serialization.JsonStringEnumConverter() },
+        Converters =
+        {
+            new DocumentMimeTypeConverter(),
+            new System.Text.Json.Serialization.JsonStringEnumConverter(),
+        },
     };
 
     [Fact]

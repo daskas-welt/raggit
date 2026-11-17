@@ -31,9 +31,7 @@ public sealed class DocumentGenerationServiceTests
         body.Should().Be("Welcome to the team.");
         citations.Should().BeEmpty();
         llm.Calls.Should().ContainSingle();
-        llm.Calls[0]
-            .UserPrompt.Should()
-            .Contain("Draft a welcome note for a new team member.");
+        llm.Calls[0].UserPrompt.Should().Contain("Draft a welcome note for a new team member.");
         llm.Calls[0].SystemPrompt.Should().Contain("document");
         llm.Calls[0].SystemPrompt.Should().Contain("RAGGit sources");
     }

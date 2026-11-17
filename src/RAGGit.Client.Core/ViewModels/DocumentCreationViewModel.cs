@@ -30,7 +30,8 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
     )
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-        _fileSaveService = fileSaveService ?? throw new ArgumentNullException(nameof(fileSaveService));
+        _fileSaveService =
+            fileSaveService ?? throw new ArgumentNullException(nameof(fileSaveService));
     }
 
     public IReadOnlyList<DocumentFormatOption> Formats { get; } =

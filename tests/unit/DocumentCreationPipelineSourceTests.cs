@@ -91,11 +91,7 @@ public sealed class DocumentCreationPipelineSourceTests
             .Where(exception => exception.Error == DocumentCreationError.NotGroundable);
     }
 
-    private static DocumentCreationPipeline Build(
-        Guid documentId,
-        Guid chunkId,
-        string answer
-    )
+    private static DocumentCreationPipeline Build(Guid documentId, Guid chunkId, string answer)
     {
         var documents = new NamedDocumentRepository(documentId, "refund-policy.txt");
         var retrieval = new RetrievalService(
@@ -128,7 +124,8 @@ public sealed class DocumentCreationPipelineSourceTests
             CancellationToken cancellationToken = default
         ) =>
             Task.FromResult<IReadOnlyList<float[]>>(
-                inputs.Select(_ =>
+                inputs
+                    .Select(_ =>
                     {
                         var vector = new float[384];
                         vector[0] = 1.0f;

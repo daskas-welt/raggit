@@ -105,7 +105,10 @@ public sealed class DocumentCreationController : ControllerBase
         }
         catch (HttpRequestException exception)
         {
-            _logger.LogError(exception, "Document creation failed because the local model is unreachable");
+            _logger.LogError(
+                exception,
+                "Document creation failed because the local model is unreachable"
+            );
             return StatusCode(
                 StatusCodes.Status503ServiceUnavailable,
                 new { error = "model unavailable offline" }
@@ -119,7 +122,8 @@ public sealed class DocumentCreationController : ControllerBase
                 new { error = "model unavailable offline" }
             );
         }
-        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception)
+            when (!cancellationToken.IsCancellationRequested)
         {
             _logger.LogError(exception, "Document creation operation timed out");
             return StatusCode(

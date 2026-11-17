@@ -46,11 +46,7 @@ public sealed class DocumentEligibilityTests
     [Fact]
     public void BlankDraft_IsNotEligible()
     {
-        var draft = new DocumentDraft
-        {
-            Description = "Draft a welcome note.",
-            Body = "   ",
-        };
+        var draft = new DocumentDraft { Description = "Draft a welcome note.", Body = "   " };
 
         DocumentEligibility.IsContentEligible(draft).Should().BeFalse();
     }

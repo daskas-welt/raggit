@@ -46,7 +46,10 @@ public sealed class DocumentCreationApiClientTests
         var file = await client.CreateAsync("Draft a welcome note.", DocumentOutputFormat.Txt);
 
         using var json = JsonDocument.Parse(requestBody!);
-        json.RootElement.GetProperty("description").GetString().Should().Be("Draft a welcome note.");
+        json.RootElement.GetProperty("description")
+            .GetString()
+            .Should()
+            .Be("Draft a welcome note.");
         json.RootElement.GetProperty("format").GetString().Should().Be("txt");
         file.FileName.Should().Be("welcome.txt");
         file.ContentType.Should().Be("text/plain");
@@ -56,11 +59,12 @@ public sealed class DocumentCreationApiClientTests
     [Fact]
     public async Task CreateAsync_ServiceUnavailable_MapsToTheExistingVocabulary()
     {
-        var handler = new TestMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
-            {
-                Content = JsonContent("AI workstation unavailable"),
-            });
+        var handler = new TestMessageHandler(_ => new HttpResponseMessage(
+            HttpStatusCode.ServiceUnavailable
+        )
+        {
+            Content = JsonContent("AI workstation unavailable"),
+        });
 
         var client = new DocumentCreationApiClient(NewHttpClient(handler));
 
@@ -74,11 +78,10 @@ public sealed class DocumentCreationApiClientTests
     [Fact]
     public async Task CreateAsync_BadRequest_SurfacesTheServerMessage()
     {
-        var handler = new TestMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.BadRequest)
-            {
-                Content = JsonContent("description is required"),
-            });
+        var handler = new TestMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = JsonContent("description is required"),
+        });
 
         var client = new DocumentCreationApiClient(NewHttpClient(handler));
 

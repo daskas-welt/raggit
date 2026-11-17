@@ -92,10 +92,7 @@ public sealed class DocumentCreationContractTests : IClassFixture<TestApiFactory
     {
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", _factory.EmployeeKey);
-        return await client.PostAsJsonAsync(
-            "/api/documents/generate",
-            new { description, format }
-        );
+        return await client.PostAsJsonAsync("/api/documents/generate", new { description, format });
     }
 
     private FakeLlmClient GetLlmClient() =>
