@@ -59,7 +59,7 @@ public sealed class DocumentCreationController : ControllerBase
 
         if (!request.TryGetFormat(out var format))
         {
-            return BadRequest(new { error = "unsupported format" });
+            return BadRequest(new { error = "unsupported format: use docx, xlsx, pdf or txt" });
         }
 
         try

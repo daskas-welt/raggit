@@ -30,7 +30,12 @@ public sealed class DocumentCreationUiTests(WpfAppFixture app)
             FindById<Wpf.Ui.Controls.TextBox>(page, "DocumentCreationDescription")
                 .Should()
                 .NotBeNull()
-                .And.Match<Wpf.Ui.Controls.TextBox>(box => box.AcceptsReturn && box.Focusable);
+                .And.Match<Wpf.Ui.Controls.TextBox>(box =>
+                    box.AcceptsReturn && box.Focusable && box.MaxLength == 10_000
+                );
+            FindVisual<Wpf.Ui.Controls.TextBlock>(page)
+                .Should()
+                .Contain(block => block.Text.Contains("choose a format"));
             FindById<ComboBox>(page, "DocumentCreationFormat")
                 .Should()
                 .NotBeNull()

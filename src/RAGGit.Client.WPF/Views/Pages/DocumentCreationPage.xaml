@@ -62,12 +62,21 @@
                     AutomationProperties.AutomationId="DocumentCreationDescription"
                     AutomationProperties.Name="Document description"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                    MaxLength="{Binding MaxDescriptionLength}"
                     Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     TextWrapping="Wrap"
                     VerticalScrollBarVisibility="Auto"
                 />
 
-                <ui:TextBlock Grid.Row="4" Text="Document format" />
+                <Grid Grid.Row="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Column="0" Text="Document format" />
+                    <ui:TextBlock Grid.Column="2" Text="Enter a description and choose a format." />
+                </Grid>
 
                 <ComboBox
                     x:Name="FormatBox"

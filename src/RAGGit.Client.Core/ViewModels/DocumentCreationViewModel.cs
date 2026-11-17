@@ -34,6 +34,8 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
             fileSaveService ?? throw new ArgumentNullException(nameof(fileSaveService));
     }
 
+    public int MaxDescriptionLength => DocumentCreationRequest.MaxDescriptionLength;
+
     public IReadOnlyList<DocumentFormatOption> Formats { get; } =
     [
         new(DocumentOutputFormat.Docx, "Word (DOCX)"),
@@ -131,7 +133,7 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
         }
         catch (Exception)
         {
-            StatusMessage = "Document generation failed. No file was saved.";
+            StatusMessage = "The document could not be saved. No file was written.";
         }
         finally
         {

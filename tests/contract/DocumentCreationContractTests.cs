@@ -64,6 +64,12 @@ public sealed class DocumentCreationContractTests : IClassFixture<TestApiFactory
         var response = await GenerateAsync("Draft a welcome note.", "pptx");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync())
+            .Should()
+            .Contain("docx")
+            .And.Contain("xlsx")
+            .And.Contain("pdf")
+            .And.Contain("txt");
     }
 
     [Theory]

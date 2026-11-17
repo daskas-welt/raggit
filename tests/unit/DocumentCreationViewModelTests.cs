@@ -120,7 +120,7 @@ public sealed class DocumentCreationViewModelTests
         await viewModel.CreateDocumentCommand.ExecuteAsync(null);
 
         viewModel.SavedPath.Should().BeNull();
-        viewModel.StatusMessage.Should().Contain("failed");
+        viewModel.StatusMessage.Should().Contain("could not be saved");
     }
 
     [Fact]
