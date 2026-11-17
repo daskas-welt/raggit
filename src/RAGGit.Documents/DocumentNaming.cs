@@ -105,6 +105,7 @@ public sealed class DocumentLabels
     public string Sources { get; init; } = "Sources";
     public string Page { get; init; } = "Page";
     public string Document { get; init; } = "Document";
+    public string Details { get; init; } = "Details";
     public string NoSources { get; init; } = "No RAGGit sources were used.";
 
     public static DocumentLabels For(bool isGreek) =>
@@ -115,6 +116,7 @@ public sealed class DocumentLabels
                 Sources = "Πηγές",
                 Page = "Σελίδα",
                 Document = "Έγγραφο",
+                Details = "Λεπτομέρειες",
                 NoSources = "Δεν χρησιμοποιήθηκαν πηγές από το RAGGit.",
             }
             : new DocumentLabels();
@@ -163,7 +165,7 @@ public static class DocumentCitationMapper
                     || !byChunk.TryGetValue(id, out var citation)
                 )
                 {
-                    return string.Empty;
+                    return draft.PreserveUnmappedCitationMarkers ? match.Value : string.Empty;
                 }
 
                 if (!assigned.TryGetValue(id, out var source))

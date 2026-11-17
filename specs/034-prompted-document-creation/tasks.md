@@ -84,7 +84,7 @@ No project, package, or solution initialization is needed. This feature uses the
 - [X] T025 [P] [US2] Add failing retrieval/source-map tests in `tests/unit/DocumentCreationPipelineSourceTests.cs` using a fake embedder, vector store, and `IDocumentRepository`: use configured `Retrieval:TopK`/`Retrieval:MinScore`, attach names/excerpts only for retrieved chunks, and reject a cited chunk ID outside the retrieved set. Confirm failure before pipeline changes.
 - [X] T026 [P] [US2] Add failing source-prompt tests in `tests/unit/DocumentGenerationPromptTests.cs`: retrieved text is marked reference-only, the prompt forbids following embedded instructions, applies the same-person rule, requests citations, and tells the model to disclose missing/conflicting values. Assert no `FallbackToTopChunk` citation is used when the model emits no valid citation.
 - [X] T027 [P] [US2] Add failing source-backed endpoint tests in `tests/contract/DocumentCreationSourceContractTests.cs`: seed relevant chunks and document names through `TestApiFactory`, request a file, and assert the correct MIME type, source appendix, and unchanged query-history/library counts. Confirm failure before source integration.
-- [X] T028 [P] [US2] Add `RequiresOllama` integration cases in `tests/integration/DocumentCreationEvalTests.cs` for relevant-source use, irrelevant-source exclusion, same-template/different-person isolation, and conflicting source values. Use settled-document helpers, not `Task.Delay`; keep model-dependent evaluation skipped when Ollama is unavailable.
+- [X] T028 [P] [US2] Add deterministic end-to-end integration coverage in `tests/integration/DocumentCreationEvalTests.cs` for a settled source document through retrieve → compose → render, using the existing fake model and settled-document helper (not `Task.Delay`).
 
 ### Implementation for User Story 2
 
@@ -121,6 +121,7 @@ No project, package, or solution initialization is needed. This feature uses the
 
 - [X] T037 Run `dotnet build RAGGit.Server.slnf -c Release`, Release unit and contract tests, the offline integration subset, and on Windows `dotnet build RAGGit.sln -c Release -p:Platform=x64` plus `dotnet test tests/client/RAGGit.Tests.Client.csproj -c Release`; after XAML changes run `dotnet csharpier format .` then `dotnet csharpier check .`. Record the verified commands and results in `specs/034-prompted-document-creation/quickstart.md`.
 - [ ] T038 Human acceptance: run the manual SC-002 (30 source-backed documents), SC-003 (20 same-template/different-person requests), SC-004 (five-employee walkthrough), and SC-007 (15-minute timing) reviews in `specs/034-prompted-document-creation/quickstart.md`; record deviations before release.
+- [ ] T039 Add opt-in `RequiresOllama` evaluation cases for relevant-source use, irrelevant-source exclusion, same-template/different-person isolation, and conflicting source values; skip when Ollama is unavailable. This is the automated real-model evidence for SC-002/SC-003.
 
 ---
 

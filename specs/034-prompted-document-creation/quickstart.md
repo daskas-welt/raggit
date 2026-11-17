@@ -42,11 +42,12 @@ Automated checks completed in the feature worktree:
 |-------|--------|
 | `dotnet build RAGGit.Server.slnf -c Release` | PASS (0 errors) |
 | `dotnet build RAGGit.sln -c Release -p:Platform=x64` | PASS (0 errors) |
-| Unit suite | 681 passed, 0 failed |
+| Unit suite | 683 passed, 0 failed |
 | Contract suite | 122 passed, 0 failed |
 | Client screen/UI suite | 113 passed, 0 failed |
 | Offline subset (`QueryOfflineTests|OfflineIdentityTests|OfflineHistoryTests|CrossUserIsolationTests`) | 12 passed, 0 failed |
-| Source-backed creation integration (`DocumentCreationEvalTests`) | 1 passed, 0 failed |
+| Source-backed creation integration (`DocumentCreationEvalTests`, deterministic fakes) | 1 passed, 0 failed |
+| Real-model `RequiresOllama` eval (T039) | Not yet added; no Ollama in this environment |
 | `dotnet csharpier check .` | PASS (372 files) |
 
 Manual acceptance still required by the feature owner:

@@ -39,6 +39,7 @@ public static class DocumentTableBuilder
         var map = DocumentCitationMapper.Map(draft);
         var paragraphs = SplitParagraphs(map.Body);
         var sourceCount = map.Sources.Count;
+        var clampSourceIndexes = !draft.PreserveUnmappedCitationMarkers;
 
         var records = new List<List<(string Label, string Value)>>();
         var prose = new List<string>();
@@ -58,12 +59,12 @@ public static class DocumentTableBuilder
         var sections = new List<DocumentSection>();
         if (records.Count > 0)
         {
-            sections.Add(RecordSection(records, sourceCount));
+            sections.Add(RecordSection(records, sourceCount, clampSourceIndexes));
         }
 
         if (prose.Count > 0)
         {
-            sections.AddRange(SectionRows(prose, sourceCount));
+            sections.AddRange(SectionRows(prose, sourceCount, clampSourceIndexes));
         }
 
         return sections;
@@ -71,7 +72,8 @@ public static class DocumentTableBuilder
 
     private static DocumentSection RecordSection(
         List<List<(string Label, string Value)>> records,
-        int sourceCount
+        int sourceCount,
+        bool clampSourceIndexes
     )
     {
         var headers = records
@@ -94,7 +96,12 @@ public static class DocumentTableBuilder
                                 )
                             )
                             .Value;
-                        return ToCell(header, value ?? string.Empty, sourceCount);
+                        return ToCell(
+                            header,
+                            value ?? string.Empty,
+                            sourceCount,
+                            clampSourceIndexes
+                        );
                     })
                     .ToList(),
             })
@@ -105,7 +112,8 @@ public static class DocumentTableBuilder
 
     private static IReadOnlyList<DocumentSection> SectionRows(
         IEnumerable<string> paragraphs,
-        int sourceCount
+        int sourceCount,
+        bool clampSourceIndexes
     )
     {
         var sections = new List<DocumentSection>();
@@ -120,22 +128,39 @@ public static class DocumentTableBuilder
                 continue;
             }
 
-            var rows = lines
+            // A short first line without terminal punctuation is a natural
+            // section heading; otherwise the renderer supplies a localized
+            // "Details" heading. One content column keeps prose readable.
+            var hasHeading = lines.Count > 1 && IsHeading(lines[0]);
+            var title = hasHeading ? lines[0] : string.Empty;
+            var contentLines = hasHeading ? lines.Skip(1) : lines;
+
+            var rows = contentLines
                 .Select(line => new DocumentRow
                 {
-                    Cells = new[]
-                    {
-                        ToCell("Section", "Content", sourceCount),
-                        ToCell("Detail", line, sourceCount),
-                    },
+                    Cells = new[] { ToCell("Content", line, sourceCount, clampSourceIndexes) },
                 })
                 .ToList();
 
-            sections.Add(new DocumentSection { Rows = rows, IsRecordShape = false });
+            sections.Add(
+                new DocumentSection
+                {
+                    Title = title,
+                    Rows = rows,
+                    IsRecordShape = false,
+                }
+            );
         }
 
         return sections;
     }
+
+    private static bool IsHeading(string line) =>
+        line.Length <= 80
+        && !line.Contains(':')
+        && !line.EndsWith('.')
+        && !line.EndsWith('!')
+        && !line.EndsWith('?');
 
     private static List<(string Label, string Value)> ParsePairs(string paragraph)
     {
@@ -174,17 +199,21 @@ public static class DocumentTableBuilder
             ? string.Empty
             : value;
 
-    private static DocumentCell ToCell(string header, string value, int sourceCount)
+    private static DocumentCell ToCell(
+        string header,
+        string value,
+        int sourceCount,
+        bool clampSourceIndexes
+    )
     {
-        var sourceIndexes =
-            sourceCount == 0
-                ? new List<int>()
-                : SourcePattern
-                    .Matches(value)
-                    .Select(match => int.TryParse(match.Groups[1].Value, out var index) ? index : 0)
-                    .Where(index => index > 0 && index <= sourceCount)
-                    .Distinct()
-                    .ToList();
+        var sourceIndexes = SourcePattern
+            .Matches(value)
+            .Select(match => int.TryParse(match.Groups[1].Value, out var index) ? index : 0)
+            .Where(index =>
+                index > 0 && (!clampSourceIndexes || (sourceCount > 0 && index <= sourceCount))
+            )
+            .Distinct()
+            .ToList();
 
         if (TryParseDate(value, out var date))
         {

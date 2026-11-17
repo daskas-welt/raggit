@@ -68,6 +68,31 @@ public sealed class DocumentNamingTests
     }
 
     [Fact]
+    public void PersistedAnswer_KeepsAnUnknownCitationMarkerUnchanged()
+    {
+        var unknown = Guid.NewGuid();
+        var detail = DocumentTestData.Detail(
+            answer: $"A claim [{unknown}].",
+            citations: Array.Empty<HistoryCitation>()
+        );
+
+        DocumentCitationMapper.Map(detail).Body.Should().Contain(unknown.ToString());
+    }
+
+    [Fact]
+    public void NewDraft_RemovesAnUnknownCitationMarker()
+    {
+        var unknown = Guid.NewGuid();
+        var draft = new DocumentDraft
+        {
+            Description = "Draft a note.",
+            Body = $"A claim [{unknown}].",
+        };
+
+        DocumentCitationMapper.Map(draft).Body.Should().NotContain(unknown.ToString());
+    }
+
+    [Fact]
     public void CitationMapper_NumbersByFirstAppearanceInTheAnswer()
     {
         var first = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");

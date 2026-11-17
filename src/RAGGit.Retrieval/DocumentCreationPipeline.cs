@@ -57,7 +57,12 @@ public sealed class DocumentCreationPipeline
             _retrievalService.DefaultTopK,
             cancellationToken
         );
-        var documentNames = await ResolveDocumentNamesAsync(chunks, cancellationToken);
+        var documentNames = await RetrievedSourceMapper.ResolveDocumentNamesAsync(
+            chunks,
+            _documents,
+            _logger,
+            cancellationToken
+        );
 
         var (body, citationIds) = await _generationService.GenerateDocumentAsync(
             request.Description,
@@ -67,18 +72,7 @@ public sealed class DocumentCreationPipeline
             cancellationToken
         );
 
-        var sources = chunks
-            .Where(chunk => citationIds.Contains(chunk.ChunkId))
-            .Where(chunk => Guid.TryParse(chunk.DocumentId, out _))
-            .Select(chunk => new Citation
-            {
-                DocumentId = Guid.Parse(chunk.DocumentId),
-                DocumentName = documentNames.GetValueOrDefault(chunk.DocumentId),
-                ChunkId = chunk.ChunkId,
-                Text = chunk.Text,
-                Ordinal = chunk.Ordinal,
-            })
-            .ToList();
+        var sources = RetrievedSourceMapper.MapCitations(chunks, citationIds, documentNames);
 
         _logger.LogInformation(
             "Document creation composed {SourceCount} sources from {ChunkCount} retrieved chunks",
@@ -92,36 +86,5 @@ public sealed class DocumentCreationPipeline
             Body = body,
             Sources = sources,
         };
-    }
-
-    private async Task<Dictionary<string, string?>> ResolveDocumentNamesAsync(
-        IReadOnlyList<SearchResult> chunks,
-        CancellationToken cancellationToken
-    )
-    {
-        var names = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var documentId in chunks.Select(chunk => chunk.DocumentId).Distinct())
-        {
-            if (!Guid.TryParse(documentId, out var id))
-            {
-                continue;
-            }
-
-            try
-            {
-                var document = await _documents.FindByIdAsync(id, cancellationToken);
-                names[documentId] = document?.Filename;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogDebug(
-                    exception,
-                    "Document name lookup failed for {DocumentId}",
-                    documentId
-                );
-            }
-        }
-
-        return names;
     }
 }

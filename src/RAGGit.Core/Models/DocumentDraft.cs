@@ -18,6 +18,13 @@ public sealed class DocumentDraft
     /// <summary>Validated library sources; empty means no RAGGit sources were used.</summary>
     public IReadOnlyList<Citation> Sources { get; init; } = Array.Empty<Citation>();
 
+    /// <summary>
+    /// True only when adapting a persisted 033 answer. That path keeps unknown
+    /// citation markers verbatim so existing exports do not change; new drafts
+    /// remove them.
+    /// </summary>
+    public bool PreserveUnmappedCitationMarkers { get; init; }
+
     /// <summary>Adapts a persisted, grounded answer for the shared renderers.</summary>
     public static DocumentDraft FromQueryDetail(QueryDetail detail)
     {
@@ -27,6 +34,7 @@ public sealed class DocumentDraft
         {
             Description = detail.Prompt,
             Body = detail.Answer,
+            PreserveUnmappedCitationMarkers = true,
             Sources = detail
                 .Citations.Select(citation => new Citation
                 {

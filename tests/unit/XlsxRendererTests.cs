@@ -66,14 +66,10 @@ public sealed class XlsxRendererTests
 
         worksheets.Should().ContainSingle();
         var rows = worksheets[0].Worksheet.Descendants<Row>().ToList();
-        rows.Should().HaveCountGreaterThanOrEqualTo(3);
-        rows[1]
-            .Elements<Cell>()
-            .Select(cell => cell.CellValue!.Text)
-            .Should()
-            .ContainInOrder("Section", "Detail");
-        rows[2]
-            .Elements<Cell>()
+        rows.Should().HaveCountGreaterThanOrEqualTo(4);
+        rows[1].Elements<Cell>().Select(cell => cell.CellValue!.Text).Should().Contain("Details");
+        rows[2].Elements<Cell>().Select(cell => cell.CellValue!.Text).Should().Contain("Content");
+        rows.SelectMany(row => row.Elements<Cell>())
             .Select(cell => cell.CellValue!.Text)
             .Should()
             .Contain(text => text.Contains("returns"));

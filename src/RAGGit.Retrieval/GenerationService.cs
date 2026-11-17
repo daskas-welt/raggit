@@ -216,9 +216,8 @@ public sealed class GenerationService
         {
             DocumentOutputFormat.Xlsx =>
                 "Produce spreadsheet-ready content. For records, use blank-line-separated blocks of 'Label: value' lines so the workbook gets real headers and one row per record. For prose, use short titled sections. ",
-            DocumentOutputFormat.Txt =>
-                "Produce plain-text content with a clear title line and short paragraphs. ",
-            _ => "Produce a readable document body with a clear title line and short paragraphs. ",
+            DocumentOutputFormat.Txt => "Produce plain-text content with short paragraphs. ",
+            _ => "Produce a readable document body with short paragraphs. ",
         };
 
         var groundingRule = hasSources

@@ -84,6 +84,18 @@ public sealed class XlsxRenderer : IDocumentRenderer
                     continue;
                 }
 
+                if (!section.IsRecordShape)
+                {
+                    sheetData.Append(
+                        TextRow(
+                            rowIndex++,
+                            string.IsNullOrWhiteSpace(section.Title)
+                                ? labels.Details
+                                : section.Title
+                        )
+                    );
+                }
+
                 var headers = section.Rows[0].Cells.Select(cell => cell.Header).ToList();
                 if (hasSources)
                 {

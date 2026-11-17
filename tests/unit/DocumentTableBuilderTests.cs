@@ -46,7 +46,7 @@ public sealed class DocumentTableBuilderTests
         sections.Should().ContainSingle();
         sections[0].IsRecordShape.Should().BeFalse();
         sections[0].Rows.Should().NotBeEmpty();
-        sections[0].Rows[0].Cells[1].Text.Should().Contain("returns");
+        sections[0].Rows[0].Cells[0].Text.Should().Contain("returns");
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class DocumentTableBuilderTests
         sections[0].IsRecordShape.Should().BeTrue();
         sections[0].Rows.Should().ContainSingle();
         sections[1].IsRecordShape.Should().BeFalse();
-        sections[1].Rows[0].Cells[1].Text.Should().Contain("current library");
+        sections[1].Rows[0].Cells[0].Text.Should().Contain("current library");
     }
 
     [Fact]
