@@ -31,6 +31,30 @@ public sealed class DocumentEligibilityTests
         DocumentEligibility.IsContentEligible(DocumentTestData.Detail()).Should().BeTrue();
     }
 
+    [Fact]
+    public void SourceFreeDraft_IsEligibleForNewDocument()
+    {
+        var draft = new DocumentDraft
+        {
+            Description = "Draft a welcome note for a new team member.",
+            Body = "Welcome to the team.",
+        };
+
+        DocumentEligibility.IsContentEligible(draft).Should().BeTrue();
+    }
+
+    [Fact]
+    public void BlankDraft_IsNotEligible()
+    {
+        var draft = new DocumentDraft
+        {
+            Description = "Draft a welcome note.",
+            Body = "   ",
+        };
+
+        DocumentEligibility.IsContentEligible(draft).Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(DocumentEligibility.MaxDocumentBytes, DocumentEligibility.MaxTableRows, true)]
     [InlineData(DocumentEligibility.MaxDocumentBytes + 1, 0, false)]

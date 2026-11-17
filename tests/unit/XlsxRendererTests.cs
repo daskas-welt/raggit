@@ -51,6 +51,36 @@ public sealed class XlsxRendererTests
     }
 
     [Fact]
+    public void SourceFreeProse_IsReadableAndHasNoSourcesSheet()
+    {
+        var draft = new DocumentDraft
+        {
+            Description = "Draft a policy note.",
+            Body = "The policy allows returns.\nRefunds are paid within 30 days.",
+        };
+
+        var document = new XlsxRenderer().Render(draft);
+        using var stream = new MemoryStream(document.Bytes);
+        using var workbook = SpreadsheetDocument.Open(stream, false);
+        var worksheets = workbook.WorkbookPart!.WorksheetParts.ToList();
+
+        worksheets.Should().ContainSingle();
+        var rows = worksheets[0].Worksheet.Descendants<Row>().ToList();
+        rows.Should().HaveCountGreaterThanOrEqualTo(3);
+        rows[1]
+            .Elements<Cell>()
+            .Select(cell => cell.CellValue!.Text)
+            .Should()
+            .ContainInOrder("Section", "Detail");
+        rows[2]
+            .Elements<Cell>()
+            .Select(cell => cell.CellValue!.Text)
+            .Should()
+            .Contain(text => text.Contains("returns"));
+        document.Sources.Should().BeEmpty();
+    }
+
+    [Fact]
     public void NumbersAndPercentages_UseNumericCells()
     {
         var detail = DocumentTestData.Detail(

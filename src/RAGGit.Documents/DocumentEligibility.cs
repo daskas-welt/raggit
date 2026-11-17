@@ -33,6 +33,22 @@ public static class DocumentEligibility
         return detail.Citations.Count > 0;
     }
 
+    /// <summary>
+    /// A newly composed draft may be source-free; it only needs a non-blank body.
+    /// Saved-answer exports keep the stricter citation rule above.
+    /// </summary>
+    public static bool IsContentEligible(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        return !string.IsNullOrWhiteSpace(draft.Body)
+            && !string.Equals(
+                draft.Body.Trim(),
+                "no relevant content found",
+                StringComparison.OrdinalIgnoreCase
+            );
+    }
+
     public static bool IsWithinCaps(long byteCount, int rowCount) =>
         byteCount is >= 0 and <= MaxDocumentBytes && rowCount is >= 0 and <= MaxTableRows;
 }

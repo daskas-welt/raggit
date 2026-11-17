@@ -79,6 +79,56 @@ public sealed class DocumentRendererTests
     }
 
     [Fact]
+    public void TxtRenderer_RendersSourceFreeDraftWithNotice()
+    {
+        var draft = SourceFreeDraft();
+
+        var document = new TxtRenderer().Render(draft);
+        var text = Encoding.UTF8.GetString(document.Bytes);
+
+        text.Should().Contain(DocumentFileName.Title(draft.Description));
+        text.Should().Contain("Welcome to the team.");
+        text.Should().Contain("No RAGGit sources were used");
+        document.Sources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DocxRenderer_RendersSourceFreeDraftWithNotice()
+    {
+        var draft = SourceFreeDraft();
+
+        var document = new DocxRenderer().Render(draft);
+        using var stream = new MemoryStream(document.Bytes);
+        using var word = WordprocessingDocument.Open(stream, false);
+        var text = word.MainDocumentPart!.Document.Body!.InnerText;
+
+        text.Should().Contain("Welcome to the team.");
+        text.Should().Contain("No RAGGit sources were used");
+        document.Sources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PdfRenderer_RendersSourceFreeDraftWithNotice()
+    {
+        var draft = SourceFreeDraft();
+
+        var document = new PdfRenderer().Render(draft);
+        using var pdf = PdfDocument.Open(new MemoryStream(document.Bytes));
+        var text = pdf.GetPage(1).Text;
+
+        text.Should().Contain("Welcome to the team.");
+        text.Should().Contain("No RAGGit sources were used");
+        document.Sources.Should().BeEmpty();
+    }
+
+    private static DocumentDraft SourceFreeDraft() =>
+        new()
+        {
+            Description = "Draft a welcome note for a new team member.",
+            Body = "Welcome to the team.",
+        };
+
+    [Fact]
     public void Renderers_UseTheSameSuggestedFileNameAndSources()
     {
         var detail = DocumentTestData.Detail();

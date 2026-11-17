@@ -50,6 +50,39 @@ public sealed class DocumentTableBuilderTests
     }
 
     [Fact]
+    public void MixedRecordAndProse_KeepBoth()
+    {
+        var draft = new DocumentDraft
+        {
+            Description = "Create a spreadsheet with employee records and a note.",
+            Body =
+                "Name: Maria Papadopoulou\nRole: Analyst\n\nNote: The records above come from the current library.",
+        };
+
+        var sections = DocumentTableBuilder.Build(draft);
+
+        sections.Should().HaveCount(2);
+        sections[0].IsRecordShape.Should().BeTrue();
+        sections[0].Rows.Should().ContainSingle();
+        sections[1].IsRecordShape.Should().BeFalse();
+        sections[1].Rows[0].Cells[1].Text.Should().Contain("current library");
+    }
+
+    [Fact]
+    public void SourceFreeMarkers_DoNotBecomeSourceIndexes()
+    {
+        var draft = new DocumentDraft
+        {
+            Description = "Create a note.",
+            Body = "Only relevant records were used [1].",
+        };
+
+        var cells = DocumentTableBuilder.Build(draft)[0].Rows[0].Cells;
+
+        cells.SelectMany(cell => cell.SourceIndexes).Should().BeEmpty();
+    }
+
+    [Fact]
     public void DatesAndAmounts_AreTyped()
     {
         var detail = DocumentTestData.Detail(

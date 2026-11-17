@@ -105,6 +105,7 @@ public sealed class DocumentLabels
     public string Sources { get; init; } = "Sources";
     public string Page { get; init; } = "Page";
     public string Document { get; init; } = "Document";
+    public string NoSources { get; init; } = "No RAGGit sources were used.";
 
     public static DocumentLabels For(bool isGreek) =>
         isGreek
@@ -114,6 +115,7 @@ public sealed class DocumentLabels
                 Sources = "Πηγές",
                 Page = "Σελίδα",
                 Document = "Έγγραφο",
+                NoSources = "Δεν χρησιμοποιήθηκαν πηγές από το RAGGit.",
             }
             : new DocumentLabels();
 }
@@ -132,9 +134,19 @@ public static class DocumentCitationMapper
     public static DocumentCitationMap Map(QueryDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
+        return Map(DocumentDraft.FromQueryDetail(detail));
+    }
 
-        var byChunk = new Dictionary<Guid, HistoryCitation>();
-        foreach (var citation in detail.Citations)
+    /// <summary>
+    /// Replaces known citation GUIDs with numbered references. An unknown GUID
+    /// is removed so a generated document can never show an unverified source.
+    /// </summary>
+    public static DocumentCitationMap Map(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var byChunk = new Dictionary<Guid, Citation>();
+        foreach (var citation in draft.Sources)
         {
             byChunk.TryAdd(citation.ChunkId, citation);
         }
@@ -143,7 +155,7 @@ public static class DocumentCitationMapper
         var sources = new List<DocumentSource>();
 
         var body = GuidPattern.Replace(
-            detail.Answer,
+            draft.Body,
             match =>
             {
                 if (
@@ -151,7 +163,7 @@ public static class DocumentCitationMapper
                     || !byChunk.TryGetValue(id, out var citation)
                 )
                 {
-                    return match.Value;
+                    return string.Empty;
                 }
 
                 if (!assigned.TryGetValue(id, out var source))
@@ -165,9 +177,9 @@ public static class DocumentCitationMapper
             }
         );
 
-        // Include citations the model did not echo in the body (for example a
-        // fallback citation) so the appendix lists every source used.
-        foreach (var citation in detail.Citations)
+        // Include sources the model did not echo in the body so the appendix
+        // lists every source the pipeline validated as used.
+        foreach (var citation in draft.Sources)
         {
             if (!assigned.ContainsKey(citation.ChunkId))
             {
@@ -180,7 +192,7 @@ public static class DocumentCitationMapper
         return new DocumentCitationMap { Body = body, Sources = sources };
     }
 
-    private static DocumentSource ToSource(HistoryCitation citation, int index) =>
+    private static DocumentSource ToSource(Citation citation, int index) =>
         new()
         {
             Index = index,

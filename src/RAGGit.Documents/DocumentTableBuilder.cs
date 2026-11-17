@@ -29,21 +29,50 @@ public static class DocumentTableBuilder
     public static IReadOnlyList<DocumentSection> Build(QueryDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
-
-        var map = DocumentCitationMapper.Map(detail);
-        var paragraphs = SplitParagraphs(map.Body);
-
-        var records = paragraphs.Select(ParsePairs).Where(pairs => pairs.Count >= 2).ToList();
-
-        if (records.Count > 0)
-        {
-            return new[] { RecordSection(records) };
-        }
-
-        return SectionRows(paragraphs);
+        return Build(DocumentDraft.FromQueryDetail(detail));
     }
 
-    private static DocumentSection RecordSection(List<List<(string Label, string Value)>> records)
+    public static IReadOnlyList<DocumentSection> Build(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var map = DocumentCitationMapper.Map(draft);
+        var paragraphs = SplitParagraphs(map.Body);
+        var sourceCount = map.Sources.Count;
+
+        var records = new List<List<(string Label, string Value)>>();
+        var prose = new List<string>();
+        foreach (var paragraph in paragraphs)
+        {
+            var pairs = ParsePairs(paragraph);
+            if (pairs.Count >= 2)
+            {
+                records.Add(pairs);
+            }
+            else
+            {
+                prose.Add(paragraph);
+            }
+        }
+
+        var sections = new List<DocumentSection>();
+        if (records.Count > 0)
+        {
+            sections.Add(RecordSection(records, sourceCount));
+        }
+
+        if (prose.Count > 0)
+        {
+            sections.AddRange(SectionRows(prose, sourceCount));
+        }
+
+        return sections;
+    }
+
+    private static DocumentSection RecordSection(
+        List<List<(string Label, string Value)>> records,
+        int sourceCount
+    )
     {
         var headers = records
             .SelectMany(record => record.Select(pair => pair.Label))
@@ -65,7 +94,7 @@ public static class DocumentTableBuilder
                                 )
                             )
                             .Value;
-                        return ToCell(header, value ?? string.Empty);
+                        return ToCell(header, value ?? string.Empty, sourceCount);
                     })
                     .ToList(),
             })
@@ -74,7 +103,10 @@ public static class DocumentTableBuilder
         return new DocumentSection { Rows = rows, IsRecordShape = true };
     }
 
-    private static IReadOnlyList<DocumentSection> SectionRows(IEnumerable<string> paragraphs)
+    private static IReadOnlyList<DocumentSection> SectionRows(
+        IEnumerable<string> paragraphs,
+        int sourceCount
+    )
     {
         var sections = new List<DocumentSection>();
         foreach (var paragraph in paragraphs)
@@ -91,7 +123,11 @@ public static class DocumentTableBuilder
             var rows = lines
                 .Select(line => new DocumentRow
                 {
-                    Cells = new[] { ToCell("Section", "Content"), ToCell("Detail", line) },
+                    Cells = new[]
+                    {
+                        ToCell("Section", "Content", sourceCount),
+                        ToCell("Detail", line, sourceCount),
+                    },
                 })
                 .ToList();
 
@@ -138,14 +174,17 @@ public static class DocumentTableBuilder
             ? string.Empty
             : value;
 
-    private static DocumentCell ToCell(string header, string value)
+    private static DocumentCell ToCell(string header, string value, int sourceCount)
     {
-        var sourceIndexes = SourcePattern
-            .Matches(value)
-            .Select(match => int.TryParse(match.Groups[1].Value, out var index) ? index : 0)
-            .Where(index => index > 0)
-            .Distinct()
-            .ToList();
+        var sourceIndexes =
+            sourceCount == 0
+                ? new List<int>()
+                : SourcePattern
+                    .Matches(value)
+                    .Select(match => int.TryParse(match.Groups[1].Value, out var index) ? index : 0)
+                    .Where(index => index > 0 && index <= sourceCount)
+                    .Distinct()
+                    .ToList();
 
         if (TryParseDate(value, out var date))
         {

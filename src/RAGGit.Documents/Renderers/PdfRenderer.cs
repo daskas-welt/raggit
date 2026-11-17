@@ -21,13 +21,16 @@ public sealed class PdfRenderer : IDocumentRenderer
 
     public DocumentOutputFormat Format => DocumentOutputFormat.Pdf;
 
-    public GeneratedDocument Render(QueryDetail detail)
-    {
-        ArgumentNullException.ThrowIfNull(detail);
+    public GeneratedDocument Render(QueryDetail detail) =>
+        Render(DocumentDraft.FromQueryDetail(detail));
 
-        var title = DocumentFileName.Title(detail.Prompt);
-        var labels = DocumentLabels.For(TextScript.IsGreek(detail.Prompt));
-        var map = DocumentCitationMapper.Map(detail);
+    public GeneratedDocument Render(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var title = DocumentFileName.Title(draft.Description);
+        var labels = DocumentLabels.For(TextScript.IsGreek(draft.Description));
+        var map = DocumentCitationMapper.Map(draft);
 
         using var stream = new MemoryStream();
         using (var document = SKDocument.CreatePdf(stream))
@@ -42,18 +45,26 @@ public sealed class PdfRenderer : IDocumentRenderer
             var writer = new PdfPageWriter(document, paint);
             writer.WriteWrapped(title, titleFont, before: 0, after: 10);
             writer.WriteWrapped(map.Body, bodyFont, before: 0, after: 8);
-            writer.WriteWrapped(labels.Sources, headingFont, before: 10, after: 4);
 
-            foreach (var source in map.Sources)
+            if (map.Sources.Count == 0)
             {
-                writer.WriteWrapped(
-                    $"[{source.Index}] {source.DocumentName ?? labels.Document} "
-                        + $"(ordinal {source.Ordinal}, chunk {source.ChunkId})",
-                    bodyFont,
-                    before: 0,
-                    after: 0
-                );
-                writer.WriteWrapped(source.Excerpt, bodyFont, before: 0, after: 6);
+                writer.WriteWrapped(labels.NoSources, bodyFont, before: 0, after: 0);
+            }
+            else
+            {
+                writer.WriteWrapped(labels.Sources, headingFont, before: 10, after: 4);
+
+                foreach (var source in map.Sources)
+                {
+                    writer.WriteWrapped(
+                        $"[{source.Index}] {source.DocumentName ?? labels.Document} "
+                            + $"(ordinal {source.Ordinal}, chunk {source.ChunkId})",
+                        bodyFont,
+                        before: 0,
+                        after: 0
+                    );
+                    writer.WriteWrapped(source.Excerpt, bodyFont, before: 0, after: 6);
+                }
             }
 
             writer.Finish();
@@ -63,7 +74,7 @@ public sealed class PdfRenderer : IDocumentRenderer
         return new GeneratedDocument
         {
             Format = DocumentOutputFormat.Pdf,
-            FileName = DocumentFileName.Create(detail.Prompt, DocumentOutputFormat.Pdf),
+            FileName = DocumentFileName.Create(draft.Description, DocumentOutputFormat.Pdf),
             ContentType = DocumentOutputFormat.Pdf.ContentType(),
             Bytes = stream.ToArray(),
             Title = title,

@@ -9,18 +9,21 @@ using WordDocument = DocumentFormat.OpenXml.Wordprocessing.Document;
 
 namespace RAGGit.Documents.Renderers;
 
-/// <summary>Word output with a title, the grounded answer and a sources appendix.</summary>
+/// <summary>Word output with a title, body and source note or appendix.</summary>
 public sealed class DocxRenderer : IDocumentRenderer
 {
     public DocumentOutputFormat Format => DocumentOutputFormat.Docx;
 
-    public GeneratedDocument Render(QueryDetail detail)
-    {
-        ArgumentNullException.ThrowIfNull(detail);
+    public GeneratedDocument Render(QueryDetail detail) =>
+        Render(DocumentDraft.FromQueryDetail(detail));
 
-        var title = DocumentFileName.Title(detail.Prompt);
-        var labels = DocumentLabels.For(TextScript.IsGreek(detail.Prompt));
-        var map = DocumentCitationMapper.Map(detail);
+    public GeneratedDocument Render(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var title = DocumentFileName.Title(draft.Description);
+        var labels = DocumentLabels.For(TextScript.IsGreek(draft.Description));
+        var map = DocumentCitationMapper.Map(draft);
 
         using var stream = new MemoryStream();
         using (
@@ -36,16 +39,23 @@ public sealed class DocxRenderer : IDocumentRenderer
                 body.Append(Paragraph(line));
             }
 
-            body.Append(Heading(labels.Sources));
-            foreach (var source in map.Sources)
+            if (map.Sources.Count == 0)
             {
-                body.Append(
-                    Paragraph(
-                        $"[{source.Index}] {source.DocumentName ?? labels.Document} "
-                            + $"(ordinal {source.Ordinal}, chunk {source.ChunkId})"
-                    )
-                );
-                body.Append(Paragraph(source.Excerpt));
+                body.Append(Paragraph(labels.NoSources));
+            }
+            else
+            {
+                body.Append(Heading(labels.Sources));
+                foreach (var source in map.Sources)
+                {
+                    body.Append(
+                        Paragraph(
+                            $"[{source.Index}] {source.DocumentName ?? labels.Document} "
+                                + $"(ordinal {source.Ordinal}, chunk {source.ChunkId})"
+                        )
+                    );
+                    body.Append(Paragraph(source.Excerpt));
+                }
             }
 
             main.Document = new WordDocument(body);
@@ -54,7 +64,7 @@ public sealed class DocxRenderer : IDocumentRenderer
         return new GeneratedDocument
         {
             Format = DocumentOutputFormat.Docx,
-            FileName = DocumentFileName.Create(detail.Prompt, DocumentOutputFormat.Docx),
+            FileName = DocumentFileName.Create(draft.Description, DocumentOutputFormat.Docx),
             ContentType = DocumentOutputFormat.Docx.ContentType(),
             Bytes = stream.ToArray(),
             Title = title,

@@ -38,6 +38,22 @@ public sealed class DocumentGenerator
             );
         }
 
+        return Generate(DocumentDraft.FromQueryDetail(detail), format);
+    }
+
+    /// <summary>Renders newly composed content; source-free drafts are allowed.</summary>
+    public GeneratedDocument Generate(DocumentDraft draft, DocumentOutputFormat format)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (!DocumentEligibility.IsContentEligible(draft))
+        {
+            throw new DocumentGenerationException(
+                DocumentGenerationError.NotEligible,
+                "no document available"
+            );
+        }
+
         if (!_renderers.TryGetValue(format, out var renderer))
         {
             throw new DocumentGenerationException(
@@ -46,7 +62,7 @@ public sealed class DocumentGenerator
             );
         }
 
-        var document = renderer.Render(detail);
+        var document = renderer.Render(draft);
         if (!DocumentEligibility.IsWithinCaps(document.ByteCount, document.RowCount))
         {
             throw new DocumentGenerationException(

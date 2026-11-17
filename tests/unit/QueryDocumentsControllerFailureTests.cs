@@ -78,6 +78,9 @@ public sealed class QueryDocumentsControllerFailureTests
 
         public GeneratedDocument Render(QueryDetail detail) =>
             throw new InvalidOperationException("renderer exploded");
+
+        public GeneratedDocument Render(DocumentDraft draft) =>
+            throw new InvalidOperationException("renderer exploded");
     }
 
     private sealed class StubQueryRepository(QueryDetail detail) : IQueryRepository

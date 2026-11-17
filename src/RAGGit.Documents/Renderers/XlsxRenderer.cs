@@ -11,20 +11,24 @@ using RAGGit.Core.Models;
 
 namespace RAGGit.Documents.Renderers;
 
-/// <summary>Excel output with a real table and a separate sources sheet.</summary>
+/// <summary>Excel output with a real table and a source note or sources sheet.</summary>
 public sealed class XlsxRenderer : IDocumentRenderer
 {
     public DocumentOutputFormat Format => DocumentOutputFormat.Xlsx;
 
-    public GeneratedDocument Render(QueryDetail detail)
-    {
-        ArgumentNullException.ThrowIfNull(detail);
+    public GeneratedDocument Render(QueryDetail detail) =>
+        Render(DocumentDraft.FromQueryDetail(detail));
 
-        var title = DocumentFileName.Title(detail.Prompt);
-        var labels = DocumentLabels.For(TextScript.IsGreek(detail.Prompt));
-        var map = DocumentCitationMapper.Map(detail);
-        var sections = DocumentTableBuilder.Build(detail);
+    public GeneratedDocument Render(DocumentDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var title = DocumentFileName.Title(draft.Description);
+        var labels = DocumentLabels.For(TextScript.IsGreek(draft.Description));
+        var map = DocumentCitationMapper.Map(draft);
+        var sections = DocumentTableBuilder.Build(draft);
         var rowCount = sections.Sum(section => section.Rows.Count);
+        var hasSources = map.Sources.Count > 0;
 
         using var stream = new MemoryStream();
         using (var package = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook))
@@ -40,9 +44,14 @@ public sealed class XlsxRenderer : IDocumentRenderer
             var sheetData = new SheetData();
             dataPart.Worksheet = new Worksheet(sheetData);
 
-            var sourcesPart = workbookPart.AddNewPart<WorksheetPart>();
-            var sourcesData = new SheetData();
-            sourcesPart.Worksheet = new Worksheet(sourcesData);
+            WorksheetPart? sourcesPart = null;
+            SheetData? sourcesData = null;
+            if (hasSources)
+            {
+                sourcesPart = workbookPart.AddNewPart<WorksheetPart>();
+                sourcesData = new SheetData();
+                sourcesPart.Worksheet = new Worksheet(sourcesData);
+            }
 
             var sheets = workbookPart.Workbook.AppendChild(new Sheets());
             sheets.Append(
@@ -51,14 +60,19 @@ public sealed class XlsxRenderer : IDocumentRenderer
                     Id = workbookPart.GetIdOfPart(dataPart),
                     SheetId = 1,
                     Name = "Document",
-                },
-                new Sheet
-                {
-                    Id = workbookPart.GetIdOfPart(sourcesPart),
-                    SheetId = 2,
-                    Name = labels.Sources,
                 }
             );
+            if (sourcesPart is not null)
+            {
+                sheets.Append(
+                    new Sheet
+                    {
+                        Id = workbookPart.GetIdOfPart(sourcesPart),
+                        SheetId = 2,
+                        Name = labels.Sources,
+                    }
+                );
+            }
 
             var rowIndex = 1u;
             sheetData.Append(TextRow(rowIndex++, title));
@@ -71,13 +85,18 @@ public sealed class XlsxRenderer : IDocumentRenderer
                 }
 
                 var headers = section.Rows[0].Cells.Select(cell => cell.Header).ToList();
-                headers.Add(labels.Sources);
+                if (hasSources)
+                {
+                    headers.Add(labels.Sources);
+                }
+
                 sheetData.Append(HeaderRow(rowIndex++, headers));
 
                 foreach (var row in section.Rows)
                 {
                     var cells = new List<Cell>();
-                    for (var column = 0; column < headers.Count - 1; column++)
+                    var dataColumns = hasSources ? headers.Count - 1 : headers.Count;
+                    for (var column = 0; column < dataColumns; column++)
                     {
                         var cell =
                             column < row.Cells.Count
@@ -86,49 +105,61 @@ public sealed class XlsxRenderer : IDocumentRenderer
                         cells.Add(DataCell(ColumnName(column), rowIndex, cell));
                     }
 
-                    cells.Add(
-                        StringCell(
-                            ColumnName(headers.Count - 1),
-                            rowIndex,
-                            string.Join(
-                                ", ",
-                                row.Cells.SelectMany(cell => cell.SourceIndexes).Distinct()
+                    if (hasSources)
+                    {
+                        cells.Add(
+                            StringCell(
+                                ColumnName(headers.Count - 1),
+                                rowIndex,
+                                string.Join(
+                                    ", ",
+                                    row.Cells.SelectMany(cell => cell.SourceIndexes).Distinct()
+                                )
                             )
-                        )
-                    );
+                        );
+                    }
+
                     sheetData.Append(new Row(cells) { RowIndex = rowIndex++ });
                 }
             }
 
-            var sourceRow = 1u;
-            sourcesData.Append(
-                HeaderRow(
-                    sourceRow++,
-                    new List<string> { "Index", labels.Document, "Ordinal", "Chunk", "Excerpt" }
-                )
-            );
-            foreach (var source in map.Sources)
+            if (!hasSources)
             {
+                sheetData.Append(TextRow(rowIndex, labels.NoSources));
+            }
+
+            if (sourcesData is not null)
+            {
+                var sourceRow = 1u;
                 sourcesData.Append(
-                    new Row(
-                        StringCell(
-                            "A",
-                            sourceRow,
-                            source.Index.ToString(CultureInfo.InvariantCulture)
-                        ),
-                        StringCell("B", sourceRow, source.DocumentName ?? labels.Document),
-                        StringCell(
-                            "C",
-                            sourceRow,
-                            source.Ordinal.ToString(CultureInfo.InvariantCulture)
-                        ),
-                        StringCell("D", sourceRow, source.ChunkId.ToString()),
-                        StringCell("E", sourceRow, source.Excerpt)
+                    HeaderRow(
+                        sourceRow++,
+                        new List<string> { "Index", labels.Document, "Ordinal", "Chunk", "Excerpt" }
                     )
-                    {
-                        RowIndex = sourceRow++,
-                    }
                 );
+                foreach (var source in map.Sources)
+                {
+                    sourcesData.Append(
+                        new Row(
+                            StringCell(
+                                "A",
+                                sourceRow,
+                                source.Index.ToString(CultureInfo.InvariantCulture)
+                            ),
+                            StringCell("B", sourceRow, source.DocumentName ?? labels.Document),
+                            StringCell(
+                                "C",
+                                sourceRow,
+                                source.Ordinal.ToString(CultureInfo.InvariantCulture)
+                            ),
+                            StringCell("D", sourceRow, source.ChunkId.ToString()),
+                            StringCell("E", sourceRow, source.Excerpt)
+                        )
+                        {
+                            RowIndex = sourceRow++,
+                        }
+                    );
+                }
             }
 
             workbookPart.Workbook.Save();
@@ -137,7 +168,7 @@ public sealed class XlsxRenderer : IDocumentRenderer
         return new GeneratedDocument
         {
             Format = DocumentOutputFormat.Xlsx,
-            FileName = DocumentFileName.Create(detail.Prompt, DocumentOutputFormat.Xlsx),
+            FileName = DocumentFileName.Create(draft.Description, DocumentOutputFormat.Xlsx),
             ContentType = DocumentOutputFormat.Xlsx.ContentType(),
             Bytes = stream.ToArray(),
             Title = title,
