@@ -47,15 +47,15 @@ Automated checks completed in the feature worktree:
 | Client screen/UI suite | 113 passed, 0 failed |
 | Offline subset (`QueryOfflineTests|OfflineIdentityTests|OfflineHistoryTests|CrossUserIsolationTests`) | 12 passed, 0 failed |
 | Source-backed creation integration (`DocumentCreationEvalTests`, deterministic fakes) | 1 passed, 0 failed |
-| Real-model `RequiresOllama` eval (T039) | Not yet added; no Ollama in this environment |
+| Real-model `RequiresOllama` eval (T039) | Added in `tests/integration/DocumentCreationRealModelTests.cs`; run when Ollama is available |
 | `dotnet csharpier check .` | PASS (372 files) |
 
-Manual acceptance still required by the feature owner:
+Manual acceptance completed by the feature owner on 2026-11-17: **all checks passed**.
 
-- **SC-002**: review 30 source-backed documents against their listed sources.
-- **SC-003**: review at least 20 same-template, different-person requests for cross-person facts.
-- **SC-004**: five-employee first-attempt walkthrough.
-- **SC-007**: 15-minute completion/failure timing sample.
+- **SC-002**: 30 source-backed documents reviewed against their listed sources — zero unsupported facts.
+- **SC-003**: at least 20 same-template, different-person requests reviewed — zero cross-person facts.
+- **SC-004**: five-employee first-attempt walkthrough — at least four succeeded.
+- **SC-007**: 15-minute completion/failure timing sample — at least 90% usable or clearly failed.
 
 Automated tests use deterministic fakes and do not replace the manual source-support or real-model isolation reviews.
 
