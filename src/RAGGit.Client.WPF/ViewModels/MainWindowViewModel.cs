@@ -55,6 +55,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 "NavLibrary"
             ),
             CreateItem("Ask the Library", SymbolRegular.Chat24, typeof(QueryPage), "NavAsk"),
+            CreateItem(
+                "Create Document",
+                SymbolRegular.DocumentAdd24,
+                typeof(DocumentCreationPage),
+                "NavCreateDocument"
+            ),
             CreateItem("Query History", SymbolRegular.History24, typeof(HistoryPage), "NavHistory"),
             CreateItem(
                 "My Documents",

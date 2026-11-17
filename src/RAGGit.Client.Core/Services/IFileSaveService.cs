@@ -42,6 +42,15 @@ public sealed class InMemoryFileSaveService : IFileSaveService
     /// <summary>Last path a save reported; null when the last save was cancelled.</summary>
     public string? SavedPath { get; private set; }
 
+    /// <summary>Last suggested filename passed to <see cref="SaveAsync"/>.</summary>
+    public string? LastFileName { get; private set; }
+
+    /// <summary>Last content passed to <see cref="SaveAsync"/>.</summary>
+    public byte[]? LastContent { get; private set; }
+
+    /// <summary>Last content type passed to <see cref="SaveAsync"/>.</summary>
+    public string? LastContentType { get; private set; }
+
     /// <summary>Last path passed to <see cref="OpenAsync"/>.</summary>
     public string? OpenedPath { get; private set; }
 
@@ -63,6 +72,9 @@ public sealed class InMemoryFileSaveService : IFileSaveService
             throw new IOException("save failed");
         }
 
+        LastFileName = suggestedFileName;
+        LastContent = content;
+        LastContentType = contentType;
         SavedPath = NextPath;
         return Task.FromResult(NextPath);
     }

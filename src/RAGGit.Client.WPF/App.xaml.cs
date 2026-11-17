@@ -188,6 +188,15 @@ public sealed partial class App : Application
             })
             .AddHttpMessageHandler<BearerDelegatingHandler>();
         services
+            .AddHttpClient<DocumentCreationApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(session.WorkstationUrl);
+                // A source-backed document can take as long as the workstation's
+                // 900-second model timeout; the 033 export remains on 10 minutes.
+                client.Timeout = TimeSpan.FromMinutes(16);
+            })
+            .AddHttpMessageHandler<BearerDelegatingHandler>();
+        services
             .AddHttpClient<AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(session.WorkstationUrl);
@@ -223,6 +232,9 @@ public sealed partial class App : Application
         services.AddTransient<DocumentApiClient>(_ => new DocumentApiClient(
             new HttpClient { BaseAddress = new Uri("http://invalid-config") }
         ));
+        services.AddTransient<DocumentCreationApiClient>(_ => new DocumentCreationApiClient(
+            new HttpClient { BaseAddress = new Uri("http://invalid-config") }
+        ));
         services.AddTransient<AuthApiClient>(_ => new AuthApiClient(
             new HttpClient { BaseAddress = new Uri("http://invalid-config") }
         ));
@@ -242,6 +254,7 @@ public sealed partial class App : Application
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<QueryDetailViewModel>();
         services.AddTransient<DocumentsMineViewModel>();
+        services.AddTransient<DocumentCreationViewModel>();
         services.AddTransient<DashboardViewModel>();
         // Bounded parallel upload: the throttle comes from configuration so a
         // slow-disk box can dial it down without a rebuild.
@@ -273,6 +286,7 @@ public sealed partial class App : Application
         services.AddTransient<QueryDetailPage>();
         services.AddTransient<HistoryPage>();
         services.AddTransient<DocumentsMinePage>();
+        services.AddTransient<DocumentCreationPage>();
         services.AddTransient<AdminUsersPage>();
         services.AddTransient<SettingsPage>();
     }

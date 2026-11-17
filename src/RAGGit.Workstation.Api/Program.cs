@@ -213,6 +213,7 @@ builder.Services.AddHostedService<ReindexBackfillService>();
 builder.Services.AddSingleton<RetrievalService>();
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<QueryPipeline>();
+builder.Services.AddSingleton<DocumentCreationPipeline>();
 builder.Services.AddSingleton<IDocumentRenderer, DocxRenderer>();
 builder.Services.AddSingleton<IDocumentRenderer, PdfRenderer>();
 builder.Services.AddSingleton<IDocumentRenderer, TxtRenderer>();
