@@ -90,6 +90,9 @@ public sealed class DocumentCreationSourceContractTests : IClassFixture<TestApiF
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response
+            .Content.Headers.ContentType!.MediaType.Should()
+            .Be("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
         using (var stream = new MemoryStream(await response.Content.ReadAsByteArrayAsync()))
         using (var word = WordprocessingDocument.Open(stream, false))

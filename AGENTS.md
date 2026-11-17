@@ -148,6 +148,12 @@ up an extraction or chunking fix.
   health probe and model validation finish before the first byte, so `400/401/403/503` stay ordinary
   JSON; a failure after that arrives as an in-band `error` event whose message matches the classic
   endpoint's, and a stream that ends without a terminal event is treated as a failure by the client.
+- **Description-based creation (034):** the Create Document page posts a description plus one explicit
+  format to `POST /api/documents/generate`. The workstation retrieves relevant library chunks with the
+  existing retrieval policy, composes through a document-specific prompt, and returns bytes. With no
+  relevant chunks the file is explicitly labelled as not library-grounded; source-backed claims must
+  cite retrieved chunks. Nothing is persisted: no query-history row, library document, content-store
+  file, or generated-document history entry. The 033 answer-export path is unchanged.
 - **Document output (033):** the Ask view and Query Detail can save an owned grounded answer as DOCX,
   XLSX, PDF or TXT. `POST /api/queries/{id}/documents` renders from the **persisted** `Queries` row and
   its citations — never a second model generation — and returns the bytes with a suggested filename;

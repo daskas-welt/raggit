@@ -11,7 +11,6 @@
 >
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolVisibility" />
-        <converters:InvertedBoolToVisibilityConverter x:Key="InvertedBoolVisibility" />
     </Page.Resources>
 
     <Grid>
