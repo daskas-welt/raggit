@@ -103,15 +103,15 @@ No project, package, or solution initialization is needed. This feature uses the
 
 ### Tests for User Story 3
 
-- [ ] T031 [P] [US3] Add failing ViewModel tests in `tests/unit/DocumentCreationViewModelTests.cs` for cancellation before save, save-dialog cancellation, save exception, repeated submission while busy, and clearing stale bytes/path after a failed request. Confirm failure before lifecycle changes.
-- [ ] T032 [P] [US3] Add failing failure/retention tests in `tests/contract/DocumentCreationFailureContractTests.cs`: model unavailable and renderer failure return safe JSON with no file bytes; creation leaves query history, uploaded documents, and the content store unchanged; successful responses use `Cache-Control: no-store`. Confirm failure before controller hardening.
-- [ ] T033 [P] [US3] Add `DocumentCreationUiTests` in `tests/client/DocumentCreationUiTests.cs` for keyboard-reachable description/format/create/cancel/save/open controls, stable automation IDs, busy-state disabling, and return to idle after save cancellation.
+- [X] T031 [P] [US3] Add failing ViewModel tests in `tests/unit/DocumentCreationViewModelTests.cs` for cancellation before save, save-dialog cancellation, save exception, repeated submission while busy, and clearing stale bytes/path after a failed request. Confirm failure before lifecycle changes.
+- [X] T032 [P] [US3] Add failing failure/retention tests in `tests/contract/DocumentCreationFailureContractTests.cs`: model unavailable and renderer failure return safe JSON with no file bytes; creation leaves query history, uploaded documents, and the content store unchanged; successful responses use `Cache-Control: no-store`. Confirm failure before controller hardening.
+- [X] T033 [P] [US3] Add `DocumentCreationUiTests` in `tests/client/DocumentCreationUiTests.cs` for keyboard-reachable description/format/create/cancel/save/open controls, stable automation IDs, busy-state disabling, and return to idle after save cancellation.
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Add a cancellation source, `CancelCommand`, busy guard, and cleanup of transient document bytes/path to `src/RAGGit.Client.Core/ViewModels/DocumentCreationViewModel.cs`; pass cancellation through API and save calls, and do not save after cancellation.
-- [ ] T035 [US3] Harden `DocumentCreationController` in `src/RAGGit.Workstation.Api/Controllers/DocumentCreationController.cs` to handle caller cancellation and model/renderer failures with safe status responses, metadata-only logs, no partial file response, and no persistent writes.
-- [ ] T036 [US3] Update `src/RAGGit.Client.WPF/Views/Pages/DocumentCreationPage.xaml.cs` and `src/RAGGit.Client.WPF/Views/Pages/DocumentCreationPage.xaml` to cancel in-flight work on navigation away, disable repeat submissions, clear stale output on failure, and show the saved filename/Open action only after a successful save.
+- [X] T034 [US3] Add a cancellation source, `CancelCommand`, busy guard, and cleanup of transient document bytes/path to `src/RAGGit.Client.Core/ViewModels/DocumentCreationViewModel.cs`; pass cancellation through API and save calls, and do not save after cancellation.
+- [X] T035 [US3] Harden `DocumentCreationController` in `src/RAGGit.Workstation.Api/Controllers/DocumentCreationController.cs` to handle caller cancellation and model/renderer failures with safe status responses, metadata-only logs, no partial file response, and no persistent writes.
+- [X] T036 [US3] Update `src/RAGGit.Client.WPF/Views/Pages/DocumentCreationPage.xaml.cs` and `src/RAGGit.Client.WPF/Views/Pages/DocumentCreationPage.xaml` to cancel in-flight work on navigation away, disable repeat submissions, clear stale output on failure, and show the saved filename/Open action only after a successful save.
 
 **Checkpoint**: Save cancellation, generation cancellation, and failures leave no unwanted file or stale saved state; generated requests/results never enter RAGGit history or the shared library.
 

@@ -54,7 +54,7 @@
 
                 <ui:TextBlock Grid.Row="0" Text="What should the document contain?" />
 
-                <TextBox
+                <ui:TextBox
                     x:Name="DescriptionBox"
                     Grid.Row="2"
                     MinHeight="140"

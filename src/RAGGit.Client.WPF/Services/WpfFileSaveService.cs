@@ -23,6 +23,7 @@ public sealed class WpfFileSaveService : IFileSaveService
     )
     {
         ArgumentNullException.ThrowIfNull(content);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var dialog = new SaveFileDialog
         {

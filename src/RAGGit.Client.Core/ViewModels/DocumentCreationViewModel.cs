@@ -96,8 +96,9 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
 
         _cts?.Cancel();
         _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        var cancellationToken = _cts.Token;
+        var cts = new CancellationTokenSource();
+        _cts = cts;
+        var cancellationToken = cts.Token;
 
         IsBusy = true;
         StatusMessage = null;
@@ -106,6 +107,7 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
         try
         {
             var file = await _apiClient.CreateAsync(Description, format, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             var path = await _fileSaveService.SaveAsync(
                 file.FileName,
                 file.Bytes,
@@ -133,6 +135,12 @@ public sealed partial class DocumentCreationViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+            if (ReferenceEquals(_cts, cts))
+            {
+                _cts = null;
+            }
+
+            cts.Dispose();
         }
     }
 
