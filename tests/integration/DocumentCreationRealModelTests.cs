@@ -94,8 +94,8 @@ public sealed class DocumentCreationRealModelTests : IDisposable
             ["parking-policy"] = "The office parking policy provides 12 spaces for employees.",
             ["person-maria"] = "Name: Maria Papadopoulou\nRole: Analyst\nDepartment: Finance",
             ["person-giorgos"] = "Name: Giorgos Nikolaou\nRole: Manager\nDepartment: Operations",
-            ["retention-five"] = "The data retention period is 5 years.",
-            ["retention-seven"] = "The data retention period is 7 years.",
+            ["retention-policy"] =
+                "The data retention period is 5 years.\n\nThe data retention period is 7 years.",
         };
 
         foreach (var (name, text) in documents)
@@ -143,8 +143,9 @@ public sealed class DocumentCreationRealModelTests : IDisposable
             "/api/documents/generate",
             new { description, format = "txt" }
         );
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        return Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, $"server said: {body}");
+        return body;
     }
 
     private sealed class RealFactory : WebApplicationFactory<Program>

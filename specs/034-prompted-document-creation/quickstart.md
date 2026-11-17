@@ -42,12 +42,12 @@ Automated checks completed in the feature worktree:
 |-------|--------|
 | `dotnet build RAGGit.Server.slnf -c Release` | PASS (0 errors) |
 | `dotnet build RAGGit.sln -c Release -p:Platform=x64` | PASS (0 errors) |
-| Unit suite | 683 passed, 0 failed |
+| Unit suite | 684 passed, 0 failed |
 | Contract suite | 122 passed, 0 failed |
 | Client screen/UI suite | 113 passed, 0 failed |
 | Offline subset (`QueryOfflineTests|OfflineIdentityTests|OfflineHistoryTests|CrossUserIsolationTests`) | 12 passed, 0 failed |
 | Source-backed creation integration (`DocumentCreationEvalTests`, deterministic fakes) | 1 passed, 0 failed |
-| Real-model `RequiresOllama` eval (T039) | Added in `tests/integration/DocumentCreationRealModelTests.cs`; run when Ollama is available |
+| Real-model `RequiresOllama` eval (T039) | PASS on 2026-11-17 with `qwen3:4b-instruct-2507-q4_K_M` + `snowflake-arctic-embed2` (1 passed, 2m27s) |
 | `dotnet csharpier check .` | PASS (372 files) |
 
 Manual acceptance completed by the feature owner on 2026-11-17: **all checks passed**.
