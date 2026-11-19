@@ -4,5 +4,5 @@
   "here": true,
   "integration": "opencode",
   "script": "ps",
-  "speckit_version": "1.0.13.dev0"
+  "speckit_version": "1.4.3"
 }
